@@ -1,24 +1,72 @@
-# Compiled class file
+# Compilación Java: Maven, Gradle y salidas manuales
+target/
+build/
+out/
+bin/
+.gradle/
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
-*.nar
 *.ear
-*.zip
-*.tar.gz
-*.rar
+!.mvn/wrapper/maven-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Reportes y cobertura generados
+.classpath-cache/
+.coverage/
+jacoco.exec
+
+# Datos locales generados por H2
+*.mv.db
+*.trace.db
+*.lock.db
+*.temp.db
+*.h2.db
+
+# Variables locales, secretos y certificados
+.env
+.env.*
+!.env.example
+application-local.properties
+application-secrets.properties
+*.jks
+*.p12
+*.pem
+
+# Visual Studio Code y otros IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+*.code-workspace
+
+# Archivos temporales de Office
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# Logs, volcados y archivos temporales
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
 hs_err_pid*
 replay_pid*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Paquetes de entrega generados localmente
+*.zip
+*.tar
+*.tar.gz
