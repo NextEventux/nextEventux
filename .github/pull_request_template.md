@@ -1,11 +1,12 @@
 ## Objetivo
 
-<!-- Explique qué problema resuelve este PR y por qué es necesario. -->
+Explique brevemente qué problema resuelve este Pull Request y por qué es necesario.
 
 ## Issue relacionado
 
-<!-- Use "Closes #123" si el Issue debe cerrarse automáticamente al fusionar. -->
+Closes #
 
+> Use `Closes #número` cuando este PR complete el Issue. Use `Refs #número` si solamente está relacionado y todavía no debe cerrarlo.
 Closes #
 
 ## Módulo y caso de uso
@@ -35,10 +36,9 @@ Closes #
 |  |  |
 
 ## Evidencia
+Incluya capturas, registros, resultados de JUnit o pasos que permitan comprobar el funcionamiento. Escriba `No aplica` únicamente cuando exista una justificación.
 
-<!-- Adjunte capturas, registros o resultados cuando sean aplicables. Si no aplica, explíquelo. -->
-
-## Impactos y decisiones
+## Riesgos, impactos y decisiones
 
 - Base de datos H2: No aplica / Describir
 - Interfaz JavaFX: No aplica / Describir
@@ -46,9 +46,13 @@ Closes #
 - Otros módulos: No aplica / Describir
 - Riesgos o trabajo pendiente: Ninguno / Describir
 
+## Rama de destino
+
+- [ ] El Pull Request de trabajo se dirige hacia `develop`.
+- [ ] Este Pull Request va de `develop` hacia `main` porque corresponde a una versión integrada y verificada.
+
 ## Lista de verificación del autor
 
-- [ ] La rama parte de `develop` y el destino del PR es `develop`.
 - [ ] El PR atiende un único objetivo principal.
 - [ ] El código sigue las convenciones acordadas por el equipo.
 - [ ] No incluí datos H2 locales, secretos, credenciales ni archivos generados.
@@ -62,3 +66,11 @@ Closes #
 ## Revisión
 
 Este PR requiere la aprobación de **un compañero distinto del autor**. Todas las conversaciones de revisión deben resolverse o quedar justificadas antes de fusionar.
+
+### Para la persona revisora
+
+- [ ] El código es comprensible y respeta el alcance del Issue.
+- [ ] Las validaciones y reglas de negocio están implementadas.
+- [ ] Las pruebas y evidencias son suficientes.
+- [ ] El cambio no afecta negativamente otros módulos.
+- [ ] Apruebo la integración a `main` o dejé solicitudes de cambio concretas.

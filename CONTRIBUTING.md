@@ -31,6 +31,12 @@ Los Issues de GitHub no sustituyen la actualización del Excel. Cuando una tarea
 
 La rama `main` solo contendrá versiones estables aprobadas para una entrega. Los cambios ordinarios no deben enviarse directamente a `main`.
 
+```bash
+git switch develop
+git pull origin develop
+git switch -c feature/CU-12-aceptar-rechazar-solicitud
+```
+
 ## 3. Ramas
 
 | Rama | Propósito | Ejemplo |
@@ -77,7 +83,7 @@ test(eventos): cubrir cancelación de evento CU-04
 
 ### 4.3 Módulos permitidos
 
-`eventos`, `finanzas`, `proveedores`, `invitados`, `marketing`, `administracion`, `compartido`, `database`, `ui`, `docs`.
+`eventos`, `finanzas`, `proveedores`, `invitados`, `marketing`, `administracion`, `compartido`, `database`, `ui`, `docs`, `repo`.
 
 La descripción se escribe en minúscula, en infinitivo, sin punto final y debe expresar un solo cambio. No se aceptan mensajes vagos como `cambios`, `arreglos`, `avance` o `commit final`.
 
@@ -108,6 +114,20 @@ Un Pull Request debe atender un solo objetivo principal. No debe mezclar funcion
 - No se fusionará código con errores conocidos que impidan cumplir los criterios de aceptación.
 - `main` recibirá únicamente versiones verificadas que ya hayan sido integradas en `develop`.
 
+**Condiciones para integrar a develop**
+
+1. Tiene al menos una aprobación válida.
+2. No presenta conflictos con `develop`.
+3. Las pruebas aplicables pasan correctamente.
+4. La plantilla está completa.
+5. El cambio tiene evidencia suficiente.
+6. No contiene contraseñas, bases de datos locales, archivos temporales ni configuraciones personales.
+
+Se recomienda usar **Squash and merge** para conservar un historial claro. El título resultante debe respetar el formato de los commits.
+
+**Paso de develop a main**
+La integración hacia `main` se realiza únicamente cuando el equipo considera estable la versión de la iteración. El Pull Request debe resumir los casos de uso incluidos, las pruebas realizadas, los errores conocidos y la versión o entrega correspondiente. También requiere una aprobación de una persona diferente al autor.
+
 ## 6. Issues y tablero Kanban
 
 ### 6.1 Dónde están las plantillas
@@ -124,6 +144,20 @@ Las plantillas están en `.github/ISSUE_TEMPLATE/` y deben estar presentes en la
 | `config.yml` | Configura el selector de plantillas y evita Issues vacíos sin estructura. |
 
 Los archivos `.yml` son formularios: GitHub convierte las respuestas en el cuerpo del Issue. Los campos obligatorios evitan abrir tareas sin objetivo, evidencia o criterios de aceptación. Los labels automáticos solo se aplican si esos labels ya fueron creados en el repositorio.
+
+**Reglas para crear un issue**
+
+El título debe describir una sola necesidad. El cuerpo debe incluir objetivo, responsable, módulo, criterios de aceptación, dependencias y evidencia esperada. Para tareas de programación, relacione el caso de uso correspondiente.
+
+Cada Issue debe tener:
+
+- Un label de tipo.
+- Un label de módulo cuando corresponda.
+- Un label de prioridad.
+- Responsable asignado.
+- Ubicación en el tablero del proyecto.
+
+El estado del trabajo se administra principalmente mediante las columnas o el campo `Status` del tablero Kanban. No se deben crear labels duplicados para `Por hacer`, `En progreso` y `Terminado`. El label `estado:bloqueado` se utiliza únicamente cuando existe un impedimento real.
 
 ### 6.2 Uso correcto de una tarea Kanban
 
@@ -170,10 +204,19 @@ No se deben borrar Issues para ocultar errores o decisiones descartadas: cerrarl
 
 ## 7. Labels personalizados
 
-Cada Issue debe tener, como mínimo, un label de tipo, uno de módulo y uno de prioridad. Los labels de estado no deben reemplazar las columnas del Project; solo se utiliza `estado:bloqueado` como alerta temporal.
+La lista inicial y sus colores está documentada en [`.github/LABELS.md`](.github/LABELS.md). Para evitar confusiones, cada Issue debe utilizar como máximo un label de tipo, uno de módulo y uno de prioridad, además de `estado:bloqueado` cuando corresponda.
 
-La propuesta completa de nombres, colores y descripciones está en `docs/ETIQUETAS.md`. No conviene crear un label por cada caso de uso: el identificador `CU-XX` se registra en el título y en el formulario, evitando mantener 30 labels innecesarios.
+Los labels no reemplazan la asignación de responsables ni el estado del tablero Kanban.
 
-## 8. Definition of Done
+## 8. Calidad y definición de terminado
 
-Una funcionalidad se considera terminada cuando está implementada, probada, revisada por al menos un compañero, integrada con los módulos relacionados y disponible en el ambiente de pruebas. Además, el Issue debe tener evidencia y el Control de Alcance debe reflejar el estado real.
+Una funcionalidad puede considerarse terminada dentro de la iteración cuando cumple los criterios de aceptación, fue probada, recibió revisión de otra persona, quedó integrada en `develop` y cuenta con evidencia. La versión pasa a `main` cuando el conjunto integrado se encuentra estable y verificado. Para un caso de uso, también deben estar controlados el flujo principal, los flujos alternativos, las excepciones y las reglas de negocio.
+
+Las pruebas automáticas se realizarán con JUnit. El término correcto para comprobar la interacción entre componentes es **pruebas de integración**, no “pruebas integrales”.
+
+## 9. Comunicación y archivos del proyecto
+
+Las decisiones formales deben quedar registradas en Issues, Pull Requests, actas o documentos institucionales. WhatsApp puede utilizarse para avisos rápidos, pero no debe ser la única evidencia de una decisión.
+
+GitHub almacenará el código fuente y su historial. Los documentos académicos en Word, Excel o PowerPoint continuarán en la carpeta institucional acordada por el equipo, salvo que el grupo decida versionar alguna copia expresamente.
+ 

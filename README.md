@@ -31,14 +31,14 @@ NextEventux no presta directamente los servicios contratados ni ejecuta pagos ba
 
 El producto se especifica mediante 30 casos de uso distribuidos de forma consecutiva en seis módulos.
 
-| Módulo | Casos de uso | Propósito general |
-| --- | --- | --- |
-| Gestión de Eventos | CU-01 a CU-05 | Crear, actualizar, publicar, cancelar y finalizar eventos. |
-| Gestión Financiera | CU-06 a CU-10 | Consultar y controlar planificación, paquetes, sanciones y movimientos. |
-| Gestión de Proveedores | CU-11 a CU-15 | Administrar servicios, solicitudes, contrataciones, reseñas y portafolios. |
-| Gestión de Invitados | CU-16 a CU-20 | Administrar respuestas, invitaciones, necesidades, acompañantes y regalos. |
-| Marketing | CU-21 a CU-25 | Gestionar segmentación, fidelidad, campañas, consentimientos y canjes. |
-| Administración | CU-26 a CU-30 | Contratar organizadores y administrar registros, aprobaciones y suspensiones. |
+| Módulo | Casos de uso | Responsable | Propósito general |
+| --- | --- | --- | --- |
+| Gestión de Eventos | CU-01 a CU-05 | Sara Alejandra Coy Calderón | Crear, actualizar, publicar, cancelar y finalizar eventos. |
+| Gestión Financiera | CU-06 a CU-10 | Valeria Salgado Cortés | Consultar y controlar planificación, paquetes, sanciones y movimientos. |
+| Gestión de Proveedores | CU-11 a CU-15 | Isabella Hermosa Losada | Administrar servicios, solicitudes, contrataciones, reseñas y portafolios. |
+| Gestión de Invitados | CU-16 a CU-20 | Sofía Cortés Salazar | Administrar respuestas, invitaciones, necesidades, acompañantes y regalos. |
+| Marketing | CU-21 a CU-25 | Saúl Leonardo Cruz Romero | Gestionar segmentación, fidelidad, campañas, consentimientos y canjes. |
+| Administración | CU-26 a CU-30 | Juan Diego Rojas Zárate | Contratar organizadores y administrar registros, aprobaciones y suspensiones. |
 
 La especificación detallada de cada comportamiento pertenece al SRS y a los anexos de casos de uso. El código no debe introducir reglas que contradigan esos documentos sin registrar y aprobar previamente una solicitud de cambio.
 
@@ -54,7 +54,7 @@ La especificación detallada de cada comportamiento pertenece al SRS y a los ane
 | Desarrollo | Visual Studio Code | Edición, ejecución y depuración del código. |
 | Versionamiento | Git y GitHub | Historial, colaboración, revisión e integración del código. |
 
-## Estructura recomendada del repositorio
+## Organización del repositorio
 
 ```text
 NextEventux/
@@ -97,9 +97,27 @@ El comando de compilación y ejecución debe añadirse aquí cuando el equipo co
 
 El PMP, el SRS, el reporte gerencial, los diagramas y las matrices de seguimiento se almacenan en la carpeta institucional definida por el equipo. GitHub se utiliza principalmente para el código, las pruebas y la documentación técnica necesaria para comprender o ejecutar el repositorio.
 
+## Equipo
+
+NextEventux es desarrollado por:
+
+| Integrante | Módulo principal | Github |
+| --- | --- | --- |
+| Sara Alejandra Coy Calderón | Gestión de Eventos | |
+| Valeria Salgado Cortés | Gestión Financiera | |
+| Isabella Hermosa Losada | Gestión de Proveedores |https://github.com/Isa21087 |
+| Sofía Cortés Salazar | Gestión de Invitados | |
+| Saúl Leonardo Cruz Romero | Marketing | https://github.com/Conecruz |
+| Juan Diego Rojas Zárate | Administración | |
+
+
 ## Contribución
 
 Antes de realizar cambios, consulte [CONTRIBUTING.md](CONTRIBUTING.md). Allí se explican la convención de commits, el uso de ramas, las plantillas de Issues, la política de Pull Requests, la aprobación requerida y el cierre trazable de las tareas.
+
+Todas las contribuciones deben realizarse mediante una rama y un Pull Request. Las ramas feature/* y fix/* nacen desde develop y sus Pull Requests regresan a develop. Cuando la versión integrada se encuentre verificada, se abre un Pull Request de develop hacia main.Cada Pull Request necesita la aprobación de una persona diferente al autor antes de integrarse a su rama de destino.
+
+
 
 ## Estado
 
