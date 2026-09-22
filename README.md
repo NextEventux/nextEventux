@@ -108,7 +108,7 @@ NextEventux es desarrollado por:
 | Isabella Hermosa Losada | Gestión de Proveedores |https://github.com/Isa21087 |
 | Sofía Cortés Salazar | Gestión de Invitados | https://github.com/cortesssofia |
 | Saúl Leonardo Cruz Romero | Marketing | https://github.com/Conecruz |
-| Juan Diego Rojas Zárate | Administración | |
+| Juan Diego Rojas Zárate | Administración | https://github.com/MaizenaDura |
 
 
 ## Contribución
