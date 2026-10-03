@@ -103,12 +103,12 @@ NextEventux es desarrollado por:
 
 | Integrante | Módulo principal | Github |
 | --- | --- | --- |
-| Sara Alejandra Coy Calderón | Gestión de Eventos | |
+| Sara Alejandra Coy Calderón | Gestión de Eventos |https://github.com/sarasscx|
 | Valeria Salgado Cortés | Gestión Financiera |https://github.com/vsalgadoo |
 | Isabella Hermosa Losada | Gestión de Proveedores |https://github.com/Isa21087 |
 | Sofía Cortés Salazar | Gestión de Invitados | https://github.com/cortesssofia |
 | Saúl Leonardo Cruz Romero | Marketing | https://github.com/Conecruz |
-| Juan Diego Rojas Zárate | Administración | |
+| Juan Diego Rojas Zárate | Administración | https://github.com/MaizenaDura |
 
 
 ## Contribución
