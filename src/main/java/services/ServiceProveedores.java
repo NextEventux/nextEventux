@@ -26,6 +26,15 @@ public class ServiceProveedores {
         repositoryServicio.guardarServicio(datos);
     }
 
+    // Actualiza los datos de un servicio usando su identificador
+    public void modificarServicio(int idServicio, Servicio datos) {
+
+        // Conservamos el id del servicio que se quiere modificar
+        datos.setIdServicio(idServicio);
+
+        repositoryServicio.actualizarServicio(datos);
+    }
+
     // Registra una fecha y horario en los que el servicio puede estar disponible
     public void registrarDisponibilidadServicio(
             int idServicio,
