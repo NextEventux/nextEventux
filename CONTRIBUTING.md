@@ -18,37 +18,57 @@ Los Issues de GitHub no sustituyen la actualización del Excel. Cuando una tarea
 
 ## 2. Flujo de trabajo
 
-1. Seleccionar o crear un Issue con alcance y criterios de aceptación claros.
-2. Asignar el Issue a la persona responsable y ubicarlo en el tablero Kanban.
-3. Crear una rama a partir de `develop`.
-4. Realizar commits pequeños y relacionados con un solo objetivo.
-5. Ejecutar las pruebas aplicables y conservar la evidencia.
-6. Publicar la rama y abrir un Pull Request hacia `develop`.
-7. Atender los comentarios de revisión.
-8. Obtener la aprobación de un compañero distinto del autor.
-9. Fusionar el Pull Request y eliminar la rama remota si ya no se necesita.
-10. Comprobar el cierre del Issue y actualizar el estado y las horas faltantes en Excel.
+## 2. Flujo de trabajo
 
-La rama `main` solo contendrá versiones estables aprobadas para una entrega. Los cambios ordinarios no deben enviarse directamente a `main`.
+1. Identificar el requerimiento o tarea que se va a desarrollar.
+2. Revisar sus requisitos, criterios y documentación relacionada.
+3. Actualizar la copia local de `main`.
+4. Crear una rama temporal específica para ese trabajo.
+5. Realizar commits pequeños y relacionados con un solo objetivo.
+6. Ejecutar las pruebas aplicables y conservar evidencia.
+7. Publicar la rama y abrir un Pull Request hacia `main`.
+8. Atender los comentarios de revisión.
+9. Obtener la aprobación de un compañero diferente al autor.
+10. Fusionar el Pull Request cuando el cambio esté validado.
+11. Eliminar la rama temporal cuando ya no sea necesaria.
+12. Actualizar el estado y las horas faltantes en el archivo de Control de Alcance.
+
+No se deben realizar cambios de desarrollo directamente sobre `main`.
 
 ```bash
-git switch develop
-git pull origin develop
-git switch -c feature/CU-12-aceptar-rechazar-solicitud
+git switch main
+git pull
+git switch -c CU12-aceptar-rechazar-solicitud
 ```
 
 ## 3. Ramas
 
 | Rama | Propósito | Ejemplo |
 | --- | --- | --- |
-| `main` | Versiones estables y aprobadas para entrega. | `main` |
-| `develop` | Integración del trabajo realizado durante los sprints. | `develop` |
-| `feature/*` | Desarrollo de una funcionalidad o caso de uso. | `feature/CU-12-aceptar-rechazar-solicitud` |
-| `fix/*` | Corrección de un error. | `fix/CU-12-conservar-version-propuesta` |
-| `docs/*` | Cambio exclusivo de documentación técnica del repositorio. | `docs/actualizar-readme` |
-| `test/*` | Adición o ajuste aislado de pruebas. | `test/CU-13-validacion-presupuesto` |
+| `main` | Versión estable y oficial del proyecto. | `main` |
+| Rama de caso de uso | Implementación o validación de un caso de uso. | `CU11-gestionar-servicio` |
+| Rama de tarea | Trabajo técnico o documental que no corresponde directamente a un CU. | `actualizar-flujo-git-documentacion` |
 
-Las ramas `feature/*`, `fix/*`, `docs/*` y `test/*` nacen desde `develop` y regresan a `develop` mediante Pull Request.
+### Convención de nombres
+
+Para los casos de uso:
+
+`CUXX-descripcion-corta`
+
+Ejemplos:
+
+- `CU01-crear-evento`
+- `CU11-gestionar-servicio`
+- `CU28-aprobar-proveedores`
+
+El nombre debe:
+
+- representar el trabajo que se realiza;
+- evitar espacios;
+- ser corto pero identificable;
+- utilizar el código del caso de uso cuando corresponda.
+
+Las ramas son temporales. Una vez que el trabajo ha sido revisado e integrado a `main`, pueden eliminarse.
 
 ## 4. Commits
 
@@ -106,27 +126,20 @@ Un Pull Request debe atender un solo objetivo principal. No debe mezclar funcion
 
 ### 5.2 Aprobación y fusión
 
-- Se requiere **una aprobación de un compañero distinto del autor** antes de fusionar a `develop`.
+- Se requiere **una aprobación de un compañero distinto del autor** antes de fusionar a `main`.
 - El autor no puede contar como su propio revisor.
 - Las conversaciones de revisión deben quedar resueltas o justificadas antes de la fusión.
 - Si el cambio afecta otro módulo, se debe avisar a su responsable y dejar constancia en el Pull Request.
 - Deben ejecutarse las pruebas aplicables. Si una prueba no puede ejecutarse, el motivo y el riesgo deben quedar escritos.
 - No se fusionará código con errores conocidos que impidan cumplir los criterios de aceptación.
-- `main` recibirá únicamente versiones verificadas que ya hayan sido integradas en `develop`.
 
-**Condiciones para integrar a develop**
+**Condiciones para integrar a main**
 
 1. Tiene al menos una aprobación válida.
-2. No presenta conflictos con `develop`.
+2. No presenta conflictos con `main`.
 3. Las pruebas aplicables pasan correctamente.
-4. La plantilla está completa.
+4. La plantilla del Pull Request está completa.
 5. El cambio tiene evidencia suficiente.
-6. No contiene contraseñas, bases de datos locales, archivos temporales ni configuraciones personales.
-
-Se recomienda usar **Squash and merge** para conservar un historial claro. El título resultante debe respetar el formato de los commits.
-
-**Paso de develop a main**
-La integración hacia `main` se realiza únicamente cuando el equipo considera estable la versión de la iteración. El Pull Request debe resumir los casos de uso incluidos, las pruebas realizadas, los errores conocidos y la versión o entrega correspondiente. También requiere una aprobación de una persona diferente al autor.
 
 ## 6. Issues y tablero Kanban
 
@@ -210,7 +223,7 @@ Los labels no reemplazan la asignación de responsables ni el estado del tablero
 
 ## 8. Calidad y definición de terminado
 
-Una funcionalidad puede considerarse terminada dentro de la iteración cuando cumple los criterios de aceptación, fue probada, recibió revisión de otra persona, quedó integrada en `develop` y cuenta con evidencia. La versión pasa a `main` cuando el conjunto integrado se encuentra estable y verificado. Para un caso de uso, también deben estar controlados el flujo principal, los flujos alternativos, las excepciones y las reglas de negocio.
+Una funcionalidad puede considerarse terminada dentro de la iteración cuando cumple los criterios de aceptación, fue probada, recibió revisión de otra persona, quedó integrada en `main` y cuenta con evidencia. Para un caso de uso también deben estar controlados el flujo principal, los flujos alternativos, las excepciones y las reglas de negocio correspondientes.
 
 Las pruebas automáticas se realizarán con JUnit. El término correcto para comprobar la interacción entre componentes es **pruebas de integración**, no “pruebas integrales”.
 
