@@ -2,6 +2,9 @@ package controllers;
 
 import entities.Servicio;
 import services.ServiceProveedores;
+import java.util.Date;
+import entities.DisponibilidadServicio;
+import repositories.RepositoryDisponibilidadServicio;
 
 // Recibe las acciones relacionadas con proveedores y las envia al service
 public class ControllerProveedores {
@@ -17,4 +20,17 @@ public class ControllerProveedores {
     public void crearServicio(Servicio datos) {
         serviceProveedores.crearServicio(datos);
     }
+
+    // Envia al service la fecha y horario disponibles para un servicio
+    public void registrarDisponibilidadServicio(
+            int idServicio,
+            Date fecha,
+            String horario) {
+
+        serviceProveedores.registrarDisponibilidadServicio(
+                idServicio,
+                fecha,
+                horario);
+    }
+
 }
