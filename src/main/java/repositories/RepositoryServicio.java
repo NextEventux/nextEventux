@@ -36,4 +36,16 @@ public class RepositoryServicio {
         // Si no existe un servicio con ese id, no tenemos nada que devolver
         return null;
     }
+
+    // Reemplaza los datos de un servicio que ya esta guardado
+    public void actualizarServicio(Servicio servicio) {
+
+        for (int i = 0; i < servicios.size(); i++) {
+
+            if (servicios.get(i).getIdServicio() == servicio.getIdServicio()) {
+                servicios.set(i, servicio);
+                return;
+            }
+        }
+    }
 }
