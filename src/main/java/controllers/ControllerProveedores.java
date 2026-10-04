@@ -21,6 +21,11 @@ public class ControllerProveedores {
         serviceProveedores.crearServicio(datos);
     }
 
+    // Envia al service los nuevos datos del servicio
+    public void modificarServicio(int idServicio, Servicio datos) {
+        serviceProveedores.modificarServicio(idServicio, datos);
+    }
+
     // Envia al service la fecha y horario disponibles para un servicio
     public void registrarDisponibilidadServicio(
             int idServicio,
