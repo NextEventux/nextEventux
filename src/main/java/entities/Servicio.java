@@ -3,17 +3,22 @@ package entities;
 // Representa uno de los servicios que un proveedor puede ofrecer en la plataforma
 public class Servicio {
 
-    // Identificadores para saber qué servicio es y a qué proveedor pertenece
+    // Identificadores para saber que servicio es y a que proveedor pertenece
     private int idServicio;
     private int idProveedor;
 
-    // Información principal que se muestra del servicio
+    // Informacion principal que se muestra del servicio
     private String nombre;
     private String descripcion;
     private double precio;
     private String categoria;
+    // Datos que definen las condiciones en las que se puede ofrecer el servicio
+    private String tipo;
+    private Integer cantidadMaximaPersonas;
+    private String ciudadZona;
+    private int anticipacionMinima;
 
-    // Sirve para saber si el servicio está activo, retirado, etc.
+    // Sirve para saber si el servicio esta activo, retirado, etc.
     private String estado;
 
     // Permite consultar el identificador del servicio
@@ -26,7 +31,7 @@ public class Servicio {
         this.idServicio = idServicio;
     }
 
-    // Permite saber a qué proveedor pertenece el servicio
+    // Permite saber a que proveedor pertenece el servicio
     public int getIdProveedor() {
         return idProveedor;
     }
@@ -73,5 +78,37 @@ public class Servicio {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public Integer getCantidadMaximaPersonas() {
+        return cantidadMaximaPersonas;
+    }
+
+    public void setCantidadMaximaPersonas(Integer cantidadMaximaPersonas) {
+        this.cantidadMaximaPersonas = cantidadMaximaPersonas;
+    }
+
+    public String getCiudadZona() {
+        return ciudadZona;
+    }
+
+    public void setCiudadZona(String ciudadZona) {
+        this.ciudadZona = ciudadZona;
+    }
+
+    public int getAnticipacionMinima() {
+        return anticipacionMinima;
+    }
+
+    public void setAnticipacionMinima(int anticipacionMinima) {
+        this.anticipacionMinima = anticipacionMinima;
     }
 }
