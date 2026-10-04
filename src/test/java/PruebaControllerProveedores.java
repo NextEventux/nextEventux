@@ -1,4 +1,6 @@
+import java.util.Date;
 import controllers.ControllerProveedores;
+import entities.DisponibilidadServicio;
 import entities.Servicio;
 import repositories.RepositoryServicio;
 import services.ServiceProveedores;
@@ -39,6 +41,21 @@ public class PruebaControllerProveedores {
             System.out.println("Nombre: " + servicioEncontrado.getNombre());
         } else {
             System.out.println("El servicio no completo el flujo");
+        }
+
+        Date fecha = new Date();
+
+        // Registramos una disponibilidad entrando por el controller
+        controller.registrarDisponibilidadServicio( 3, fecha,"14:00 - 18:00");
+
+        // Comprobamos que haya llegado al repositorio
+        DisponibilidadServicio disponibilidadEncontrada = repositoryDisponibilidad.buscarDisponibilidad(3, fecha, "14:00 - 18:00");
+
+        if (disponibilidadEncontrada != null) {
+            System.out.println("El controller registro la disponibilidad correctamente");
+            System.out.println("Horario: " + disponibilidadEncontrada.getHorario());
+        } else {
+            System.out.println("La disponibilidad no completo el flujo");
         }
     }
 }
