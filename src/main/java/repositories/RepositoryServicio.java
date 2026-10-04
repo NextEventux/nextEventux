@@ -9,8 +9,8 @@ import entities.Servicio;
 // Por ahora usamos una lista para poder probar el flujo antes de conectar H2.
 public class RepositoryServicio {
 
-    // Guarda temporalmente los servicios mientras validamos la primera implementación
-    // Es una colección donde podemos tener varios objetos Servicio
+    // Guarda temporalmente los servicios mientras validamos la primera implementacion
+    // Es una coleccion donde podemos tener varios objetos Servicio
     private List<Servicio> servicios;
 
     public RepositoryServicio() {
@@ -18,7 +18,7 @@ public class RepositoryServicio {
         servicios = new ArrayList<>();
     }
 
-    // Guarda un servicio para que después pueda ser consultado
+    // Guarda un servicio para que despues pueda ser consultado
     public void guardarServicio(Servicio servicio) {
         servicios.add(servicio);
     }
