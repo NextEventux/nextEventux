@@ -1,6 +1,7 @@
 import entities.Servicio;
 import repositories.RepositoryServicio;
 import services.ServiceProveedores;
+import repositories.RepositoryDisponibilidadServicio;
 
 // Comprueba que el service pueda enviar un servicio al repositorio
 public class PruebaServiceProveedores {
@@ -9,9 +10,10 @@ public class PruebaServiceProveedores {
 
         // Primero creamos el repositorio que va a guardar los servicios
         RepositoryServicio repository = new RepositoryServicio();
+        RepositoryDisponibilidadServicio repositoryDisponibilidad =
+        new RepositoryDisponibilidadServicio();
 
-        // El service recibe ese repositorio para poder usarlo
-        ServiceProveedores service = new ServiceProveedores(repository);
+        ServiceProveedores service = new ServiceProveedores(repository, repositoryDisponibilidad);
 
         Servicio servicio = new Servicio();
         servicio.setIdServicio(2);
