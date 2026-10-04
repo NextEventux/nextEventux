@@ -77,7 +77,17 @@ Los scripts de creación o migración de la base de datos que sean necesarios pa
 
 ## Flujo de desarrollo
 
-`main` conserva las versiones estables de entrega y `develop` integra el trabajo de cada sprint. Las nuevas funcionalidades se desarrollan en ramas `feature/*`; las correcciones, en ramas `fix/*`. Cada cambio comienza con un Issue, se relaciona mediante commits y termina en un Pull Request hacia `develop`.
+`main` conserva la versión estable del proyecto. Cada requerimiento o tarea se desarrolla en una rama temporal independiente creada a partir de `main`. Cuando el trabajo está listo, probado y revisado, se integra nuevamente a `main` mediante Pull Request.
+
+Para los casos de uso, el equipo utilizará nombres de rama con el formato:
+
+`CUXX-descripcion-corta`
+
+Por ejemplo:
+
+`CU11-gestionar-servicio`
+
+Para trabajos que no correspondan directamente a un caso de uso se utilizará un nombre breve y representativo de la tarea.
 
 El proyecto combina Scrum con seguimiento Kanban. GitHub Issues y GitHub Project permiten visualizar el flujo técnico, mientras que `Control_de_Alcance_NextEventux.xlsx` continúa siendo el registro oficial de tareas, estados, horas faltantes, métricas y Burndown Chart. El responsable debe mantener consistencia entre ambos recursos.
 
@@ -88,7 +98,8 @@ Se requiere un JDK compatible con la versión que declare el archivo de construc
 ```bash
 git clone <URL_DEL_REPOSITORIO>
 cd NextEventux
-git switch develop
+git switch main
+git pull
 ```
 
 El comando de compilación y ejecución debe añadirse aquí cuando el equipo confirme y configure el gestor de construcción. Si se adopta Maven o Gradle, se recomienda versionar su wrapper para que todos ejecuten exactamente la misma versión.
@@ -115,7 +126,9 @@ NextEventux es desarrollado por:
 
 Antes de realizar cambios, consulte [CONTRIBUTING.md](CONTRIBUTING.md). Allí se explican la convención de commits, el uso de ramas, las plantillas de Issues, la política de Pull Requests, la aprobación requerida y el cierre trazable de las tareas.
 
-Todas las contribuciones deben realizarse mediante una rama y un Pull Request. Las ramas feature/* y fix/* nacen desde develop y sus Pull Requests regresan a develop. Cuando la versión integrada se encuentre verificada, se abre un Pull Request de develop hacia main.Cada Pull Request necesita la aprobación de una persona diferente al autor antes de integrarse a su rama de destino.
+Todas las contribuciones deben realizarse mediante una rama independiente y un Pull Request. Las ramas de trabajo se crean a partir de `main` y deben representar claramente el requerimiento o tarea que se está desarrollando. Cada Pull Request debe dirigirse a `main` y requiere la revisión de una persona diferente al autor antes de integrarse.
+
+Para el procedimiento completo de implementación, validación, pruebas y registro de hallazgos consulte [GUIA_IMPLEMENTACION_Y_VALIDACION.md](GUIA_IMPLEMENTACION_Y_VALIDACION.md).
 
 ## Estado
 
@@ -155,7 +168,7 @@ Las plantillas no deben utilizarse para simular avance. Un Issue abierto represe
 
 El archivo `PULL_REQUEST_TEMPLATE.md` se carga automáticamente al crear un Pull Request. El autor debe completar todas las secciones y la lista de comprobación.
 
-Los Pull Requests de `feature/*` y `fix/*` se dirigen normalmente hacia `develop`. Solo las versiones integradas y verificadas pasan mediante Pull Request de `develop` hacia `main`.
+Los Pull Requests de las ramas de trabajo se dirigen hacia `main`. Cada Pull Request requiere la aprobación de una persona diferente al autor antes de integrarse.
 
 Cada Pull Request requiere una aprobación de una persona diferente al autor. La persona revisora debe comprobar la rama de destino, el alcance, las pruebas, las reglas de negocio y la ausencia de información sensible antes de aprobar.
 
