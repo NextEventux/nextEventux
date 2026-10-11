@@ -1,7 +1,7 @@
-package main.java.repositories;
+package repositories;
 
 import java.util.List;
-import main.java.entities.Sancion;
+import entities.Sancion;
 
 public class RepositorySancion {
     

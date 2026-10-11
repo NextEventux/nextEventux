@@ -1,30 +1,39 @@
-package main.java.services;
+package services;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import main.java.entities.MovimientoFinanciero;
-import main.java.entities.Planificacion;
-import main.java.repositories.RepositoryMovimientoFinanciero;
-import main.java.repositories.RepositoryPlanificacion;
+import entities.MovimientoFinanciero;
+import entities.Planificacion;
+import entities.Servicio;
+import repositories.RepositoryMovimientoFinanciero;
+import repositories.RepositoryPlanificacion;
+import repositories.RepositoryServicio;
 
 public class ServiceFinanciera {
     
     private RepositoryMovimientoFinanciero repoMovimientos;
     private RepositoryPlanificacion repoPlanificacion;
+    private RepositoryServicio repoServicios;
 
-    // Inyectamos ambos repositorios
-    public ServiceFinanciera(RepositoryMovimientoFinanciero repoMovimientos, RepositoryPlanificacion repoPlanificacion) {
+    // Inyectamos los TRES repositorios
+    public ServiceFinanciera(RepositoryMovimientoFinanciero repoMovimientos, 
+                             RepositoryPlanificacion repoPlanificacion, 
+                             RepositoryServicio repoServicios) {
         this.repoMovimientos = repoMovimientos;
         this.repoPlanificacion = repoPlanificacion;
+        this.repoServicios = repoServicios;
     }
 
     public Map<String, Object> consultarEstadoFinanciero(int idEvento) {
-        // 1. Traer datos de ambas tablas
+        // 1. Traer datos de las tablas
         List<MovimientoFinanciero> movimientos = repoMovimientos.listarMovimientosPorEvento(idEvento);
         Planificacion planificacion = repoPlanificacion.buscarPlanificacionPorEvento(idEvento);
         
-        // 2. Calcular balance
+        // LO NUEVO: Traer los servicios
+        List<Servicio> servicios = repoServicios.listarServiciosPorEvento(idEvento); 
+        
+        // 2. Calcular balance (Tu lógica original intacta)
         double ingresos = 0.0;
         double egresos = 0.0;
 
@@ -50,6 +59,10 @@ public class ServiceFinanciera {
         } else {
             estado.put("Planificacion_Descripcion", "No hay planificación registrada para este evento.");
         }
+
+        // LO NUEVO: Agregar las listas al mapa para que la vista gráfica pueda dibujarlas
+        estado.put("Movimientos", movimientos);
+        estado.put("Servicios", servicios);
         
         return estado;
     }

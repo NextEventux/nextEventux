@@ -1,8 +1,8 @@
-package main.java.repositories;
+package repositories;
 
 import java.util.ArrayList;
 import java.util.List;
-import main.java.entities.Planificacion;
+import entities.Planificacion;
 
 public class RepositoryPlanificacion {
     

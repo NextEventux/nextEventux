@@ -1,7 +1,7 @@
-package main.java.controllers;
+package controllers;
 
 import java.util.Map;
-import main.java.services.ServiceFinanciera;
+import services.ServiceFinanciera;
 
 public class ControllerFinanciera {
     
