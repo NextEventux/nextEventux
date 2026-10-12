@@ -2,6 +2,7 @@ import controllers.ControllerProveedores;
 import entities.Servicio;
 import repositories.RepositoryServicio;
 import services.ServiceProveedores;
+import repositories.RepositoryDisponibilidadServicio;
 
 // Comprueba el flujo desde el controller hasta el repositorio
 public class PruebaControllerProveedores {
@@ -10,7 +11,8 @@ public class PruebaControllerProveedores {
 
         // Creamos las capas que necesita el flujo
         RepositoryServicio repository = new RepositoryServicio();
-        ServiceProveedores service = new ServiceProveedores(repository);
+        RepositoryDisponibilidadServicio repositoryDisponibilidad = new RepositoryDisponibilidadServicio();
+        ServiceProveedores service = new ServiceProveedores(repository, repositoryDisponibilidad);
         ControllerProveedores controller = new ControllerProveedores(service);
 
         Servicio servicio = new Servicio();
