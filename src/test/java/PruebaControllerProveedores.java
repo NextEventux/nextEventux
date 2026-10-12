@@ -21,6 +21,10 @@ public class PruebaControllerProveedores {
         servicio.setPrecio(1200000);
         servicio.setCategoria("Alimentacion");
         servicio.setEstado("Activo");
+        servicio.setTipo("Catering");
+        servicio.setCantidadMaximaPersonas(150);
+        servicio.setCiudadZona("Bogota");
+        servicio.setAnticipacionMinima(7);
 
         // El servicio entra por el controller y sigue por las demas capas
         controller.crearServicio(servicio);
