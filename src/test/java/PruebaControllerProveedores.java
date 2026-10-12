@@ -42,6 +42,36 @@ public class PruebaControllerProveedores {
         } else {
             System.out.println("El servicio no completo el flujo");
         }
+        
+        // Creamos los nuevos datos para modificar el servicio
+        Servicio servicioModificado = new Servicio();
+        servicioModificado.setIdProveedor(10);
+        servicioModificado.setNombre("Catering premium para eventos");
+        servicioModificado.setDescripcion("Servicio de alimentacion actualizado");
+        servicioModificado.setPrecio(1500000);
+        servicioModificado.setCategoria("Alimentacion");
+        servicioModificado.setEstado("Activo");
+        servicioModificado.setTipo("Catering");
+        servicioModificado.setCantidadMaximaPersonas(200);
+        servicioModificado.setCiudadZona("Bogota");
+        servicioModificado.setAnticipacionMinima(7);
+
+        // La modificacion entra por el controller
+        controller.modificarServicio(3, servicioModificado);
+
+        // Revisamos que los cambios hayan llegado al repositorio
+        Servicio servicioActualizado = repository.buscarServicio(3);
+
+        if (servicioActualizado != null
+                && servicioActualizado.getNombre().equals("Catering premium para eventos")
+                && servicioActualizado.getPrecio() == 1500000) {
+
+            System.out.println("El controller modifico el servicio correctamente");
+            System.out.println("Nuevo nombre: " + servicioActualizado.getNombre());
+            System.out.println("Nuevo precio: " + servicioActualizado.getPrecio());
+        } else {
+            System.out.println("El controller no modifico el servicio correctamente");
+        }
 
         Date fecha = new Date();
 
