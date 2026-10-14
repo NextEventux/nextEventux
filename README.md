@@ -255,11 +255,11 @@ Los ejemplos pueden ejecutarse manualmente. `ServiceEventosTest` cubre las
 validaciones y el flujo del controlador con JUnit; `SchemaPersistenciaTest`
 ejecuta las verificaciones H2 existentes. Ambos se ejecutan con `mvn test`.
 
-`RepositoryEvento` sigue guardando en memoria. Su implementación JDBC es el
-siguiente paso y deberá validar la existencia del organizador mediante la clave
-foránea, recuperar el identificador generado y reconstruir los datos almacenados,
-incluidos los campos nulos de registros históricos. El identificador 1 utilizado
-en `PruebaCU01` es solo un ejemplo; no se asigna por defecto en el servicio.
+`RepositoryEvento` guarda y consulta mediante JDBC. Antes de insertar verifica
+que el organizador exista; la clave foránea mantiene la relación en H2. El evento
+recibe el identificador generado después de confirmar la transacción. La consulta
+recupera estado, fecha de creación y campos históricos nulos sin inventar valores.
+Los invitados históricos usan `Integer` para distinguir desconocido (`NULL`) de cero.
 
 Esta conciliación cambia atributos y tipos respecto de la primera iteración.
 Debe reflejarse en el diseño de estructura (SDD 3.2), persistencia (SDD 3.4) e
@@ -284,10 +284,29 @@ en el formulario y conservan lo ingresado. «Cancelar» limpia los campos, el
 resumen y el mensaje, sin eliminar eventos ya creados. Después de crear se
 conservan los campos y se muestra una confirmación, siguiendo el mockup.
 
-La aplicación guarda eventos en memoria durante la sesión; la conexión del
-repositorio con H2 sigue pendiente. El identificador del organizador aún no se
-contrasta con la base y no hay sesión de usuario. El menú de otros módulos y la
-cuenta son elementos visuales sin navegación ni autenticación implementadas.
+La aplicación guarda eventos de forma persistente en `data/nexteventux.mv.db`.
+No elimines ese archivo si necesitas conservar los registros. El organizador debe
+estar previamente registrado. Los errores de validación o base de datos aparecen
+en el formulario, sin mostrar confirmación de éxito ni borrar los campos.
+
+No hay sesión de usuario. El menú de otros módulos y la cuenta son elementos
+visuales sin navegación ni autenticación implementadas.
+
+### Preparar una demostración en una base vacía
+
+Para probar CU01 antes de disponer del módulo de registro de organizadores:
+
+```bash
+mvn test-compile dependency:copy-dependencies
+java -cp "target/classes:target/dependency/*" config.CargarDatosEjemplo
+mvn javafx:run
+```
+
+En Windows usa `;` como separador del classpath. La carga es explícita y se rechaza
+si hay registros en cualquier tabla, para proteger los datos existentes. Los
+organizadores de ejemplo tienen identificadores 1 y 2. La aplicación no carga
+estos ejemplos automáticamente. Si ya existen datos reales, usa un organizador
+registrado y omite la carga de ejemplos.
 
 ### Comprobación del formulario
 
@@ -300,7 +319,15 @@ cuenta son elementos visuales sin navegación ni autenticación implementadas.
 5. Pulsar Cancelar: deben limpiarse los campos y el mensaje, y el resumen volver a cero.
 6. Reducir y ampliar la ventana: el formulario y sus acciones deben seguir accesibles.
 
-Verificación de esta implementación: 9 pruebas JUnit sin fallos y una ejecución
-controlada del formulario JavaFX con aserciones sobre resumen, datos creados,
-rechazo de entradas inválidas, cancelación y redimensionamiento. La comprobación
-visual se realizó mediante capturas de la pantalla JavaFX real.
+Verificación de esta implementación: 14 pruebas JUnit sin fallos que cubren
+validaciones, creación mediante controlador y repositorio JDBC, identificador
+automático, organizador inexistente, recuperación tras cerrar y reabrir H2,
+registros históricos nulos, error de conexión, migración y carga segura de ejemplos.
+Las bases de prueba son temporales y no modifican los datos de la aplicación.
+La interfaz fue validada visualmente por la usuaria y mediante una ejecución
+controlada JavaFX con aserciones sobre resumen, rechazo de entradas inválidas,
+creación, persistencia, cancelación y redimensionamiento.
+
+CU01 queda implementado para el alcance disponible en este repositorio. Su cierre
+formal requiere revisión del PR, integración y contraste con el SRS y los
+criterios institucionales que no están versionados aquí.
