@@ -177,3 +177,41 @@ Cada Pull Request requiere una aprobación de una persona diferente al autor. La
 GitHub no crea automáticamente todos los labels personalizados solo por mencionarlos en las plantillas. Primero deben crearse en la configuración del repositorio utilizando los nombres, colores y descripciones indicados en [`LABELS.md`](LABELS.md).
 
 El estado del trabajo se administra en el tablero Kanban. Los labels sirven para clasificar tipo, módulo, prioridad y bloqueos.
+
+## Inicialización de H2
+
+La conexión `config.DatabaseConnection.getConnection()` crea las tablas de
+`src/main/resources/schema.sql` si todavía no existen. Al abrir nuevas conexiones
+se conservan los registros existentes. Este mecanismo no migra columnas de tablas
+ya creadas: los futuros cambios de estructura necesitan una migración explícita.
+
+Los datos de ejemplo están separados en `src/main/resources/seed.sql`. Su carga es
+opcional y debe realizarse una sola vez sobre una base recién inicializada; no se
+cargan al abrir la aplicación ni deben ejecutarse nuevamente sobre datos existentes.
+
+Con JDK 17 o superior y Maven instalado, ejecutar desde la raíz del repositorio:
+
+```bash
+mvn clean test-compile dependency:copy-dependencies
+java -cp "target/classes:target/test-classes:target/dependency/*" config.TestSchema
+```
+
+En Windows se utiliza `;` como separador del classpath. `TestSchema` es una
+validación ejecutable manualmente, no una prueba JUnit ejecutada por `mvn test`.
+Comprueba creación del esquema, carga de ejemplos, reinicialización sin duplicados
+y conservación de datos después de cerrar y volver a abrir la base. Utiliza una
+base temporal y no modifica `data/nexteventux`.
+
+### Integración pendiente con CU01
+
+La infraestructura H2 puede incorporarse a `CU01-crear-evento` sin sustituir sus
+capas actuales. `RepositoryEvento` todavía debe implementar guardar y consultar
+mediante JDBC usando esta conexión.
+
+Antes de hacerlo, se debe conciliar la entidad con el esquema compartido: la tabla
+`Evento` requiere un organizador existente, fechas de inicio y fin y fecha de
+creación; la entidad actual solo tiene una fecha y carece de organizador. Además,
+la tabla no guarda tipo, presupuesto ni invitados iniciales. El código usa el
+estado `En planeación` y los ejemplos SQL usan `PLANEADO`. Estas diferencias deben
+resolverse con la especificación de CU01 y el modelo de persistencia, sin descartar
+datos ni asignar organizadores arbitrariamente.
