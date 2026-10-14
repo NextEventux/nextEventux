@@ -4,7 +4,6 @@ import controllers.ControllerEventos;
 import entities.Evento;
 import repositories.RepositoryEvento;
 import services.ServiceEventos;
-import views.ViewEventos;
 
 public class PruebaCU01 {
 
@@ -18,9 +17,6 @@ public class PruebaCU01 {
         ControllerEventos controllerEventos =
                 new ControllerEventos(serviceEventos);
 
-        ViewEventos viewEventos =
-                new ViewEventos(controllerEventos);
-
         Evento evento = new Evento(
                 1, // Organizador de ejemplo; JDBC deberá comprobar que exista.
                 "Festival NextEventux",
@@ -33,7 +29,10 @@ public class PruebaCU01 {
                 100
         );
 
-        viewEventos.mostrarFormularioEvento(evento);
+        controllerEventos.crearEvento(evento);
+        if (repositoryEvento.listarEventos().size() != 1) {
+            throw new AssertionError("No se guardó el evento.");
+        }
 
         System.out.println(evento);
         System.out.println(
