@@ -1,74 +1,70 @@
 package entities;
 
-public class Evento {
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
-    private String nombre;
-    private String tipo;
-    private String fecha;
-    private String lugar;
-    private double presupuesto;
-    private int invitadosIniciales;
+public class Evento {
+    public static final String ESTADO_INICIAL = "PLANEADO";
+
+    private Integer idEvento;
+    private final int idOrganizador;
+    private final String nombre;
+    private final String tipo;
+    private final String descripcion;
+    private final LocalDateTime fechaInicio;
+    private final LocalDateTime fechaFin;
+    private final String ubicacion;
+    private final BigDecimal presupuesto;
+    private final int invitadosIniciales;
+    private final LocalDateTime fechaCreacion;
     private String estado;
 
-    public Evento(
-            String nombre,
-            String tipo,
-            String fecha,
-            String lugar,
-            double presupuesto,
-            int invitadosIniciales) {
-
+    public Evento(int idOrganizador, String nombre, String tipo, String descripcion,
+                  LocalDateTime fechaInicio, LocalDateTime fechaFin, String ubicacion,
+                  BigDecimal presupuesto, int invitadosIniciales) {
+        this.idOrganizador = idOrganizador;
         this.nombre = nombre;
         this.tipo = tipo;
-        this.fecha = fecha;
-        this.lugar = lugar;
+        this.descripcion = descripcion;
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+        this.ubicacion = ubicacion;
         this.presupuesto = presupuesto;
         this.invitadosIniciales = invitadosIniciales;
-        this.estado = "En planeación";
+        this.fechaCreacion = LocalDateTime.now();
+        this.estado = ESTADO_INICIAL;
     }
 
-    public String getNombre() {
-        return nombre;
-    }
-
-    public String getTipo() {
-        return tipo;
-    }
-
-    public String getFecha() {
-        return fecha;
-    }
-
-    public String getLugar() {
-        return lugar;
-    }
-
-    public double getPresupuesto() {
-        return presupuesto;
-    }
-
-    public int getInvitadosIniciales() {
-        return invitadosIniciales;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
+    public Integer getIdEvento() { return idEvento; }
+    public void setIdEvento(Integer idEvento) { this.idEvento = idEvento; }
+    public int getIdOrganizador() { return idOrganizador; }
+    public String getNombre() { return nombre; }
+    public String getTipo() { return tipo; }
+    public String getDescripcion() { return descripcion; }
+    public LocalDateTime getFechaInicio() { return fechaInicio; }
+    public LocalDateTime getFechaFin() { return fechaFin; }
+    public String getUbicacion() { return ubicacion; }
+    public BigDecimal getPresupuesto() { return presupuesto; }
+    public int getInvitadosIniciales() { return invitadosIniciales; }
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 
     @Override
     public String toString() {
         return "Evento{" +
-                "nombre='" + nombre + '\'' +
+                "idEvento=" + idEvento +
+                ", idOrganizador=" + idOrganizador +
+                ", nombre='" + nombre + '\'' +
                 ", tipo='" + tipo + '\'' +
-                ", fecha='" + fecha + '\'' +
-                ", lugar='" + lugar + '\'' +
+                ", descripcion='" + descripcion + '\'' +
+                ", fechaInicio=" + fechaInicio +
+                ", fechaFin=" + fechaFin +
+                ", ubicacion='" + ubicacion + '\'' +
                 ", presupuesto=" + presupuesto +
                 ", invitadosIniciales=" + invitadosIniciales +
                 ", estado='" + estado + '\'' +
+                ", fechaCreacion=" + fechaCreacion +
                 '}';
     }
 }
