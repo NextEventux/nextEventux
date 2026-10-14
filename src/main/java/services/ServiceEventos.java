@@ -44,7 +44,7 @@ public class ServiceEventos {
         } catch (ArithmeticException e) {
             return "El presupuesto debe tener como máximo dos decimales.";
         }
-        if (datos.getInvitadosIniciales() < 0) return "Los invitados iniciales deben ser mayores o iguales a cero.";
+        if (datos.getInvitadosIniciales() == null || datos.getInvitadosIniciales() < 0) return "Los invitados iniciales deben ser mayores o iguales a cero.";
         return null;
     }
 

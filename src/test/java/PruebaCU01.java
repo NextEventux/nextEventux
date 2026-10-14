@@ -7,9 +7,11 @@ import services.ServiceEventos;
 
 public class PruebaCU01 {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
-        RepositoryEvento repositoryEvento = new RepositoryEvento();
+        String url = "jdbc:h2:" + java.nio.file.Files.createTempDirectory("cu01-ejemplo-").resolve("eventos");
+        BaseDatosPrueba.preparar(url);
+        RepositoryEvento repositoryEvento = new RepositoryEvento(url);
 
         ServiceEventos serviceEventos =
                 new ServiceEventos(repositoryEvento);
