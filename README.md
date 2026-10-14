@@ -328,6 +328,16 @@ La interfaz fue validada visualmente por la usuaria y mediante una ejecución
 controlada JavaFX con aserciones sobre resumen, rechazo de entradas inválidas,
 creación, persistencia, cancelación y redimensionamiento.
 
-CU01 queda implementado para el alcance disponible en este repositorio. Su cierre
-formal requiere revisión del PR, integración y contraste con el SRS y los
-criterios institucionales que no están versionados aquí.
+Esta es una primera iteración de CU01; el caso de uso completo sigue pendiente.
+Según la especificación original confirmada por la usuaria («Especificación Casos
+de Uso-33.pdf», CU-001), faltan:
+
+- Organizador autenticado con rol ORG y proveedor en estado Verificado como precondiciones.
+- Envío de una solicitud de servicio dentro del flujo principal.
+- Validación de que el costo comprometido no supere el presupuesto.
+- Actualización del presupuesto disponible en el flujo exitoso.
+
+La existencia del organizador en H2 no equivale a autenticación ni autorización.
+La persistencia del evento no sustituye estas reglas. El PR se mantiene como
+primera iteración para revisión; no debe registrarse CU01 como completado en el
+Control de Alcance hasta implementar, probar e integrar los requisitos pendientes.
