@@ -182,8 +182,9 @@ El estado del trabajo se administra en el tablero Kanban. Los labels sirven para
 
 La conexión `config.DatabaseConnection.getConnection()` crea las tablas de
 `src/main/resources/schema.sql` si todavía no existen. Al abrir nuevas conexiones
-se conservan los registros existentes. Este mecanismo no migra columnas de tablas
-ya creadas: los futuros cambios de estructura necesitan una migración explícita.
+se conservan los registros existentes. Después aplica la migración repetible
+`migrations/001_evento_cu01.sql` para añadir los campos de CU01 a bases existentes.
+Los futuros cambios de estructura también necesitan una migración explícita.
 
 Los datos de ejemplo están separados en `src/main/resources/seed.sql`. Su carga es
 opcional y debe realizarse una sola vez sobre una base recién inicializada; no se
@@ -202,16 +203,54 @@ Comprueba creación del esquema, carga de ejemplos, reinicialización sin duplic
 y conservación de datos después de cerrar y volver a abrir la base. Utiliza una
 base temporal y no modifica `data/nexteventux`.
 
-### Integración pendiente con CU01
+### Conciliación de Evento con CU01
 
-La infraestructura H2 puede incorporarse a `CU01-crear-evento` sin sustituir sus
-capas actuales. `RepositoryEvento` todavía debe implementar guardar y consultar
-mediante JDBC usando esta conexión.
+La entidad conserva nombre, tipo, presupuesto e invitados iniciales y representa
+los campos requeridos por la tabla compartida. El constructor ahora recibe un
+organizador explícito, descripción opcional y fechas de inicio y fin con hora.
 
-Antes de hacerlo, se debe conciliar la entidad con el esquema compartido: la tabla
-`Evento` requiere un organizador existente, fechas de inicio y fin y fecha de
-creación; la entidad actual solo tiene una fecha y carece de organizador. Además,
-la tabla no guarda tipo, presupuesto ni invitados iniciales. El código usa el
-estado `En planeación` y los ejemplos SQL usan `PLANEADO`. Estas diferencias deben
-resolverse con la especificación de CU01 y el modelo de persistencia, sin descartar
-datos ni asignar organizadores arbitrariamente.
+| Entidad Java | Columna H2 |
+| --- | --- |
+| `idEvento` (`Integer`, nulo hasta guardar) | `id_evento` autogenerado |
+| `idOrganizador` | `id_organizador`, clave foránea |
+| `nombre`, `tipo`, `descripcion` | `nombre`, `tipo`, `descripcion` |
+| `fechaInicio`, `fechaFin` (`LocalDateTime`) | `fecha_inicio`, `fecha_fin` (`TIMESTAMP`) |
+| `ubicacion` (antes `lugar`) | `ubicacion` |
+| `presupuesto` (`BigDecimal`) | `presupuesto` (`DECIMAL(12,2)`) |
+| `invitadosIniciales` | `invitados_iniciales` |
+| `estado` | `estado`, valor inicial `PLANEADO` |
+| `fechaCreacion` (`LocalDateTime`) | `fecha_creacion` |
+
+El presupuesto admite cero y hasta 9999999999.99 con precisión de centavos, sin
+redondeo silencioso. Los invitados admiten cero. Las fechas son obligatorias y el
+fin no puede ser anterior al inicio; no se añade una restricción sobre fechas
+pasadas ni se exige duración mínima. Las longitudes se validan según las columnas.
+
+Las columnas nuevas permiten `NULL` para conservar registros anteriores cuyos
+datos reales no se conocen. La creación de nuevos eventos mediante el servicio
+requiere los tres campos. La migración no rellena datos históricos. Los ejemplos
+incluyen estos campos y adelantan sus contadores automáticos; al inicializar se
+recupera también el contador de eventos de bases antiguas si quedó por debajo de
+los identificadores existentes, sin reducir un contador ya adelantado.
+
+Validaciones adicionales, después de compilar las clases de prueba:
+
+```bash
+java -cp "target/classes:target/test-classes:target/dependency/*" PruebaValidacionesEvento
+java -cp "target/classes:target/test-classes:target/dependency/*" PruebaEventoSchema
+java -cp "target/classes:target/test-classes:target/dependency/*" PruebaCU01
+```
+
+`PruebaEventoSchema` comprueba que H2 genera un identificador y conserva los
+campos del evento. `TestSchema` verifica además la migración de tablas existentes.
+Estas pruebas son ejecutables manuales, no pruebas JUnit.
+
+`RepositoryEvento` sigue guardando en memoria. Su implementación JDBC es el
+siguiente paso y deberá validar la existencia del organizador mediante la clave
+foránea, recuperar el identificador generado y reconstruir los datos almacenados,
+incluidos los campos nulos de registros históricos. El identificador 1 utilizado
+en `PruebaCU01` es solo un ejemplo; no se asigna por defecto en el servicio.
+
+Esta conciliación cambia atributos y tipos respecto de la primera iteración.
+Debe reflejarse en el diseño de estructura (SDD 3.2), persistencia (SDD 3.4) e
+interfaz (SDD 3.1) de los documentos institucionales, que no están en el repositorio.
