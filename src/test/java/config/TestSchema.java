@@ -24,15 +24,50 @@ public class TestSchema {
                     RunScript.execute(connection, reader);
                 }
                 comprobarEventos(connection, 2);
+                // Simular una base anterior a CU01, conservando eventos existentes.
+                try (Statement statement = connection.createStatement()) {
+                    statement.execute("ALTER TABLE Evento DROP COLUMN tipo");
+                    statement.execute("ALTER TABLE Evento DROP COLUMN presupuesto");
+                    statement.execute("ALTER TABLE Evento DROP COLUMN invitados_iniciales");
+                    statement.execute("ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH 1");
+                }
+                DatabaseConnection.inicializarEsquema(connection);
+                try (Statement statement = connection.createStatement();
+                     ResultSet result = statement.executeQuery(
+                             "SELECT tipo, presupuesto, invitados_iniciales FROM Evento WHERE id_evento = 1")) {
+                    if (!result.next() || result.getObject(1) != null
+                            || result.getObject(2) != null || result.getObject(3) != null) {
+                        throw new AssertionError("La migración inventó datos históricos.");
+                    }
+                }
                 DatabaseConnection.inicializarEsquema(connection);
                 comprobarEventos(connection, 2);
+                try (Statement statement = connection.createStatement();
+                     ResultSet result = statement.executeQuery(
+                             "SELECT IDENTITY_BASE FROM INFORMATION_SCHEMA.COLUMNS "
+                             + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = 'EVENTO' "
+                             + "AND COLUMN_NAME = 'ID_EVENTO'")) {
+                    if (!result.next() || result.getLong(1) != 3) {
+                        throw new AssertionError("No se recuperó el contador de eventos.");
+                    }
+                }
                 try (Statement statement = connection.createStatement()) {
                     statement.executeUpdate("UPDATE Evento SET nombre = 'Evento modificado' WHERE id_evento = 1");
+                    statement.execute("ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH 100");
                 }
             }
             try (Connection connection = DriverManager.getConnection(url, "sa", "")) {
                 DatabaseConnection.inicializarEsquema(connection);
                 comprobarEventos(connection, 2);
+                try (Statement statement = connection.createStatement();
+                     ResultSet result = statement.executeQuery(
+                             "SELECT IDENTITY_BASE FROM INFORMATION_SCHEMA.COLUMNS "
+                             + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = 'EVENTO' "
+                             + "AND COLUMN_NAME = 'ID_EVENTO'")) {
+                    if (!result.next() || result.getLong(1) != 100) {
+                        throw new AssertionError("Se redujo un contador existente.");
+                    }
+                }
                 try (Statement statement = connection.createStatement();
                      ResultSet result = statement.executeQuery("SELECT nombre FROM Evento WHERE id_evento = 1")) {
                     if (!result.next() || !"Evento modificado".equals(result.getString(1))) {

@@ -16,7 +16,11 @@ public class DatabaseConnection
 
     public static Connection getConnection() throws SQLException
     {
-        Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+        return getConnection(URL);
+    }
+
+    public static Connection getConnection(String url) throws SQLException {
+        Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
         try {
             inicializarEsquema(connection);
             return connection;
@@ -31,9 +35,34 @@ public class DatabaseConnection
     }
 
     public static void inicializarEsquema(Connection connection) throws SQLException {
-        InputStream schema = DatabaseConnection.class.getResourceAsStream("/schema.sql");
+        ejecutarScript(connection, "/schema.sql");
+        ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
+        actualizarContadorEventos(connection);
+    }
+
+    // Los ejemplos antiguos usaban IDs explícitos sin avanzar la secuencia H2.
+    private static void actualizarContadorEventos(Connection connection) throws SQLException {
+        try (java.sql.Statement statement = connection.createStatement();
+             java.sql.ResultSet result = statement.executeQuery(
+                     "SELECT IDENTITY_BASE, (SELECT COALESCE(MAX(id_evento), 0) FROM Evento) "
+                     + "FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' "
+                     + "AND TABLE_NAME = 'EVENTO' AND COLUMN_NAME = 'ID_EVENTO'")) {
+            if (result.next()) {
+                long siguiente = result.getLong(1);
+                long maximo = result.getLong(2);
+                if (siguiente <= maximo) {
+                    try (java.sql.Statement alter = connection.createStatement()) {
+                        alter.execute("ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH " + (maximo + 1));
+                    }
+                }
+            }
+        }
+    }
+
+    private static void ejecutarScript(Connection connection, String recurso) throws SQLException {
+        InputStream schema = DatabaseConnection.class.getResourceAsStream(recurso);
         if (schema == null) {
-            throw new SQLException("No se encontró schema.sql en los recursos del proyecto.");
+            throw new SQLException("No se encontró el recurso " + recurso);
         }
         try (InputStreamReader reader = new InputStreamReader(schema, StandardCharsets.UTF_8)) {
             RunScript.execute(connection, reader);
