@@ -108,10 +108,10 @@ VALUES
 -- ---------------------------------------------------------
 
 INSERT INTO Evento
-(id_evento, id_organizador, nombre, descripcion, fecha_inicio, fecha_fin, ubicacion, estado, fecha_creacion)
+(id_evento, id_organizador, nombre, descripcion, fecha_inicio, fecha_fin, ubicacion, estado, fecha_creacion, tipo, presupuesto, invitados_iniciales)
 VALUES
-(1, 1, 'Boda Laura y Daniel', 'Celebración de matrimonio', TIMESTAMP '2026-11-15 15:00:00', TIMESTAMP '2026-11-15 23:00:00', 'Salón Primavera', 'PLANEADO', TIMESTAMP '2026-10-06 09:00:00'),
-(2, 2, 'Baby Shower Valentina', 'Celebración de bienvenida para bebé', TIMESTAMP '2026-12-05 14:00:00', TIMESTAMP '2026-12-05 19:00:00', 'Jardín Los Pinos', 'PLANEADO', TIMESTAMP '2026-10-07 10:00:00');
+(1, 1, 'Boda Laura y Daniel', 'Celebración de matrimonio', TIMESTAMP '2026-11-15 15:00:00', TIMESTAMP '2026-11-15 23:00:00', 'Salón Primavera', 'PLANEADO', TIMESTAMP '2026-10-06 09:00:00', 'Boda', 15000000.00, 120),
+(2, 2, 'Baby Shower Valentina', 'Celebración de bienvenida para bebé', TIMESTAMP '2026-12-05 14:00:00', TIMESTAMP '2026-12-05 19:00:00', 'Jardín Los Pinos', 'PLANEADO', TIMESTAMP '2026-10-07 10:00:00', 'Baby shower', 5000000.00, 60);
 
 
 -- ---------------------------------------------------------
@@ -373,3 +373,36 @@ INSERT INTO Puntos_fidelidad
 VALUES
 (1, 5, 350, TIMESTAMP '2026-10-10 18:00:00'),
 (2, 6, 120, TIMESTAMP '2026-10-10 18:00:00');
+
+-- Continuar los identificadores automáticos después de los datos de ejemplo.
+ALTER TABLE Permiso ALTER COLUMN id_permiso RESTART WITH 5;
+ALTER TABLE Rol ALTER COLUMN id_rol RESTART WITH 5;
+ALTER TABLE Usuario ALTER COLUMN id_usuario RESTART WITH 7;
+ALTER TABLE Rol_permiso ALTER COLUMN id_rol_permiso RESTART WITH 7;
+ALTER TABLE Usuario_rol ALTER COLUMN id_usuario_rol RESTART WITH 7;
+ALTER TABLE Lugar ALTER COLUMN id_lugar RESTART WITH 4;
+ALTER TABLE Organizador ALTER COLUMN id_organizador RESTART WITH 3;
+ALTER TABLE Proveedor ALTER COLUMN id_proveedor RESTART WITH 3;
+ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH 3;
+ALTER TABLE Planificacion ALTER COLUMN id_planificacion RESTART WITH 4;
+ALTER TABLE Invitacion ALTER COLUMN id_invitacion RESTART WITH 4;
+ALTER TABLE Invitado ALTER COLUMN id_invitado RESTART WITH 5;
+ALTER TABLE Acompanante ALTER COLUMN id_acompanante RESTART WITH 4;
+ALTER TABLE Necesidad_Especial ALTER COLUMN id_necesidad RESTART WITH 3;
+ALTER TABLE Regalo ALTER COLUMN id_regalo RESTART WITH 5;
+ALTER TABLE Reserva_regalo ALTER COLUMN id_reserva RESTART WITH 4;
+ALTER TABLE Servicio ALTER COLUMN id_servicio RESTART WITH 5;
+ALTER TABLE Paquete_servicio ALTER COLUMN id_paquete RESTART WITH 3;
+ALTER TABLE Solicitud_Ejecucion ALTER COLUMN id_solicitud RESTART WITH 4;
+ALTER TABLE Propuesta ALTER COLUMN id_propuesta RESTART WITH 4;
+ALTER TABLE Contratacion ALTER COLUMN id_contratacion RESTART WITH 3;
+ALTER TABLE Movimiento_financiero ALTER COLUMN id_movimiento RESTART WITH 5;
+ALTER TABLE Resena ALTER COLUMN id_resena RESTART WITH 3;
+ALTER TABLE Conversacion ALTER COLUMN id_conversacion RESTART WITH 3;
+ALTER TABLE Mensaje ALTER COLUMN id_mensaje RESTART WITH 5;
+ALTER TABLE Respuesta_resena ALTER COLUMN id_respuesta RESTART WITH 3;
+ALTER TABLE Sancion ALTER COLUMN id_sancion RESTART WITH 3;
+ALTER TABLE Segmentacion ALTER COLUMN id_segmento RESTART WITH 4;
+ALTER TABLE Campana ALTER COLUMN id_campana RESTART WITH 3;
+ALTER TABLE Envio_Campana ALTER COLUMN id_envio RESTART WITH 5;
+ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 3;
