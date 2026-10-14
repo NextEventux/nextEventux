@@ -15,13 +15,21 @@ public class Evento {
     private final LocalDateTime fechaFin;
     private final String ubicacion;
     private final BigDecimal presupuesto;
-    private final int invitadosIniciales;
+    private final Integer invitadosIniciales;
     private final LocalDateTime fechaCreacion;
     private String estado;
 
     public Evento(int idOrganizador, String nombre, String tipo, String descripcion,
                   LocalDateTime fechaInicio, LocalDateTime fechaFin, String ubicacion,
                   BigDecimal presupuesto, int invitadosIniciales) {
+        this(null, idOrganizador, nombre, tipo, descripcion, fechaInicio, fechaFin,
+                ubicacion, presupuesto, invitadosIniciales, ESTADO_INICIAL, LocalDateTime.now());
+    }
+
+    public Evento(Integer idEvento, int idOrganizador, String nombre, String tipo, String descripcion,
+                  LocalDateTime fechaInicio, LocalDateTime fechaFin, String ubicacion,
+                  BigDecimal presupuesto, Integer invitadosIniciales, String estado, LocalDateTime fechaCreacion) {
+        this.idEvento = idEvento;
         this.idOrganizador = idOrganizador;
         this.nombre = nombre;
         this.tipo = tipo;
@@ -31,8 +39,8 @@ public class Evento {
         this.ubicacion = ubicacion;
         this.presupuesto = presupuesto;
         this.invitadosIniciales = invitadosIniciales;
-        this.fechaCreacion = LocalDateTime.now();
-        this.estado = ESTADO_INICIAL;
+        this.fechaCreacion = fechaCreacion;
+        this.estado = estado;
     }
 
     public Integer getIdEvento() { return idEvento; }
@@ -45,7 +53,7 @@ public class Evento {
     public LocalDateTime getFechaFin() { return fechaFin; }
     public String getUbicacion() { return ubicacion; }
     public BigDecimal getPresupuesto() { return presupuesto; }
-    public int getInvitadosIniciales() { return invitadosIniciales; }
+    public Integer getInvitadosIniciales() { return invitadosIniciales; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

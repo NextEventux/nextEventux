@@ -1,6 +1,9 @@
 import controllers.ControllerEventos;
 import entities.Evento;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.Path;
 import repositories.RepositoryEvento;
 import services.ServiceEventos;
 import java.math.BigDecimal;
@@ -8,8 +11,17 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ServiceEventosTest {
-    private final RepositoryEvento repository = new RepositoryEvento();
-    private final ServiceEventos service = new ServiceEventos(repository);
+    @TempDir Path directorio;
+    private RepositoryEvento repository;
+    private ServiceEventos service;
+
+    @BeforeEach
+    void prepararBase() throws Exception {
+        String url = "jdbc:h2:" + directorio.resolve("eventos");
+        BaseDatosPrueba.preparar(url);
+        repository = new RepositoryEvento(url);
+        service = new ServiceEventos(repository);
+    }
     private final LocalDateTime inicio = LocalDateTime.of(2026, 10, 20, 9, 0);
 
     @Test
@@ -17,10 +29,10 @@ class ServiceEventosTest {
         Evento evento = evento("Festival", "Corporativo", "Bogotá", new BigDecimal("15000000.25"), 100);
         new ControllerEventos(service).crearEvento(evento);
         assertEquals(1, repository.listarEventos().size());
-        assertSame(evento, repository.listarEventos().get(0));
+        assertEquals(evento.getIdEvento(), repository.listarEventos().get(0).getIdEvento());
         assertEquals("PLANEADO", evento.getEstado());
         assertNotNull(evento.getFechaCreacion());
-        assertNull(evento.getIdEvento());
+        assertNotNull(evento.getIdEvento());
     }
 
     @Test

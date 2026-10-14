@@ -16,7 +16,11 @@ public class DatabaseConnection
 
     public static Connection getConnection() throws SQLException
     {
-        Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+        return getConnection(URL);
+    }
+
+    public static Connection getConnection(String url) throws SQLException {
+        Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
         try {
             inicializarEsquema(connection);
             return connection;

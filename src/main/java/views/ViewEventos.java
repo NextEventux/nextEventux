@@ -200,7 +200,7 @@ public class ViewEventos {
                 filaResumen("Invitados", resumenInvitados));
         resumen.getStyleClass().add("info-card");
         panel.getChildren().addAll(inicio, resumen, informacion("ⓘ Información importante",
-                "Tu evento comenzará en estado En planeación. En esta versión se conserva durante la sesión; al cerrar la aplicación se pierde."));
+                "Tu evento comenzará en estado En planeación. Sus datos se guardarán y estarán disponibles después de cerrar la aplicación."));
         return panel;
     }
 
@@ -221,8 +221,8 @@ public class ViewEventos {
                     LocalDateTime.of(fechaFin.getValue(), fin), lugar.getText().trim(), valor,
                     leerEntero(invitados.getText(), "invitados iniciales"));
             controller.crearEvento(datos);
-            mostrarMensaje("Evento creado correctamente. Se conserva durante esta sesión.", true);
-        } catch (IllegalArgumentException e) {
+            mostrarMensaje("Evento creado correctamente. Número de evento: " + datos.getIdEvento() + ".", true);
+        } catch (IllegalArgumentException | IllegalStateException e) {
             mostrarMensaje(e.getMessage(), false);
         }
     }
