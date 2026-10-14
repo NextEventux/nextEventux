@@ -102,7 +102,16 @@ git switch main
 git pull
 ```
 
-El comando de compilación y ejecución debe añadirse aquí cuando el equipo confirme y configure el gestor de construcción. Si se adopta Maven o Gradle, se recomienda versionar su wrapper para que todos ejecuten exactamente la misma versión.
+El proyecto utiliza Maven y Java 17 o superior. Para probar y abrir la aplicación JavaFX:
+
+```bash
+mvn clean test
+mvn javafx:run
+```
+
+Se requiere una sesión gráfica de escritorio para abrir la ventana. Las
+bibliotecas nativas de JavaFX se descargan mediante Maven para el sistema actual.
+El repositorio todavía no incluye Maven Wrapper.
 
 ## Documentación del proyecto
 
@@ -182,8 +191,9 @@ El estado del trabajo se administra en el tablero Kanban. Los labels sirven para
 
 La conexión `config.DatabaseConnection.getConnection()` crea las tablas de
 `src/main/resources/schema.sql` si todavía no existen. Al abrir nuevas conexiones
-se conservan los registros existentes. Este mecanismo no migra columnas de tablas
-ya creadas: los futuros cambios de estructura necesitan una migración explícita.
+se conservan los registros existentes. Después aplica la migración repetible
+`migrations/001_evento_cu01.sql` para añadir los campos de CU01 a bases existentes.
+Los futuros cambios de estructura también necesitan una migración explícita.
 
 Los datos de ejemplo están separados en `src/main/resources/seed.sql`. Su carga es
 opcional y debe realizarse una sola vez sobre una base recién inicializada; no se
@@ -196,22 +206,138 @@ mvn clean test-compile dependency:copy-dependencies
 java -cp "target/classes:target/test-classes:target/dependency/*" config.TestSchema
 ```
 
-En Windows se utiliza `;` como separador del classpath. `TestSchema` es una
-validación ejecutable manualmente, no una prueba JUnit ejecutada por `mvn test`.
+En Windows se utiliza `;` como separador del classpath. `TestSchema` puede ejecutarse manualmente y también se verifica mediante
+`SchemaPersistenciaTest` al ejecutar `mvn test`.
 Comprueba creación del esquema, carga de ejemplos, reinicialización sin duplicados
 y conservación de datos después de cerrar y volver a abrir la base. Utiliza una
 base temporal y no modifica `data/nexteventux`.
 
-### Integración pendiente con CU01
+### Conciliación de Evento con CU01
 
-La infraestructura H2 puede incorporarse a `CU01-crear-evento` sin sustituir sus
-capas actuales. `RepositoryEvento` todavía debe implementar guardar y consultar
-mediante JDBC usando esta conexión.
+La entidad conserva nombre, tipo, presupuesto e invitados iniciales y representa
+los campos requeridos por la tabla compartida. El constructor ahora recibe un
+organizador explícito, descripción opcional y fechas de inicio y fin con hora.
 
-Antes de hacerlo, se debe conciliar la entidad con el esquema compartido: la tabla
-`Evento` requiere un organizador existente, fechas de inicio y fin y fecha de
-creación; la entidad actual solo tiene una fecha y carece de organizador. Además,
-la tabla no guarda tipo, presupuesto ni invitados iniciales. El código usa el
-estado `En planeación` y los ejemplos SQL usan `PLANEADO`. Estas diferencias deben
-resolverse con la especificación de CU01 y el modelo de persistencia, sin descartar
-datos ni asignar organizadores arbitrariamente.
+| Entidad Java | Columna H2 |
+| --- | --- |
+| `idEvento` (`Integer`, nulo hasta guardar) | `id_evento` autogenerado |
+| `idOrganizador` | `id_organizador`, clave foránea |
+| `nombre`, `tipo`, `descripcion` | `nombre`, `tipo`, `descripcion` |
+| `fechaInicio`, `fechaFin` (`LocalDateTime`) | `fecha_inicio`, `fecha_fin` (`TIMESTAMP`) |
+| `ubicacion` (antes `lugar`) | `ubicacion` |
+| `presupuesto` (`BigDecimal`) | `presupuesto` (`DECIMAL(12,2)`) |
+| `invitadosIniciales` | `invitados_iniciales` |
+| `estado` | `estado`, valor inicial `PLANEADO` |
+| `fechaCreacion` (`LocalDateTime`) | `fecha_creacion` |
+
+El presupuesto admite cero y hasta 9999999999.99 con precisión de centavos, sin
+redondeo silencioso. Los invitados admiten cero. Las fechas son obligatorias y el
+fin no puede ser anterior al inicio; no se añade una restricción sobre fechas
+pasadas ni se exige duración mínima. Las longitudes se validan según las columnas.
+
+Las columnas nuevas permiten `NULL` para conservar registros anteriores cuyos
+datos reales no se conocen. La creación de nuevos eventos mediante el servicio
+requiere los tres campos. La migración no rellena datos históricos. Los ejemplos
+incluyen estos campos y adelantan sus contadores automáticos; al inicializar se
+recupera también el contador de eventos de bases antiguas si quedó por debajo de
+los identificadores existentes, sin reducir un contador ya adelantado.
+
+Validaciones adicionales, después de compilar las clases de prueba:
+
+```bash
+java -cp "target/classes:target/test-classes:target/dependency/*" PruebaEventoSchema
+java -cp "target/classes:target/test-classes:target/dependency/*" PruebaCU01
+```
+
+`PruebaEventoSchema` comprueba que H2 genera un identificador y conserva los
+campos del evento. `TestSchema` verifica además la migración de tablas existentes.
+Los ejemplos pueden ejecutarse manualmente. `ServiceEventosTest` cubre las
+validaciones y el flujo del controlador con JUnit; `SchemaPersistenciaTest`
+ejecuta las verificaciones H2 existentes. Ambos se ejecutan con `mvn test`.
+
+`RepositoryEvento` guarda y consulta mediante JDBC. Antes de insertar verifica
+que el organizador exista; la clave foránea mantiene la relación en H2. El evento
+recibe el identificador generado después de confirmar la transacción. La consulta
+recupera estado, fecha de creación y campos históricos nulos sin inventar valores.
+Los invitados históricos usan `Integer` para distinguir desconocido (`NULL`) de cero.
+
+Esta conciliación cambia atributos y tipos respecto de la primera iteración.
+Debe reflejarse en el diseño de estructura (SDD 3.2), persistencia (SDD 3.4) e
+interfaz (SDD 3.1) de los documentos institucionales, que no están en el repositorio.
+
+## Pantalla JavaFX de creación de eventos
+
+`app.NextEventuxApp` abre la pantalla de `ViewEventos`, construida con controles
+JavaFX y un único archivo CSS en `src/main/resources/styles/eventos.css`. Sigue el
+mockup aportado: menú lateral, barra superior, formulario, tarjetas informativas y
+resumen del presupuesto en COP y de los invitados. El panel baja en ventanas
+pequeñas y el contenido se puede desplazar para acceder a los botones.
+
+El formulario añade los campos requeridos por la entidad conciliada: organizador
+por identificador, inicio y fin con hora y descripción opcional. Las horas usan
+`HH:mm`, los invitados son enteros y los decimales del presupuesto usan punto.
+El selector de tipo contiene Corporativo, Social, Cultural y Otro. La interfaz
+muestra «En planeación» y el servicio conserva el valor `PLANEADO`.
+
+«Crear evento» construye la entidad y llama al controlador. Los errores aparecen
+en el formulario y conservan lo ingresado. «Cancelar» limpia los campos, el
+resumen y el mensaje, sin eliminar eventos ya creados. Después de crear se
+conservan los campos y se muestra una confirmación, siguiendo el mockup.
+
+La aplicación guarda eventos de forma persistente en `data/nexteventux.mv.db`.
+No elimines ese archivo si necesitas conservar los registros. El organizador debe
+estar previamente registrado. Los errores de validación o base de datos aparecen
+en el formulario, sin mostrar confirmación de éxito ni borrar los campos.
+
+No hay sesión de usuario. El menú de otros módulos y la cuenta son elementos
+visuales sin navegación ni autenticación implementadas.
+
+### Preparar una demostración en una base vacía
+
+Para probar CU01 antes de disponer del módulo de registro de organizadores:
+
+```bash
+mvn test-compile dependency:copy-dependencies
+java -cp "target/classes:target/dependency/*" config.CargarDatosEjemplo
+mvn javafx:run
+```
+
+En Windows usa `;` como separador del classpath. La carga es explícita y se rechaza
+si hay registros en cualquier tabla, para proteger los datos existentes. Los
+organizadores de ejemplo tienen identificadores 1 y 2. La aplicación no carga
+estos ejemplos automáticamente. Si ya existen datos reales, usa un organizador
+registrado y omite la carga de ejemplos.
+
+### Comprobación del formulario
+
+1. Abrir con `mvn javafx:run` y verificar la distribución y el desplazamiento.
+2. Escribir presupuesto e invitados y comprobar el resumen en vivo.
+3. Crear con nombre, tipo, organizador positivo, fechas y horas válidas, lugar,
+   presupuesto no negativo con hasta dos decimales e invitados enteros no negativos.
+4. Probar un campo obligatorio vacío, `NaN`, invitados decimales, hora `24:00` y
+   fin anterior al inicio: deben mostrarse errores y conservarse los campos.
+5. Pulsar Cancelar: deben limpiarse los campos y el mensaje, y el resumen volver a cero.
+6. Reducir y ampliar la ventana: el formulario y sus acciones deben seguir accesibles.
+
+Verificación de esta implementación: 14 pruebas JUnit sin fallos que cubren
+validaciones, creación mediante controlador y repositorio JDBC, identificador
+automático, organizador inexistente, recuperación tras cerrar y reabrir H2,
+registros históricos nulos, error de conexión, migración y carga segura de ejemplos.
+Las bases de prueba son temporales y no modifican los datos de la aplicación.
+La interfaz fue validada visualmente por la usuaria y mediante una ejecución
+controlada JavaFX con aserciones sobre resumen, rechazo de entradas inválidas,
+creación, persistencia, cancelación y redimensionamiento.
+
+Esta es una primera iteración de CU01; el caso de uso completo sigue pendiente.
+Según la especificación original confirmada por la usuaria («Especificación Casos
+de Uso-33.pdf», CU-001), faltan:
+
+- Organizador autenticado con rol ORG y proveedor en estado Verificado como precondiciones.
+- Envío de una solicitud de servicio dentro del flujo principal.
+- Validación de que el costo comprometido no supere el presupuesto.
+- Actualización del presupuesto disponible en el flujo exitoso.
+
+La existencia del organizador en H2 no equivale a autenticación ni autorización.
+La persistencia del evento no sustituye estas reglas. El PR se mantiene como
+primera iteración para revisión; no debe registrarse CU01 como completado en el
+Control de Alcance hasta implementar, probar e integrar los requisitos pendientes.
