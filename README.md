@@ -102,7 +102,16 @@ git switch main
 git pull
 ```
 
-El comando de compilación y ejecución debe añadirse aquí cuando el equipo confirme y configure el gestor de construcción. Si se adopta Maven o Gradle, se recomienda versionar su wrapper para que todos ejecuten exactamente la misma versión.
+El proyecto utiliza Maven y Java 17 o superior. Para probar y abrir la aplicación JavaFX:
+
+```bash
+mvn clean test
+mvn javafx:run
+```
+
+Se requiere una sesión gráfica de escritorio para abrir la ventana. Las
+bibliotecas nativas de JavaFX se descargan mediante Maven para el sistema actual.
+El repositorio todavía no incluye Maven Wrapper.
 
 ## Documentación del proyecto
 
@@ -197,8 +206,8 @@ mvn clean test-compile dependency:copy-dependencies
 java -cp "target/classes:target/test-classes:target/dependency/*" config.TestSchema
 ```
 
-En Windows se utiliza `;` como separador del classpath. `TestSchema` es una
-validación ejecutable manualmente, no una prueba JUnit ejecutada por `mvn test`.
+En Windows se utiliza `;` como separador del classpath. `TestSchema` puede ejecutarse manualmente y también se verifica mediante
+`SchemaPersistenciaTest` al ejecutar `mvn test`.
 Comprueba creación del esquema, carga de ejemplos, reinicialización sin duplicados
 y conservación de datos después de cerrar y volver a abrir la base. Utiliza una
 base temporal y no modifica `data/nexteventux`.
@@ -236,14 +245,15 @@ los identificadores existentes, sin reducir un contador ya adelantado.
 Validaciones adicionales, después de compilar las clases de prueba:
 
 ```bash
-java -cp "target/classes:target/test-classes:target/dependency/*" PruebaValidacionesEvento
 java -cp "target/classes:target/test-classes:target/dependency/*" PruebaEventoSchema
 java -cp "target/classes:target/test-classes:target/dependency/*" PruebaCU01
 ```
 
 `PruebaEventoSchema` comprueba que H2 genera un identificador y conserva los
 campos del evento. `TestSchema` verifica además la migración de tablas existentes.
-Estas pruebas son ejecutables manuales, no pruebas JUnit.
+Los ejemplos pueden ejecutarse manualmente. `ServiceEventosTest` cubre las
+validaciones y el flujo del controlador con JUnit; `SchemaPersistenciaTest`
+ejecuta las verificaciones H2 existentes. Ambos se ejecutan con `mvn test`.
 
 `RepositoryEvento` sigue guardando en memoria. Su implementación JDBC es el
 siguiente paso y deberá validar la existencia del organizador mediante la clave
@@ -254,3 +264,43 @@ en `PruebaCU01` es solo un ejemplo; no se asigna por defecto en el servicio.
 Esta conciliación cambia atributos y tipos respecto de la primera iteración.
 Debe reflejarse en el diseño de estructura (SDD 3.2), persistencia (SDD 3.4) e
 interfaz (SDD 3.1) de los documentos institucionales, que no están en el repositorio.
+
+## Pantalla JavaFX de creación de eventos
+
+`app.NextEventuxApp` abre la pantalla de `ViewEventos`, construida con controles
+JavaFX y un único archivo CSS en `src/main/resources/styles/eventos.css`. Sigue el
+mockup aportado: menú lateral, barra superior, formulario, tarjetas informativas y
+resumen del presupuesto en COP y de los invitados. El panel baja en ventanas
+pequeñas y el contenido se puede desplazar para acceder a los botones.
+
+El formulario añade los campos requeridos por la entidad conciliada: organizador
+por identificador, inicio y fin con hora y descripción opcional. Las horas usan
+`HH:mm`, los invitados son enteros y los decimales del presupuesto usan punto.
+El selector de tipo contiene Corporativo, Social, Cultural y Otro. La interfaz
+muestra «En planeación» y el servicio conserva el valor `PLANEADO`.
+
+«Crear evento» construye la entidad y llama al controlador. Los errores aparecen
+en el formulario y conservan lo ingresado. «Cancelar» limpia los campos, el
+resumen y el mensaje, sin eliminar eventos ya creados. Después de crear se
+conservan los campos y se muestra una confirmación, siguiendo el mockup.
+
+La aplicación guarda eventos en memoria durante la sesión; la conexión del
+repositorio con H2 sigue pendiente. El identificador del organizador aún no se
+contrasta con la base y no hay sesión de usuario. El menú de otros módulos y la
+cuenta son elementos visuales sin navegación ni autenticación implementadas.
+
+### Comprobación del formulario
+
+1. Abrir con `mvn javafx:run` y verificar la distribución y el desplazamiento.
+2. Escribir presupuesto e invitados y comprobar el resumen en vivo.
+3. Crear con nombre, tipo, organizador positivo, fechas y horas válidas, lugar,
+   presupuesto no negativo con hasta dos decimales e invitados enteros no negativos.
+4. Probar un campo obligatorio vacío, `NaN`, invitados decimales, hora `24:00` y
+   fin anterior al inicio: deben mostrarse errores y conservarse los campos.
+5. Pulsar Cancelar: deben limpiarse los campos y el mensaje, y el resumen volver a cero.
+6. Reducir y ampliar la ventana: el formulario y sus acciones deben seguir accesibles.
+
+Verificación de esta implementación: 9 pruebas JUnit sin fallos y una ejecución
+controlada del formulario JavaFX con aserciones sobre resumen, datos creados,
+rechazo de entradas inválidas, cancelación y redimensionamiento. La comprobación
+visual se realizó mediante capturas de la pantalla JavaFX real.
