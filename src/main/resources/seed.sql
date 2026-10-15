@@ -36,7 +36,8 @@ VALUES
 (3, 'Decoraciones Arcoíris', 'decoraciones.arcoiris', 'clave789', 'ACTIVO', TIMESTAMP '2026-10-03 11:00:00', TRUE, 'PROVEEDOR'),
 (4, 'Sabores & Eventos', 'sabores.eventos', 'clave321', 'ACTIVO', TIMESTAMP '2026-10-03 14:00:00', FALSE, 'PROVEEDOR'),
 (5, 'Ana Martínez', 'ana.martinez', 'clave654', 'ACTIVO', TIMESTAMP '2026-10-04 08:30:00', TRUE, 'CLIENTE'),
-(6, 'Diego Pérez', 'diego.perez', 'clave987', 'ACTIVO', TIMESTAMP '2026-10-05 16:00:00', FALSE, 'CLIENTE');
+(6, 'Diego Pérez', 'diego.perez', 'clave987', 'ACTIVO', TIMESTAMP '2026-10-05 16:00:00', FALSE, 'CLIENTE'),
+(7, 'Diana Rojas', 'diana.rojas', 'clave654', 'ACTIVO', TIMESTAMP '2026-10-08 09:30:00', FALSE, 'PROVEEDOR');
 
 
 -- ---------------------------------------------------------
@@ -66,7 +67,8 @@ VALUES
 (3, 3, 3),
 (4, 4, 3),
 (5, 5, 4),
-(6, 6, 4);
+(6, 6, 4),
+(7, 7, 3);
 
 
 -- ---------------------------------------------------------
@@ -100,7 +102,8 @@ INSERT INTO Proveedor
 (id_proveedor, id_usuario, nombre, empresa, correo, telefono, direccion, estado)
 VALUES
 (1, 3, 'Mariana López', 'Decoraciones Arcoíris', 'contacto@arcoiris.com', '3101234567', 'Carrera 15 #80-20', 'APROBADO'),
-(2, 4, 'Andrés Torres', 'Sabores & Eventos', 'contacto@saboreseventos.com', '3117654321', 'Calle 90 #20-30', 'APROBADO');
+(2, 4, 'Andrés Torres', 'Sabores & Eventos', 'contacto@saboreseventos.com', '3117654321', 'Calle 90 #20-30', 'APROBADO'),
+(3, 7, 'Diana Rojas', 'Floristería Jardín', 'contacto@floristeriajardin.com', '3201234567', 'Carrera 13 #76-20', 'PENDIENTE_VERIFICACION');
 
 
 -- ---------------------------------------------------------

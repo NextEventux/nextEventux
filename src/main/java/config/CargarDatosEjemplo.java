@@ -14,7 +14,7 @@ public class CargarDatosEjemplo {
         try (Connection connection = DatabaseConnection.getConnection()) {
             cargar(connection);
         }
-        System.out.println("Datos de ejemplo cargados. Organizadores disponibles: 1 y 2.");
+        System.out.println("Datos de ejemplo cargados. Organizadores: 1 y 2; proveedor pendiente para CU-028: 3.");
     }
 
     public static void cargar(Connection connection) throws Exception {
@@ -36,6 +36,23 @@ public class CargarDatosEjemplo {
         try (InputStreamReader reader = new InputStreamReader(
                 CargarDatosEjemplo.class.getResourceAsStream("/seed.sql"), StandardCharsets.UTF_8)) {
             RunScript.execute(connection, reader);
+        }
+        // La semilla usa identificadores explícitos; avanza los contadores que necesita CU-028.
+        avanzarIdentidad(connection, "Usuario", "id_usuario");
+        avanzarIdentidad(connection, "Usuario_rol", "id_usuario_rol");
+        avanzarIdentidad(connection, "Proveedor", "id_proveedor");
+    }
+
+    private static void avanzarIdentidad(Connection connection, String tabla, String columna) throws SQLException {
+        // Los nombres se definen en el código; no provienen de datos de usuario.
+        long siguiente;
+        try (Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("SELECT COALESCE(MAX(" + columna + "), 0) + 1 FROM " + tabla)) {
+            result.next();
+            siguiente = result.getLong(1);
+        }
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE " + tabla + " ALTER COLUMN " + columna + " RESTART WITH " + siguiente);
         }
     }
 }
