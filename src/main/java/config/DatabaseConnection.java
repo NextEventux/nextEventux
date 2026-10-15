@@ -37,6 +37,7 @@ public class DatabaseConnection
     public static void inicializarEsquema(Connection connection) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
+        ejecutarScript(connection, "/migrations/002_proveedor_cu28.sql");
         actualizarContadorEventos(connection);
     }
 
