@@ -17,6 +17,7 @@ import java.util.Locale;
 
 public class ViewEventos {
     private final ControllerEventos controller;
+    private final Runnable abrirAdministracion;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final TextField organizador = campo("organizador", "Identificador del organizador");
@@ -34,7 +35,12 @@ public class ViewEventos {
     private final NumberFormat formatoCOP = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
 
     public ViewEventos(ControllerEventos controller) {
+        this(controller, () -> { });
+    }
+
+    public ViewEventos(ControllerEventos controller, Runnable abrirAdministracion) {
         this.controller = controller;
+        this.abrirAdministracion = abrirAdministracion == null ? () -> { } : abrirAdministracion;
         formatoCOP.setMaximumFractionDigits(2);
         tipo.setId("tipo");
         tipo.setPromptText("Seleccionar tipo");
@@ -128,10 +134,18 @@ public class ViewEventos {
         menu.getChildren().addAll(marca, etiqueta("MENÚ PRINCIPAL", "menu-title"));
         String[] opciones = {"⌂  Inicio", "▦  Mis eventos", "＋  Crear evento", "♧  Proveedores", "♙  Invitados", "⚙  Configuración"};
         for (String opcion : opciones) {
-            Label item = etiqueta(opcion, "menu-item");
-            item.setMaxWidth(Double.MAX_VALUE);
-            if (opcion.contains("Crear evento")) item.getStyleClass().add("active");
-            menu.getChildren().add(item);
+            if (opcion.contains("Proveedores")) {
+                Button item = new Button(opcion);
+                item.getStyleClass().addAll("menu-item", "menu-action");
+                item.setMaxWidth(Double.MAX_VALUE);
+                item.setOnAction(event -> abrirAdministracion.run());
+                menu.getChildren().add(item);
+            } else {
+                Label item = etiqueta(opcion, "menu-item");
+                item.setMaxWidth(Double.MAX_VALUE);
+                if (opcion.contains("Crear evento")) item.getStyleClass().add("active");
+                menu.getChildren().add(item);
+            }
         }
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
