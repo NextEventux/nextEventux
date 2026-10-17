@@ -16,7 +16,7 @@ public class DatabaseConnection
 
     public static Connection getConnection() throws SQLException
     {
-        return getConnection(URL);
+        return getConnection(System.getProperty("nexteventux.db.url", URL));
     }
 
     public static Connection getConnection(String url) throws SQLException {
@@ -37,6 +37,7 @@ public class DatabaseConnection
     public static void inicializarEsquema(Connection connection) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
+        ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
         actualizarContadorEventos(connection);
     }
 
