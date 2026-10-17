@@ -17,6 +17,7 @@ import java.util.Locale;
 
 public class ViewEventos {
     private final ControllerEventos controller;
+    private Runnable abrirProveedores;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final TextField organizador = campo("organizador", "Identificador del organizador");
@@ -61,6 +62,11 @@ public class ViewEventos {
         resumenInvitados.setId("resumenInvitados");
         presupuesto.textProperty().addListener((observable, anterior, actual) -> actualizarResumen());
         invitados.textProperty().addListener((observable, anterior, actual) -> actualizarResumen());
+    }
+
+    public ViewEventos(ControllerEventos controller, Runnable abrirProveedores) {
+        this(controller);
+        this.abrirProveedores = abrirProveedores;
     }
 
     public Parent crearPantalla() {
@@ -131,6 +137,9 @@ public class ViewEventos {
             Label item = etiqueta(opcion, "menu-item");
             item.setMaxWidth(Double.MAX_VALUE);
             if (opcion.contains("Crear evento")) item.getStyleClass().add("active");
+            if (opcion.contains("Proveedores") && abrirProveedores != null) {
+                item.setOnMouseClicked(event -> abrirProveedores.run());
+            }
             menu.getChildren().add(item);
         }
         Region espacio = new Region();

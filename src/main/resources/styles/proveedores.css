@@ -1,0 +1,68 @@
+.service-layout {
+    -fx-alignment: top-left;
+}
+
+.service-form {
+    -fx-padding: 0 0 0 8;
+}
+
+.service-form .text-area {
+    -fx-background-color: white;
+    -fx-background-radius: 9;
+    -fx-border-color: #E1E3EA;
+    -fx-border-radius: 9;
+    -fx-prompt-text-fill: #ADB0BD;
+    -fx-padding: 8 10;
+}
+
+.service-form .text-area:focused {
+    -fx-border-color: #D71920;
+}
+
+.service-state {
+    -fx-background-color: #FFF3DC;
+    -fx-text-fill: #A96A00;
+    -fx-padding: 8 13;
+    -fx-background-radius: 18;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.service-list,
+.availability-list {
+    -fx-background-color: white;
+    -fx-border-color: #E8E9EF;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.service-list .list-cell,
+.availability-list .list-cell {
+    -fx-background-color: white;
+    -fx-padding: 13;
+    -fx-text-fill: #404255;
+    -fx-border-color: transparent transparent #F0F1F5 transparent;
+}
+
+.service-list .list-cell:selected,
+.availability-list .list-cell:selected {
+    -fx-background-color: #FFF0F1;
+    -fx-text-fill: #D71920;
+}
+
+.btn-danger {
+    -fx-background-color: #FFF0F0;
+    -fx-text-fill: #BA2424;
+}
+
+.btn-danger:hover {
+    -fx-background-color: #FBE1E3;
+}
+
+.menu-item {
+    -fx-cursor: hand;
+}
+
+.info-card .muted {
+    -fx-wrap-text: true;
+}
