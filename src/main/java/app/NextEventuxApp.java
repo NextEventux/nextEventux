@@ -1,24 +1,33 @@
 package app;
 
+import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
 import controllers.ControllerProveedores;
+import entities.SesionUsuario;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
 import repositories.RepositoryServicio;
+import services.ServiceAutenticacion;
 import services.ServiceEventos;
 import services.ServiceProveedores;
 import views.ViewEventos;
+import views.ViewLogin;
 import views.ViewProveedores;
 
 public class NextEventuxApp extends Application {
 
     private StackPane contenedor;
+
     private ControllerEventos controllerEventos;
     private ControllerProveedores controllerProveedores;
+    private ControllerAutenticacion controllerAutenticacion;
+
+    private SesionUsuario sesionActual;
 
     @Override
     public void start(Stage stage) {
@@ -43,7 +52,13 @@ public class NextEventuxApp extends Application {
                                 repositoryServicio,
                                 repositoryDisponibilidad));
 
-        contenedor = new StackPane();
+        controllerAutenticacion =
+                new ControllerAutenticacion(
+                        new ServiceAutenticacion(
+                                new RepositoryAutenticacion()));
+
+        contenedor =
+                new StackPane();
 
         Scene scene =
                 new Scene(
@@ -63,7 +78,13 @@ public class NextEventuxApp extends Application {
                                 "/styles/proveedores.css")
                         .toExternalForm());
 
-        mostrarEventos();
+        scene.getStylesheets().add(
+                getClass()
+                        .getResource(
+                                "/styles/login.css")
+                        .toExternalForm());
+
+        mostrarLogin();
 
         stage.setTitle("NextEventux");
         stage.setMinWidth(900);
@@ -72,26 +93,77 @@ public class NextEventuxApp extends Application {
         stage.show();
     }
 
+    private void mostrarLogin() {
+
+        sesionActual = null;
+
+        contenedor
+                .getChildren()
+                .setAll(
+                        new ViewLogin(
+                                controllerAutenticacion,
+                                this::procesarSesion)
+                                .crearPantalla());
+    }
+
+    private void procesarSesion(
+            SesionUsuario sesion) {
+
+        sesionActual = sesion;
+
+        if ("PROVEEDOR".equalsIgnoreCase(
+                sesion.getTipoUsuario())) {
+
+            mostrarProveedores();
+            return;
+        }
+
+        if ("ORGANIZADOR".equalsIgnoreCase(
+                sesion.getTipoUsuario())) {
+
+            mostrarEventos();
+            return;
+        }
+
+        mostrarLogin();
+    }
+
     private void mostrarEventos() {
+
+        if (sesionActual == null
+                || !"ORGANIZADOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
 
         contenedor
                 .getChildren()
                 .setAll(
                         new ViewEventos(
                                 controllerEventos,
-                                this::mostrarProveedores)
+                                null)
                                 .crearPantalla());
     }
 
     private void mostrarProveedores() {
+
+        if (sesionActual == null
+                || !"PROVEEDOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
 
         contenedor
                 .getChildren()
                 .setAll(
                         new ViewProveedores(
                                 controllerProveedores,
-                                1,
-                                this::mostrarEventos)
+                                sesionActual.getIdActor(),
+                                null)
                                 .crearPantalla());
     }
 
