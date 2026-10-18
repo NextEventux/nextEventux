@@ -406,3 +406,84 @@ ALTER TABLE Segmentacion ALTER COLUMN id_segmento RESTART WITH 4;
 ALTER TABLE Campana ALTER COLUMN id_campana RESTART WITH 3;
 ALTER TABLE Envio_Campana ALTER COLUMN id_envio RESTART WITH 5;
 ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 3;
+
+-- =========================================================
+-- MARKETING: datos de prueba para CU21 (segmentar clientes)
+-- =========================================================
+
+-- Administrador que ejecuta la segmentación.
+INSERT INTO Usuario
+(nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario)
+VALUES
+('Administrador NextEventux', 'admin.nexteventux', 'clave000', 'ACTIVO', TIMESTAMP '2026-10-01 08:00:00', FALSE, 'ADMINISTRADOR');
+
+INSERT INTO Usuario_rol (id_usuario, id_rol)
+SELECT id_usuario, 1 FROM Usuario WHERE usuario = 'admin.nexteventux';
+
+-- Ubicación y edad de los clientes que ya existían.
+UPDATE Usuario SET pais = 'Colombia', ciudad = 'Bogotá', fecha_nacimiento = DATE '1998-05-12' WHERE usuario = 'ana.martinez';
+UPDATE Usuario SET pais = 'Colombia', ciudad = 'Medellín', fecha_nacimiento = DATE '1999-02-08' WHERE usuario = 'diego.perez';
+
+-- Cliente que contrató cada evento de ejemplo.
+UPDATE Evento SET id_cliente = (SELECT id_usuario FROM Usuario WHERE usuario = 'ana.martinez') WHERE id_evento = 1;
+UPDATE Evento SET id_cliente = (SELECT id_usuario FROM Usuario WHERE usuario = 'diego.perez') WHERE id_evento = 2;
+
+-- Clientes nuevos. Mínimo por segmento: 5 clientes.
+-- Bogotá, 18-25 años: 6 clientes (forman segmento).
+INSERT INTO Usuario
+(nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario, pais, ciudad, fecha_nacimiento)
+SELECT 'Cliente Bogotá Joven ' || X, 'cliente.bogota.joven' || X, 'clave111', 'ACTIVO',
+       TIMESTAMP '2026-10-06 09:00:00', (X <> 3), 'CLIENTE', 'Colombia', 'Bogotá', DATE '2003-03-15'
+FROM SYSTEM_RANGE(1, 6);
+
+-- Bogotá, 26-35 años: 5 clientes nuevos + Ana = 6 (forman segmento).
+INSERT INTO Usuario
+(nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario, pais, ciudad, fecha_nacimiento)
+SELECT 'Cliente Bogotá Adulto ' || X, 'cliente.bogota.adulto' || X, 'clave222', 'ACTIVO',
+       TIMESTAMP '2026-10-06 10:00:00', TRUE, 'CLIENTE', 'Colombia', 'Bogotá', DATE '1996-06-20'
+FROM SYSTEM_RANGE(1, 5);
+
+-- Medellín, 26-35 años: 4 clientes nuevos + Diego = 5 (justo en el mínimo).
+INSERT INTO Usuario
+(nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario, pais, ciudad, fecha_nacimiento)
+SELECT 'Cliente Medellín ' || X, 'cliente.medellin' || X, 'clave333', 'ACTIVO',
+       TIMESTAMP '2026-10-06 11:00:00', TRUE, 'CLIENTE', 'Colombia', 'Medellín', DATE '1997-09-30'
+FROM SYSTEM_RANGE(1, 4);
+
+-- Cali, 36-50 años: solo 3 clientes (NO forman segmento).
+INSERT INTO Usuario
+(nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario, pais, ciudad, fecha_nacimiento)
+SELECT 'Cliente Cali ' || X, 'cliente.cali' || X, 'clave444', 'ACTIVO',
+       TIMESTAMP '2026-10-06 12:00:00', TRUE, 'CLIENTE', 'Colombia', 'Cali', DATE '1985-01-10'
+FROM SYSTEM_RANGE(1, 3);
+
+-- Clientes sin ciudad ni fecha de nacimiento (se excluyen de la segmentación).
+INSERT INTO Usuario
+(nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario)
+SELECT 'Cliente Sin Datos ' || X, 'cliente.sindatos' || X, 'clave555', 'ACTIVO',
+       TIMESTAMP '2026-10-06 13:00:00', TRUE, 'CLIENTE'
+FROM SYSTEM_RANGE(1, 2);
+
+-- Búsquedas de tipos de evento.
+INSERT INTO Busqueda_evento (id_usuario, tipo, fecha_busqueda)
+SELECT u.id_usuario, t.tipo, TIMESTAMP '2026-10-10 10:00:00'
+FROM Usuario u
+JOIN (VALUES ('Social'), ('Social'), ('Cultural')) AS t(tipo) ON TRUE
+WHERE u.usuario LIKE 'cliente.bogota.joven%';
+
+INSERT INTO Busqueda_evento (id_usuario, tipo, fecha_busqueda)
+SELECT u.id_usuario, t.tipo, TIMESTAMP '2026-10-11 10:00:00'
+FROM Usuario u
+JOIN (VALUES ('Corporativo'), ('Corporativo'), ('Social')) AS t(tipo) ON TRUE
+WHERE u.usuario LIKE 'cliente.bogota.adulto%' OR u.usuario = 'ana.martinez';
+
+INSERT INTO Busqueda_evento (id_usuario, tipo, fecha_busqueda)
+SELECT u.id_usuario, t.tipo, TIMESTAMP '2026-10-12 10:00:00'
+FROM Usuario u
+JOIN (VALUES ('Cultural'), ('Cultural'), ('Otro')) AS t(tipo) ON TRUE
+WHERE u.usuario LIKE 'cliente.medellin%' OR u.usuario = 'diego.perez';
+
+INSERT INTO Busqueda_evento (id_usuario, tipo, fecha_busqueda)
+SELECT id_usuario, 'Social', TIMESTAMP '2026-10-13 10:00:00'
+FROM Usuario
+WHERE usuario LIKE 'cliente.cali%' OR usuario LIKE 'cliente.sindatos%';
