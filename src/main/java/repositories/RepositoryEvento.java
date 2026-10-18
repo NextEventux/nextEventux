@@ -2,6 +2,7 @@ package repositories;
 
 import config.DatabaseConnection;
 import entities.Evento;
+import entities.EdicionEvento;
 import entities.Organizador;
 import java.sql.*;
 import java.util.ArrayList;
@@ -85,16 +86,45 @@ public class RepositoryEvento {
              PreparedStatement statement = connection.prepareStatement("SELECT * FROM Evento ORDER BY id_evento");
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-                eventos.add(new Evento(result.getInt("id_evento"), result.getInt("id_organizador"),
-                        result.getString("nombre"), result.getString("tipo"), result.getString("descripcion"),
-                        result.getTimestamp("fecha_inicio").toLocalDateTime(),
-                        result.getTimestamp("fecha_fin").toLocalDateTime(), result.getString("ubicacion"),
-                        result.getBigDecimal("presupuesto"), result.getObject("invitados_iniciales", Integer.class),
-                        result.getString("estado"), result.getTimestamp("fecha_creacion").toLocalDateTime()));
+                eventos.add(leerEvento(result));
             }
             return eventos;
         } catch (SQLException e) {
             throw new IllegalStateException("No se pudieron consultar los eventos. Revisa la conexión con la base de datos.", e);
         }
     }
+    public Evento buscarEvento(int evento, int organizador) {
+        try (Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(
+                "SELECT * FROM Evento WHERE id_evento=? AND id_organizador=?")) {
+            statement.setInt(1,evento); statement.setInt(2,organizador);
+            try (ResultSet result=statement.executeQuery()) { return result.next()?leerEvento(result):null; }
+        } catch (SQLException e) { throw new IllegalStateException("No se pudo cargar el evento. Vuelve a intentarlo.",e); }
+    }
+
+    public void editarEvento(int evento, int organizador, EdicionEvento datos) {
+        // Un solo UPDATE es atómico; su condición vuelve a verificar estado y pertenencia al guardar.
+        String sql="UPDATE Evento SET nombre=?,tipo=?,fecha_inicio=?,fecha_fin=?,ubicacion=? "
+                + "WHERE id_evento=? AND id_organizador=? AND UPPER(estado)='PLANEADO'";
+        try (Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(sql)) {
+            statement.setString(1,datos.nombre()); statement.setString(2,datos.tipo());
+            statement.setTimestamp(3,Timestamp.valueOf(datos.inicio())); statement.setTimestamp(4,Timestamp.valueOf(datos.fin()));
+            statement.setString(5,datos.lugar()); statement.setInt(6,evento); statement.setInt(7,organizador);
+            if(statement.executeUpdate()!=1) {
+                Evento actual=buscarEvento(evento,organizador);
+                if(actual==null) throw new IllegalArgumentException("Selecciona un evento existente del organizador elegido.");
+                throw new IllegalArgumentException("No se puede editar: el evento está en estado " + actual.getEstado() + ".");
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron guardar los cambios. Los datos anteriores se conservaron; vuelve a intentarlo.",e);
+        }
+    }
+
+    private Evento leerEvento(ResultSet result) throws SQLException {
+        return new Evento(result.getInt("id_evento"),result.getInt("id_organizador"),
+                result.getString("nombre"),result.getString("tipo"),result.getString("descripcion"),
+                result.getTimestamp("fecha_inicio").toLocalDateTime(),result.getTimestamp("fecha_fin").toLocalDateTime(),
+                result.getString("ubicacion"),result.getBigDecimal("presupuesto"),result.getObject("invitados_iniciales",Integer.class),
+                result.getString("estado"),result.getTimestamp("fecha_creacion").toLocalDateTime());
+    }
+
 }
