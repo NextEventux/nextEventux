@@ -274,7 +274,7 @@ resumen del presupuesto en COP y de los invitados. El panel baja en ventanas
 pequeñas y el contenido se puede desplazar para acceder a los botones.
 
 El formulario añade los campos requeridos por la entidad conciliada: organizador
-por identificador, inicio y fin con hora y descripción opcional. Las horas usan
+seleccionado por nombre desde H2, inicio y fin con hora y descripción opcional. Las horas usan
 `HH:mm`, los invitados son enteros y los decimales del presupuesto usan punto.
 El selector de tipo contiene Corporativo, Social, Cultural y Otro. La interfaz
 muestra «En planeación» y el servicio conserva el valor `PLANEADO`.
@@ -303,8 +303,8 @@ mvn javafx:run
 ```
 
 En Windows usa `;` como separador del classpath. La carga es explícita y se rechaza
-si hay registros en cualquier tabla, para proteger los datos existentes. Los
-organizadores de ejemplo tienen identificadores 1 y 2. La aplicación no carga
+si hay registros en cualquier tabla, para proteger los datos existentes. El desplegable muestra los nombres de los
+organizadores de ejemplo. La aplicación no carga
 estos ejemplos automáticamente. Si ya existen datos reales, usa un organizador
 registrado y omite la carga de ejemplos.
 
@@ -312,14 +312,14 @@ registrado y omite la carga de ejemplos.
 
 1. Abrir con `mvn javafx:run` y verificar la distribución y el desplazamiento.
 2. Escribir presupuesto e invitados y comprobar el resumen en vivo.
-3. Crear con nombre, tipo, organizador positivo, fechas y horas válidas, lugar,
+3. Crear con nombre, tipo, organizador seleccionado, fechas y horas válidas, lugar,
    presupuesto no negativo con hasta dos decimales e invitados enteros no negativos.
 4. Probar un campo obligatorio vacío, `NaN`, invitados decimales, hora `24:00` y
    fin anterior al inicio: deben mostrarse errores y conservarse los campos.
 5. Pulsar Cancelar: deben limpiarse los campos y el mensaje, y el resumen volver a cero.
 6. Reducir y ampliar la ventana: el formulario y sus acciones deben seguir accesibles.
 
-Verificación de esta implementación: 14 pruebas JUnit sin fallos que cubren
+Verificación de esta implementación: 16 pruebas JUnit sin fallos que cubren
 validaciones, creación mediante controlador y repositorio JDBC, identificador
 automático, organizador inexistente, recuperación tras cerrar y reabrir H2,
 registros históricos nulos, error de conexión, migración y carga segura de ejemplos.
@@ -341,3 +341,9 @@ La existencia del organizador en H2 no equivale a autenticación ni autorizació
 La persistencia del evento no sustituye estas reglas. El PR se mantiene como
 primera iteración para revisión; no debe registrarse CU01 como completado en el
 Control de Alcance hasta implementar, probar e integrar los requisitos pendientes.
+
+El campo Organizador consulta H2 y muestra únicamente los nombres de los usuarios
+asociados a organizadores, ordenados por nombre. El identificador permanece
+interno y se utiliza al guardar. No se selecciona un organizador automáticamente;
+Cancelar borra la selección. Si no hay organizadores o falla la consulta, se
+muestra un mensaje y no se permite crear sin seleccionar uno.
