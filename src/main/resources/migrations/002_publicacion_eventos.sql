@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS Solicitud_publicacion (
     id_solicitud INT PRIMARY KEY AUTO_INCREMENT,
-    id_evento INT NOT NULL UNIQUE,
+    id_evento INT NOT NULL,
     estado VARCHAR(20) NOT NULL CHECK (estado IN ('PENDIENTE', 'APROBADA', 'RECHAZADA')),
     motivo VARCHAR(500),
     id_administrador INT,
