@@ -1,6 +1,7 @@
 package services;
 
 import entities.Evento;
+import entities.EdicionEvento;
 import entities.Organizador;
 import java.util.List;
 import repositories.RepositoryEvento;
@@ -37,6 +38,22 @@ public class ServiceEventos {
         return cancelaciones.listarAvisos(evento, organizador);
     }
 
+    public Evento consultarEventoParaEditar(int evento, int organizador) {
+        Evento actual=repositoryEvento.buscarEvento(evento,organizador);
+        if(actual==null) throw new IllegalArgumentException("Selecciona un evento existente del organizador elegido.");
+        if(!Evento.ESTADO_INICIAL.equalsIgnoreCase(actual.getEstado()))
+            throw new IllegalArgumentException("No se puede editar: el evento está en estado " + actual.getEstado() + ".");
+        return actual;
+    }
+
+    public void editarEvento(int evento, int organizador, EdicionEvento datos) {
+        if(evento<=0 || organizador<=0) throw new IllegalArgumentException("Selecciona un organizador y un evento.");
+        if(datos==null) throw new IllegalArgumentException("Completa los datos del evento.");
+        String error=errorDatosGenerales(datos.nombre(),datos.tipo(),datos.inicio(),datos.fin(),datos.lugar());
+        if(error!=null) throw new IllegalArgumentException(error);
+        repositoryEvento.editarEvento(evento,organizador,datos);
+    }
+
     public void crearEvento(Evento datos) {
         String error = obtenerError(datos);
         if (error != null) {
@@ -53,15 +70,10 @@ public class ServiceEventos {
     private String obtenerError(Evento datos) {
         if (datos == null) return "Completa los datos del evento.";
         if (datos.getIdOrganizador() <= 0) return "Ingresa un identificador de organizador mayor que cero.";
-        if (!textoValido(datos.getNombre(), 150)) return "Ingresa un nombre de hasta 150 caracteres.";
-        if (!textoValido(datos.getTipo(), 100)) return "Selecciona el tipo de evento.";
-        if (!textoValido(datos.getUbicacion(), 255)) return "Ingresa un lugar de hasta 255 caracteres.";
+        String general=errorDatosGenerales(datos.getNombre(),datos.getTipo(),datos.getFechaInicio(),datos.getFechaFin(),datos.getUbicacion());
+        if(general!=null) return general;
         if (datos.getDescripcion() != null && datos.getDescripcion().length() > 255)
             return "La descripción debe tener hasta 255 caracteres.";
-        if (datos.getFechaInicio() == null || datos.getFechaFin() == null)
-            return "Selecciona las fechas de inicio y fin.";
-        if (datos.getFechaFin().isBefore(datos.getFechaInicio()))
-            return "El fin del evento no puede ser anterior al inicio.";
         if (datos.getPresupuesto() == null || datos.getPresupuesto().signum() < 0)
             return "Ingresa un presupuesto mayor o igual a cero.";
         if (datos.getPresupuesto().compareTo(new java.math.BigDecimal("9999999999.99")) > 0)
@@ -72,6 +84,15 @@ public class ServiceEventos {
             return "El presupuesto debe tener como máximo dos decimales.";
         }
         if (datos.getInvitadosIniciales() == null || datos.getInvitadosIniciales() < 0) return "Los invitados iniciales deben ser mayores o iguales a cero.";
+        return null;
+    }
+
+    private String errorDatosGenerales(String nombre,String tipo,java.time.LocalDateTime inicio,java.time.LocalDateTime fin,String lugar) {
+        if(!textoValido(nombre,150)) return "Ingresa un nombre de hasta 150 caracteres.";
+        if(!textoValido(tipo,100)) return "Selecciona el tipo de evento.";
+        if(!textoValido(lugar,255)) return "Ingresa un lugar de hasta 255 caracteres.";
+        if(inicio==null || fin==null) return "Selecciona las fechas de inicio y fin.";
+        if(fin.isBefore(inicio)) return "El fin del evento no puede ser anterior al inicio.";
         return null;
     }
 
