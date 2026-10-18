@@ -5,6 +5,7 @@ import controllers.ControllerPublicacion;
 import repositories.RepositoryPublicacion;
 import services.ServicePublicacion;
 import views.ViewPublicacion;
+import views.ViewCancelacion;
 import javafx.scene.layout.BorderPane;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -36,12 +37,17 @@ public class NextEventuxApp extends Application {
 
     private void mostrarCrear() {
         stage.setTitle("NextEventux | Crear evento");
-        scene.setRoot(new ViewEventos(controller, this::mostrarPublicacion).crearPantalla());
+        scene.setRoot(new ViewEventos(controller, this::mostrarPublicacion, this::mostrarCancelacion).crearPantalla());
     }
 
     private void mostrarPublicacion() {
         stage.setTitle("NextEventux | Subir evento al repositorio");
         scene.setRoot(new ViewPublicacion(publicaciones, this::mostrarCrear).crearPantalla());
+    }
+
+    private void mostrarCancelacion() {
+        stage.setTitle("NextEventux | Cancelar evento");
+        scene.setRoot(new ViewCancelacion(controller, this::mostrarCrear).crearPantalla());
     }
 
     public static void main(String[] args) {
