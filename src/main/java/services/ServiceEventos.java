@@ -4,16 +4,37 @@ import entities.Evento;
 import entities.Organizador;
 import java.util.List;
 import repositories.RepositoryEvento;
+import repositories.RepositoryCancelacion;
 
 public class ServiceEventos {
     private final RepositoryEvento repositoryEvento;
+    private final RepositoryCancelacion cancelaciones;
 
     public ServiceEventos(RepositoryEvento repositoryEvento) {
+        this(repositoryEvento, new RepositoryCancelacion());
+    }
+
+    public ServiceEventos(RepositoryEvento repositoryEvento, RepositoryCancelacion cancelaciones) {
         this.repositoryEvento = repositoryEvento;
+        this.cancelaciones = cancelaciones;
     }
 
     public List<Organizador> listarOrganizadores() {
         return repositoryEvento.listarOrganizadores();
+    }
+
+    public List<Evento> listarEventos(int organizador) {
+        return repositoryEvento.listarEventos().stream().filter(e -> e.getIdOrganizador() == organizador).toList();
+    }
+
+    public void cancelarEvento(int evento, int organizador, boolean confirmado) {
+        if (evento <= 0 || organizador <= 0) throw new IllegalArgumentException("Selecciona un organizador y un evento.");
+        if (!confirmado) throw new IllegalArgumentException("Confirma explícitamente que deseas cancelar el evento.");
+        cancelaciones.cancelar(evento, organizador);
+    }
+
+    public List<String> listarAvisosCancelacion(int evento, int organizador) {
+        return cancelaciones.listarAvisos(evento, organizador);
     }
 
     public void crearEvento(Evento datos) {

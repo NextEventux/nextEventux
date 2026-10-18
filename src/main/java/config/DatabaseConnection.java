@@ -38,6 +38,7 @@ public class DatabaseConnection
         ejecutarScript(connection, "/schema.sql");
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
         ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
+        ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
         actualizarContadorEventos(connection);
     }
 
