@@ -3,6 +3,8 @@ package entities;
 /** Persona invitada a través de una invitación (tabla Invitado). */
 public class Invitado {
     public static final String ESTADO_PENDIENTE = "PENDIENTE";
+    public static final String ESTADO_CONFIRMADO = "CONFIRMADO";
+    public static final String ESTADO_RECHAZADO = "RECHAZADO";
 
     private int idInvitado;
     private int idInvitacion;
