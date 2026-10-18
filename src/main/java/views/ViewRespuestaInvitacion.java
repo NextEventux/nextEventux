@@ -1,12 +1,13 @@
 package views;
 
+import controllers.ControllerInvitados;
+import entities.InvitacionRecibida;
+import entities.Invitado;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -21,10 +22,9 @@ import javafx.scene.layout.*;
  * CU-16 - Gestionar respuesta a la invitación (vista del invitado).
  *
  * Corresponde a mostrarRespuesta() de ViewInvitados en el diagrama de clases.
- * Flujo del diagrama VP-04: el invitado consulta su invitación y responde si asistirá.
- *
- * Por ahora es solo la interfaz con datos de prueba (cargarDatosMock()); todavía no
- * guarda nada. Después se conectará con ControllerInvitados.gestionarRespuestaInvitacion().
+ * Flujo del diagrama VP-04: el invitado consulta su invitación (R37) y responde si
+ * asistirá (R38); al rechazar libera su cupo (R39).
+ * Los datos llegan de H2 por ControllerInvitados -> ServiceInvitados -> Repository.
  */
 public final class ViewRespuestaInvitacion {
 
@@ -38,14 +38,12 @@ public final class ViewRespuestaInvitacion {
     private static final DateTimeFormatter FECHA_CORTA = DateTimeFormatter.ofPattern("d MMM yyyy", ES);
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("h:mm a", ES);
 
-    /** Invitación tal como la ve el invitado (datos de Invitacion, Invitado, Evento y Lugar). */
-    public record InvitacionRecibida(int idInvitacion, int idInvitado, String evento, String tipoEvento,
-                                     LocalDateTime inicio, LocalDateTime fin, String lugar, String direccion,
-                                     String mensaje, String estado, int ocupados, int capacidad) {
-    }
-
-    private final ObservableList<InvitacionRecibida> invitaciones = FXCollections.observableArrayList();
+    private final ControllerInvitados controller;
+    private List<InvitacionRecibida> encontradas = List.of();
     private final ToggleGroup respuesta = new ToggleGroup();
+    private ToggleButton opcionSi;
+    private ToggleButton opcionNo;
+    private final Label estadoRespuesta = new Label();
 
     private final TextField correo = new TextField();
     private final VBox listaInvitaciones = new VBox(10);
@@ -65,10 +63,10 @@ public final class ViewRespuestaInvitacion {
 
     private InvitacionRecibida seleccionada;
 
-    public ViewRespuestaInvitacion() {
+    public ViewRespuestaInvitacion(ControllerInvitados controller) {
+        this.controller = controller;
         correo.setId("correoInvitado");
         correo.setPromptText("Ej. sofia@email.com");
-        correo.setText("sofia@email.com");
         correo.setOnAction(e -> consultar());
         HBox.setHgrow(correo, Priority.ALWAYS);
 
@@ -86,23 +84,8 @@ public final class ViewRespuestaInvitacion {
         barraCupos.setMaxWidth(Double.MAX_VALUE);
         barraCupos.getStyleClass().add("cupos");
         resumenCupos.getStyleClass().add("hint");
-
-        cargarDatosMock();
-    }
-
-    // ------------------------------------------------------------------
-    // Datos de prueba (basados en seed.sql). Se reemplazan por el Controller.
-    // ------------------------------------------------------------------
-    private void cargarDatosMock() {
-        invitaciones.setAll(
-                new InvitacionRecibida(1, 1, "Boda Laura y Daniel", "Boda",
-                        LocalDateTime.of(2026, 11, 15, 15, 0), LocalDateTime.of(2026, 11, 15, 23, 0),
-                        "Salón Primavera", "Calle 100 #15-20",
-                        "Te invitamos a celebrar con nosotros este día especial.", "PENDIENTE", 3, 150),
-                new InvitacionRecibida(3, 5, "Baby Shower Valentina", "Baby shower",
-                        LocalDateTime.of(2026, 12, 5, 14, 0), LocalDateTime.of(2026, 12, 5, 19, 0),
-                        "Jardín Los Pinos", "Carrera 7 #120-15",
-                        "Acompáñanos en el baby shower de Valentina.", "CONFIRMADO", 4, 250));
+        estadoRespuesta.getStyleClass().add("muted");
+        estadoRespuesta.setWrapText(true);
     }
 
     // ------------------------------------------------------------------
@@ -202,7 +185,8 @@ public final class ViewRespuestaInvitacion {
             sidebar.setManaged(sidebar.isVisible());
         });
 
-        consultar();
+        mostrarListaVacia("Escribe tu correo y pulsa Consultar para ver tus invitaciones.");
+        seleccionar(null);
         return raiz;
     }
 
@@ -322,10 +306,12 @@ public final class ViewRespuestaInvitacion {
         HBox titulo = new HBox(13, etiqueta("✓", "heading-icon"), etiqueta("¿Asistirás al evento?", "card-title"));
         titulo.setAlignment(Pos.CENTER_LEFT);
 
-        ToggleButton si = opcion("Sí, asistiré", "Confirmo mi asistencia y reservo mi cupo.", "ASISTIRE");
-        ToggleButton no = opcion("No podré asistir", "Rechazo la invitación y libero mi cupo.", "NO_ASISTIRE");
+        ToggleButton si = opcion("Sí, asistiré", "Confirmo mi asistencia y reservo mi cupo.", Invitado.ESTADO_CONFIRMADO);
+        ToggleButton no = opcion("No podré asistir", "Rechazo la invitación y libero mi cupo.", Invitado.ESTADO_RECHAZADO);
         si.setId("respuestaSi");
         no.setId("respuestaNo");
+        opcionSi = si;
+        opcionNo = no;
         GridPane opciones = new GridPane();
         opciones.setHgap(16);
         for (int i = 0; i < 2; i++) {
@@ -347,14 +333,13 @@ public final class ViewRespuestaInvitacion {
         enviar.setId("enviarRespuesta");
         enviar.getStyleClass().add("btn-primary");
         enviar.disableProperty().bind(respuesta.selectedToggleProperty().isNull());
+        cancelar.disableProperty().bind(respuesta.selectedToggleProperty().isNull());
         enviar.setOnAction(e -> enviarRespuesta());
         HBox acciones = new HBox(12, notaAcompanantes, espacioHorizontal(), cancelar, enviar);
         acciones.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(notaAcompanantes, Priority.SOMETIMES);
 
-        VBox tarjeta = new VBox(22, titulo,
-                etiqueta("Elige una opción y envía tu respuesta al organizador.", "muted"),
-                opciones, new Separator(), acciones);
+        VBox tarjeta = new VBox(22, titulo, estadoRespuesta, opciones, new Separator(), acciones);
         tarjeta.getStyleClass().add("card");
         return tarjeta;
     }
@@ -380,39 +365,66 @@ public final class ViewRespuestaInvitacion {
     }
 
     // ------------------------------------------------------------------
-    // Comportamiento (solo interfaz)
+    // Comportamiento (Controller)
     // ------------------------------------------------------------------
+    /** R37: consulta en H2 las invitaciones activas del correo escrito. */
     private void consultar() {
-        String texto = correo.getText() == null ? "" : correo.getText().trim().toLowerCase(Locale.ROOT);
-        List<InvitacionRecibida> encontradas = "sofia@email.com".equals(texto) ? invitaciones : List.of();
+        consultar(seleccionada == null ? -1 : seleccionada.getIdInvitado());
+    }
+
+    private void consultar(int idInvitadoSeleccionar) {
+        String texto = correo.getText() == null ? "" : correo.getText().trim();
+        if (texto.isEmpty()) {
+            mostrarMensaje("Escribe el correo con el que recibiste la invitación.", false);
+            return;
+        }
+        try {
+            encontradas = controller.consultarInvitacionesPorCorreo(texto);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            encontradas = List.of();
+            mostrarListaVacia("No se pudieron consultar las invitaciones.");
+            seleccionar(null);
+            mostrarMensaje(e.getMessage(), false);
+            return;
+        }
+        int n = encontradas.size();
+        if (n == 0) {
+            mostrarListaVacia("No encontramos invitaciones activas para ese correo.");
+            seleccionar(null);
+            mostrarMensaje("No hay invitaciones activas asociadas a \"" + texto + "\".", false);
+            return;
+        }
+        ocultarMensaje();
         listaInvitaciones.getChildren().clear();
         for (InvitacionRecibida inv : encontradas) listaInvitaciones.getChildren().add(itemInvitacion(inv));
-        int n = encontradas.size();
         cantidad.setText(n + (n == 1 ? " invitación encontrada" : " invitaciones encontradas"));
-        if (n == 0) {
-            Label vacio = etiqueta("No encontramos invitaciones para ese correo.", "muted");
-            vacio.setWrapText(true);
-            listaInvitaciones.getChildren().add(vacio);
-            mostrarMensaje("No hay invitaciones asociadas a \"" + correo.getText().trim() + "\".", false);
-            seleccionar(null);
-        } else {
-            ocultarMensaje();
-            seleccionar(encontradas.get(0));
-        }
+        seleccionar(encontradas.stream().filter(inv -> inv.getIdInvitado() == idInvitadoSeleccionar)
+                .findFirst().orElse(encontradas.get(0)));
+    }
+
+    private void mostrarListaVacia(String texto) {
+        listaInvitaciones.getChildren().clear();
+        Label vacio = etiqueta(texto, "muted");
+        vacio.setWrapText(true);
+        listaInvitaciones.getChildren().add(vacio);
+        cantidad.setText("0 invitaciones");
     }
 
     private Node itemInvitacion(InvitacionRecibida inv) {
-        Label nombre = etiqueta(inv.evento(), "summary-value");
+        Label nombre = etiqueta(inv.getEvento(), "summary-value");
         nombre.setStyle("-fx-font-size: 13px;");
         nombre.setWrapText(true);
-        Label fecha = etiqueta(inv.inicio().format(FECHA_CORTA) + " · " + inv.lugar(), "hint");
+        Label fecha = etiqueta(inv.getInicio().format(FECHA_CORTA) + " · " + inv.getLugar(), "hint");
         fecha.setWrapText(true);
-        Label estado = pill(inv.estado());
+        Label estado = pill(inv.getEstadoInvitado());
         VBox item = new VBox(6, nombre, fecha, estado);
         item.setMinWidth(0);
         item.getStyleClass().add("invitation-item");
         item.setUserData(inv);
-        item.setOnMouseClicked(e -> seleccionar(inv));
+        item.setOnMouseClicked(e -> {
+            ocultarMensaje();
+            seleccionar(inv);
+        });
         return item;
     }
 
@@ -431,52 +443,97 @@ public final class ViewRespuestaInvitacion {
             detalleEstado.setVisible(false);
             resumenCupos.setText("");
             barraCupos.setProgress(0);
+            estadoRespuesta.setText("Consulta tus invitaciones para poder responder.");
+            opcionSi.setDisable(true);
+            opcionNo.setDisable(true);
             return;
         }
-        detalleEvento.setText(inv.evento());
-        detalleTipo.setText(inv.tipoEvento() + " · Invitación #" + inv.idInvitacion());
-        String fecha = inv.inicio().format(FECHA_LARGA);
+        detalleEvento.setText(inv.getEvento());
+        detalleTipo.setText((inv.getTipoEvento() == null ? "Evento" : inv.getTipoEvento())
+                + " · Invitación #" + inv.getIdInvitacion() + " · Para " + inv.getNombreInvitado());
+        String fecha = inv.getInicio().format(FECHA_LARGA);
         detalleFecha.setText(Character.toUpperCase(fecha.charAt(0)) + fecha.substring(1));
-        detalleHora.setText(inv.inicio().format(HORA) + " – " + inv.fin().format(HORA));
-        detalleLugar.setText(inv.lugar());
-        detalleDireccion.setText(inv.direccion());
-        detalleMensaje.setText("“" + inv.mensaje() + "”");
-        detalleEstado.setText(textoEstado(inv.estado()));
-        detalleEstado.getStyleClass().setAll("label", "status", claseEstado(inv.estado()));
+        detalleHora.setText(inv.getInicio().format(HORA) + " – " + inv.getFin().format(HORA));
+        detalleLugar.setText(inv.getLugar());
+        detalleDireccion.setText(inv.getDireccion() == null ? "-" : inv.getDireccion());
+        detalleMensaje.setText("“" + (inv.getMensaje() == null ? "" : inv.getMensaje()) + "”");
+        detalleEstado.setText(textoEstado(inv.getEstadoInvitado()));
+        detalleEstado.getStyleClass().setAll("label", "status", claseEstado(inv.getEstadoInvitado()));
         detalleEstado.setVisible(true);
-        int libres = inv.capacidad() - inv.ocupados();
-        resumenCupos.setText("Cupos del lugar: " + inv.ocupados() + " ocupados de " + inv.capacidad()
+        int libres = Math.max(0, inv.getCapacidad() - inv.getOcupados());
+        resumenCupos.setText("Cupos del lugar: " + inv.getOcupados() + " ocupados de " + inv.getCapacidad()
                 + " (" + libres + " disponibles)");
-        barraCupos.setProgress(inv.capacidad() == 0 ? 0 : (double) inv.ocupados() / inv.capacidad());
+        barraCupos.setProgress(inv.getCapacidad() == 0 ? 0 : Math.min(1, (double) inv.getOcupados() / inv.getCapacidad()));
+
+        String estado = estadoDe(inv);
+        boolean comenzo = !inv.getInicio().isAfter(LocalDateTime.now());
+        boolean cerrado = "CANCELADO".equalsIgnoreCase(inv.getEstadoEvento()) || "FINALIZADO".equalsIgnoreCase(inv.getEstadoEvento());
+        opcionSi.setDisable(comenzo || cerrado || estado.equals(Invitado.ESTADO_CONFIRMADO));
+        opcionNo.setDisable(comenzo || cerrado || estado.equals(Invitado.ESTADO_RECHAZADO));
+        if (comenzo || cerrado) {
+            estadoRespuesta.setText("Este evento ya no recibe respuestas.");
+        } else if (estado.equals(Invitado.ESTADO_CONFIRMADO)) {
+            estadoRespuesta.setText("Ya confirmaste tu asistencia. Si cambias de planes, indica que no podrás asistir.");
+        } else if (estado.equals(Invitado.ESTADO_RECHAZADO)) {
+            estadoRespuesta.setText("Indicaste que no asistirás. Si cambias de opinión puedes confirmar, si aún hay cupo.");
+        } else {
+            estadoRespuesta.setText("Elige una opción y envía tu respuesta al organizador.");
+        }
     }
 
+    /** R38: guarda la respuesta del invitado; rechazar pide confirmación porque libera el cupo (R39). */
     private void enviarRespuesta() {
         if (seleccionada == null || respuesta.getSelectedToggle() == null) return;
-        boolean asiste = "ASISTIRE".equals(respuesta.getSelectedToggle().getUserData());
-        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
-        alerta.setTitle("Respuesta a la invitación");
-        alerta.setHeaderText(asiste ? "Confirmarás tu asistencia" : "Indicarás que no asistirás");
-        alerta.setContentText("Evento: " + seleccionada.evento() + "\n\n"
-                + "La respuesta se guardará cuando la pantalla se conecte con la base de datos.");
+        String nueva = (String) respuesta.getSelectedToggle().getUserData();
+        boolean asiste = Invitado.ESTADO_CONFIRMADO.equals(nueva);
+        if (!asiste && !confirmarRechazo()) return;
+        InvitacionRecibida actual = seleccionada;
+        try {
+            controller.gestionarRespuestaInvitacion(actual.getIdInvitado(), nueva);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
+            return;
+        }
+        consultar(actual.getIdInvitado());
+        mostrarMensaje(asiste
+                ? "¡Listo! Confirmaste tu asistencia a " + actual.getEvento() + "."
+                : "Registramos que no asistirás a " + actual.getEvento() + ". Tu cupo quedó libre.", true);
+    }
+
+    private boolean confirmarRechazo() {
+        Alert confirmar = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmar.setTitle("No podré asistir");
+        confirmar.setHeaderText("¿Confirmas que no asistirás a " + seleccionada.getEvento() + "?");
+        confirmar.setContentText("Tu cupo y el de tus acompañantes quedarán libres para otros invitados.");
         URL css = getClass().getResource(CSS);
-        if (css != null) alerta.getDialogPane().getStylesheets().add(css.toExternalForm());
-        if (correo.getScene() != null) alerta.initOwner(correo.getScene().getWindow());
-        alerta.getDialogPane().lookupButton(ButtonType.OK).getStyleClass().add("btn-primary");
-        alerta.showAndWait();
+        if (css != null) confirmar.getDialogPane().getStylesheets().add(css.toExternalForm());
+        if (correo.getScene() != null) confirmar.initOwner(correo.getScene().getWindow());
+        ButtonType si = new ButtonType("Sí, no asistiré", ButtonBar.ButtonData.OK_DONE);
+        ButtonType volver = new ButtonType("Volver", ButtonBar.ButtonData.CANCEL_CLOSE);
+        confirmar.getButtonTypes().setAll(volver, si);
+        confirmar.getDialogPane().lookupButton(si).getStyleClass().add("btn-primary");
+        confirmar.getDialogPane().lookupButton(volver).getStyleClass().add("btn-secondary");
+        return confirmar.showAndWait().filter(si::equals).isPresent();
+    }
+
+    private static String estadoDe(InvitacionRecibida inv) {
+        return inv.getEstadoInvitado() == null ? Invitado.ESTADO_PENDIENTE : inv.getEstadoInvitado().toUpperCase(Locale.ROOT);
     }
 
     private static String textoEstado(String estado) {
-        return switch (estado) {
-            case "CONFIRMADO" -> "ASISTIRÁ";
-            case "RECHAZADO" -> "NO ASISTIRÁ";
+        String e = estado == null ? "" : estado.toUpperCase(Locale.ROOT);
+        return switch (e) {
+            case Invitado.ESTADO_CONFIRMADO -> "ASISTIRÁ";
+            case Invitado.ESTADO_RECHAZADO -> "NO ASISTIRÁ";
             default -> "SIN RESPONDER";
         };
     }
 
     private static String claseEstado(String estado) {
-        return switch (estado) {
-            case "CONFIRMADO" -> "status-confirmada";
-            case "RECHAZADO" -> "status-rechazada";
+        String e = estado == null ? "" : estado.toUpperCase(Locale.ROOT);
+        return switch (e) {
+            case Invitado.ESTADO_CONFIRMADO -> "status-confirmada";
+            case Invitado.ESTADO_RECHAZADO -> "status-rechazada";
             default -> "status-pendiente";
         };
     }
