@@ -94,6 +94,29 @@ class CancelacionTest {
         assertTrue(service.listarAvisosCancelacion(1,2).isEmpty());
     }
 
+    @Test void bloqueaLugarReservadoSinVinculo() throws Exception {
+        sql("UPDATE Evento SET id_lugar=NULL WHERE id_evento=1");
+        assertThrows(IllegalArgumentException.class,()->service.cancelarEvento(1,1,true));
+        comprobarOriginal();
+    }
+
+    @Test void bloqueaReservaDeUnProveedorDistinto() throws Exception {
+        sql("UPDATE Contratacion SET id_disponibilidad=2 WHERE id_contratacion=1");
+        assertThrows(IllegalArgumentException.class,()->service.cancelarEvento(1,1,true));
+        comprobarOriginal();
+    }
+
+    @Test void liberaReservaCompartidaSoloAlCancelarElUltimoEvento() throws Exception {
+        sql("UPDATE Evento SET id_lugar=1 WHERE id_evento=2");
+        sql("UPDATE Invitacion SET id_lugar=1 WHERE id_evento=2");
+        sql("INSERT INTO Contratacion (id_propuesta,id_evento,fecha_contratacion,estado,id_disponibilidad) VALUES (3,2,CURRENT_TIMESTAMP,'ACTIVA',1)");
+        service.cancelarEvento(1,1,true);
+        assertEquals("RESERVADO",valor("SELECT estado FROM Disponibilidad_Servicio WHERE id_disponibilidad=1"));
+        service.cancelarEvento(2,2,true);
+        assertEquals("DISPONIBLE",valor("SELECT estado FROM Disponibilidad_Servicio WHERE id_disponibilidad=1"));
+        assertEquals("DISPONIBLE",valor("SELECT estado FROM Lugar WHERE id_lugar=1"));
+    }
+
     private void comprobarOriginal() throws Exception {
         assertEquals("PLANEADO",valor("SELECT estado FROM Evento WHERE id_evento=1"));
         assertEquals("RESERVADO",valor("SELECT estado FROM Disponibilidad_Servicio WHERE id_disponibilidad=1"));
