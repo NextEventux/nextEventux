@@ -1,8 +1,12 @@
 package services;
 
 import entities.DisponibilidadServicio;
+import entities.ImagenServicio;
+import entities.PreguntaServicio;
 import entities.Servicio;
 import repositories.RepositoryDisponibilidadServicio;
+import repositories.RepositoryImagenServicio;
+import repositories.RepositoryPreguntaServicio;
 import repositories.RepositoryServicio;
 
 import java.util.Date;
@@ -13,14 +17,33 @@ public class ServiceProveedores {
 
     private RepositoryServicio repositoryServicio;
     private RepositoryDisponibilidadServicio repositoryDisponibilidadServicio;
+    private RepositoryImagenServicio repositoryImagenServicio;
+    private RepositoryPreguntaServicio repositoryPreguntaServicio;
 
     public ServiceProveedores(
             RepositoryServicio repositoryServicio,
             RepositoryDisponibilidadServicio repositoryDisponibilidadServicio) {
 
+        this(
+                repositoryServicio,
+                repositoryDisponibilidadServicio,
+                new RepositoryImagenServicio(),
+                new RepositoryPreguntaServicio());
+    }
+
+    public ServiceProveedores(
+            RepositoryServicio repositoryServicio,
+            RepositoryDisponibilidadServicio repositoryDisponibilidadServicio,
+            RepositoryImagenServicio repositoryImagenServicio,
+            RepositoryPreguntaServicio repositoryPreguntaServicio) {
+
         this.repositoryServicio = repositoryServicio;
         this.repositoryDisponibilidadServicio =
                 repositoryDisponibilidadServicio;
+        this.repositoryImagenServicio =
+                repositoryImagenServicio;
+        this.repositoryPreguntaServicio =
+                repositoryPreguntaServicio;
     }
 
     public void crearServicio(Servicio datos) {
@@ -176,6 +199,165 @@ public class ServiceProveedores {
 
         repositoryDisponibilidadServicio
                 .eliminarDisponibilidad(idDisponibilidad);
+    }
+
+
+    public void agregarImagenServicio(
+            int idProveedor,
+            int idServicio,
+            String ruta) {
+
+        validarServicioDelProveedor(
+                idServicio,
+                idProveedor);
+
+        if (ruta == null || ruta.isBlank()) {
+            throw new IllegalArgumentException(
+                    "La ruta de la imagen es obligatoria.");
+        }
+
+        ImagenServicio imagen =
+                new ImagenServicio();
+
+        imagen.setIdServicio(idServicio);
+        imagen.setRuta(ruta);
+
+        int orden =
+                repositoryImagenServicio
+                        .listarImagenesServicio(idServicio)
+                        .size() + 1;
+
+        imagen.setOrdenImagen(orden);
+
+        repositoryImagenServicio
+                .guardarImagen(imagen);
+    }
+
+    public void eliminarImagenServicio(
+            int idProveedor,
+            int idImagen) {
+
+        ImagenServicio imagen =
+                repositoryImagenServicio
+                        .buscarImagen(idImagen);
+
+        if (imagen == null) {
+            throw new IllegalArgumentException(
+                    "La imagen no existe.");
+        }
+
+        validarServicioDelProveedor(
+                imagen.getIdServicio(),
+                idProveedor);
+
+        repositoryImagenServicio
+                .eliminarImagen(idImagen);
+    }
+
+    public List<ImagenServicio> listarImagenesServicio(
+            int idServicio) {
+
+        return repositoryImagenServicio
+                .listarImagenesServicio(idServicio);
+    }
+
+    public void formularPreguntaPublica(
+            int idServicio,
+            int idOrganizador,
+            String texto) {
+
+        Servicio servicio =
+                repositoryServicio
+                        .buscarServicio(idServicio);
+
+        if (servicio == null) {
+            throw new IllegalArgumentException(
+                    "El servicio no existe.");
+        }
+
+        if (!"DISPONIBLE".equalsIgnoreCase(
+                servicio.getEstado())) {
+
+            throw new IllegalStateException(
+                    "Solo se pueden hacer preguntas sobre servicios publicados.");
+        }
+
+        if (texto == null || texto.isBlank()) {
+            throw new IllegalArgumentException(
+                    "La pregunta es obligatoria.");
+        }
+
+        PreguntaServicio pregunta =
+                new PreguntaServicio();
+
+        pregunta.setIdServicio(idServicio);
+        pregunta.setIdOrganizador(idOrganizador);
+        pregunta.setPregunta(texto.trim());
+        pregunta.setFechaPregunta(
+                java.time.LocalDateTime.now());
+        pregunta.setEstado("PENDIENTE");
+
+        repositoryPreguntaServicio
+                .guardarPregunta(pregunta);
+    }
+
+    public void responderPreguntaPublica(
+            int idProveedor,
+            int idPregunta,
+            String respuesta) {
+
+        PreguntaServicio pregunta =
+                repositoryPreguntaServicio
+                        .buscarPregunta(idPregunta);
+
+        if (pregunta == null) {
+            throw new IllegalArgumentException(
+                    "La pregunta no existe.");
+        }
+
+        validarServicioDelProveedor(
+                pregunta.getIdServicio(),
+                idProveedor);
+
+        if (respuesta == null
+                || respuesta.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "La respuesta es obligatoria.");
+        }
+
+        repositoryPreguntaServicio
+                .responderPregunta(
+                        idPregunta,
+                        respuesta.trim());
+    }
+
+    public List<PreguntaServicio> listarPreguntasPublicas(
+            int idServicio) {
+
+        return repositoryPreguntaServicio
+                .listarPreguntasServicio(idServicio);
+    }
+
+    private void validarServicioDelProveedor(
+            int idServicio,
+            int idProveedor) {
+
+        Servicio servicio =
+                repositoryServicio
+                        .buscarServicio(idServicio);
+
+        if (servicio == null) {
+            throw new IllegalArgumentException(
+                    "El servicio no existe.");
+        }
+
+        if (servicio.getIdProveedor()
+                != idProveedor) {
+
+            throw new IllegalStateException(
+                    "El servicio no pertenece al proveedor.");
+        }
     }
 
     private void validarServicioParaPublicar(

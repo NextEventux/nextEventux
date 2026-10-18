@@ -1,6 +1,8 @@
 package controllers;
 
 import entities.DisponibilidadServicio;
+import entities.ImagenServicio;
+import entities.PreguntaServicio;
 import entities.Servicio;
 import services.ServiceProveedores;
 
@@ -78,4 +80,62 @@ public class ControllerProveedores {
         serviceProveedores
                 .eliminarDisponibilidad(idDisponibilidad);
     }
+
+    public void agregarImagenServicio(
+            int idProveedor,
+            int idServicio,
+            String ruta) {
+
+        serviceProveedores.agregarImagenServicio(
+                idProveedor,
+                idServicio,
+                ruta);
+    }
+
+    public void eliminarImagenServicio(
+            int idProveedor,
+            int idImagen) {
+
+        serviceProveedores.eliminarImagenServicio(
+                idProveedor,
+                idImagen);
+    }
+
+    public List<ImagenServicio> listarImagenesServicio(
+            int idServicio) {
+
+        return serviceProveedores
+                .listarImagenesServicio(idServicio);
+    }
+
+    public void formularPreguntaPublica(
+            int idServicio,
+            int idOrganizador,
+            String pregunta) {
+
+        serviceProveedores.formularPreguntaPublica(
+                idServicio,
+                idOrganizador,
+                pregunta);
+    }
+
+    public void responderPreguntaPublica(
+            int idProveedor,
+            int idPregunta,
+            String respuesta) {
+
+        serviceProveedores.responderPreguntaPublica(
+                idProveedor,
+                idPregunta,
+                respuesta);
+    }
+
+    public List<PreguntaServicio> listarPreguntasPublicas(
+            int idServicio) {
+
+        return serviceProveedores
+                .listarPreguntasPublicas(idServicio);
+    }
+
+
 }
