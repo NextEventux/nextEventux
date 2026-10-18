@@ -1,8 +1,6 @@
 .root { -fx-font-family: "System"; -fx-font-size: 13px; -fx-text-fill: #252638; -fx-background-color: #F8F9FC; }
 .label { -fx-text-fill: #252638; }
 .sidebar { -fx-background-color: white; -fx-border-color: transparent #E8E9EF transparent transparent; -fx-padding: 28 18; }
-.brand-icon { -fx-font-size: 42px; -fx-text-fill: #D71920; }
-.brand { -fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #D71920; }
 .brand-caption { -fx-font-size: 11px; -fx-text-fill: #858899; }
 .menu-title { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #A0A3B0; -fx-padding: 0 15 15 15; }
 .menu-item { -fx-padding: 14 17; -fx-font-size: 14px; -fx-text-fill: #626578; -fx-background-radius: 11; }

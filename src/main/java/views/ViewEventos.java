@@ -3,6 +3,9 @@ package views;
 import controllers.ControllerEventos;
 import entities.Evento;
 import javafx.geometry.Insets;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
@@ -121,8 +124,16 @@ public class ViewEventos {
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
-        VBox marca = new VBox(5, etiqueta("🎪", "brand-icon"), etiqueta("nextEventux", "brand"),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        ImageView logo = new ImageView(new Image(
+                getClass().getResource("/images/nexteventux-logo.png").toExternalForm()));
+        // Excluir el margen blanco al mostrar la imagen, sin modificar el archivo original.
+        logo.setViewport(new Rectangle2D(75, 225, 1110, 725));
+        logo.setFitWidth(210);
+        logo.setFitHeight(138);
+        logo.setPreserveRatio(true);
+        logo.setSmooth(true);
+        logo.setAccessibleText("Logo de NextEventux");
+        VBox marca = new VBox(5, logo, etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
         marca.setAlignment(Pos.CENTER);
         VBox.setMargin(marca, new Insets(0, 0, 38, 0));
         menu.getChildren().addAll(marca, etiqueta("MENÚ PRINCIPAL", "menu-title"));
