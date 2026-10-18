@@ -17,6 +17,10 @@ public class ControllerEventos {
         return serviceEventos.listarOrganizadores();
     }
 
+    public List<Evento> listarEventos(int organizador) { return serviceEventos.listarEventos(organizador); }
+    public void cancelarEvento(int evento, int organizador, boolean confirmado) { serviceEventos.cancelarEvento(evento, organizador, confirmado); }
+    public List<String> listarAvisosCancelacion(int evento, int organizador) { return serviceEventos.listarAvisosCancelacion(evento, organizador); }
+
     public void crearEvento(Evento datos) {
         serviceEventos.crearEvento(datos);
     }
