@@ -1,9 +1,25 @@
 package views;
 
+import controllers.ControllerInvitados;
+import entities.Evento;
+import entities.Invitacion;
+import entities.Invitado;
+import entities.Lugar;
+import java.net.URL;
+import java.text.Normalizer;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -13,55 +29,45 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import java.net.URL;
-import java.text.Normalizer;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 
 /**
- * CU17 - Gestionar invitaciones.
+ * CU-17 - Gestionar invitaciones del evento.
  *
  * Sigue el mismo patrón que ViewEventos: no extiende Application; construye la
  * pantalla en crearPantalla() y quien la abre la pone en una Scene.
- *
- * Por ahora trabaja con datos mock (ver cargarDatosMock()). Cuando exista
- * ControllerInvitados, ese método se reemplaza por la consulta al controlador
- * (View -> Controller -> Service -> Repository -> H2). Esta clase no contiene SQL.
+ * Los datos llegan de H2 por ControllerInvitados -> ServiceInvitados -> Repository.
+ * Esta clase no contiene SQL ni reglas de negocio.
  */
-public class ViewInvitados {
+public final class ViewInvitados {
 
     private static final String CSS = "/styles/invitados.css";
-    private static final String LOGO = "/images/logo-carpa.png";
-    private static final String TODOS = "Todos los eventos";
+    private static final String LOGO = "/images/logo-nexteventux.png";
     private static final double ANCHO_PANEL = 270;
     /** Ancho de ventana desde el cual el panel derecho va al lado de la tabla. */
     private static final double ANCHO_PANEL_LATERAL = 1400;
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FORMATO_FECHA_LARGA =
+            DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("es-CO"));
 
-    /** Fila de la tabla. Refleja las columnas de la tabla Invitacion más los nombres a mostrar. */
-    public record FilaInvitacion(int idInvitacion, int idEvento, String nombreEvento, int idLugar,
-                                 String nombreLugar, LocalDateTime fechaEnvio, String mensaje,
-                                 String estadoRespuesta) {
+    /** Fila de la tabla: la invitación con el nombre del lugar y sus asistentes. */
+    public record FilaInvitacion(Invitacion invitacion, String nombreLugar, int asistentes) {
+        int id() { return invitacion.getIdInvitacion(); }
+        String estado() { return invitacion.getEstadoRespuesta() == null ? "" : invitacion.getEstadoRespuesta(); }
+        boolean activa() { return invitacion.estaActiva(); }
     }
 
-    /** Datos del evento que se muestran en el panel lateral. */
-    public record DetalleEvento(int idEvento, String nombre, String fecha, String lugar, String asistentes) {
-    }
+    private final ControllerInvitados controller;
 
-    private final ObservableList<FilaInvitacion> invitaciones = FXCollections.observableArrayList();
-    private final FilteredList<FilaInvitacion> filtradas = new FilteredList<>(invitaciones, fila -> true);
-    private final ObservableList<DetalleEvento> eventos = FXCollections.observableArrayList();
+    private final ObservableList<FilaInvitacion> filas = FXCollections.observableArrayList();
+    private final FilteredList<FilaInvitacion> filtradas = new FilteredList<>(filas, fila -> true);
+    private final Map<Integer, Lugar> lugares = new HashMap<>();
 
-    private final ComboBox<String> selectorEvento = new ComboBox<>();
+    private final ComboBox<Evento> selectorEvento = new ComboBox<>();
     private final TextField buscador = new TextField();
     private final TableView<FilaInvitacion> tabla = new TableView<>(filtradas);
     private final Label cantidadRegistros = new Label();
+    private final Label mensaje = new Label();
 
     private final Label totalValor = new Label("0");
     private final Label enviadasValor = new Label("0");
@@ -71,18 +77,21 @@ public class ViewInvitados {
     private final Label detalleNombre = new Label();
     private final Label detalleFecha = new Label();
     private final Label detalleLugar = new Label();
-    private final Label detalleAsistentes = new Label();
+    private final Label detalleAforo = new Label();
 
-    public ViewInvitados() {
-        cargarDatosMock();
+    public ViewInvitados(ControllerInvitados controller) {
+        this.controller = controller;
 
         selectorEvento.setId("selectorEvento");
-        selectorEvento.getItems().add(TODOS);
-        for (DetalleEvento evento : eventos) selectorEvento.getItems().add(evento.nombre());
-        selectorEvento.getSelectionModel().selectFirst();
+        selectorEvento.setPromptText("Selecciona un evento");
         selectorEvento.setPrefWidth(280);
         selectorEvento.setMinWidth(200);
-        selectorEvento.valueProperty().addListener((obs, anterior, actual) -> actualizarVista());
+        selectorEvento.setConverter(new StringConverter<>() {
+            @Override public String toString(Evento evento) { return evento == null ? "" : evento.getNombre(); }
+            @Override public Evento fromString(String texto) { return null; }
+        });
+        selectorEvento.setPlaceholder(new Label("No hay eventos registrados"));
+        selectorEvento.valueProperty().addListener((obs, anterior, actual) -> cargarInvitaciones());
 
         buscador.setId("buscador");
         buscador.setPromptText("Buscar invitación...");
@@ -90,28 +99,13 @@ public class ViewInvitados {
         buscador.setMinWidth(150);
         buscador.textProperty().addListener((obs, anterior, actual) -> actualizarVista());
 
+        mensaje.setId("mensaje");
+        mensaje.setWrapText(true);
+        mensaje.setVisible(false);
+        mensaje.setManaged(false);
+
         cantidadRegistros.setId("cantidadRegistros");
         configurarTabla();
-        actualizarVista();
-    }
-
-    // ------------------------------------------------------------------
-    // Datos mock: punto único a reemplazar por ControllerInvitados.
-    // ------------------------------------------------------------------
-    private void cargarDatosMock() {
-        eventos.setAll(
-                new DetalleEvento(1, "Festival NextEventux", "20 de octubre de 2026", "Bogotá, Colombia", "500"),
-                new DetalleEvento(2, "Baby Shower de Valentina", "Por confirmar", "Bogotá, Colombia", "Por confirmar"));
-        invitaciones.setAll(
-                new FilaInvitacion(1, 1, "Festival NextEventux", 1, "Bogotá, Colombia",
-                        LocalDateTime.of(2026, 10, 20, 10, 0),
-                        "Te invitamos a celebrar con nosotros este día especial.", "ENVIADA"),
-                new FilaInvitacion(2, 1, "Festival NextEventux", 1, "Bogotá, Colombia",
-                        LocalDateTime.of(2026, 10, 20, 15, 0),
-                        "Esperamos contar contigo en nuestra gran celebración.", "ENVIADA"),
-                new FilaInvitacion(3, 2, "Baby Shower de Valentina", 1, "Bogotá, Colombia",
-                        LocalDateTime.of(2026, 11, 1, 9, 0),
-                        "Acompáñanos en el baby shower de Valentina.", "ENVIADA"));
     }
 
     // ------------------------------------------------------------------
@@ -143,8 +137,8 @@ public class ViewInvitados {
         VBox tarjetaDetalles = crearTarjetaDetalles();
         VBox tarjetaAcciones = crearTarjetaAcciones();
         VBox tarjetaInfo = informacion("Información importante",
-                "Las invitaciones podrán enviarse a los invitados y su estado de respuesta se actualizará "
-                        + "cuando confirmen o rechacen la invitación.");
+                "Cada invitado puede tener una sola invitación activa por evento y el total de invitados y "
+                        + "acompañantes no puede superar el aforo del lugar. Revocar una invitación libera sus cupos.");
         tarjetaInfo.getStyleClass().add("highlight");
         Region[] tarjetasPanel = {tarjetaDetalles, tarjetaAcciones, tarjetaInfo};
 
@@ -162,7 +156,7 @@ public class ViewInvitados {
         ColumnConstraints derecha = new ColumnConstraints(ANCHO_PANEL);
 
         GridPane estadisticas = crearEstadisticas();
-        contenido.getChildren().addAll(titulo, crearTarjetaEvento(), estadisticas, columnas);
+        contenido.getChildren().addAll(titulo, mensaje, crearTarjetaEvento(), estadisticas, columnas);
 
         StackPane centrado = new StackPane(contenido);
         centrado.setAlignment(Pos.TOP_CENTER);
@@ -217,6 +211,10 @@ public class ViewInvitados {
             sidebar.setVisible(actual.doubleValue() >= 1000);
             sidebar.setManaged(sidebar.isVisible());
         });
+        // Al mostrarse (también al volver desde otra pantalla del menú) se recargan los datos de H2.
+        raiz.sceneProperty().addListener((obs, anterior, actual) -> {
+            if (actual != null) recargar();
+        });
         return raiz;
     }
 
@@ -234,8 +232,7 @@ public class ViewInvitados {
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
-        VBox marca = new VBox(5, crearLogo(), etiqueta("nextEventux", "brand"),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        VBox marca = new VBox(10, crearLogo(), etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
         marca.setAlignment(Pos.CENTER);
         VBox.setMargin(marca, new Insets(0, 0, 38, 0));
         menu.getChildren().addAll(marca, etiqueta("MENÚ PRINCIPAL", "menu-title"));
@@ -256,7 +253,7 @@ public class ViewInvitados {
         return menu;
     }
 
-    /** Carpa del logo de NextEventux (misma identidad que la pantalla de eventos). */
+    /** Logo completo de NextEventux (carpa y nombre). */
     private Node crearLogo() {
         URL imagen = getClass().getResource(LOGO);
         if (imagen == null) {
@@ -264,7 +261,7 @@ public class ViewInvitados {
             return new Region();
         }
         ImageView logo = new ImageView(new Image(imagen.toExternalForm()));
-        logo.setFitWidth(76);
+        logo.setFitWidth(190);
         logo.setPreserveRatio(true);
         logo.setSmooth(true);
         return logo;
@@ -286,11 +283,8 @@ public class ViewInvitados {
         textos.setMinWidth(0);
         HBox.setHgrow(textos, Priority.ALWAYS);
 
-        Button nueva = new Button("+ Nueva invitación");
-        nueva.setId("nuevaInvitacion");
-        nueva.getStyleClass().add("btn-primary");
+        Button nueva = botonNuevaInvitacion("nuevaInvitacion");
         nueva.setMinWidth(Region.USE_PREF_SIZE);
-        nueva.setOnAction(e -> nuevaInvitacion());
 
         HBox fila = new HBox(16, etiqueta("▦", "heading-icon"), textos, selectorEvento, nueva);
         fila.setAlignment(Pos.CENTER_LEFT);
@@ -299,15 +293,24 @@ public class ViewInvitados {
         return tarjeta;
     }
 
+    private Button botonNuevaInvitacion(String id) {
+        Button nueva = new Button("+ Nueva invitación");
+        nueva.setId(id);
+        nueva.getStyleClass().add("btn-primary");
+        nueva.disableProperty().bind(selectorEvento.valueProperty().isNull());
+        nueva.setOnAction(e -> abrirFormularioInvitacion(null));
+        return nueva;
+    }
+
     private GridPane crearEstadisticas() {
         GridPane grid = new GridPane();
         grid.setHgap(20);
         grid.setVgap(20);
         grid.getChildren().addAll(
                 estadistica("Total invitaciones", totalValor, "Registradas", "▤"),
-                estadistica("Enviadas", enviadasValor, "Invitaciones enviadas", "➤"),
+                estadistica("Enviadas", enviadasValor, "Vigentes (no revocadas)", "➤"),
                 estadistica("Pendientes", pendientesValor, "Sin respuesta", "◷"),
-                estadistica("Respuestas", respuestasValor, "Con confirmación", "✓"));
+                estadistica("Respuestas", respuestasValor, "Aceptadas o rechazadas", "✓"));
         organizarEstadisticas(grid, true);
         return grid;
     }
@@ -358,28 +361,29 @@ public class ViewInvitados {
     }
 
     @SuppressWarnings("deprecation") // CONSTRAINED_RESIZE_POLICY sigue funcionando en JavaFX 17 y 21
+    private static void ajustarColumnas(TableView<?> tabla) {
+        tabla.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+    }
+
     private void configurarTabla() {
         tabla.setId("tablaInvitaciones");
-        tabla.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        ajustarColumnas(tabla);
         tabla.setFixedCellSize(58);
-        tabla.setPlaceholder(etiqueta("No hay invitaciones que coincidan con la búsqueda.", "muted"));
+        tabla.setPlaceholder(etiqueta("No hay invitaciones para mostrar.", "muted"));
         // La tabla crece con sus filas; el desplazamiento lo hace el ScrollPane de la página.
         tabla.prefHeightProperty().bind(Bindings.createDoubleBinding(
                 () -> 50 + 58.0 * Math.max(filtradas.size(), 2), filtradas));
         tabla.minHeightProperty().bind(tabla.prefHeightProperty());
         tabla.maxHeightProperty().bind(tabla.prefHeightProperty());
 
-        TableColumn<FilaInvitacion, Number> id = new TableColumn<>("ID");
-        id.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().idInvitacion()));
-        id.setMinWidth(40);
-        id.setPrefWidth(45);
-
-        TableColumn<FilaInvitacion, String> evento = columnaTexto("Evento", FilaInvitacion::nombreEvento, 110, 190);
-        TableColumn<FilaInvitacion, String> lugar = columnaTexto("Lugar", FilaInvitacion::nombreLugar, 90, 130);
+        TableColumn<FilaInvitacion, String> id = columnaTexto("ID", fila -> String.valueOf(fila.id()), 40, 45);
+        TableColumn<FilaInvitacion, String> texto = columnaTexto("Mensaje",
+                fila -> fila.invitacion().getMensaje() == null ? "" : fila.invitacion().getMensaje(), 95, 180);
+        TableColumn<FilaInvitacion, String> lugar = columnaTexto("Lugar", FilaInvitacion::nombreLugar, 90, 115);
         TableColumn<FilaInvitacion, String> fecha = columnaTexto("Fecha de envío",
-                fila -> fila.fechaEnvio().format(FORMATO_FECHA), 95, 130);
+                fila -> fila.invitacion().getFechaEnvio().format(FORMATO_FECHA), 108, 115);
 
-        TableColumn<FilaInvitacion, String> estado = columnaTexto("Estado", FilaInvitacion::estadoRespuesta, 95, 100);
+        TableColumn<FilaInvitacion, String> estado = columnaTexto("Estado", FilaInvitacion::estado, 95, 100);
         estado.setCellFactory(col -> new TableCell<>() {
             private final Label pill = new Label();
             { pill.setMinWidth(Region.USE_PREF_SIZE); }
@@ -398,43 +402,49 @@ public class ViewInvitados {
         });
 
         TableColumn<FilaInvitacion, FilaInvitacion> acciones = new TableColumn<>("Acciones");
-        acciones.setCellValueFactory(c -> new javafx.beans.property.SimpleObjectProperty<>(c.getValue()));
-        acciones.setMinWidth(170);
-        acciones.setPrefWidth(170);
+        acciones.setCellValueFactory(c -> new SimpleObjectProperty<>(c.getValue()));
+        acciones.setMinWidth(282);
+        acciones.setPrefWidth(282);
         acciones.setSortable(false);
         acciones.setCellFactory(col -> new TableCell<>() {
+            private final Button invitados = new Button("Invitados");
             private final Button editar = new Button("Editar");
-            private final Button eliminar = new Button("Eliminar");
-            private final HBox caja = new HBox(8, editar, eliminar);
+            private final Button revocar = new Button("Revocar");
+            private final HBox caja = new HBox(6, invitados, editar, revocar);
             {
+                invitados.getStyleClass().addAll("btn-secondary", "btn-small");
                 editar.getStyleClass().addAll("btn-secondary", "btn-small");
-                eliminar.getStyleClass().addAll("btn-danger", "btn-small");
-                editar.setMinWidth(Region.USE_PREF_SIZE);
-                eliminar.setMinWidth(Region.USE_PREF_SIZE);
+                revocar.getStyleClass().addAll("btn-danger", "btn-small");
+                for (Button boton : new Button[]{invitados, editar, revocar}) boton.setMinWidth(Region.USE_PREF_SIZE);
                 caja.setAlignment(Pos.CENTER_LEFT);
-                editar.setOnAction(e -> editarInvitacion(getItem()));
-                eliminar.setOnAction(e -> eliminarInvitacion(getItem()));
+                invitados.setOnAction(e -> abrirInvitados(getItem()));
+                editar.setOnAction(e -> abrirFormularioInvitacion(getItem()));
+                revocar.setOnAction(e -> revocar(getItem()));
             }
             @Override
             protected void updateItem(FilaInvitacion fila, boolean vacio) {
                 super.updateItem(fila, vacio);
+                if (!vacio && fila != null) {
+                    invitados.setText("Invitados (" + fila.asistentes() + ")");
+                    editar.setDisable(!fila.activa());
+                    revocar.setDisable(!fila.activa());
+                }
                 setGraphic(vacio || fila == null ? null : caja);
                 setText(null);
             }
         });
 
-        tabla.getColumns().addAll(java.util.List.of(id, evento, lugar, fecha, estado, acciones));
+        tabla.getColumns().addAll(List.of(id, texto, lugar, fecha, estado, acciones));
     }
 
-    private TableColumn<FilaInvitacion, String> columnaTexto(String titulo,
-            java.util.function.Function<FilaInvitacion, String> valor, double min, double pref) {
-        TableColumn<FilaInvitacion, String> columna = new TableColumn<>(titulo);
-        columna.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(valor.apply(c.getValue())));
+    private <T> TableColumn<T, String> columnaTexto(String titulo, Function<T, String> valor, double min, double pref) {
+        TableColumn<T, String> columna = new TableColumn<>(titulo);
+        columna.setCellValueFactory(c -> new SimpleStringProperty(valor.apply(c.getValue())));
         columna.setMinWidth(min);
         columna.setPrefWidth(pref);
         // Si la columna queda angosta, el texto baja a una segunda línea en vez de cortarse con "...".
         columna.setCellFactory(col -> {
-            TableCell<FilaInvitacion, String> celda = new TableCell<>() {
+            TableCell<T, String> celda = new TableCell<>() {
                 @Override
                 protected void updateItem(String texto, boolean vacio) {
                     super.updateItem(texto, vacio);
@@ -450,17 +460,18 @@ public class ViewInvitados {
     private VBox crearTarjetaDetalles() {
         detalleNombre.getStyleClass().add("section-title");
         detalleNombre.setWrapText(true);
+        detalleAforo.setId("detalleAforo");
         Button ver = new Button("Ver detalles del evento");
         ver.setId("verDetallesEvento");
         ver.getStyleClass().add("btn-secondary");
         ver.setMaxWidth(Double.MAX_VALUE);
         ver.setWrapText(true);
-        ver.setOnAction(e -> mostrarAviso("Detalles del evento",
-                "Próximamente podrás ver toda la información de \"" + eventoMostrado().nombre() + "\"."));
+        ver.disableProperty().bind(selectorEvento.valueProperty().isNull());
+        ver.setOnAction(e -> mostrarDetalleEvento());
         VBox tarjeta = new VBox(14, etiqueta("Detalles del evento", "card-title"), detalleNombre,
                 filaResumen("Fecha", detalleFecha), new Separator(),
                 filaResumen("Lugar", detalleLugar), new Separator(),
-                filaResumen("Asistentes", detalleAsistentes), ver);
+                filaResumen("Aforo", detalleAforo), ver);
         tarjeta.getStyleClass().add("info-card");
         return tarjeta;
     }
@@ -468,79 +479,131 @@ public class ViewInvitados {
     private VBox crearTarjetaAcciones() {
         Label texto = etiqueta("Gestiona las invitaciones de manera rápida y sencilla.", "muted");
         texto.setWrapText(true);
-        Button nueva = new Button("+ Nueva invitación");
-        nueva.setId("nuevaInvitacionRapida");
-        nueva.getStyleClass().add("btn-primary");
+        Button nueva = botonNuevaInvitacion("nuevaInvitacionRapida");
         nueva.setMaxWidth(Double.MAX_VALUE);
-        nueva.setOnAction(e -> nuevaInvitacion());
-        Button importar = new Button("Importar lista");
-        importar.setId("importarLista");
-        importar.getStyleClass().add("btn-secondary");
-        importar.setMaxWidth(Double.MAX_VALUE);
-        importar.setOnAction(e -> mostrarAviso("Importar lista",
-                "La importación de listas de invitados estará disponible próximamente."));
-        VBox tarjeta = new VBox(14, etiqueta("Acciones rápidas", "card-title"), texto, nueva, importar);
+        VBox tarjeta = new VBox(14, etiqueta("Acciones rápidas", "card-title"), texto, nueva);
         tarjeta.getStyleClass().add("info-card");
         return tarjeta;
+    }
+
+    // ------------------------------------------------------------------
+    // Carga de datos (Controller)
+    // ------------------------------------------------------------------
+    /** Recarga eventos y lugares conservando el evento seleccionado. */
+    public void recargar() {
+        try {
+            Integer seleccionado = selectorEvento.getValue() == null ? null : selectorEvento.getValue().getIdEvento();
+            lugares.clear();
+            for (Lugar lugar : controller.listarLugares()) lugares.put(lugar.getIdLugar(), lugar);
+            List<Evento> eventos = controller.listarEventos();
+            selectorEvento.getItems().setAll(eventos);
+            Evento elegir = eventos.stream().filter(e -> e.getIdEvento().equals(seleccionado)).findFirst()
+                    .orElse(eventos.isEmpty() ? null : eventos.get(0));
+            if (elegir == selectorEvento.getValue()) cargarInvitaciones();
+            else selectorEvento.setValue(elegir);
+        } catch (IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
+        }
+    }
+
+    private void cargarInvitaciones() {
+        Evento evento = selectorEvento.getValue();
+        if (evento == null) {
+            filas.clear();
+            actualizarVista();
+            return;
+        }
+        try {
+            Map<Integer, Integer> asistentes = controller.contarAsistentesPorInvitacion(evento.getIdEvento());
+            filas.setAll(controller.listarInvitaciones(evento.getIdEvento()).stream()
+                    .map(inv -> new FilaInvitacion(inv, nombreLugar(inv.getIdLugar()),
+                            asistentes.getOrDefault(inv.getIdInvitacion(), 0)))
+                    .toList());
+        } catch (IllegalStateException e) {
+            filas.clear();
+            mostrarMensaje(e.getMessage(), false);
+        }
+        actualizarVista();
     }
 
     // ------------------------------------------------------------------
     // Comportamiento
     // ------------------------------------------------------------------
     private void actualizarVista() {
-        String eventoElegido = selectorEvento.getValue();
         String[] palabras = normalizar(buscador.getText()).split("\\s+");
-        filtradas.setPredicate(fila -> perteneceAlEvento(fila, eventoElegido) && coincide(fila, palabras));
+        filtradas.setPredicate(fila -> coincide(fila, palabras));
 
         int n = filtradas.size();
         cantidadRegistros.setText(n + (n == 1 ? " registro" : " registros"));
 
-        int total = 0, enviadas = 0, pendientes = 0, respuestas = 0;
-        for (FilaInvitacion fila : invitaciones) {
-            if (!perteneceAlEvento(fila, eventoElegido)) continue;
-            total++;
-            String estado = fila.estadoRespuesta() == null ? "" : fila.estadoRespuesta().toUpperCase(Locale.ROOT);
-            switch (estado) {
-                case "ENVIADA" -> enviadas++;
-                case "PENDIENTE" -> pendientes++;
-                case "CONFIRMADA", "ACEPTADA", "RECHAZADA" -> respuestas++;
+        int enviadas = 0, pendientes = 0, respuestas = 0;
+        for (FilaInvitacion fila : filas) {
+            if (!fila.activa()) continue;
+            enviadas++;
+            switch (fila.estado().toUpperCase(Locale.ROOT)) {
+                case Invitacion.ESTADO_ENVIADA -> pendientes++;
+                case Invitacion.ESTADO_ACEPTADA, Invitacion.ESTADO_RECHAZADA -> respuestas++;
                 default -> { }
             }
         }
-        totalValor.setText(String.valueOf(total));
+        totalValor.setText(String.valueOf(filas.size()));
         enviadasValor.setText(String.valueOf(enviadas));
         pendientesValor.setText(String.valueOf(pendientes));
         respuestasValor.setText(String.valueOf(respuestas));
+        actualizarDetalle();
+    }
 
-        DetalleEvento evento = eventoMostrado();
-        detalleNombre.setText(evento.nombre());
-        detalleFecha.setText(evento.fecha());
-        detalleLugar.setText(evento.lugar());
-        detalleAsistentes.setText(evento.asistentes());
+    private void actualizarDetalle() {
+        Evento evento = selectorEvento.getValue();
+        if (evento == null) {
+            detalleNombre.setText("Sin eventos");
+            detalleFecha.setText("-");
+            detalleLugar.setText("-");
+            detalleAforo.setText("-");
+            return;
+        }
+        detalleNombre.setText(evento.getNombre());
+        detalleFecha.setText(evento.getFechaInicio().format(FORMATO_FECHA_LARGA));
+        detalleLugar.setText(evento.getUbicacion() == null || evento.getUbicacion().isBlank() ? "-" : evento.getUbicacion());
+        Lugar lugar = lugarPrincipal(evento);
+        if (lugar == null) {
+            detalleAforo.setText("Sin lugar asignado");
+            return;
+        }
+        try {
+            int ocupados = controller.contarAsistentes(evento.getIdEvento(), lugar.getIdLugar());
+            detalleAforo.setText(ocupados + " de " + lugar.getCapacidad());
+        } catch (IllegalStateException e) {
+            detalleAforo.setText("-");
+        }
+    }
+
+    /** Lugar del evento: el registrado con el nombre de su ubicación o, si no, el de su primera invitación vigente. */
+    private Lugar lugarPrincipal(Evento evento) {
+        Lugar porNombre = lugarPorNombre(evento.getUbicacion());
+        if (porNombre != null) return porNombre;
+        return filas.stream().filter(FilaInvitacion::activa).map(f -> lugares.get(f.invitacion().getIdLugar()))
+                .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+    }
+
+    private Lugar lugarPorNombre(String nombre) {
+        if (nombre == null) return null;
+        String buscado = normalizar(nombre);
+        return lugares.values().stream().filter(l -> normalizar(l.getNombre()).equals(buscado)).findFirst().orElse(null);
     }
 
     /** Cada palabra escrita debe aparecer en algún dato de la invitación. */
     private boolean coincide(FilaInvitacion fila, String[] palabras) {
-        String texto = normalizar(textoBuscable(fila));
+        String texto = normalizar(fila.id() + " " + fila.nombreLugar() + " "
+                + fila.invitacion().getFechaEnvio().format(FORMATO_FECHA) + " " + fila.estado() + " "
+                + (fila.invitacion().getMensaje() == null ? "" : fila.invitacion().getMensaje()));
         for (String palabra : palabras) if (!palabra.isEmpty() && !texto.contains(palabra)) return false;
         return true;
     }
 
-    private boolean perteneceAlEvento(FilaInvitacion fila, String evento) {
-        return evento == null || TODOS.equals(evento) || evento.equals(fila.nombreEvento());
-    }
-
-    /** Evento del panel lateral: el seleccionado, o el primero si se ven todos. */
-    private DetalleEvento eventoMostrado() {
-        String elegido = selectorEvento.getValue();
-        for (DetalleEvento evento : eventos) if (evento.nombre().equals(elegido)) return evento;
-        return eventos.get(0);
-    }
-
-    private String textoBuscable(FilaInvitacion fila) {
-        return fila.idInvitacion() + " " + fila.nombreEvento() + " " + fila.nombreLugar() + " "
-                + fila.fechaEnvio().format(FORMATO_FECHA) + " " + fila.estadoRespuesta() + " "
-                + (fila.mensaje() == null ? "" : fila.mensaje());
+    private String nombreLugar(int idLugar) {
+        Lugar lugar = lugares.get(idLugar);
+        return lugar == null ? "Lugar #" + idLugar : lugar.getNombre();
     }
 
     /** Minúsculas y sin tildes, para que "bogota" encuentre "Bogotá". */
@@ -552,37 +615,298 @@ public class ViewInvitados {
 
     private static String claseEstado(String estado) {
         return switch (estado.toUpperCase(Locale.ROOT)) {
-            case "ENVIADA" -> "status-enviada";
-            case "CONFIRMADA", "ACEPTADA" -> "status-confirmada";
-            case "RECHAZADA" -> "status-rechazada";
+            case Invitacion.ESTADO_ENVIADA -> "status-enviada";
+            case "CONFIRMADA", "CONFIRMADO", Invitacion.ESTADO_ACEPTADA -> "status-confirmada";
+            case Invitacion.ESTADO_RECHAZADA -> "status-rechazada";
+            case Invitacion.ESTADO_REVOCADA -> "status-revocada";
             default -> "status-pendiente";
         };
     }
 
-    private void nuevaInvitacion() {
-        String evento = selectorEvento.getValue();
-        String destino = evento == null || TODOS.equals(evento) ? "el evento que elijas" : "\"" + evento + "\"";
-        mostrarAviso("Nueva invitación",
-                "El formulario para crear una invitación para " + destino + " estará disponible próximamente.");
+    // ------------------------------------------------------------------
+    // Crear / editar invitación
+    // ------------------------------------------------------------------
+    /** Con fila nula crea una invitación nueva; con fila, edita su lugar y mensaje. */
+    private void abrirFormularioInvitacion(FilaInvitacion fila) {
+        Evento evento = selectorEvento.getValue();
+        if (evento == null) return;
+        boolean nueva = fila == null;
+
+        ComboBox<Lugar> lugar = new ComboBox<>(FXCollections.observableArrayList(lugares.values().stream()
+                .sorted(java.util.Comparator.comparing(Lugar::getNombre)).toList()));
+        lugar.setId("formLugar");
+        lugar.setMaxWidth(Double.MAX_VALUE);
+        lugar.setPromptText("Selecciona un lugar");
+        lugar.setValue(nueva ? lugarPorNombre(evento.getUbicacion()) : lugares.get(fila.invitacion().getIdLugar()));
+
+        TextArea texto = new TextArea(nueva ? "" : fila.invitacion().getMensaje());
+        texto.setId("formMensaje");
+        texto.setPromptText("Ej. Te invitamos a celebrar con nosotros este día especial.");
+        texto.setWrapText(true);
+        texto.setPrefRowCount(4);
+        Label contador = etiqueta("", "hint");
+        contador.textProperty().bind(Bindings.createStringBinding(
+                () -> texto.getText().length() + " / 500 caracteres", texto.textProperty()));
+        Label error = mensajeDialogo();
+
+        Label explicacion = etiqueta(nueva ? "La invitación quedará registrada como ENVIADA con la fecha y hora actuales."
+                : "Invitación #" + fila.id() + " enviada el "
+                + fila.invitacion().getFechaEnvio().format(FORMATO_FECHA) + ".", "muted");
+        explicacion.setWrapText(true);
+        explicacion.setMinHeight(Region.USE_PREF_SIZE);
+        VBox contenido = new VBox(14, explicacion,
+                grupo("Evento", etiqueta(evento.getNombre(), "summary-value")),
+                grupo("Lugar *", lugar),
+                grupo("Mensaje *", texto, contador),
+                error);
+        contenido.setPrefWidth(460);
+
+        Dialog<ButtonType> dialogo = crearDialogo(nueva ? "Nueva invitación" : "Editar invitación", contenido);
+        ButtonType guardar = new ButtonType(nueva ? "Crear y enviar" : "Guardar cambios", ButtonBar.ButtonData.OK_DONE);
+        dialogo.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, guardar);
+        estilizarBotones(dialogo, guardar);
+
+        Invitacion datos = new Invitacion();
+        dialogo.getDialogPane().lookupButton(guardar).addEventFilter(ActionEvent.ACTION, e -> {
+            datos.setIdLugar(lugar.getValue() == null ? 0 : lugar.getValue().getIdLugar());
+            datos.setMensaje(texto.getText());
+            try {
+                if (nueva) controller.crearInvitacion(evento.getIdEvento(), datos);
+                else controller.actualizarInvitacion(fila.id(), datos);
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                mostrarError(error, ex.getMessage());
+                e.consume();
+            }
+        });
+
+        if (dialogo.showAndWait().filter(guardar::equals).isPresent()) {
+            cargarInvitaciones();
+            if (nueva) {
+                mostrarMensaje("Invitación #" + datos.getIdInvitacion() + " creada y enviada. Ahora agrega sus invitados.", true);
+                filas.stream().filter(f -> f.id() == datos.getIdInvitacion()).findFirst().ifPresent(this::abrirInvitados);
+            } else {
+                mostrarMensaje("Invitación #" + fila.id() + " actualizada.", true);
+            }
+        }
     }
 
-    private void editarInvitacion(FilaInvitacion fila) {
+    private void revocar(FilaInvitacion fila) {
         if (fila == null) return;
-        mostrarAviso("Editar invitación", "Seleccionaste la invitación #" + fila.idInvitacion() + ".\n\n"
-                + descripcion(fila));
+        Alert confirmar = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmar.setTitle("Revocar invitación");
+        confirmar.setHeaderText("¿Revocar la invitación #" + fila.id() + "?");
+        confirmar.setContentText("Sus " + fila.asistentes() + " asistentes dejarán de contar para el aforo "
+                + "y la invitación no se podrá volver a editar.");
+        prepararDialogo(confirmar);
+        ButtonType revocar = new ButtonType("Revocar", ButtonBar.ButtonData.OK_DONE);
+        confirmar.getButtonTypes().setAll(ButtonType.CANCEL, revocar);
+        estilizarBotones(confirmar, revocar);
+        if (confirmar.showAndWait().filter(revocar::equals).isEmpty()) return;
+        try {
+            controller.revocarInvitacion(fila.id());
+            mostrarMensaje("Invitación #" + fila.id() + " revocada.", true);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
+        }
+        cargarInvitaciones();
     }
 
-    private void eliminarInvitacion(FilaInvitacion fila) {
+    // ------------------------------------------------------------------
+    // Invitados de una invitación
+    // ------------------------------------------------------------------
+    private void abrirInvitados(FilaInvitacion fila) {
         if (fila == null) return;
-        mostrarAviso("Eliminar invitación", "Seleccionaste para eliminar la invitación #" + fila.idInvitacion()
-                + ".\n\n" + descripcion(fila) + "\n\nLa eliminación real se habilitará al conectar la base de datos.");
+        Evento evento = selectorEvento.getValue();
+        Lugar lugar = lugares.get(fila.invitacion().getIdLugar());
+        ObservableList<Invitado> lista = FXCollections.observableArrayList();
+        Label aforo = etiqueta("", "summary-value");
+        Label error = mensajeDialogo();
+
+        TableView<Invitado> tablaInvitados = new TableView<>(lista);
+        tablaInvitados.setId("tablaInvitados");
+        tablaInvitados.setFixedCellSize(50);
+        tablaInvitados.setPrefHeight(50 + 50 * 4);
+        tablaInvitados.setPlaceholder(etiqueta("Esta invitación todavía no tiene invitados.", "muted"));
+        TableColumn<Invitado, Invitado> quitar = new TableColumn<>("");
+        quitar.setCellValueFactory(c -> new SimpleObjectProperty<>(c.getValue()));
+        quitar.setSortable(false);
+        quitar.setMinWidth(85);
+        quitar.setPrefWidth(85);
+
+        Runnable refrescar = () -> {
+            try {
+                lista.setAll(controller.listarInvitados(fila.id()));
+                aforo.setText(lugar == null ? "-" : controller.contarAsistentes(evento.getIdEvento(), lugar.getIdLugar())
+                        + " de " + lugar.getCapacidad() + " cupos ocupados en " + lugar.getNombre());
+            } catch (IllegalStateException e) {
+                mostrarError(error, e.getMessage());
+            }
+        };
+        quitar.setCellFactory(col -> new TableCell<>() {
+            private final Button boton = new Button("Quitar");
+            {
+                boton.getStyleClass().addAll("btn-danger", "btn-small");
+                boton.setOnAction(e -> {
+                    try {
+                        controller.quitarInvitado(getItem().getIdInvitado());
+                        error.setVisible(false);
+                        error.setManaged(false);
+                        refrescar.run();
+                    } catch (IllegalArgumentException | IllegalStateException ex) {
+                        mostrarError(error, ex.getMessage());
+                    }
+                });
+            }
+            @Override
+            protected void updateItem(Invitado invitado, boolean vacio) {
+                super.updateItem(invitado, vacio);
+                setGraphic(vacio || invitado == null || !fila.activa() ? null : boton);
+            }
+        });
+        ajustarColumnas(tablaInvitados);
+        tablaInvitados.getColumns().addAll(List.of(
+                this.<Invitado>columnaTexto("Nombre", Invitado::getNombre, 120, 150),
+                this.<Invitado>columnaTexto("Correo", Invitado::getCorreo, 140, 180),
+                this.<Invitado>columnaTexto("Teléfono", i -> i.getTelefono() == null ? "-" : i.getTelefono(), 90, 100),
+                this.<Invitado>columnaTexto("Estado", i -> i.getEstado() == null ? "-" : i.getEstado(), 90, 100),
+                quitar));
+
+        TextField nombre = campoDialogo("invNombre", "Nombre completo *");
+        TextField correo = campoDialogo("invCorreo", "correo@ejemplo.com *");
+        TextField telefono = campoDialogo("invTelefono", "Teléfono");
+        TextField direccion = campoDialogo("invDireccion", "Dirección");
+        Button agregar = new Button("Agregar invitado");
+        agregar.setId("agregarInvitado");
+        agregar.getStyleClass().add("btn-primary");
+        agregar.setDefaultButton(true);
+        agregar.setOnAction(e -> {
+            try {
+                controller.agregarInvitado(fila.id(), new Invitado(nombre.getText(), correo.getText(),
+                        telefono.getText(), direccion.getText()));
+                for (TextField campo : new TextField[]{nombre, correo, telefono, direccion}) campo.clear();
+                error.setVisible(false);
+                error.setManaged(false);
+                nombre.requestFocus();
+                refrescar.run();
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                mostrarError(error, ex.getMessage());
+            }
+        });
+        GridPane formulario = new GridPane();
+        formulario.setHgap(12);
+        formulario.setVgap(12);
+        for (int i = 0; i < 2; i++) {
+            ColumnConstraints columna = new ColumnConstraints();
+            columna.setPercentWidth(50);
+            formulario.getColumnConstraints().add(columna);
+        }
+        formulario.addRow(0, nombre, correo);
+        formulario.addRow(1, telefono, direccion);
+        HBox barraAgregar = new HBox(agregar);
+        barraAgregar.setAlignment(Pos.CENTER_RIGHT);
+        VBox agregarCaja = new VBox(12, etiqueta("Agregar invitado", "section-title"), formulario, barraAgregar);
+        if (!fila.activa()) {
+            agregarCaja = new VBox(etiqueta("La invitación fue revocada; ya no se pueden modificar sus invitados.", "muted"));
+        }
+
+        HBox resumen = new HBox(10, etiqueta("Aforo", "hint"), espacioHorizontal(), aforo);
+        resumen.setAlignment(Pos.CENTER_LEFT);
+        VBox contenido = new VBox(16,
+                etiqueta(evento.getNombre() + "  ·  " + (fila.invitacion().getMensaje() == null ? "" : fila.invitacion().getMensaje()), "muted"),
+                resumen, tablaInvitados, new Separator(), agregarCaja, error);
+        contenido.setPrefWidth(680);
+        ((Label) contenido.getChildren().get(0)).setWrapText(true);
+
+        Dialog<ButtonType> dialogo = crearDialogo("Invitados de la invitación #" + fila.id(), contenido);
+        dialogo.getDialogPane().getButtonTypes().add(new ButtonType("Cerrar", ButtonBar.ButtonData.CANCEL_CLOSE));
+        estilizarBotones(dialogo, null);
+        refrescar.run();
+        dialogo.showAndWait();
+        cargarInvitaciones();
     }
 
-    private String descripcion(FilaInvitacion fila) {
-        return "Evento: " + fila.nombreEvento() + "\nLugar: " + fila.nombreLugar()
-                + "\nFecha de envío: " + fila.fechaEnvio().format(FORMATO_FECHA)
-                + "\nEstado: " + fila.estadoRespuesta()
-                + "\nMensaje: " + (fila.mensaje() == null ? "-" : fila.mensaje());
+    // ------------------------------------------------------------------
+    // Mensajes y diálogos
+    // ------------------------------------------------------------------
+    private void mostrarDetalleEvento() {
+        Evento evento = selectorEvento.getValue();
+        if (evento == null) return;
+        mostrarAviso("Detalles del evento", evento.getNombre()
+                + "\n\nTipo: " + valor(evento.getTipo())
+                + "\nInicio: " + evento.getFechaInicio().format(FORMATO_FECHA)
+                + "\nFin: " + evento.getFechaFin().format(FORMATO_FECHA)
+                + "\nUbicación: " + valor(evento.getUbicacion())
+                + "\nEstado: " + valor(evento.getEstado())
+                + "\nInvitados iniciales: " + (evento.getInvitadosIniciales() == null ? "-" : evento.getInvitadosIniciales())
+                + "\nDescripción: " + valor(evento.getDescripcion()));
+    }
+
+    private static String valor(String texto) {
+        return texto == null || texto.isBlank() ? "-" : texto;
+    }
+
+    /** Mensaje de éxito o error debajo del título (equivalente a mostrarMensaje del diagrama de clases). */
+    public void mostrarMensaje(String texto, boolean exito) {
+        mensaje.setText(texto);
+        mensaje.getStyleClass().setAll("label", "message", exito ? "success" : "error");
+        mensaje.setVisible(true);
+        mensaje.setManaged(true);
+    }
+
+    private Label mensajeDialogo() {
+        Label error = new Label();
+        error.setWrapText(true);
+        error.setMinHeight(Region.USE_PREF_SIZE);
+        error.getStyleClass().setAll("label", "message", "error");
+        error.setVisible(false);
+        error.setManaged(false);
+        return error;
+    }
+
+    private void mostrarError(Label error, String texto) {
+        error.setText(texto);
+        error.setVisible(true);
+        error.setManaged(true);
+        // El diálogo crece para que el mensaje se lea completo.
+        if (error.getScene() != null && error.getScene().getWindow() != null) {
+            error.getScene().getWindow().sizeToScene();
+        }
+    }
+
+    private Dialog<ButtonType> crearDialogo(String titulo, Node contenido) {
+        Dialog<ButtonType> dialogo = new Dialog<>();
+        dialogo.setTitle(titulo);
+        dialogo.setHeaderText(titulo);
+        dialogo.getDialogPane().setContent(contenido);
+        prepararDialogo(dialogo);
+        return dialogo;
+    }
+
+    private void prepararDialogo(Dialog<?> dialogo) {
+        if (tabla.getScene() != null) dialogo.initOwner(tabla.getScene().getWindow());
+        URL css = getClass().getResource(CSS);
+        if (css != null) dialogo.getDialogPane().getStylesheets().add(css.toExternalForm());
+    }
+
+    private void estilizarBotones(Dialog<?> dialogo, ButtonType principal) {
+        for (ButtonType tipo : dialogo.getDialogPane().getButtonTypes()) {
+            Node boton = dialogo.getDialogPane().lookupButton(tipo);
+            boton.getStyleClass().add(tipo == principal ? "btn-primary" : "btn-secondary");
+        }
+    }
+
+    private TextField campoDialogo(String id, String ayuda) {
+        TextField campo = new TextField();
+        campo.setId(id);
+        campo.setPromptText(ayuda);
+        campo.setMaxWidth(Double.MAX_VALUE);
+        return campo;
+    }
+
+    private VBox grupo(String titulo, Node... controles) {
+        VBox grupo = new VBox(8, etiqueta(titulo, "field-label"));
+        grupo.getChildren().addAll(controles);
+        return grupo;
     }
 
     private void mostrarAviso(String titulo, String texto) {
@@ -590,11 +914,8 @@ public class ViewInvitados {
         alerta.setTitle(titulo);
         alerta.setHeaderText(titulo);
         alerta.setContentText(texto);
-        if (tabla.getScene() != null) {
-            alerta.initOwner(tabla.getScene().getWindow());
-            URL css = getClass().getResource(CSS);
-            if (css != null) alerta.getDialogPane().getStylesheets().add(css.toExternalForm());
-        }
+        prepararDialogo(alerta);
+        estilizarBotones(alerta, ButtonType.OK);
         alerta.showAndWait();
     }
 
