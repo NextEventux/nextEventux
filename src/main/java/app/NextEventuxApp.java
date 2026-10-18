@@ -1,6 +1,11 @@
 package app;
 
 import controllers.ControllerEventos;
+import controllers.ControllerPublicacion;
+import repositories.RepositoryPublicacion;
+import services.ServicePublicacion;
+import views.ViewPublicacion;
+import javafx.scene.layout.BorderPane;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -9,17 +14,34 @@ import services.ServiceEventos;
 import views.ViewEventos;
 
 public class NextEventuxApp extends Application {
+    private Scene scene;
+    private Stage stage;
+    private ControllerEventos controller;
+    private ControllerPublicacion publicaciones;
+
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
         RepositoryEvento repository = new RepositoryEvento();
-        ControllerEventos controller = new ControllerEventos(new ServiceEventos(repository));
-        Scene scene = new Scene(new ViewEventos(controller).crearPantalla(), 1440, 1000);
+        controller = new ControllerEventos(new ServiceEventos(repository));
+        publicaciones = new ControllerPublicacion(new ServicePublicacion(new RepositoryPublicacion(), repository));
+        scene = new Scene(new BorderPane(), 1440, 1000);
+        mostrarCrear();
         scene.getStylesheets().add(getClass().getResource("/styles/eventos.css").toExternalForm());
-        stage.setTitle("NextEventux | Crear evento");
         stage.setMinWidth(800);
         stage.setMinHeight(650);
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void mostrarCrear() {
+        stage.setTitle("NextEventux | Crear evento");
+        scene.setRoot(new ViewEventos(controller, this::mostrarPublicacion).crearPantalla());
+    }
+
+    private void mostrarPublicacion() {
+        stage.setTitle("NextEventux | Subir evento al repositorio");
+        scene.setRoot(new ViewPublicacion(publicaciones, this::mostrarCrear).crearPantalla());
     }
 
     public static void main(String[] args) {
