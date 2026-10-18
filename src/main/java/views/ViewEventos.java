@@ -23,6 +23,7 @@ public class ViewEventos {
     private final ControllerEventos controller;
     private Runnable abrirPublicacion = () -> {};
     private Runnable abrirCancelacion = () -> {};
+    private Runnable abrirEdicion = () -> {};
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final ComboBox<Organizador> organizador = new ComboBox<>();
@@ -87,6 +88,11 @@ public class ViewEventos {
     public ViewEventos(ControllerEventos controller, Runnable abrirPublicacion, Runnable abrirCancelacion) {
         this(controller, abrirPublicacion);
         this.abrirCancelacion = abrirCancelacion;
+    }
+
+    public ViewEventos(ControllerEventos controller, Runnable abrirPublicacion, Runnable abrirCancelacion, Runnable abrirEdicion) {
+        this(controller, abrirPublicacion, abrirCancelacion);
+        this.abrirEdicion = abrirEdicion;
     }
 
     public Parent crearPantalla() {
@@ -189,6 +195,8 @@ public class ViewEventos {
         cancelar.setId("abrirCancelacion"); cancelar.getStyleClass().add("btn-secondary");
         cancelar.setMaxWidth(Double.MAX_VALUE); cancelar.setOnAction(event -> abrirCancelacion.run());
         menu.getChildren().add(cancelar);
+        Button editar = new Button("Editar evento"); editar.setId("abrirEdicion"); editar.getStyleClass().add("btn-secondary");
+        editar.setMaxWidth(Double.MAX_VALUE); editar.setOnAction(event -> abrirEdicion.run()); menu.getChildren().add(editar);
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
         VBox perfil = new VBox(4, etiqueta("Organizador", "profile-name"), etiqueta("Mi cuenta", "hint"));
@@ -204,7 +212,8 @@ public class ViewEventos {
         publicar.setOnAction(event -> abrirPublicacion.run());
         MenuItem cancelar = new MenuItem("Cancelar evento");
         cancelar.setOnAction(event -> abrirCancelacion.run());
-        MenuButton eventos = new MenuButton("Eventos", null, publicar, cancelar);
+        MenuItem editar = new MenuItem("Editar evento"); editar.setOnAction(event -> abrirEdicion.run());
+        MenuButton eventos = new MenuButton("Eventos", null, editar, publicar, cancelar);
         eventos.setId("menuEventos");
         HBox barra = new HBox(18, etiqueta("Inicio / Mis eventos /", "breadcrumb"),
                 etiqueta("Crear evento", "breadcrumb-current"), espacioHorizontal(), eventos,
