@@ -1,6 +1,8 @@
 package services;
 
 import entities.Evento;
+import entities.Organizador;
+import java.util.List;
 import repositories.RepositoryEvento;
 
 public class ServiceEventos {
@@ -8,6 +10,10 @@ public class ServiceEventos {
 
     public ServiceEventos(RepositoryEvento repositoryEvento) {
         this.repositoryEvento = repositoryEvento;
+    }
+
+    public List<Organizador> listarOrganizadores() {
+        return repositoryEvento.listarOrganizadores();
     }
 
     public void crearEvento(Evento datos) {

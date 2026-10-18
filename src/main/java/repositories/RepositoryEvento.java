@@ -2,6 +2,7 @@ package repositories;
 
 import config.DatabaseConnection;
 import entities.Evento;
+import entities.Organizador;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,22 @@ public class RepositoryEvento {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("No se pudo guardar el evento. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    public List<Organizador> listarOrganizadores() {
+        List<Organizador> organizadores = new ArrayList<>();
+        String sql = "SELECT o.id_organizador, u.nombre FROM Organizador o "
+                + "JOIN Usuario u ON u.id_usuario = o.id_usuario ORDER BY u.nombre, o.id_organizador";
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                organizadores.add(new Organizador(result.getInt("id_organizador"), result.getString("nombre")));
+            }
+            return organizadores;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron cargar los organizadores. Revisa la conexión con la base de datos.", e);
         }
     }
 

@@ -2,6 +2,7 @@ package views;
 
 import controllers.ControllerEventos;
 import entities.Evento;
+import entities.Organizador;
 import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
@@ -22,7 +23,7 @@ public class ViewEventos {
     private final ControllerEventos controller;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
-    private final TextField organizador = campo("organizador", "Identificador del organizador");
+    private final ComboBox<Organizador> organizador = new ComboBox<>();
     private final DatePicker fechaInicio = new DatePicker();
     private final DatePicker fechaFin = new DatePicker();
     private final TextField horaInicio = campo("horaInicio", "09:00");
@@ -39,6 +40,16 @@ public class ViewEventos {
     public ViewEventos(ControllerEventos controller) {
         this.controller = controller;
         formatoCOP.setMaximumFractionDigits(2);
+        organizador.setId("organizador");
+        organizador.setPromptText("Seleccionar organizador");
+        organizador.setMaxWidth(Double.MAX_VALUE);
+        organizador.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Organizador item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(item == null ? organizador.getPromptText() : item.nombre());
+            }
+        });
         tipo.setId("tipo");
         tipo.setPromptText("Seleccionar tipo");
         tipo.getItems().addAll("Corporativo", "Social", "Cultural", "Otro");
@@ -116,7 +127,19 @@ public class ViewEventos {
             sidebar.setVisible(actual.doubleValue() >= 1000);
             sidebar.setManaged(sidebar.isVisible());
         });
+        cargarOrganizadores();
         return raiz;
+    }
+
+    private void cargarOrganizadores() {
+        try {
+            organizador.getItems().setAll(controller.listarOrganizadores());
+            if (organizador.getItems().isEmpty()) {
+                mostrarMensaje("No hay organizadores registrados. Registra un organizador antes de crear el evento.", false);
+            }
+        } catch (IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
+        }
     }
 
     private VBox crearMenu() {
@@ -173,7 +196,7 @@ public class ViewEventos {
         GridPane datos = grilla();
         datos.add(grupo("Nombre del evento *", nombre, null), 0, 0, 2, 1);
         datos.add(grupo("Tipo de evento *", tipo, null), 0, 1);
-        datos.add(grupo("Organizador (ID) *", organizador, null), 1, 1);
+        datos.add(grupo("Organizador *", organizador, null), 1, 1);
         datos.add(grupo("Fecha de inicio *", fechaInicio, null), 0, 2);
         datos.add(grupo("Hora de inicio *", horaInicio, "Formato de 24 horas: HH:mm"), 1, 2);
         datos.add(grupo("Fecha de fin *", fechaFin, null), 0, 3);
@@ -217,6 +240,8 @@ public class ViewEventos {
 
     private void crearDesdeFormulario() {
         try {
+            if (organizador.getValue() == null)
+                throw new IllegalArgumentException("Selecciona un organizador.");
             if (fechaInicio.getValue() == null || fechaFin.getValue() == null)
                 throw new IllegalArgumentException("Selecciona las fechas de inicio y fin.");
             LocalTime inicio = leerHora(horaInicio.getText(), "inicio");
@@ -227,7 +252,7 @@ public class ViewEventos {
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Ingresa un presupuesto numérico; usa punto para los decimales.");
             }
-            Evento datos = new Evento(leerEntero(organizador.getText(), "organizador"), nombre.getText().trim(),
+            Evento datos = new Evento(organizador.getValue().id(), nombre.getText().trim(),
                     tipo.getValue(), descripcion.getText().trim(), LocalDateTime.of(fechaInicio.getValue(), inicio),
                     LocalDateTime.of(fechaFin.getValue(), fin), lugar.getText().trim(), valor,
                     leerEntero(invitados.getText(), "invitados iniciales"));
@@ -271,7 +296,8 @@ public class ViewEventos {
     }
 
     private void limpiarFormulario() {
-        for (TextField campo : new TextField[]{nombre, organizador, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) campo.clear();
+        for (TextField campo : new TextField[]{nombre, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) campo.clear();
+        organizador.getSelectionModel().clearSelection();
         tipo.getSelectionModel().clearSelection();
         fechaInicio.setValue(null);
         fechaFin.setValue(null);
