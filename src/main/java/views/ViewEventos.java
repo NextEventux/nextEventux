@@ -21,6 +21,7 @@ import java.util.Locale;
 
 public class ViewEventos {
     private final ControllerEventos controller;
+    private Runnable abrirPublicacion = () -> {};
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final ComboBox<Organizador> organizador = new ComboBox<>();
@@ -75,6 +76,11 @@ public class ViewEventos {
         resumenInvitados.setId("resumenInvitados");
         presupuesto.textProperty().addListener((observable, anterior, actual) -> actualizarResumen());
         invitados.textProperty().addListener((observable, anterior, actual) -> actualizarResumen());
+    }
+
+    public ViewEventos(ControllerEventos controller, Runnable abrirPublicacion) {
+        this(controller);
+        this.abrirPublicacion = abrirPublicacion;
     }
 
     public Parent crearPantalla() {
@@ -167,6 +173,12 @@ public class ViewEventos {
             if (opcion.contains("Crear evento")) item.getStyleClass().add("active");
             menu.getChildren().add(item);
         }
+        Button publicaciones = new Button("↑ Subir al repositorio");
+        publicaciones.setId("abrirPublicacion");
+        publicaciones.getStyleClass().add("btn-secondary");
+        publicaciones.setMaxWidth(Double.MAX_VALUE);
+        publicaciones.setOnAction(event -> abrirPublicacion.run());
+        menu.getChildren().add(publicaciones);
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
         VBox perfil = new VBox(4, etiqueta("Organizador", "profile-name"), etiqueta("Mi cuenta", "hint"));
