@@ -78,7 +78,8 @@ public class NextEventuxApp extends Application {
         String tipo = sesion.getTipoUsuario();
 
         if (!"ORGANIZADOR".equalsIgnoreCase(tipo)
-                && !"PROVEEDOR".equalsIgnoreCase(tipo)) {
+                && !"PROVEEDOR".equalsIgnoreCase(tipo)
+                && !"ADMINISTRADOR".equalsIgnoreCase(tipo)) {
 
             mostrarLogin();
             return;
@@ -107,9 +108,15 @@ public class NextEventuxApp extends Application {
 
         } else {
 
+            String modulo = "ADMINISTRADOR".equalsIgnoreCase(tipo)
+                    ? "administración (CU03)"
+                    : "proveedores";
+
             Label pendiente = new Label(
-                    "Sesión iniciada correctamente como proveedor.\n"
-                    + "El módulo de proveedores está pendiente de integración.");
+                    "Sesión iniciada correctamente como "
+                    + tipo.toLowerCase() + ".\n"
+                    + "El módulo de " + modulo
+                    + " está pendiente de integración.");
 
             pendiente.setStyle("-fx-font-size: 18px;");
             pendiente.setWrapText(true);
