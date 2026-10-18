@@ -534,3 +534,56 @@ mvn javafx:run
 Como Maven no está instalado en este equipo, se verificó compilando con
 `javac --release 17` y ejecutando JUnit Platform Console 1.10.2 con H2 2.3.232.
 Las pruebas no ejecutan el login de la rama externa ni tocan la base de la aplicación.
+
+## CU02 — Editar evento
+
+Implementación sencilla sobre el controlador, servicio y repositorio de eventos
+existentes. La rama `CU02-editar-evento` parte del avance local de CU04 para mantener
+la navegación disponible; conserva esa dependencia al preparar sus PRs.
+No añade tablas ni dependencias.
+
+Desde Crear evento, usar **Eventos → Editar evento** o el botón del menú lateral.
+Seleccionar organizador y evento por nombre. Solo los eventos en estado de
+planeación (`PLANEADO`) habilitan el formulario. El estado y la pertenencia se
+consultan otra vez al precargar, y también se comprueban en el UPDATE al guardar.
+Si otro proceso cambia el estado después de cargar el formulario, la edición se
+bloquea sin sobrescribir los datos.
+
+Campos permitidos: nombre, tipo, fecha/hora de inicio, fecha/hora de fin y lugar.
+La edición de inicio y fin con hora fue confirmada por la usuaria para adaptar
+la «fecha» de la especificación al modelo actual. Las horas admiten HH:mm; si un
+registro previo contiene segundos, se precargan y conservan sin truncarlos.
+Se aplican las mismas validaciones generales de CU01, sin duplicar sus reglas.
+
+El objeto `EdicionEvento` contiene solo estos campos. El UPDATE no modifica
+organizador, descripción, presupuesto, invitados, estado, fecha de creación ni
+vínculos de reservas. Los valores históricos NULL de presupuesto e invitados se
+conservan: no es necesario inventarlos para editar los datos generales. La
+coordinación de horarios y reservas contratadas con los otros módulos deberá
+validarse según las reglas que defina el equipo; este flujo no cambia contratos.
+
+**Guardar cambios** confirma la edición; **Restablecer** vuelve a cargar los datos
+actuales. Si falla el guardado, el UPDATE se revierte como una única operación
+atómica, la base conserva sus datos anteriores y la pantalla mantiene lo escrito
+para reintentar. Los mensajes son claros y no muestran errores SQL al usuario.
+
+La selección de organizador sigue siendo temporal para demostración. Obtener al
+organizador desde la sesión autenticada e impedir seleccionar perfiles ajenos
+queda pendiente de integrar con la rama de login, cuya corrección se está
+coordinando. La comprobación de propiedad por identificador no sustituye la sesión.
+
+### Pruebas de CU02
+
+49 pruebas JUnit correctas en total: las 41 existentes y 8 de edición. Las nuevas
+comprueban precarga y propiedad, campos permitidos, conservación de los demás
+datos, estados bloqueados, cambio de estado después de cargar, entradas inválidas,
+fallo técnico con reintento e históricos NULL. Las bases de prueba son temporales.
+
+Se comprobó además la ventana JavaFX: precarga, rechazo de hora 24:00, conservación
+de los datos ingresados ante un fallo simulado, guardado exitoso, preservación de
+segundos en las horas y bloqueo de un evento que pasó a Confirmado. Se revisaron
+capturas antes y después del guardado.
+
+Con Maven instalado: `mvn clean test` y `mvn javafx:run`. En este equipo se compiló
+con `javac --release 17` y se ejecutaron las pruebas mediante JUnit Platform Console
+1.10.2, sin modificar la base de datos de la aplicación.
