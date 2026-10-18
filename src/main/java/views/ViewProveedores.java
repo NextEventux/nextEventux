@@ -4,13 +4,19 @@ import controllers.ControllerProveedores;
 import entities.DisponibilidadServicio;
 import entities.Servicio;
 import entities.SesionUsuario;
+import entities.ImagenServicio;
+import entities.PreguntaServicio;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
 
 import java.sql.Date;
+import java.io.File;
 import java.util.List;
 
 public class ViewProveedores {
@@ -22,42 +28,51 @@ public class ViewProveedores {
     private Runnable cerrarSesion;
 
     private final ListView<Servicio> listaServicios = new ListView<>();
-    private final ListView<DisponibilidadServicio> listaDisponibilidades =
-            new ListView<>();
+    private final ListView<DisponibilidadServicio> listaDisponibilidades
+            = new ListView<>();
 
-    private final TextField nombre =
-            campo("nombreServicio", "Ej. Fotografia premium");
+    private final ListView<ImagenServicio> listaImagenes
+            = new ListView<>();
 
-    private final TextField tipo =
-            campo("tipoServicio", "Ej. Servicio individual");
+    private final ListView<PreguntaServicio> listaPreguntas
+            = new ListView<>();
 
-    private final TextField categoria =
-            campo("categoriaServicio", "Ej. FOTOGRAFIA");
+    private final TextArea respuestaPregunta
+            = new TextArea();
 
-    private final TextField precio =
-            campo("precioServicio", "Ej. 850000");
+    private final TextField nombre
+            = campo("nombreServicio", "Ej. Fotografia premium");
 
-    private final TextField ciudad =
-            campo("ciudadServicio", "Ej. Bogota");
+    private final TextField tipo
+            = campo("tipoServicio", "Ej. Servicio individual");
 
-    private final TextField anticipacion =
-            campo("anticipacionServicio", "Ej. 5");
+    private final TextField categoria
+            = campo("categoriaServicio", "Ej. FOTOGRAFIA");
 
-    private final TextField cantidad =
-            campo("cantidadServicio", "Opcional");
+    private final TextField precio
+            = campo("precioServicio", "Ej. 850000");
+
+    private final TextField ciudad
+            = campo("ciudadServicio", "Ej. Bogota");
+
+    private final TextField anticipacion
+            = campo("anticipacionServicio", "Ej. 5");
+
+    private final TextField cantidad
+            = campo("cantidadServicio", "Opcional");
 
     private final TextArea descripcion = new TextArea();
 
     private final DatePicker fecha = new DatePicker();
 
-    private final TextField horaInicio =
-            campo("horaInicioServicio", "09:00");
+    private final TextField horaInicio
+            = campo("horaInicioServicio", "09:00");
 
-    private final TextField horaFin =
-            campo("horaFinServicio", "13:00");
+    private final TextField horaFin
+            = campo("horaFinServicio", "13:00");
 
-    private final Label estadoServicio =
-            new Label("Nuevo servicio");
+    private final Label estadoServicio
+            = new Label("Nuevo servicio");
 
     public ViewProveedores(
             ControllerProveedores controller,
@@ -76,6 +91,11 @@ public class ViewProveedores {
 
         fecha.setEditable(false);
         fecha.setMaxWidth(Double.MAX_VALUE);
+        respuestaPregunta.setPromptText(
+                "Escribe la respuesta para la pregunta seleccionada");
+
+        respuestaPregunta.setWrapText(true);
+        respuestaPregunta.setPrefRowCount(3);
     }
 
     public ViewProveedores(
@@ -136,14 +156,14 @@ public class ViewProveedores {
         columnas.setHgap(25);
         columnas.setVgap(25);
 
-        ColumnConstraints izquierda =
-                new ColumnConstraints();
+        ColumnConstraints izquierda
+                = new ColumnConstraints();
 
         izquierda.setHgrow(
                 Priority.ALWAYS);
 
-        ColumnConstraints derecha =
-                new ColumnConstraints(290);
+        ColumnConstraints derecha
+                = new ColumnConstraints(290);
 
         columnas
                 .getColumnConstraints()
@@ -176,14 +196,14 @@ public class ViewProveedores {
                         encabezado,
                         columnas);
 
-        StackPane centrado =
-                new StackPane(contenido);
+        StackPane centrado
+                = new StackPane(contenido);
 
         centrado.setAlignment(
                 Pos.TOP_CENTER);
 
-        ScrollPane scroll =
-                new ScrollPane(centrado);
+        ScrollPane scroll
+                = new ScrollPane(centrado);
 
         scroll.setFitToWidth(true);
         scroll
@@ -199,11 +219,11 @@ public class ViewProveedores {
         raiz.widthProperty().addListener(
                 (observable, anterior, actual) -> {
 
-                    boolean ancho =
-                            actual.doubleValue() >= 1200;
+                    boolean ancho
+                    = actual.doubleValue() >= 1200;
 
                     if (ancho
-                            != (GridPane.getColumnIndex(panel) == 1)) {
+                    != (GridPane.getColumnIndex(panel) == 1)) {
 
                         columnas
                                 .getChildren()
@@ -281,15 +301,15 @@ public class ViewProveedores {
                         "menu-title"));
 
         String[] opciones = {
-                "⌂  Inicio",
-                "♧  Mis servicios",
-                "⚙  Configuración"
+            "⌂  Inicio",
+            "♧  Mis servicios",
+            "⚙  Configuración"
         };
 
         for (String opcion : opciones) {
 
-            Label item =
-                    etiqueta(
+            Label item
+                    = etiqueta(
                             opcion,
                             "menu-item");
 
@@ -309,8 +329,8 @@ public class ViewProveedores {
                 espacio,
                 Priority.ALWAYS);
 
-        Label salir =
-                etiqueta(
+        Label salir
+                = etiqueta(
                         "Cerrar sesión",
                         "logout-link");
 
@@ -320,8 +340,8 @@ public class ViewProveedores {
                     event -> cerrarSesion.run());
         }
 
-        VBox perfil =
-                new VBox(
+        VBox perfil
+                = new VBox(
                         4,
                         etiqueta(
                                 nombreSesion(),
@@ -331,8 +351,8 @@ public class ViewProveedores {
                                 "hint"),
                         salir);
 
-        HBox cuenta =
-                new HBox(
+        HBox cuenta
+                = new HBox(
                         12,
                         etiqueta(
                                 inicialesSesion(),
@@ -402,8 +422,8 @@ public class ViewProveedores {
             return "Proveedor";
         }
 
-        String rol =
-                sesion.getTipoUsuario()
+        String rol
+                = sesion.getTipoUsuario()
                         .toLowerCase();
 
         return Character.toUpperCase(
@@ -413,13 +433,13 @@ public class ViewProveedores {
 
     private String inicialesSesion() {
 
-        String[] partes =
-                nombreSesion()
+        String[] partes
+                = nombreSesion()
                         .trim()
                         .split("\\s+");
 
-        StringBuilder iniciales =
-                new StringBuilder();
+        StringBuilder iniciales
+                = new StringBuilder();
 
         for (String parte : partes) {
 
@@ -505,8 +525,8 @@ public class ViewProveedores {
         listaServicios.setMinWidth(230);
         listaServicios.setPrefHeight(500);
 
-        Button nuevo =
-                new Button("+ Nuevo servicio");
+        Button nuevo
+                = new Button("+ Nuevo servicio");
 
         nuevo
                 .getStyleClass()
@@ -605,8 +625,8 @@ public class ViewProveedores {
                 0,
                 3);
 
-        VBox grupoDescripcion =
-                grupo(
+        VBox grupoDescripcion
+                = grupo(
                         "Descripción *",
                         descripcion,
                         null);
@@ -618,8 +638,8 @@ public class ViewProveedores {
                 2,
                 1);
 
-        Button guardar =
-                new Button("Guardar");
+        Button guardar
+                = new Button("Guardar");
 
         guardar
                 .getStyleClass()
@@ -628,8 +648,8 @@ public class ViewProveedores {
         guardar.setOnAction(
                 event -> guardarServicio());
 
-        Button publicar =
-                new Button("Publicar");
+        Button publicar
+                = new Button("Publicar");
 
         publicar
                 .getStyleClass()
@@ -638,8 +658,8 @@ public class ViewProveedores {
         publicar.setOnAction(
                 event -> publicarServicio());
 
-        Button retirar =
-                new Button("Retirar");
+        Button retirar
+                = new Button("Retirar");
 
         retirar
                 .getStyleClass()
@@ -657,8 +677,14 @@ public class ViewProveedores {
         acciones.setAlignment(
                 Pos.CENTER_RIGHT);
 
-        VBox disponibilidad =
-                crearDisponibilidad();
+        VBox disponibilidad
+                = crearDisponibilidad();
+
+        VBox imagenesServicio
+                = crearImagenesServicio();
+
+        VBox preguntasServicio
+                = crearPreguntasServicio();
 
         VBox formulario = new VBox(
                 18,
@@ -667,7 +693,11 @@ public class ViewProveedores {
                 datos,
                 acciones,
                 new Separator(),
-                disponibilidad);
+                disponibilidad,
+                new Separator(),
+                imagenesServicio,
+                new Separator(),
+                preguntasServicio);
 
         formulario
                 .getStyleClass()
@@ -708,8 +738,8 @@ public class ViewProveedores {
                 0,
                 1);
 
-        Button agregar =
-                new Button(
+        Button agregar
+                = new Button(
                         "+ Agregar disponibilidad");
 
         agregar
@@ -726,8 +756,8 @@ public class ViewProveedores {
         listaDisponibilidades
                 .setPrefHeight(150);
 
-        Button eliminar =
-                new Button(
+        Button eliminar
+                = new Button(
                         "Eliminar seleccionada");
 
         eliminar
@@ -744,6 +774,426 @@ public class ViewProveedores {
                 agregar,
                 listaDisponibilidades,
                 eliminar);
+    }
+
+    private VBox crearImagenesServicio() {
+
+        Label titulo = etiqueta(
+                "Imágenes del servicio",
+                "section-title");
+
+        Label ayuda = etiqueta(
+                "Agrega imágenes para que los organizadores puedan conocer mejor tu servicio.",
+                "muted");
+
+        ayuda.setWrapText(true);
+
+        Button agregar
+                = new Button("+ Agregar imagen");
+
+        agregar
+                .getStyleClass()
+                .add("btn-secondary");
+
+        agregar.setOnAction(
+                event -> agregarImagen());
+
+        listaImagenes
+                .getStyleClass()
+                .add("publication-list");
+
+        listaImagenes.setPrefHeight(190);
+
+        listaImagenes.setCellFactory(
+                lista -> new ListCell<>() {
+
+            @Override
+            protected void updateItem(
+                    ImagenServicio imagen,
+                    boolean empty) {
+
+                super.updateItem(
+                        imagen,
+                        empty);
+
+                if (empty || imagen == null) {
+
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+
+                ImageView vista
+                        = new ImageView();
+
+                vista.setFitWidth(95);
+                vista.setFitHeight(68);
+                vista.setPreserveRatio(true);
+                vista.setSmooth(true);
+
+                try {
+
+                    vista.setImage(
+                            new Image(
+                                    imagen.getRuta(),
+                                    95,
+                                    68,
+                                    true,
+                                    true));
+
+                } catch (Exception e) {
+
+                    vista.setVisible(false);
+                    vista.setManaged(false);
+                }
+
+                Label nombreImagen
+                        = etiqueta(
+                                "Imagen "
+                                + imagen.getOrdenImagen(),
+                                "profile-name");
+
+                Label estado
+                        = etiqueta(
+                                "Publicada en el servicio",
+                                "muted");
+
+                VBox informacion
+                        = new VBox(
+                                4,
+                                nombreImagen,
+                                estado);
+
+                Button eliminar
+                        = new Button("Eliminar");
+
+                eliminar
+                        .getStyleClass()
+                        .add("btn-danger");
+
+                eliminar.setOnAction(
+                        event
+                        -> eliminarImagen(
+                                imagen));
+
+                Region espacio
+                        = new Region();
+
+                HBox.setHgrow(
+                        espacio,
+                        Priority.ALWAYS);
+
+                HBox fila
+                        = new HBox(
+                                14,
+                                vista,
+                                informacion,
+                                espacio,
+                                eliminar);
+
+                fila.setAlignment(
+                        Pos.CENTER_LEFT);
+
+                setText(null);
+                setGraphic(fila);
+            }
+        });
+
+        return new VBox(
+                12,
+                titulo,
+                ayuda,
+                agregar,
+                listaImagenes);
+    }
+
+    private VBox crearPreguntasServicio() {
+
+        Label titulo = etiqueta(
+                "Preguntas públicas",
+                "section-title");
+
+        Label ayuda = etiqueta(
+                "Aquí aparecen las preguntas que los organizadores realizan sobre este servicio.",
+                "muted");
+
+        ayuda.setWrapText(true);
+
+        listaPreguntas
+                .getStyleClass()
+                .add("publication-list");
+
+        listaPreguntas.setPrefHeight(220);
+
+        listaPreguntas.setCellFactory(
+                lista -> new ListCell<>() {
+
+            @Override
+            protected void updateItem(
+                    PreguntaServicio pregunta,
+                    boolean empty) {
+
+                super.updateItem(
+                        pregunta,
+                        empty);
+
+                if (empty || pregunta == null) {
+
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+
+                Label texto
+                        = etiqueta(
+                                pregunta.getPregunta(),
+                                "profile-name");
+
+                texto.setWrapText(true);
+
+                String estadoTexto
+                        = "RESPONDIDA".equalsIgnoreCase(
+                                pregunta.getEstado())
+                        ? "Respondida"
+                        : "Pendiente de respuesta";
+
+                Label estado
+                        = etiqueta(
+                                estadoTexto,
+                                "muted");
+
+                VBox contenido
+                        = new VBox(
+                                5,
+                                texto,
+                                estado);
+
+                if (pregunta.getRespuesta() != null
+                        && !pregunta
+                                .getRespuesta()
+                                .isBlank()) {
+
+                    Label respuesta
+                            = etiqueta(
+                                    "Respuesta: "
+                                    + pregunta.getRespuesta(),
+                                    "muted");
+
+                    respuesta.setWrapText(true);
+
+                    contenido
+                            .getChildren()
+                            .add(respuesta);
+                }
+
+                setText(null);
+                setGraphic(contenido);
+            }
+        });
+
+        listaPreguntas
+                .getSelectionModel()
+                .selectedItemProperty()
+                .addListener(
+                        (observable,
+                                anterior,
+                                actual) -> {
+
+                            if (actual == null
+                            || actual.getRespuesta() == null) {
+
+                                respuestaPregunta.clear();
+
+                            } else {
+
+                                respuestaPregunta.setText(
+                                        actual.getRespuesta());
+                            }
+                        });
+
+        Button responder
+                = new Button("Responder pregunta");
+
+        responder
+                .getStyleClass()
+                .add("btn-primary");
+
+        responder.setOnAction(
+                event -> responderPregunta());
+
+        VBox respuesta
+                = new VBox(
+                        9,
+                        etiqueta(
+                                "Respuesta",
+                                "field-label"),
+                        respuestaPregunta,
+                        responder);
+
+        return new VBox(
+                12,
+                titulo,
+                ayuda,
+                listaPreguntas,
+                respuesta);
+    }
+
+    private void agregarImagen() {
+
+        Servicio servicio
+                = servicioSeleccionado();
+
+        if (servicio == null) {
+            return;
+        }
+
+        FileChooser selector
+                = new FileChooser();
+
+        selector.setTitle(
+                "Seleccionar imagen del servicio");
+
+        selector
+                .getExtensionFilters()
+                .add(
+                        new FileChooser.ExtensionFilter(
+                                "Imágenes",
+                                "*.png",
+                                "*.jpg",
+                                "*.jpeg",
+                                "*.gif"));
+
+        File archivo
+                = selector.showOpenDialog(
+                        nombre
+                                .getScene()
+                                .getWindow());
+
+        if (archivo == null) {
+            return;
+        }
+
+        try {
+
+            controller.agregarImagenServicio(
+                    idProveedor,
+                    servicio.getIdServicio(),
+                    archivo.toURI().toString());
+
+            cargarImagenes(
+                    servicio.getIdServicio());
+
+            mostrarInformacion(
+                    "Imagen agregada",
+                    "La imagen quedó asociada al servicio.");
+
+        } catch (Exception e) {
+
+            mostrarError(
+                    e.getMessage());
+        }
+    }
+
+    private void eliminarImagen(
+            ImagenServicio imagen) {
+
+        try {
+
+            controller.eliminarImagenServicio(
+                    idProveedor,
+                    imagen.getIdImagen());
+
+            cargarImagenes(
+                    imagen.getIdServicio());
+
+        } catch (Exception e) {
+
+            mostrarError(
+                    e.getMessage());
+        }
+    }
+
+    private void cargarImagenes(
+            int idServicio) {
+
+        try {
+
+            listaImagenes
+                    .getItems()
+                    .setAll(
+                            controller
+                                    .listarImagenesServicio(
+                                            idServicio));
+
+        } catch (Exception e) {
+
+            mostrarError(
+                    e.getMessage());
+        }
+    }
+
+    private void cargarPreguntas(
+            int idServicio) {
+
+        try {
+
+            listaPreguntas
+                    .getItems()
+                    .setAll(
+                            controller
+                                    .listarPreguntasPublicas(
+                                            idServicio));
+
+        } catch (Exception e) {
+
+            mostrarError(
+                    e.getMessage());
+        }
+    }
+
+    private void responderPregunta() {
+
+        Servicio servicio
+                = servicioSeleccionado();
+
+        if (servicio == null) {
+            return;
+        }
+
+        PreguntaServicio pregunta
+                = listaPreguntas
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (pregunta == null) {
+
+            mostrarError(
+                    "Selecciona primero una pregunta.");
+
+            return;
+        }
+
+        try {
+
+            controller.responderPreguntaPublica(
+                    idProveedor,
+                    pregunta.getIdPregunta(),
+                    respuestaPregunta.getText());
+
+            respuestaPregunta.clear();
+
+            cargarPreguntas(
+                    servicio.getIdServicio());
+
+            mostrarInformacion(
+                    "Pregunta respondida",
+                    "La respuesta quedó publicada correctamente.");
+
+        } catch (Exception e) {
+
+            mostrarError(
+                    e.getMessage());
+        }
     }
 
     private VBox crearPanelDerecho() {
@@ -810,30 +1260,30 @@ public class ViewProveedores {
         listaServicios.setCellFactory(
                 lista -> new ListCell<>() {
 
-                    @Override
-                    protected void updateItem(
-                            Servicio servicio,
-                            boolean empty) {
+            @Override
+            protected void updateItem(
+                    Servicio servicio,
+                    boolean empty) {
 
-                        super.updateItem(
-                                servicio,
-                                empty);
+                super.updateItem(
+                        servicio,
+                        empty);
 
-                        if (empty || servicio == null) {
-                            setText(null);
-                            return;
-                        }
+                if (empty || servicio == null) {
+                    setText(null);
+                    return;
+                }
 
-                        setText(
-                                servicio.getNombre()
-                                + "\n$"
-                                + String.format(
-                                        "%,.0f",
-                                        servicio.getPrecio())
-                                + " · "
-                                + servicio.getEstado());
-                    }
-                });
+                setText(
+                        servicio.getNombre()
+                        + "\n$"
+                        + String.format(
+                                "%,.0f",
+                                servicio.getPrecio())
+                        + " · "
+                        + servicio.getEstado());
+            }
+        });
 
         listaServicios
                 .getSelectionModel()
@@ -849,39 +1299,39 @@ public class ViewProveedores {
         listaDisponibilidades.setCellFactory(
                 lista -> new ListCell<>() {
 
-                    @Override
-                    protected void updateItem(
-                            DisponibilidadServicio disponibilidad,
-                            boolean empty) {
+            @Override
+            protected void updateItem(
+                    DisponibilidadServicio disponibilidad,
+                    boolean empty) {
 
-                        super.updateItem(
-                                disponibilidad,
-                                empty);
+                super.updateItem(
+                        disponibilidad,
+                        empty);
 
-                        if (empty || disponibilidad == null) {
-                            setText(null);
-                            return;
-                        }
+                if (empty || disponibilidad == null) {
+                    setText(null);
+                    return;
+                }
 
-                        setText(
-                                new java.text.SimpleDateFormat("dd/MM/yyyy").format(disponibilidad.getFecha())
-                                + "   "
-                                + disponibilidad.getHorario());
-                    }
-                });
+                setText(
+                        new java.text.SimpleDateFormat("dd/MM/yyyy").format(disponibilidad.getFecha())
+                        + "   "
+                        + disponibilidad.getHorario());
+            }
+        });
     }
 
     private void guardarServicio() {
 
         try {
 
-            Servicio seleccionado =
-                    listaServicios
+            Servicio seleccionado
+                    = listaServicios
                             .getSelectionModel()
                             .getSelectedItem();
 
-            Servicio datos =
-                    construirServicio();
+            Servicio datos
+                    = construirServicio();
 
             if (seleccionado == null) {
 
@@ -906,8 +1356,8 @@ public class ViewProveedores {
                         "Los cambios se guardaron correctamente.");
             }
 
-            int idGuardado =
-                    seleccionado == null
+            int idGuardado
+                    = seleccionado == null
                             ? datos.getIdServicio()
                             : seleccionado.getIdServicio();
 
@@ -959,14 +1409,14 @@ public class ViewProveedores {
 
         try {
 
-            valorPrecio =
-                    Double.parseDouble(
+            valorPrecio
+                    = Double.parseDouble(
                             precio
                                     .getText()
                                     .trim());
 
-            diasAnticipacion =
-                    Integer.parseInt(
+            diasAnticipacion
+                    = Integer.parseInt(
                             anticipacion
                                     .getText()
                                     .trim());
@@ -986,8 +1436,8 @@ public class ViewProveedores {
 
             try {
 
-                maximo =
-                        Integer.valueOf(
+                maximo
+                        = Integer.valueOf(
                                 cantidad
                                         .getText()
                                         .trim());
@@ -1035,8 +1485,8 @@ public class ViewProveedores {
 
     private void publicarServicio() {
 
-        Servicio servicio =
-                servicioSeleccionado();
+        Servicio servicio
+                = servicioSeleccionado();
 
         if (servicio == null) {
             return;
@@ -1063,8 +1513,8 @@ public class ViewProveedores {
 
     private void retirarServicio() {
 
-        Servicio servicio =
-                servicioSeleccionado();
+        Servicio servicio
+                = servicioSeleccionado();
 
         if (servicio == null) {
             return;
@@ -1091,8 +1541,8 @@ public class ViewProveedores {
 
     private void agregarDisponibilidad() {
 
-        Servicio servicio =
-                servicioSeleccionado();
+        Servicio servicio
+                = servicioSeleccionado();
 
         if (servicio == null) {
             return;
@@ -1106,13 +1556,13 @@ public class ViewProveedores {
             return;
         }
 
-        String inicio =
-                horaInicio
+        String inicio
+                = horaInicio
                         .getText()
                         .trim();
 
-        String fin =
-                horaFin
+        String fin
+                = horaFin
                         .getText()
                         .trim();
 
@@ -1151,8 +1601,8 @@ public class ViewProveedores {
 
     private void eliminarDisponibilidad() {
 
-        DisponibilidadServicio disponibilidad =
-                listaDisponibilidades
+        DisponibilidadServicio disponibilidad
+                = listaDisponibilidades
                         .getSelectionModel()
                         .getSelectedItem();
 
@@ -1170,8 +1620,8 @@ public class ViewProveedores {
                     disponibilidad
                             .getIdDisponibilidad());
 
-            Servicio servicio =
-                    listaServicios
+            Servicio servicio
+                    = listaServicios
                             .getSelectionModel()
                             .getSelectedItem();
 
@@ -1179,6 +1629,7 @@ public class ViewProveedores {
 
                 cargarDisponibilidades(
                         servicio.getIdServicio());
+
             }
 
         } catch (Exception e) {
@@ -1212,10 +1663,10 @@ public class ViewProveedores {
 
         cantidad.setText(
                 servicio.getCantidadMaximaPersonas() == null
-                        ? ""
-                        : String.valueOf(
-                                servicio
-                                        .getCantidadMaximaPersonas()));
+                ? ""
+                : String.valueOf(
+                        servicio
+                                .getCantidadMaximaPersonas()));
 
         descripcion.setText(
                 seguro(
@@ -1228,13 +1679,19 @@ public class ViewProveedores {
 
         cargarDisponibilidades(
                 servicio.getIdServicio());
+
+        cargarImagenes(
+                servicio.getIdServicio());
+
+        cargarPreguntas(
+                servicio.getIdServicio());
     }
 
     private void cargarDisponibilidades(
             int idServicio) {
 
-        List<DisponibilidadServicio> disponibilidades =
-                controller
+        List<DisponibilidadServicio> disponibilidades
+                = controller
                         .listarDisponibilidadesServicio(
                                 idServicio);
 
@@ -1279,8 +1736,8 @@ public class ViewProveedores {
 
     private Servicio servicioSeleccionado() {
 
-        Servicio servicio =
-                listaServicios
+        Servicio servicio
+                = listaServicios
                         .getSelectionModel()
                         .getSelectedItem();
 
@@ -1312,6 +1769,16 @@ public class ViewProveedores {
                 .getItems()
                 .clear();
 
+        listaImagenes
+                .getItems()
+                .clear();
+
+        listaPreguntas
+                .getItems()
+                .clear();
+
+        respuestaPregunta.clear();
+
         estadoServicio.setText(
                 "Nuevo servicio");
     }
@@ -1323,11 +1790,11 @@ public class ViewProveedores {
         grid.setHgap(22);
         grid.setVgap(16);
 
-        ColumnConstraints columna1 =
-                new ColumnConstraints();
+        ColumnConstraints columna1
+                = new ColumnConstraints();
 
-        ColumnConstraints columna2 =
-                new ColumnConstraints();
+        ColumnConstraints columna2
+                = new ColumnConstraints();
 
         columna1.setPercentWidth(50);
         columna2.setPercentWidth(50);
@@ -1352,8 +1819,8 @@ public class ViewProveedores {
             Control control,
             String ayuda) {
 
-        Label etiqueta =
-                etiqueta(
+        Label etiqueta
+                = etiqueta(
                         titulo,
                         "field-label");
 
@@ -1382,8 +1849,8 @@ public class ViewProveedores {
             String id,
             String prompt) {
 
-        TextField campo =
-                new TextField();
+        TextField campo
+                = new TextField();
 
         campo.setId(id);
         campo.setPromptText(prompt);
@@ -1395,8 +1862,8 @@ public class ViewProveedores {
             String texto,
             String clase) {
 
-        Label label =
-                new Label(texto);
+        Label label
+                = new Label(texto);
 
         label
                 .getStyleClass()
@@ -1442,8 +1909,8 @@ public class ViewProveedores {
     private void mostrarError(
             String mensaje) {
 
-        Alert alert =
-                new Alert(
+        Alert alert
+                = new Alert(
                         Alert.AlertType.ERROR);
 
         alert.setTitle(
@@ -1464,8 +1931,8 @@ public class ViewProveedores {
             String titulo,
             String mensaje) {
 
-        Alert alert =
-                new Alert(
+        Alert alert
+                = new Alert(
                         Alert.AlertType.INFORMATION);
 
         alert.setTitle(

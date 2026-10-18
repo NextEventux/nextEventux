@@ -66,3 +66,27 @@
 .info-card .muted {
     -fx-wrap-text: true;
 }
+.publication-list {
+    -fx-background-color: white;
+    -fx-border-color: #E8E9EF;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.publication-list .list-cell {
+    -fx-background-color: white;
+    -fx-padding: 13;
+    -fx-text-fill: #404255;
+    -fx-border-color: transparent transparent #F0F1F5 transparent;
+}
+
+.publication-list .list-cell:hover {
+    -fx-background-color: #FFF8F8;
+    -fx-cursor: hand;
+}
+
+.publication-list .list-cell:selected {
+    -fx-background-color: #FFF0F1;
+    -fx-border-color: #D71920;
+    -fx-border-width: 0 0 0 3px;
+}
