@@ -347,3 +347,108 @@ asociados a organizadores, ordenados por nombre. El identificador permanece
 interno y se utiliza al guardar. No se selecciona un organizador automáticamente;
 Cancelar borra la selección. Si no hay organizadores o falla la consulta, se
 muestra un mensaje y no se permite crear sin seleccionar uno.
+
+## CU03 — Subir evento al repositorio
+
+La rama `CU03-subir-evento-repositorio` parte del avance local de CU01 para
+reutilizar la pantalla JavaFX, el logo y la persistencia existentes. Sus cambios
+se mantienen en commits separados; CU01 debe integrarse antes o coordinarse como
+dependencia al preparar el PR de CU03.
+
+Desde Crear evento, el botón **Subir al repositorio** abre tres secciones:
+
+- **Solicitar publicación:** seleccionar un organizador por nombre y uno de sus
+  eventos. Solo se aceptan eventos finalizados. Se registra la solicitud pendiente
+  y se envía una notificación interna a los administradores activos.
+- **Revisión del administrador:** seleccionar un administrador activo con el rol
+  ADMINISTRADOR y una solicitud pendiente. Aprobar publica la plantilla; rechazar
+  exige un motivo de hasta 250 caracteres. Ambas decisiones notifican al organizador.
+- **Plantillas publicadas:** lista las estructuras aprobadas, disponibles para
+  futura reutilización. Esta pantalla no implementa una operación de clonación.
+
+### Alcance y privacidad
+
+La selección de perfiles es **solo para demostración**. No autentica usuarios y
+no sustituye la sesión que está desarrollando el equipo. Antes de dar CU03 por
+completado debe integrarse esa sesión para obtener el organizador/administrador
+autenticado, proteger las consultas y ocultar las funciones de otros roles. La
+comprobación del rol activo en H2 no equivale a una autenticación.
+
+La publicación copia únicamente el tipo y la duración en minutos. Genera un título
+genérico a partir del tipo; no copia el nombre original, descripción, lugar,
+fechas exactas, invitados, identificadores de personas ni presupuesto. La tabla
+pública de plantillas no contiene esas columnas. La referencia interna a la
+solicitud se utiliza para asegurar una sola plantilla por aprobación, y no se
+expone en la vista pública. El evento original no cambia de estado ni pierde datos.
+
+No se permiten solicitudes duplicadas mientras haya una pendiente o aprobada.
+Después de un rechazo, el organizador puede solicitar de nuevo expresamente; se
+conservan la solicitud anterior y su motivo. Las notificaciones se guardan en H2
+por usuario y se consultan dentro de la aplicación; no se envían correos.
+
+### Persistencia y errores
+
+La migración repetible `migrations/002_publicacion_eventos.sql` añade:
+
+- `Solicitud_publicacion`, con estado, motivo y administrador revisor.
+- `Plantilla_evento`, con los datos estructurales de la plantilla.
+- `Notificacion_interna`, con destinatario, mensaje y fecha.
+
+La comprobación del evento, registro de solicitud y notificaciones forman una
+transacción. La aprobación también confirma conjuntamente la plantilla, decisión
+y notificación. Ante un fallo se revierten los cambios, se muestra un mensaje
+claro y se conserva el formulario para reintentar. Se bloquea el evento al procesar
+la solicitud y se vuelve a comprobar su estado antes de aprobar. Las consultas
+usan parámetros JDBC.
+
+Si no hay administradores activos con el rol correspondiente, la solicitud se
+bloquea con un mensaje; no se simula un envío ni una aprobación automática.
+El botón Actualizar recarga solicitudes, catálogo y avisos de los perfiles
+seleccionados. Para cargar nuevos perfiles creados desde otra pantalla, volver a
+abrir CU03.
+
+### Demostración en una base vacía
+
+Con Maven instalado:
+
+```bash
+mvn test-compile dependency:copy-dependencies
+java -cp "target/classes:target/dependency/*" config.CargarDemoPublicacion
+mvn javafx:run
+```
+
+En Windows, sustituir `:` por `;` en el classpath. No ejecutar previamente
+`CargarDatosEjemplo`: la demostración CU03 ya lo llama y exige una base vacía.
+El comando no borra datos existentes; rechaza la carga si alguna tabla contiene
+registros. Los ejemplos no se cargan al abrir la aplicación.
+
+Elegir Laura Gómez y «Evento finalizado de demostración», enviar la solicitud y
+revisarla como «Administrador de demostración». Probar rechazo con motivo o
+aprobación; consultar después Mis solicitudes, Notificaciones y Plantillas.
+El evento finalizado es una fixture de demostración; este comando no implementa
+ni ejecuta el proceso de finalización CU05. Si ya hay datos reales, usar los
+organizadores, eventos finalizados y administradores registrados, sin cargar
+la demostración ni eliminar la base de datos.
+
+### Verificación de CU03
+
+- 30 pruebas JUnit en total: 16 anteriores y 14 de publicación/demostración.
+- Cobertura nueva: solicitud pendiente, propiedad del evento, estados, administrador
+  con rol activo, motivo obligatorio, duplicados, publicación sin datos sensibles,
+  conservación del original, notificaciones, rechazo y nuevo envío, persistencia,
+  reversión por fallo y reintento.
+- Prueba JavaFX con H2 temporal: solicitud bloqueada por estado, envío, rechazo sin
+  motivo, rechazo válido, notificación, reenvío, fallo durante aprobación con
+  conservación del formulario, reintento exitoso y consulta de plantilla.
+- Inspección de capturas de las tres secciones de JavaFX.
+
+En este equipo no hay Maven instalado: la verificación se ejecutó compilando con
+`javac --release 17` y usando JUnit Platform Console 1.10.2, con las dependencias
+JavaFX/H2 ya disponibles. En un entorno con Maven, usar `mvn clean test`.
+Las pruebas usan bases temporales; no modifican los registros de la aplicación.
+La comprobación visual se realizó en macOS; no se ha validado esta pantalla en Windows.
+
+Quedan pendientes la integración con la autenticación real y la revisión del equipo
+de las tablas/interacciones que afectan a Administración y a las notificaciones.
+No debe marcarse CU03 como completado en el control institucional hasta integrar
+esas dependencias y superar la revisión correspondiente.
