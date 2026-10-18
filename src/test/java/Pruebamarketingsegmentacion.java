@@ -97,7 +97,6 @@ public class PruebaMarketingSegmentacion {
         RepositoryMarketing repositorio = new RepositoryMarketing(url);
         List<SegmentoCalculado> segmentos = new ServiceMarketing().calcularSegmentos(
                 repositorio.listarClientesActivos(), repositorio.contarSolicitudesPorTipo(), HOY);
-
         for (SegmentoCalculado segmento : segmentos) {
             System.out.println(segmento.getCiudad() + " | " + segmento.getRangoEdad().getEtiqueta()
                     + " | " + segmento.getTipoEvento() + " | " + segmento.getCantidadClientes() + " clientes");
