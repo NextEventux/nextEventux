@@ -452,3 +452,85 @@ Quedan pendientes la integración con la autenticación real y la revisión del 
 de las tablas/interacciones que afectan a Administración y a las notificaciones.
 No debe marcarse CU03 como completado en el control institucional hasta integrar
 esas dependencias y superar la revisión correspondiente.
+
+## CU04 — Cancelar evento
+
+Esta primera iteración reutiliza `ControllerEventos`, `ServiceEventos` y el CSS
+actual. Añade únicamente el repositorio de cancelación, una pantalla JavaFX y una
+migración. La rama `CU04-cancelar-evento` parte de CU03 porque reutiliza su tabla de
+notificaciones; esa dependencia debe conservarse al integrar las ramas.
+
+### Uso
+
+Desde Crear evento, elegir **Cancelar evento** en el menú lateral o en el menú
+**Eventos** de la barra superior, disponible también en ventanas pequeñas.
+Seleccionar organizador y evento por nombre y marcar la confirmación explícita.
+El botón permanece deshabilitado hasta confirmar. Cambiar de evento borra esa
+confirmación para evitar cancelar otra selección por accidente.
+
+Se bloquean eventos cancelados, finalizados, inexistentes o de otro organizador.
+Al cancelar se liberan los horarios de servicios vinculados, se cancelan las
+contrataciones activas, se libera el lugar cuando corresponde, se revocan las
+invitaciones enviadas y se registran los avisos internos para proveedores e
+invitados. No se modifica la aprobación del proveedor ni se eliminan invitados.
+Los borradores y las invitaciones ya revocadas se conservan.
+
+Todos los cambios se confirman juntos. Si falla una liberación o notificación,
+se revierte la operación completa, se mantiene la selección del formulario y se
+permite reintentar. La confirmación de éxito aparece solo después del commit.
+
+### Vínculos de reservas e integración
+
+La migración `003_cancelacion_eventos.sql` agrega:
+
+- `Contratacion.id_disponibilidad`, para identificar el horario exacto que se libera.
+- `Evento.id_lugar`, para identificar el lugar reservado mediante su clave real.
+- La tabla `Disponibilidad_Servicio` con la estructura ya definida en la rama CU11.
+  Si esa tabla existe, no se recrean sus datos.
+- Destinatario `id_invitado` y referencia `id_evento` en `Notificacion_interna`.
+  La restricción exige un destinatario: usuario o invitado, nunca ambos.
+
+El módulo de contratación debe guardar `id_disponibilidad`; la reserva de lugar
+debe guardar `id_lugar`. No se infieren esos vínculos de los textos ni se rellenan
+identificadores arbitrarios en datos existentes. Si una contratación activa carece
+de una reserva válida o una invitación apunta a un lugar reservado sin vínculo
+coherente con el evento, se bloquea la cancelación sin modificar datos.
+
+Una reserva compartida no se libera mientras otro evento mantenga un compromiso
+activo. El estado global de Lugar permanece reservado si otro evento activo lo
+utiliza; el modelo actual no contiene un calendario independiente de reservas de
+lugares. Ese comportamiento debe coordinarse con el módulo responsable.
+
+Los avisos para proveedores se dirigen a su Usuario. Invitado no tiene una cuenta
+Usuario en el esquema actual: su aviso se guarda mediante `id_invitado`, sin
+buscar cuentas por nombre o correo. La pantalla muestra el resumen de avisos del
+evento; integrar su lectura en la bandeja del módulo de Invitados sigue pendiente.
+Los avisos de proveedores pueden consultarse por `id_usuario` en la misma tabla.
+
+La selección de organizador sigue siendo de demostración mientras se corrige e
+integra el login. No equivale a autenticación. CU04 no debe declararse completo
+hasta integrar esa sesión y coordinar las reservas y bandejas con los otros módulos.
+
+### Pruebas
+
+41 pruebas JUnit correctas en total, incluidas 11 de CU04: confirmación, propiedad,
+estados, reservas válidas, liberación sin afectar otros eventos, reserva compartida,
+revocación, destinatarios, persistencia y rollback si falla un servicio o un aviso.
+La prueba de liberación compartida comprueba que el último evento cancelado deja
+el recurso disponible. Las pruebas utilizan exclusivamente bases temporales.
+
+La ventana JavaFX también se comprobó con una base temporal: selección por nombre,
+confirmación obligatoria, fallo simulado, conservación del formulario, reintento,
+estado actualizado y cuatro avisos registrados para los afectados de los ejemplos.
+Se inspeccionaron capturas de la pantalla antes y después de cancelar.
+
+Con Maven instalado:
+
+```bash
+mvn clean test
+mvn javafx:run
+```
+
+Como Maven no está instalado en este equipo, se verificó compilando con
+`javac --release 17` y ejecutando JUnit Platform Console 1.10.2 con H2 2.3.232.
+Las pruebas no ejecutan el login de la rama externa ni tocan la base de la aplicación.
