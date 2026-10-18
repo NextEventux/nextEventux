@@ -21,7 +21,8 @@ import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewEventos;
 import views.ViewLogin;
-import views.ViewProveedores;
+import views.ViewDetalleServicioProveedor;
+import views.ViewListaServiciosProveedor;
 
 public class NextEventuxApp extends Application {
 
@@ -36,27 +37,27 @@ public class NextEventuxApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        controllerEventos =
-                new ControllerEventos(
+        controllerEventos
+                = new ControllerEventos(
                         new ServiceEventos(
                                 new RepositoryEvento()));
 
-        controllerProveedores =
-                new ControllerProveedores(
+        controllerProveedores
+                = new ControllerProveedores(
                         new ServiceProveedores(
                                 new RepositoryServicio(),
                                 new RepositoryDisponibilidadServicio()));
 
-        controllerAutenticacion =
-                new ControllerAutenticacion(
+        controllerAutenticacion
+                = new ControllerAutenticacion(
                         new ServiceAutenticacion(
                                 new RepositoryAutenticacion()));
 
-        contenedor =
-                new StackPane();
+        contenedor
+                = new StackPane();
 
-        Scene scene =
-                new Scene(
+        Scene scene
+                = new Scene(
                         contenedor,
                         1200,
                         800);
@@ -83,7 +84,7 @@ public class NextEventuxApp extends Application {
                 event -> {
 
                     if (event.getCode()
-                            == KeyCode.F11) {
+                    == KeyCode.F11) {
 
                         stage.setFullScreen(
                                 !stage.isFullScreen());
@@ -216,12 +217,37 @@ public class NextEventuxApp extends Application {
         contenedor
                 .getChildren()
                 .setAll(
-                        new ViewProveedores(
+                        new ViewListaServiciosProveedor(
                                 controllerProveedores,
                                 sesionActual.getIdActor(),
-                                null,
                                 sesionActual,
-                                this::mostrarLogin)
+                                this::mostrarLogin,
+                                this::mostrarDetalleServicioProveedor,
+                                () -> mostrarDetalleServicioProveedor(null))
+                                .crearPantalla());
+    }
+
+    private void mostrarDetalleServicioProveedor(
+            Integer idServicio) {
+
+        if (sesionActual == null
+                || !"PROVEEDOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        contenedor
+                .getChildren()
+                .setAll(
+                        new ViewDetalleServicioProveedor(
+                                controllerProveedores,
+                                sesionActual.getIdActor(),
+                                sesionActual,
+                                this::mostrarLogin,
+                                idServicio,
+                                this::mostrarProveedores)
                                 .crearPantalla());
     }
 

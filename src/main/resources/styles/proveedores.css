@@ -90,3 +90,45 @@
     -fx-border-color: #D71920;
     -fx-border-width: 0 0 0 3px;
 }
+/* Iconos de categoria en la lista de servicios */
+
+.service-category-icon {
+    -fx-min-width: 42px;
+    -fx-pref-width: 42px;
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
+
+    -fx-alignment: center;
+
+    -fx-background-color: #FFF0F1;
+    -fx-background-radius: 10px;
+
+    -fx-text-fill: #D71920;
+    -fx-font-size: 18px;
+}
+
+
+/* Estados de los servicios */
+
+.service-status,
+.service-status-detail {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.status-available {
+    -fx-text-fill: #238653;
+}
+
+.status-draft {
+    -fx-text-fill: #9A7418;
+}
+
+.status-retired {
+    -fx-text-fill: #B34444;
+}
