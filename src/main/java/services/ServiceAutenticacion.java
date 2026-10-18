@@ -26,8 +26,8 @@ public class ServiceAutenticacion {
                     "Ingresa usuario y contrasena.");
         }
 
-        SesionUsuario sesion =
-                repository.autenticar(
+        SesionUsuario sesion
+                = repository.autenticar(
                         usuario.trim(),
                         contrasena);
 
@@ -67,6 +67,12 @@ public class ServiceAutenticacion {
                 throw new IllegalStateException(
                         "El organizador no esta activo.");
             }
+
+            return sesion;
+        }
+
+        if ("ADMINISTRADOR".equalsIgnoreCase(
+                sesion.getTipoUsuario())) {
 
             return sesion;
         }

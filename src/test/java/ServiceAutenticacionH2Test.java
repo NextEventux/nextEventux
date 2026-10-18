@@ -1,17 +1,23 @@
-import config.DatabaseConnection;
-import entities.SesionUsuario;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import repositories.RepositoryAutenticacion;
-import services.ServiceAutenticacion;
 
 import java.sql.Connection;
 import java.sql.Statement;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import config.DatabaseConnection;
+import entities.SesionUsuario;
+import repositories.RepositoryAutenticacion;
+import services.ServiceAutenticacion;
 
 public class ServiceAutenticacionH2Test {
+
+    private static final String TEST_URL
+            = "jdbc:h2:mem:auth;DB_CLOSE_DELAY=-1";
 
     private ServiceAutenticacion service;
 
@@ -20,12 +26,17 @@ public class ServiceAutenticacionH2Test {
 
         System.setProperty(
                 "nexteventux.db.url",
-                "jdbc:h2:mem:auth;DB_CLOSE_DELAY=-1");
+                TEST_URL);
 
-        try (Connection connection =
-                     DatabaseConnection.getConnection();
-             Statement statement =
-                     connection.createStatement()) {
+        try (Connection connection
+                = DatabaseConnection.getConnection(TEST_URL); Statement statement
+                = connection.createStatement()) {
+
+            assertTrue(
+                    connection.getMetaData()
+                            .getURL()
+                            .startsWith("jdbc:h2:mem:auth"),
+                    "La prueba debe utilizar exclusivamente H2 en memoria.");
 
             statement.executeUpdate("""
                     INSERT INTO Usuario
@@ -101,34 +112,53 @@ public class ServiceAutenticacionH2Test {
                      'Bogota',
                      'PENDIENTE')
                     """);
+
+            statement.executeUpdate("""
+                    INSERT INTO Usuario
+                    (id_usuario, nombre, usuario, contraseña,
+                     estado, fecha_registro,
+                     acepta_marketing, tipo_usuario)
+                    VALUES
+                    (8004, 'Administrador prueba',
+                     'admin.prueba', 'claveadmin',
+                     'ACTIVO', CURRENT_TIMESTAMP,
+                     FALSE, 'ADMINISTRADOR')
+                    """);
         }
 
-        service =
-                new ServiceAutenticacion(
+        service
+                = new ServiceAutenticacion(
                         new RepositoryAutenticacion());
     }
 
     @AfterEach
     void limpiar() throws Exception {
 
-        try (Connection connection =
-                     DatabaseConnection.getConnection();
-             Statement statement =
-                     connection.createStatement()) {
+        try {
+            try (Connection connection
+                    = DatabaseConnection.getConnection(TEST_URL); Statement statement
+                    = connection.createStatement()) {
 
-            statement.execute(
-                    "DROP ALL OBJECTS");
+                assertTrue(
+                        connection.getMetaData()
+                                .getURL()
+                                .startsWith("jdbc:h2:mem:auth"),
+                        "La limpieza debe utilizar H2 en memoria.");
+
+                statement.execute(
+                        "DROP ALL OBJECTS");
+            }
+        } finally {
+            System.clearProperty(
+                    "nexteventux.db.url");
         }
-
-        System.clearProperty(
-                "nexteventux.db.url");
     }
 
     @Test
     void proveedorAprobadoPuedeIngresar() {
 
-        SesionUsuario sesion =
-                service.iniciarSesion(
+        SesionUsuario sesion
+                = service.iniciarSesion(
                         "proveedor.prueba",
                         "clave1");
 
@@ -144,8 +174,8 @@ public class ServiceAutenticacionH2Test {
     @Test
     void organizadorActivoPuedeIngresar() {
 
-        SesionUsuario sesion =
-                service.iniciarSesion(
+        SesionUsuario sesion
+                = service.iniciarSesion(
                         "organizador.prueba",
                         "clave2");
 
@@ -161,8 +191,8 @@ public class ServiceAutenticacionH2Test {
     @Test
     void proveedorPendienteNoPuedeIngresar() {
 
-        IllegalStateException error =
-                assertThrows(
+        IllegalStateException error
+                = assertThrows(
                         IllegalStateException.class,
                         () -> service.iniciarSesion(
                                 "proveedor.pendiente",
@@ -181,5 +211,43 @@ public class ServiceAutenticacionH2Test {
                 () -> service.iniciarSesion(
                         "proveedor.prueba",
                         "incorrecta"));
+    }
+
+    @Test
+    void administradorActivoPuedeIngresar() {
+
+        SesionUsuario sesion
+                = service.iniciarSesion(
+                        "admin.prueba",
+                        "claveadmin");
+
+        assertEquals(
+                "ADMINISTRADOR",
+                sesion.getTipoUsuario());
+
+        assertEquals(
+                8004,
+                sesion.getIdUsuario());
+    }
+
+    @Test
+    void administradorInactivoNoPuedeIngresar() throws Exception {
+
+        try (Connection connection
+                = DatabaseConnection.getConnection(TEST_URL); Statement statement
+                = connection.createStatement()) {
+
+            statement.executeUpdate("""
+                    UPDATE Usuario
+                    SET estado = 'INACTIVO'
+                    WHERE id_usuario = 8004
+                    """);
+        }
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.iniciarSesion(
+                        "admin.prueba",
+                        "claveadmin"));
     }
 }
