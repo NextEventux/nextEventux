@@ -2,6 +2,7 @@ package views;
 
 import controllers.ControllerAutenticacion;
 import entities.SesionUsuario;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -9,6 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.function.Consumer;
@@ -24,8 +26,13 @@ public class ViewLogin {
     private final PasswordField contrasena =
             new PasswordField();
 
+    private final TextField contrasenaVisible =
+            new TextField();
+
     private final Label mensaje =
             new Label();
+
+    private boolean mostrarContrasena;
 
     public ViewLogin(
             ControllerAutenticacion controller,
@@ -35,10 +42,29 @@ public class ViewLogin {
         this.alIngresar = alIngresar;
 
         usuario.setPromptText("Usuario");
+
         contrasena.setPromptText("Contraseña");
+        contrasenaVisible.setPromptText("Contraseña");
 
         usuario.setMaxWidth(Double.MAX_VALUE);
         contrasena.setMaxWidth(Double.MAX_VALUE);
+        contrasenaVisible.setMaxWidth(Double.MAX_VALUE);
+
+        contrasenaVisible
+                .textProperty()
+                .bindBidirectional(
+                        contrasena.textProperty());
+
+        contrasenaVisible.setVisible(false);
+        contrasenaVisible.setManaged(false);
+
+        contrasena
+                .getStyleClass()
+                .add("login-password-field");
+
+        contrasenaVisible
+                .getStyleClass()
+                .add("login-password-field");
 
         mensaje.getStyleClass().add(
                 "login-error");
@@ -106,6 +132,9 @@ public class ViewLogin {
         contrasena.setOnAction(
                 event -> iniciarSesion());
 
+        contrasenaVisible.setOnAction(
+                event -> iniciarSesion());
+
         VBox formulario =
                 new VBox(
                         14,
@@ -115,7 +144,7 @@ public class ViewLogin {
                         etiqueta("Usuario"),
                         usuario,
                         etiqueta("Contraseña"),
-                        contrasena,
+                        crearCampoContrasena(),
                         mensaje,
                         ingresar);
 
@@ -141,6 +170,80 @@ public class ViewLogin {
                 "login-root");
 
         return raiz;
+    }
+
+    private StackPane crearCampoContrasena() {
+
+        Button ver =
+                new Button("👁");
+
+        ver.getStyleClass().add(
+                "login-eye-button");
+
+        ver.setFocusTraversable(false);
+
+        StackPane.setAlignment(
+                ver,
+                Pos.CENTER_RIGHT);
+
+        StackPane.setMargin(
+                ver,
+                new Insets(
+                        0,
+                        8,
+                        0,
+                        0));
+
+        ver.setOnAction(
+                event -> alternarContrasena());
+
+        StackPane campo =
+                new StackPane(
+                        contrasena,
+                        contrasenaVisible,
+                        ver);
+
+        campo.getStyleClass().add(
+                "login-password-box");
+
+        return campo;
+    }
+
+    private void alternarContrasena() {
+
+        mostrarContrasena =
+                !mostrarContrasena;
+
+        contrasenaVisible.setVisible(
+                mostrarContrasena);
+
+        contrasenaVisible.setManaged(
+                mostrarContrasena);
+
+        contrasena.setVisible(
+                !mostrarContrasena);
+
+        contrasena.setManaged(
+                !mostrarContrasena);
+
+        if (mostrarContrasena) {
+
+            contrasenaVisible.requestFocus();
+
+            contrasenaVisible.positionCaret(
+                    contrasenaVisible
+                            .getText()
+                            .length());
+
+        } else {
+
+            contrasena.requestFocus();
+
+            contrasena.positionCaret(
+                    contrasena
+                            .getText()
+                            .length());
+        }
     }
 
     private void iniciarSesion() {

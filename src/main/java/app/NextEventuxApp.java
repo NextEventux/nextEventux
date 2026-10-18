@@ -6,6 +6,7 @@ import controllers.ControllerProveedores;
 import entities.SesionUsuario;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
@@ -63,8 +64,8 @@ public class NextEventuxApp extends Application {
         Scene scene =
                 new Scene(
                         contenedor,
-                        1440,
-                        1000);
+                        1200,
+                        800);
 
         scene.getStylesheets().add(
                 getClass()
@@ -84,12 +85,26 @@ public class NextEventuxApp extends Application {
                                 "/styles/login.css")
                         .toExternalForm());
 
+        scene.setOnKeyPressed(event -> {
+
+            if (event.getCode() == KeyCode.F11) {
+                stage.setFullScreen(
+                        !stage.isFullScreen());
+            }
+        });
+
         mostrarLogin();
 
         stage.setTitle("NextEventux");
-        stage.setMinWidth(900);
-        stage.setMinHeight(700);
+
+        stage.setMinWidth(760);
+        stage.setMinHeight(600);
+
+        stage.setResizable(true);
+        stage.setFullScreenExitHint("");
+
         stage.setScene(scene);
+        stage.setMaximized(true);
         stage.show();
     }
 
@@ -143,7 +158,9 @@ public class NextEventuxApp extends Application {
                 .setAll(
                         new ViewEventos(
                                 controllerEventos,
-                                null)
+                                null,
+                                sesionActual,
+                                this::mostrarLogin)
                                 .crearPantalla());
     }
 
@@ -163,7 +180,9 @@ public class NextEventuxApp extends Application {
                         new ViewProveedores(
                                 controllerProveedores,
                                 sesionActual.getIdActor(),
-                                null)
+                                null,
+                                sesionActual,
+                                this::mostrarLogin)
                                 .crearPantalla());
     }
 

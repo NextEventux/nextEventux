@@ -3,6 +3,7 @@ package views;
 import controllers.ControllerProveedores;
 import entities.DisponibilidadServicio;
 import entities.Servicio;
+import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -17,6 +18,8 @@ public class ViewProveedores {
     private final ControllerProveedores controller;
     private final int idProveedor;
     private final Runnable abrirEventos;
+    private SesionUsuario sesion;
+    private Runnable cerrarSesion;
 
     private final ListView<Servicio> listaServicios = new ListView<>();
     private final ListView<DisponibilidadServicio> listaDisponibilidades =
@@ -73,6 +76,22 @@ public class ViewProveedores {
 
         fecha.setEditable(false);
         fecha.setMaxWidth(Double.MAX_VALUE);
+    }
+
+    public ViewProveedores(
+            ControllerProveedores controller,
+            int idProveedor,
+            Runnable abrirEventos,
+            SesionUsuario sesion,
+            Runnable cerrarSesion) {
+
+        this(
+                controller,
+                idProveedor,
+                abrirEventos);
+
+        this.sesion = sesion;
+        this.cerrarSesion = cerrarSesion;
     }
 
     public Parent crearPantalla() {
@@ -263,10 +282,7 @@ public class ViewProveedores {
 
         String[] opciones = {
                 "⌂  Inicio",
-                "▦  Mis eventos",
-                "＋  Crear evento",
-                "♧  Proveedores",
-                "♙  Invitados",
+                "♧  Mis servicios",
                 "⚙  Configuración"
         };
 
@@ -280,15 +296,8 @@ public class ViewProveedores {
             item.setMaxWidth(
                     Double.MAX_VALUE);
 
-            if (opcion.contains("Proveedores")) {
+            if (opcion.contains("Mis servicios")) {
                 item.getStyleClass().add("active");
-            }
-
-            if (opcion.contains("Crear evento")
-                    && abrirEventos != null) {
-
-                item.setOnMouseClicked(
-                        event -> abrirEventos.run());
             }
 
             menu.getChildren().add(item);
@@ -300,21 +309,35 @@ public class ViewProveedores {
                 espacio,
                 Priority.ALWAYS);
 
-        VBox perfil = new VBox(
-                4,
+        Label salir =
                 etiqueta(
-                        "Proveedor",
-                        "profile-name"),
-                etiqueta(
-                        "Mi cuenta",
-                        "hint"));
+                        "Cerrar sesión",
+                        "logout-link");
 
-        HBox cuenta = new HBox(
-                12,
-                etiqueta(
-                        "PR",
-                        "avatar"),
-                perfil);
+        if (cerrarSesion != null) {
+
+            salir.setOnMouseClicked(
+                    event -> cerrarSesion.run());
+        }
+
+        VBox perfil =
+                new VBox(
+                        4,
+                        etiqueta(
+                                nombreSesion(),
+                                "profile-name"),
+                        etiqueta(
+                                rolSesion(),
+                                "hint"),
+                        salir);
+
+        HBox cuenta =
+                new HBox(
+                        12,
+                        etiqueta(
+                                inicialesSesion(),
+                                "avatar"),
+                        perfil);
 
         cuenta.setAlignment(
                 Pos.CENTER_LEFT);
@@ -345,7 +368,7 @@ public class ViewProveedores {
                         "♧",
                         "notification"),
                 etiqueta(
-                        "Proveedor",
+                        nombreSesion(),
                         "user-badge"));
 
         barra.setAlignment(
@@ -356,6 +379,65 @@ public class ViewProveedores {
                 .add("topbar");
 
         return barra;
+    }
+
+    private String nombreSesion() {
+
+        if (sesion == null
+                || sesion.getNombre() == null
+                || sesion.getNombre().isBlank()) {
+
+            return "Proveedor";
+        }
+
+        return sesion.getNombre();
+    }
+
+    private String rolSesion() {
+
+        if (sesion == null
+                || sesion.getTipoUsuario() == null
+                || sesion.getTipoUsuario().isBlank()) {
+
+            return "Proveedor";
+        }
+
+        String rol =
+                sesion.getTipoUsuario()
+                        .toLowerCase();
+
+        return Character.toUpperCase(
+                rol.charAt(0))
+                + rol.substring(1);
+    }
+
+    private String inicialesSesion() {
+
+        String[] partes =
+                nombreSesion()
+                        .trim()
+                        .split("\\s+");
+
+        StringBuilder iniciales =
+                new StringBuilder();
+
+        for (String parte : partes) {
+
+            if (!parte.isBlank()) {
+
+                iniciales.append(
+                        Character.toUpperCase(
+                                parte.charAt(0)));
+            }
+
+            if (iniciales.length() == 2) {
+                break;
+            }
+        }
+
+        return iniciales.length() == 0
+                ? "PR"
+                : iniciales.toString();
     }
 
     private VBox crearGestionServicios() {

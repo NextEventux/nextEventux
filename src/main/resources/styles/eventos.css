@@ -46,3 +46,14 @@
 .message { -fx-padding: 15 18; -fx-background-radius: 10; -fx-max-width: infinity; }
 .message.success { -fx-background-color: #EAF8EF; -fx-text-fill: #247443; }
 .message.error { -fx-background-color: #FFF0F0; -fx-text-fill: #BA2424; }
+
+.avatar {
+    -fx-min-width: 46px;
+    -fx-pref-width: 46px;
+    -fx-max-width: 46px;
+    -fx-min-height: 46px;
+    -fx-pref-height: 46px;
+    -fx-max-height: 46px;
+    -fx-padding: 0;
+    -fx-alignment: center;
+}

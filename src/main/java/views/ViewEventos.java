@@ -2,6 +2,7 @@ package views;
 
 import controllers.ControllerEventos;
 import entities.Evento;
+import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -18,6 +19,8 @@ import java.util.Locale;
 public class ViewEventos {
     private final ControllerEventos controller;
     private Runnable abrirProveedores;
+    private SesionUsuario sesion;
+    private Runnable cerrarSesion;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final TextField organizador = campo("organizador", "Identificador del organizador");
@@ -67,6 +70,18 @@ public class ViewEventos {
     public ViewEventos(ControllerEventos controller, Runnable abrirProveedores) {
         this(controller);
         this.abrirProveedores = abrirProveedores;
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirProveedores,
+            SesionUsuario sesion,
+            Runnable cerrarSesion) {
+
+        this(controller, abrirProveedores);
+
+        this.sesion = sesion;
+        this.cerrarSesion = cerrarSesion;
     }
 
     public Parent crearPantalla() {
@@ -144,8 +159,34 @@ public class ViewEventos {
         }
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
-        VBox perfil = new VBox(4, etiqueta("Organizador", "profile-name"), etiqueta("Mi cuenta", "hint"));
-        HBox cuenta = new HBox(12, etiqueta("SC", "avatar"), perfil);
+        Label salir =
+                etiqueta(
+                        "Cerrar sesión",
+                        "logout-link");
+
+        if (cerrarSesion != null) {
+            salir.setOnMouseClicked(
+                    event -> cerrarSesion.run());
+        }
+
+        VBox perfil =
+                new VBox(
+                        4,
+                        etiqueta(
+                                nombreSesion(),
+                                "profile-name"),
+                        etiqueta(
+                                rolSesion(),
+                                "hint"),
+                        salir);
+
+        HBox cuenta =
+                new HBox(
+                        12,
+                        etiqueta(
+                                inicialesSesion(),
+                                "avatar"),
+                        perfil);
         cuenta.setAlignment(Pos.CENTER_LEFT);
         cuenta.getStyleClass().add("sidebar-bottom");
         menu.getChildren().addAll(espacio, cuenta);
@@ -155,10 +196,69 @@ public class ViewEventos {
     private HBox crearBarraSuperior() {
         HBox barra = new HBox(18, etiqueta("Inicio / Mis eventos /", "breadcrumb"),
                 etiqueta("Crear evento", "breadcrumb-current"), espacioHorizontal(),
-                etiqueta("♧", "notification"), etiqueta("Organizador", "user-badge"));
+                etiqueta("♧", "notification"), etiqueta(nombreSesion(), "user-badge"));
         barra.setAlignment(Pos.CENTER_LEFT);
         barra.getStyleClass().add("topbar");
         return barra;
+    }
+
+    private String nombreSesion() {
+
+        if (sesion == null
+                || sesion.getNombre() == null
+                || sesion.getNombre().isBlank()) {
+
+            return "Organizador";
+        }
+
+        return sesion.getNombre();
+    }
+
+    private String rolSesion() {
+
+        if (sesion == null
+                || sesion.getTipoUsuario() == null
+                || sesion.getTipoUsuario().isBlank()) {
+
+            return "Organizador";
+        }
+
+        String rol =
+                sesion.getTipoUsuario()
+                        .toLowerCase();
+
+        return Character.toUpperCase(
+                rol.charAt(0))
+                + rol.substring(1);
+    }
+
+    private String inicialesSesion() {
+
+        String[] partes =
+                nombreSesion()
+                        .trim()
+                        .split("\\s+");
+
+        StringBuilder iniciales =
+                new StringBuilder();
+
+        for (String parte : partes) {
+
+            if (!parte.isBlank()) {
+
+                iniciales.append(
+                        Character.toUpperCase(
+                                parte.charAt(0)));
+            }
+
+            if (iniciales.length() == 2) {
+                break;
+            }
+        }
+
+        return iniciales.length() == 0
+                ? "OR"
+                : iniciales.toString();
     }
 
     private VBox crearFormulario() {
