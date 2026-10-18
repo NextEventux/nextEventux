@@ -3,6 +3,7 @@ package app;
 import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
 import controllers.ControllerProveedores;
+import entities.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -16,6 +17,8 @@ import repositories.RepositoryServicio;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
 import services.ServiceProveedores;
+import views.ViewCatalogoServicios;
+import views.ViewDetalleServicio;
 import views.ViewEventos;
 import views.ViewLogin;
 import views.ViewProveedores;
@@ -33,25 +36,16 @@ public class NextEventuxApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        RepositoryEvento repositoryEvento =
-                new RepositoryEvento();
-
         controllerEventos =
                 new ControllerEventos(
                         new ServiceEventos(
-                                repositoryEvento));
-
-        RepositoryServicio repositoryServicio =
-                new RepositoryServicio();
-
-        RepositoryDisponibilidadServicio repositoryDisponibilidad =
-                new RepositoryDisponibilidadServicio();
+                                new RepositoryEvento()));
 
         controllerProveedores =
                 new ControllerProveedores(
                         new ServiceProveedores(
-                                repositoryServicio,
-                                repositoryDisponibilidad));
+                                new RepositoryServicio(),
+                                new RepositoryDisponibilidadServicio()));
 
         controllerAutenticacion =
                 new ControllerAutenticacion(
@@ -85,13 +79,16 @@ public class NextEventuxApp extends Application {
                                 "/styles/login.css")
                         .toExternalForm());
 
-        scene.setOnKeyPressed(event -> {
+        scene.setOnKeyPressed(
+                event -> {
 
-            if (event.getCode() == KeyCode.F11) {
-                stage.setFullScreen(
-                        !stage.isFullScreen());
-            }
-        });
+                    if (event.getCode()
+                            == KeyCode.F11) {
+
+                        stage.setFullScreen(
+                                !stage.isFullScreen());
+                    }
+                });
 
         mostrarLogin();
 
@@ -145,9 +142,7 @@ public class NextEventuxApp extends Application {
 
     private void mostrarEventos() {
 
-        if (sesionActual == null
-                || !"ORGANIZADOR".equalsIgnoreCase(
-                        sesionActual.getTipoUsuario())) {
+        if (!esOrganizador()) {
 
             mostrarLogin();
             return;
@@ -158,8 +153,52 @@ public class NextEventuxApp extends Application {
                 .setAll(
                         new ViewEventos(
                                 controllerEventos,
-                                null,
+                                this::mostrarCatalogoServicios,
                                 sesionActual,
+                                this::mostrarLogin)
+                                .crearPantalla());
+    }
+
+    private void mostrarCatalogoServicios() {
+
+        if (!esOrganizador()) {
+
+            mostrarLogin();
+            return;
+        }
+
+        contenedor
+                .getChildren()
+                .setAll(
+                        new ViewCatalogoServicios(
+                                controllerProveedores,
+                                sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarLogin,
+                                this::mostrarDetalleServicio)
+                                .crearPantalla());
+    }
+
+    private void mostrarDetalleServicio(
+            Servicio servicio) {
+
+        if (!esOrganizador()
+                || servicio == null) {
+
+            mostrarLogin();
+            return;
+        }
+
+        contenedor
+                .getChildren()
+                .setAll(
+                        new ViewDetalleServicio(
+                                controllerProveedores,
+                                servicio,
+                                sesionActual.getIdActor(),
+                                sesionActual,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarEventos,
                                 this::mostrarLogin)
                                 .crearPantalla());
     }
@@ -184,6 +223,13 @@ public class NextEventuxApp extends Application {
                                 sesionActual,
                                 this::mostrarLogin)
                                 .crearPantalla());
+    }
+
+    private boolean esOrganizador() {
+
+        return sesionActual != null
+                && "ORGANIZADOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario());
     }
 
     public static void main(String[] args) {

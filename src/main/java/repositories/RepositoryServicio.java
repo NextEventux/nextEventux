@@ -1,8 +1,5 @@
 package repositories;
 
-import config.DatabaseConnection;
-import entities.Servicio;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,6 +7,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import config.DatabaseConnection;
+import entities.Servicio;
 
 // Se encarga de guardar y consultar los servicios en H2
 public class RepositoryServicio {
@@ -23,10 +23,9 @@ public class RepositoryServicio {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     sql,
-                     Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(
+                sql,
+                Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setInt(1, servicio.getIdProveedor());
             statement.setString(2, servicio.getNombre());
@@ -66,8 +65,7 @@ public class RepositoryServicio {
                 WHERE id_servicio = ?
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idServicio);
 
@@ -96,8 +94,7 @@ public class RepositoryServicio {
                 ORDER BY id_servicio
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idProveedor);
 
@@ -132,8 +129,7 @@ public class RepositoryServicio {
                 WHERE id_servicio = ?
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, servicio.getIdProveedor());
             statement.setString(2, servicio.getNombre());
@@ -168,8 +164,7 @@ public class RepositoryServicio {
                 WHERE id_servicio = ?
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, estado);
             statement.setInt(2, idServicio);
@@ -189,8 +184,7 @@ public class RepositoryServicio {
                   AND UPPER(estado) = 'PENDIENTE'
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idServicio);
 
@@ -202,6 +196,38 @@ public class RepositoryServicio {
         } catch (SQLException e) {
             throw new RuntimeException(
                     "No se pudieron consultar las solicitudes del servicio.",
+                    e);
+        }
+    }
+
+    public List<Servicio> listarServiciosDisponibles() {
+
+        List<Servicio> servicios
+                = new ArrayList<>();
+
+        String sql = """
+            SELECT *
+            FROM Servicio
+            WHERE UPPER(estado) = 'DISPONIBLE'
+            ORDER BY nombre
+            """;
+
+        try (Connection connection
+                = DatabaseConnection.getConnection(); PreparedStatement statement
+                = connection.prepareStatement(sql); ResultSet result
+                = statement.executeQuery()) {
+
+            while (result.next()) {
+                servicios.add(
+                        construirServicio(result));
+            }
+
+            return servicios;
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "No se pudieron consultar los servicios publicados.",
                     e);
         }
     }

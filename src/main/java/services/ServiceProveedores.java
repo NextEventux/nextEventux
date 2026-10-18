@@ -1,5 +1,8 @@
 package services;
 
+import java.util.Date;
+import java.util.List;
+
 import entities.DisponibilidadServicio;
 import entities.ImagenServicio;
 import entities.PreguntaServicio;
@@ -8,9 +11,6 @@ import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryImagenServicio;
 import repositories.RepositoryPreguntaServicio;
 import repositories.RepositoryServicio;
-
-import java.util.Date;
-import java.util.List;
 
 // Aqui va la logica relacionada con las acciones del modulo de proveedores
 public class ServiceProveedores {
@@ -38,12 +38,12 @@ public class ServiceProveedores {
             RepositoryPreguntaServicio repositoryPreguntaServicio) {
 
         this.repositoryServicio = repositoryServicio;
-        this.repositoryDisponibilidadServicio =
-                repositoryDisponibilidadServicio;
-        this.repositoryImagenServicio =
-                repositoryImagenServicio;
-        this.repositoryPreguntaServicio =
-                repositoryPreguntaServicio;
+        this.repositoryDisponibilidadServicio
+                = repositoryDisponibilidadServicio;
+        this.repositoryImagenServicio
+                = repositoryImagenServicio;
+        this.repositoryPreguntaServicio
+                = repositoryPreguntaServicio;
     }
 
     public void crearServicio(Servicio datos) {
@@ -65,8 +65,8 @@ public class ServiceProveedores {
             int idServicio,
             Servicio datos) {
 
-        Servicio existente =
-                repositoryServicio.buscarServicio(idServicio);
+        Servicio existente
+                = repositoryServicio.buscarServicio(idServicio);
 
         if (existente == null) {
             throw new IllegalArgumentException(
@@ -118,8 +118,8 @@ public class ServiceProveedores {
                     "Ese horario se cruza con otra disponibilidad.");
         }
 
-        DisponibilidadServicio disponibilidad =
-                new DisponibilidadServicio();
+        DisponibilidadServicio disponibilidad
+                = new DisponibilidadServicio();
 
         disponibilidad.setIdServicio(idServicio);
         disponibilidad.setFecha(fecha);
@@ -131,8 +131,8 @@ public class ServiceProveedores {
 
     public void publicarServicio(int idServicio) {
 
-        Servicio servicio =
-                repositoryServicio.buscarServicio(idServicio);
+        Servicio servicio
+                = repositoryServicio.buscarServicio(idServicio);
 
         if (servicio == null) {
             throw new IllegalArgumentException(
@@ -155,8 +155,8 @@ public class ServiceProveedores {
 
     public void retirarServicio(int idServicio) {
 
-        Servicio servicio =
-                repositoryServicio.buscarServicio(idServicio);
+        Servicio servicio
+                = repositoryServicio.buscarServicio(idServicio);
 
         if (servicio == null) {
             throw new IllegalArgumentException(
@@ -177,6 +177,12 @@ public class ServiceProveedores {
 
     public Servicio buscarServicio(int idServicio) {
         return repositoryServicio.buscarServicio(idServicio);
+    }
+
+    public List<Servicio> listarServiciosDisponibles() {
+
+        return repositoryServicio
+                .listarServiciosDisponibles();
     }
 
     public List<Servicio> listarServiciosProveedor(
@@ -201,7 +207,6 @@ public class ServiceProveedores {
                 .eliminarDisponibilidad(idDisponibilidad);
     }
 
-
     public void agregarImagenServicio(
             int idProveedor,
             int idServicio,
@@ -216,14 +221,14 @@ public class ServiceProveedores {
                     "La ruta de la imagen es obligatoria.");
         }
 
-        ImagenServicio imagen =
-                new ImagenServicio();
+        ImagenServicio imagen
+                = new ImagenServicio();
 
         imagen.setIdServicio(idServicio);
         imagen.setRuta(ruta);
 
-        int orden =
-                repositoryImagenServicio
+        int orden
+                = repositoryImagenServicio
                         .listarImagenesServicio(idServicio)
                         .size() + 1;
 
@@ -237,8 +242,8 @@ public class ServiceProveedores {
             int idProveedor,
             int idImagen) {
 
-        ImagenServicio imagen =
-                repositoryImagenServicio
+        ImagenServicio imagen
+                = repositoryImagenServicio
                         .buscarImagen(idImagen);
 
         if (imagen == null) {
@@ -266,8 +271,8 @@ public class ServiceProveedores {
             int idOrganizador,
             String texto) {
 
-        Servicio servicio =
-                repositoryServicio
+        Servicio servicio
+                = repositoryServicio
                         .buscarServicio(idServicio);
 
         if (servicio == null) {
@@ -287,8 +292,8 @@ public class ServiceProveedores {
                     "La pregunta es obligatoria.");
         }
 
-        PreguntaServicio pregunta =
-                new PreguntaServicio();
+        PreguntaServicio pregunta
+                = new PreguntaServicio();
 
         pregunta.setIdServicio(idServicio);
         pregunta.setIdOrganizador(idOrganizador);
@@ -306,8 +311,8 @@ public class ServiceProveedores {
             int idPregunta,
             String respuesta) {
 
-        PreguntaServicio pregunta =
-                repositoryPreguntaServicio
+        PreguntaServicio pregunta
+                = repositoryPreguntaServicio
                         .buscarPregunta(idPregunta);
 
         if (pregunta == null) {
@@ -343,8 +348,8 @@ public class ServiceProveedores {
             int idServicio,
             int idProveedor) {
 
-        Servicio servicio =
-                repositoryServicio
+        Servicio servicio
+                = repositoryServicio
                         .buscarServicio(idServicio);
 
         if (servicio == null) {

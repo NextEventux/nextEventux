@@ -57,3 +57,71 @@
     -fx-padding: 0;
     -fx-alignment: center;
 }
+
+.catalog-service-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 2px;
+}
+
+.catalog-service-list .list-cell {
+    -fx-background-color: white;
+    -fx-border-color: #E8E9EF;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 16px;
+    -fx-margin: 6px 0;
+}
+
+.catalog-service-list .list-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.catalog-service-list .list-cell:hover {
+    -fx-border-color: #E79AA0;
+    -fx-border-width: 1.5px;
+    -fx-cursor: hand;
+}
+
+.catalog-service-list .list-cell:selected {
+    -fx-background-color: white;
+    -fx-border-color: #D71920;
+    -fx-border-width: 2px;
+}
+
+.catalog-service-name {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.catalog-category-icon {
+    -fx-font-size: 24px;
+    -fx-min-width: 42px;
+    -fx-pref-width: 42px;
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
+    -fx-alignment: center;
+    -fx-background-color: #FFF0F1;
+    -fx-background-radius: 10px;
+}
+
+.service-detail-data {
+    -fx-background-color: #F8F9FC;
+    -fx-background-radius: 10px;
+    -fx-padding: 13px;
+}
+
+.service-image {
+    -fx-background-color: #F8F9FC;
+}
+
+.public-question {
+    -fx-background-color: #F8F9FC;
+    -fx-border-color: #E8E9EF;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px;
+}

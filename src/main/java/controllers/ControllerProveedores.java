@@ -1,13 +1,13 @@
 package controllers;
 
+import java.util.Date;
+import java.util.List;
+
 import entities.DisponibilidadServicio;
 import entities.ImagenServicio;
 import entities.PreguntaServicio;
 import entities.Servicio;
 import services.ServiceProveedores;
-
-import java.util.Date;
-import java.util.List;
 
 // Recibe las acciones relacionadas con proveedores y las envia al service
 public class ControllerProveedores {
@@ -57,6 +57,12 @@ public class ControllerProveedores {
     public Servicio buscarServicio(int idServicio) {
         return serviceProveedores
                 .buscarServicio(idServicio);
+    }
+
+    public List<Servicio> listarServiciosDisponibles() {
+
+        return serviceProveedores
+                .listarServiciosDisponibles();
     }
 
     public List<Servicio> listarServiciosProveedor(
@@ -136,6 +142,5 @@ public class ControllerProveedores {
         return serviceProveedores
                 .listarPreguntasPublicas(idServicio);
     }
-
 
 }
