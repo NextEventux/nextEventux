@@ -2,18 +2,22 @@ package views;
 
 import controllers.ControllerPublicacion;
 import entities.*;
-import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import java.util.function.Function;
+import views.components.MenuCompartido;
 
 public class ViewPublicacion {
     private final ControllerPublicacion controller;
     private final Runnable volver;
+    private final Integer eventoInicial;
+    private final SesionUsuario sesion;
+    private final Runnable abrirEventos;
+    private final Runnable abrirMisEventos;
+    private final Runnable abrirCatalogo;
+    private final Runnable abrirInvitados;
+    private final Runnable cerrarSesion;
     private boolean esAdministrador;
     private final Label usuario = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
@@ -26,8 +30,33 @@ public class ViewPublicacion {
     private final Label mensaje = new Label();
 
     public ViewPublicacion(ControllerPublicacion controller, Runnable volver) {
+        this(controller, volver, null);
+    }
+
+    public ViewPublicacion(ControllerPublicacion controller, Runnable volver, Integer eventoInicial) {
+        this(controller, volver, eventoInicial, null, null, null, null, null, null);
+    }
+
+    public ViewPublicacion(
+            ControllerPublicacion controller,
+            Runnable volver,
+            Integer eventoInicial,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirMisEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion) {
+
         this.controller = controller;
         this.volver = volver;
+        this.eventoInicial = eventoInicial;
+        this.sesion = sesion;
+        this.abrirEventos = abrirEventos;
+        this.abrirMisEventos = abrirMisEventos;
+        this.abrirCatalogo = abrirCatalogo;
+        this.abrirInvitados = abrirInvitados;
+        this.cerrarSesion = cerrarSesion;
         usuario.setId("usuarioPublicacion");
         configurarCombo(evento, "eventoPublicacion", "Seleccionar evento", e -> e.getNombre() + " — " + estado(e.getEstado()));
         pendientes.setId("solicitudesPendientes");
@@ -54,17 +83,18 @@ public class ViewPublicacion {
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().addAll("app", "publicacion");
-        ImageView logo = new ImageView(new Image(getClass().getResource("/images/nexteventux-logo.png").toExternalForm()));
-        logo.setViewport(new Rectangle2D(75,225,1110,725));
-        logo.setFitWidth(210); logo.setFitHeight(138); logo.setPreserveRatio(true);
-        VBox menu = new VBox(24,logo,etiqueta("GESTIÓN DE EVENTOS", "brand-caption"),
-                etiqueta("↑ Subir al repositorio", "breadcrumb-current"));
-        menu.setPrefWidth(250); menu.setMinWidth(250); menu.getStyleClass().add("sidebar");
-        menu.setAlignment(Pos.TOP_CENTER);
-        raiz.setLeft(menu);
+        boolean organizadorActivo = sesion != null
+                && "ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario());
+        raiz.setLeft(MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.MIS_EVENTOS,
+                organizadorActivo ? abrirEventos : null,
+                organizadorActivo ? abrirInvitados : null,
+                organizadorActivo ? abrirCatalogo : null,
+                null,
+                cerrarSesion,
+                organizadorActivo ? abrirMisEventos : null));
         Button actualizar = boton("Actualizar", "actualizarPublicacion", this::actualizar, false);
-        HBox barra = new HBox(20,etiqueta("Mis eventos / Subir al repositorio", "breadcrumb"),espacio(),actualizar);
-        barra.setAlignment(Pos.CENTER_LEFT); barra.getStyleClass().add("topbar");
         VBox contenido = new VBox(22);
         contenido.getStyleClass().add("content");
         Label explicacion = etiqueta("Comparte un evento finalizado como plantilla. La publicación requiere aprobación del administrador.","muted");
@@ -87,14 +117,13 @@ public class ViewPublicacion {
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         contenido.getChildren().addAll(etiqueta("Subir evento al repositorio","page-title"),explicacion,usuario,mensaje,tabs);
         ScrollPane scroll = new ScrollPane(contenido); scroll.setFitToWidth(true); scroll.getStyleClass().add("content-scroll");
-        BorderPane principal = new BorderPane(scroll,barra,null,null,null);
+        String textoRegreso = esAdministrador
+                ? "Inicio"
+                : eventoInicial != null ? "Mis eventos" : "Crear evento";
+        BorderPane principal = new BorderPane(scroll);
+        principal.setTop(MenuCompartido.crearBarraSuperior(
+                sesion,"Publicación de eventos",textoRegreso,volver));
         raiz.setCenter(principal);
-        raiz.widthProperty().addListener((obs,antes,ancho)-> {
-            menu.setVisible(ancho.doubleValue()>=1100); menu.setManaged(menu.isVisible());
-        });
-        // La navegación de regreso permanece disponible incluso si se oculta el menú.
-        Button regresar = boton(esAdministrador ? "← Inicio" : "← Crear evento","volverCrearCompacto",volver,false);
-        barra.getChildren().add(0,regresar);
         actualizar();
         return raiz;
     }
@@ -168,6 +197,18 @@ public class ViewPublicacion {
                 evento.getItems().setAll(controller.listarEventos());
                 if (anterior != null) evento.getItems().stream().filter(e -> e.getIdEvento().equals(anterior.getIdEvento()))
                         .findFirst().ifPresent(e -> evento.getSelectionModel().select(e));
+                if (eventoInicial != null) {
+                    Evento seleccionado = evento.getItems().stream()
+                            .filter(e -> eventoInicial.equals(e.getIdEvento()))
+                            .findFirst()
+                            .orElse(null);
+                    if (seleccionado == null) {
+                        mostrar("El evento seleccionado ya no está disponible para esta cuenta.",false);
+                    } else {
+                        evento.getSelectionModel().select(seleccionado);
+                    }
+                    evento.setDisable(true);
+                }
                 misSolicitudes.getItems().setAll(controller.listarSolicitudes());
                 avisosOrganizador.getItems().setAll(controller.notificaciones());
             }
@@ -189,7 +230,6 @@ public class ViewPublicacion {
         };
     }
     private Label etiqueta(String texto,String estilo) { Label label=new Label(texto); label.getStyleClass().add(estilo); return label; }
-    private Region espacio() { Region espacio=new Region(); HBox.setHgrow(espacio,Priority.ALWAYS); return espacio; }
     private VBox tarjeta(javafx.scene.Node... nodos) { VBox box=new VBox(18,nodos); box.getStyleClass().add("card"); return box; }
     private VBox campo(String texto,javafx.scene.Node control) { return new VBox(9,etiqueta(texto,"field-label"),control); }
     private Button boton(String texto,String id,Runnable accion,boolean principal) {

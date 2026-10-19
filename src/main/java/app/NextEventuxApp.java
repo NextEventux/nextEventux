@@ -6,17 +6,15 @@ import controllers.ControllerPublicacion;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
 import controllers.ControllerAdministracion;
+import entities.Evento;
 import entities.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import repositories.RepositoryProveedor;
@@ -41,6 +39,8 @@ import views.ViewEdicion;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
+import views.ViewMisEventos;
+import views.ViewCancelacion;
 
 public class NextEventuxApp extends Application {
 
@@ -50,6 +50,10 @@ public class NextEventuxApp extends Application {
     private ControllerProveedores controllerProveedores;
 
     private SesionUsuario sesionActual;
+    private Navegacion navegacion;
+    private Servicio servicioSeleccionado;
+    private Integer servicioProveedorSeleccionado;
+    private Integer eventoSeleccionado;
     private Stage stage;
     private ControllerPublicacion publicaciones;
 
@@ -98,6 +102,10 @@ public class NextEventuxApp extends Application {
 
         if (sesionActual != null) sesionActual.cerrar();
         sesionActual = null;
+        navegacion = null;
+        servicioSeleccionado = null;
+        servicioProveedorSeleccionado = null;
+        eventoSeleccionado = null;
         controllerEventos = null;
         publicaciones = null;
         contenedor.setTop(null);
@@ -112,79 +120,65 @@ public class NextEventuxApp extends Application {
 
     private void procesarSesion(SesionUsuario sesion) {
 
-        sesionActual = sesion;
-        publicaciones = new ControllerPublicacion(new ServicePublicacion(
-                new RepositoryPublicacion(), new RepositoryEvento()), sesion);
-        controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
+    sesionActual = sesion;
 
-        String tipo = sesion.getTipoUsuario();
+    publicaciones = new ControllerPublicacion(
+            new ServicePublicacion(
+                    new RepositoryPublicacion(),
+                    new RepositoryEvento()),
+            sesion);
 
-        if (!"ORGANIZADOR".equalsIgnoreCase(tipo)
-                && !"PROVEEDOR".equalsIgnoreCase(tipo)
-                && !"ADMINISTRADOR".equalsIgnoreCase(tipo)) {
+    controllerEventos = new ControllerEventos(
+            new ServiceEventos(new RepositoryEvento()),
+            sesion);
 
-            mostrarLogin();
-            return;
-        }
+    String tipo = sesion.getTipoUsuario();
 
-        Label usuario = new Label(
-                sesion.getNombre() + " - " + tipo);
+    if (!"ORGANIZADOR".equalsIgnoreCase(tipo)
+            && !"PROVEEDOR".equalsIgnoreCase(tipo)
+            && !"ADMINISTRADOR".equalsIgnoreCase(tipo)) {
+        mostrarLogin();
+        return;
+    }
 
-        Button cerrarSesion = new Button("Cerrar sesión");
-        cerrarSesion.setId("cerrarSesion");
+    contenedor.setTop(null);
+    navegacion = new Navegacion();
 
-        cerrarSesion.setOnAction(
-                event -> mostrarLogin());
+    if ("ORGANIZADOR".equalsIgnoreCase(tipo)
+            || "ADMINISTRADOR".equalsIgnoreCase(tipo)) {
 
-        FlowPane barra = new FlowPane(15, 8, usuario, cerrarSesion);
-
-        if ("ORGANIZADOR".equalsIgnoreCase(tipo) || "ADMINISTRADOR".equalsIgnoreCase(tipo)) {
-            Button publicar = new Button("Publicaciones"); publicar.setId("abrirPublicacionSesion");
-            publicar.setOnAction(event -> mostrarPublicacion()); barra.getChildren().add(0, publicar);
-        }
-
-        if ("ADMINISTRADOR".equalsIgnoreCase(tipo)) {
-    Button aprobarProveedores = new Button("Aprobar proveedores");
-    aprobarProveedores.setId("abrirAdministracionSesion");
-    aprobarProveedores.setOnAction(
-            event -> mostrarAdministracion());
-    barra.getChildren().add(1, aprobarProveedores);
-}
-        if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
-
-            Button crear = new Button("Crear evento");
-            crear.setId("abrirCrearSesion"); crear.setOnAction(event -> mostrarEventos());
-            Button editar = new Button("Editar evento");
-            editar.setId("abrirEdicionSesion"); editar.setOnAction(event -> mostrarEdicion());
-            Button invitados = new Button("Invitados");
-            invitados.setId("abrirInvitadosSesion"); invitados.setOnAction(event -> mostrarInvitados());
-            barra.getChildren().addAll(0, java.util.List.of(crear, editar, invitados));
-            Button catalogo = new Button("Catálogo de proveedores");
-            catalogo.setId("abrirCatalogoSesion");
-
-            catalogo.setOnAction(
-                    event -> mostrarCatalogoServicios());
-
-            barra.getChildren().add(1, catalogo);
-        }
-
-        barra.setAlignment(Pos.CENTER_RIGHT);
-        barra.setPadding(new Insets(12));
-
-        contenedor.setTop(barra);
+        registrarRutasOrganizador();
 
         if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
-
             mostrarEventos();
-
-        } else if ("PROVEEDOR".equalsIgnoreCase(tipo)) {
-
-            mostrarProveedores();
-
         } else {
+            javafx.scene.control.Button aprobarProveedores =
+                    new javafx.scene.control.Button(
+                            "Aprobar proveedores");
+
+            aprobarProveedores.setId("abrirAdministracionSesion");
+            aprobarProveedores.setOnAction(
+                    event -> mostrarAdministracion());
+
+            javafx.scene.layout.HBox barraAdministracion =
+                    new javafx.scene.layout.HBox(
+                            aprobarProveedores);
+
+            barraAdministracion.setAlignment(Pos.CENTER_RIGHT);
+            barraAdministracion.setPadding(
+                    new javafx.geometry.Insets(12));
+
+            contenedor.setTop(barraAdministracion);
+
             mostrarPublicacion();
         }
+
+    } else if ("PROVEEDOR".equalsIgnoreCase(tipo)) {
+
+        registrarRutasProveedor();
+        mostrarProveedores();
     }
+}
 
     private boolean esOrganizador() {
 
@@ -200,38 +194,166 @@ public class NextEventuxApp extends Application {
             return;
         }
 
-        // El menú lateral permite ir de Eventos a Invitados (CU-17) y volver.
-        new Navegacion()
-                .registrar(Navegacion.Pantalla.EVENTOS,
-                        () -> new ViewEventos(controllerEventos, sesionActual, this::mostrarEdicion, this::mostrarPublicacion).crearPantalla())
-                .registrar(Navegacion.Pantalla.INVITADOS,
-                        () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
-                .mostrarEn(contenedor, Navegacion.Pantalla.EVENTOS);
-    }
-
-    private void mostrarEdicion() {
-        if (!esOrganizador()) { mostrarLogin(); return; }
-        stage.setTitle("NextEventux | Editar evento");
-        contenedor.setCenter(new ViewEdicion(controllerEventos, this::mostrarEventos).crearPantalla());
+        navegacion.mostrarEn(
+                contenedor,
+                Navegacion.Pantalla.EVENTOS);
     }
 
     private void mostrarInvitados() {
-        if (!esOrganizador()) { mostrarLogin(); return; }
-        stage.setTitle("NextEventux | Invitaciones");
-        new Navegacion()
-                .registrar(Navegacion.Pantalla.EVENTOS,
-                        () -> new ViewEventos(controllerEventos, sesionActual, this::mostrarEdicion, this::mostrarPublicacion).crearPantalla())
-                .registrar(Navegacion.Pantalla.INVITADOS,
-                        () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
-                .mostrarEn(contenedor, Navegacion.Pantalla.INVITADOS);
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        navegacion.ir(Navegacion.Pantalla.INVITADOS);
+    }
+
+    private void registrarRutasOrganizador() {
+        navegacion
+                .registrar(
+                        Navegacion.Pantalla.EVENTOS,
+                        () -> new ViewEventos(
+                                controllerEventos,
+                                this::mostrarEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin,
+                                sesionActual,
+                                this::mostrarMisEventos).crearPantalla())
+                .registrar(
+                        Navegacion.Pantalla.INVITADOS,
+                        () -> new ViewInvitados(
+                                new ControllerInvitados(
+                                        new ServiceInvitados()),
+                                this::mostrarEventos,
+                                this::mostrarInvitados,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarLogin,
+                                sesionActual,
+                                this::mostrarMisEventos).crearPantalla())
+                .registrar(
+                        Navegacion.Pantalla.CATALOGO_SERVICIOS,
+                        () -> new ViewCatalogoServicios(
+                                controllerProveedores,
+                                sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarInvitados,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarLogin,
+                                this::mostrarDetalleServicio,
+                                this::mostrarMisEventos).crearPantalla())
+                .registrar(
+                        Navegacion.Pantalla.DETALLE_SERVICIO,
+                        this::crearVistaDetalleServicio)
+                .registrarDinamica(
+                        Navegacion.Pantalla.MIS_EVENTOS,
+                        () -> new ViewMisEventos(
+                                controllerEventos,
+                                sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarMisEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin,
+                                this::mostrarEdicion,
+                                this::mostrarPublicacion,
+                                this::mostrarCancelacion)
+                                .crearPantalla())
+                .registrarDinamica(
+                        Navegacion.Pantalla.EDICION_EVENTO,
+                        () -> new ViewEdicion(
+                                controllerEventos,
+                                this::mostrarMisEventos,
+                                eventoSeleccionado,
+                                sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarMisEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin).crearPantalla())
+                .registrarDinamica(
+                        Navegacion.Pantalla.CANCELACION_EVENTO,
+                        () -> new ViewCancelacion(
+                                controllerEventos,
+                                this::mostrarMisEventos,
+                                sesionActual.getIdActor(),
+                                eventoSeleccionado,
+                                sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarMisEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin).crearPantalla())
+                .registrarDinamica(
+                        Navegacion.Pantalla.PUBLICACION_EVENTOS,
+                        () -> new ViewPublicacion(
+                                publicaciones,
+                                this::volverDesdePublicacion,
+                                eventoSeleccionado,
+                                sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarMisEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin).crearPantalla());
+    }
+
+    private void mostrarMisEventos() {
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.ir(Navegacion.Pantalla.MIS_EVENTOS);
+    }
+
+    private void mostrarEdicion(Evento evento) {
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+        eventoSeleccionado = evento.getIdEvento();
+        navegacion.ir(Navegacion.Pantalla.EDICION_EVENTO);
     }
 
     private void mostrarPublicacion() {
-        stage.setTitle("NextEventux | Publicación de eventos");
-        contenedor.setCenter(new ViewPublicacion(publicaciones, () -> {
-            if (esOrganizador()) mostrarEventos();
-            else contenedor.setCenter(new Label("Selecciona Publicaciones para revisar las solicitudes."));
-        }).crearPantalla());
+        if (!esOrganizador()
+                && (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario()))) {
+            mostrarLogin();
+            return;
+        }
+        eventoSeleccionado = null;
+        navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
+    }
+
+    private void mostrarPublicacion(Evento evento) {
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+        eventoSeleccionado = evento.getIdEvento();
+        navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
+    }
+
+    private void mostrarCancelacion(Evento evento) {
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+        eventoSeleccionado = evento.getIdEvento();
+        navegacion.ir(Navegacion.Pantalla.CANCELACION_EVENTO);
+    }
+
+    private void volverDesdePublicacion() {
+        if (eventoSeleccionado != null && esOrganizador()) {
+            mostrarMisEventos();
+        } else if (esOrganizador()) {
+            mostrarEventos();
+        } else {
+            contenedor.setCenter(new Label(
+                    "Selecciona Publicaciones para revisar las solicitudes."));
+        }
     }
 
     private void mostrarCatalogoServicios() {
@@ -241,14 +363,7 @@ public class NextEventuxApp extends Application {
             return;
         }
 
-        contenedor.setCenter(
-                new ViewCatalogoServicios(
-                        controllerProveedores,
-                        sesionActual,
-                        this::mostrarEventos,
-                        this::mostrarLogin,
-                        this::mostrarDetalleServicio)
-                        .crearPantalla());
+        navegacion.ir(Navegacion.Pantalla.CATALOGO_SERVICIOS);
     }
 
     private void mostrarDetalleServicio(Servicio servicio) {
@@ -263,16 +378,31 @@ public class NextEventuxApp extends Application {
             return;
         }
 
-        contenedor.setCenter(
-                new ViewDetalleServicio(
-                        controllerProveedores,
-                        servicio,
-                        sesionActual.getIdActor(),
-                        sesionActual,
-                        this::mostrarCatalogoServicios,
-                        this::mostrarEventos,
-                        this::mostrarLogin)
-                        .crearPantalla());
+        if (servicioSeleccionado == null
+                || servicioSeleccionado.getIdServicio()
+                        != servicio.getIdServicio()) {
+            navegacion.invalidar(Navegacion.Pantalla.DETALLE_SERVICIO);
+        }
+        servicioSeleccionado = servicio;
+        navegacion.ir(Navegacion.Pantalla.DETALLE_SERVICIO);
+    }
+
+    private javafx.scene.Parent crearVistaDetalleServicio() {
+        if (servicioSeleccionado == null) {
+            throw new IllegalStateException(
+                    "No hay un servicio seleccionado para mostrar");
+        }
+        return new ViewDetalleServicio(
+                controllerProveedores,
+                servicioSeleccionado,
+                sesionActual.getIdActor(),
+                sesionActual,
+                this::mostrarCatalogoServicios,
+                this::mostrarEventos,
+                this::mostrarInvitados,
+                this::mostrarLogin,
+                this::mostrarMisEventos)
+                .crearPantalla();
     }
 
     private void mostrarProveedores() {
@@ -285,17 +415,28 @@ public class NextEventuxApp extends Application {
             return;
         }
 
-        contenedor.setTop(null);
+        navegacion.invalidar(Navegacion.Pantalla.MIS_SERVICIOS);
+        navegacion.mostrarEn(
+                contenedor,
+                Navegacion.Pantalla.MIS_SERVICIOS);
+    }
 
-        contenedor.setCenter(
-                new ViewListaServiciosProveedor(
-                        controllerProveedores,
-                        sesionActual.getIdActor(),
-                        sesionActual,
-                        this::mostrarLogin,
-                        this::mostrarDetalleServicioProveedor,
-                        () -> mostrarDetalleServicioProveedor(null))
-                        .crearPantalla());
+    private void registrarRutasProveedor() {
+        navegacion
+                .registrar(
+                        Navegacion.Pantalla.MIS_SERVICIOS,
+                        () -> new ViewListaServiciosProveedor(
+                                controllerProveedores,
+                                sesionActual.getIdActor(),
+                                sesionActual,
+                                this::mostrarLogin,
+                                this::mostrarDetalleServicioProveedor,
+                                () -> mostrarDetalleServicioProveedor(null),
+                                this::mostrarProveedores)
+                                .crearPantalla())
+                .registrar(
+                        Navegacion.Pantalla.DETALLE_SERVICIO_PROVEEDOR,
+                        this::crearVistaDetalleServicioProveedor);
     }
 
     private void mostrarDetalleServicioProveedor(
@@ -309,17 +450,26 @@ public class NextEventuxApp extends Application {
             return;
         }
 
-        contenedor.setTop(null);
+        if (!java.util.Objects.equals(
+                servicioProveedorSeleccionado,
+                idServicio)) {
+            navegacion.invalidar(
+                    Navegacion.Pantalla.DETALLE_SERVICIO_PROVEEDOR);
+        }
+        servicioProveedorSeleccionado = idServicio;
+        navegacion.ir(
+                Navegacion.Pantalla.DETALLE_SERVICIO_PROVEEDOR);
+    }
 
-        contenedor.setCenter(
-                new ViewDetalleServicioProveedor(
-                        controllerProveedores,
-                        sesionActual.getIdActor(),
-                        sesionActual,
-                        this::mostrarLogin,
-                        idServicio,
-                        this::mostrarProveedores)
-                        .crearPantalla());
+    private javafx.scene.Parent crearVistaDetalleServicioProveedor() {
+        return new ViewDetalleServicioProveedor(
+                controllerProveedores,
+                sesionActual.getIdActor(),
+                sesionActual,
+                this::mostrarLogin,
+                servicioProveedorSeleccionado,
+                this::mostrarProveedores)
+                .crearPantalla();
     }
     private void mostrarAdministracion() {
 
