@@ -2,7 +2,7 @@ package entities;
 
 public class Servicio {
     
-    // Atributos (coinciden con las columnas de tu base de datos)
+    // Atributos
     private int idServicio;
     private int idProveedor;
     private String nombre;
