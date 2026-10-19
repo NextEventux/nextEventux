@@ -34,8 +34,9 @@ import views.ViewDetalleServicioProveedor;
 import views.ViewEventos;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
-import views.ViewSolicitudesProveedor;
 import views.ViewLogin;
+import views.ViewPropuestasOrganizador;
+import views.ViewSolicitudesProveedor;
 
 public class NextEventuxApp extends Application {
 
@@ -137,7 +138,13 @@ public class NextEventuxApp extends Application {
             catalogo.setOnAction(
                     event -> mostrarCatalogoServicios());
 
+            Button propuestas = new Button("Propuestas recibidas");
+
+            propuestas.setOnAction(
+                    event -> mostrarPropuestasOrganizador());
+
             barra.getChildren().add(1, catalogo);
+            barra.getChildren().add(2, propuestas);
         }
 
         barra.setAlignment(Pos.CENTER_RIGHT);
@@ -185,7 +192,9 @@ public class NextEventuxApp extends Application {
         // El menú lateral permite ir de Eventos a Invitados (CU-17) y volver.
         new Navegacion()
                 .registrar(Navegacion.Pantalla.EVENTOS,
-                        () -> new ViewEventos(controllerEventos).crearPantalla())
+                        () -> new ViewEventos(
+                                controllerEventos,
+                                this::mostrarCatalogoServicios).crearPantalla())
                 .registrar(Navegacion.Pantalla.INVITADOS,
                         () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
                 .mostrarEn(contenedor, Navegacion.Pantalla.EVENTOS);
@@ -223,12 +232,29 @@ public class NextEventuxApp extends Application {
         contenedor.setCenter(
                 new ViewDetalleServicio(
                         controllerProveedores,
+                        controllerSolicitudes,
                         servicio,
                         sesionActual.getIdActor(),
                         sesionActual,
                         this::mostrarCatalogoServicios,
                         this::mostrarEventos,
                         this::mostrarLogin)
+                        .crearPantalla());
+    }
+
+    private void mostrarPropuestasOrganizador() {
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        contenedor.setCenter(
+                new ViewPropuestasOrganizador(
+                        controllerSolicitudes,
+                        sesionActual.getIdActor(),
+                        sesionActual.getIdUsuario(),
+                        this::mostrarEventos)
                         .crearPantalla());
     }
 
@@ -296,6 +322,7 @@ public class NextEventuxApp extends Application {
                 new ViewSolicitudesProveedor(
                         controllerSolicitudes,
                         sesionActual.getIdActor(),
+                        sesionActual.getIdUsuario(),
                         this::mostrarProveedores)
                         .crearPantalla());
     }

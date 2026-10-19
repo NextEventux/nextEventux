@@ -1,10 +1,12 @@
 package services;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SolicitudEjecucion;
-import java.math.BigDecimal;
+import repositories.RepositoryMensajesSolicitud;
 import repositories.RepositoryPropuestaServicio;
 import repositories.RepositorySolicitudEjecucion;
 
@@ -12,6 +14,8 @@ public class ServiceSolicitudes {
 
     private final RepositorySolicitudEjecucion repository;
     private final RepositoryPropuestaServicio repositoryPropuestas;
+    private final RepositoryMensajesSolicitud repositoryMensajes
+            = new RepositoryMensajesSolicitud();
 
     public ServiceSolicitudes(RepositorySolicitudEjecucion repository) {
         this(repository, new RepositoryPropuestaServicio());
@@ -128,6 +132,172 @@ public class ServiceSolicitudes {
                 valor,
                 descripcionLimpia,
                 condicionesLimpias);
+    }
+
+    public List<MensajeSolicitud> listarMensajes(
+            int idSolicitud,
+            int idUsuario) {
+
+        if (idSolicitud <= 0 || idUsuario <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+
+        return repositoryMensajes.listarMensajes(
+                idSolicitud,
+                idUsuario);
+    }
+
+    public void enviarMensaje(
+            int idSolicitud,
+            int idUsuario,
+            String contenido,
+            String adjuntoUrl) {
+
+        if (idSolicitud <= 0 || idUsuario <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+
+        if (contenido == null || contenido.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El mensaje no puede estar vacio.");
+        }
+
+        String texto = contenido.trim();
+
+        if (texto.length() > 1000) {
+            throw new IllegalArgumentException(
+                    "El mensaje no puede superar los 1000 caracteres.");
+        }
+
+        String enlace = null;
+
+        if (adjuntoUrl != null && !adjuntoUrl.isBlank()) {
+
+            enlace = adjuntoUrl.trim();
+
+            if (enlace.length() > 1000) {
+                throw new IllegalArgumentException(
+                        "El enlace no puede superar los 1000 caracteres.");
+            }
+        }
+
+        repositoryMensajes.enviarMensaje(
+                idSolicitud,
+                idUsuario,
+                texto,
+                enlace);
+    }
+
+    public void rechazarPropuesta(
+            int idOrganizador,
+            int idPropuesta) {
+
+        if (idOrganizador <= 0 || idPropuesta <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+
+        repositoryPropuestas.rechazarPropuesta(
+                idOrganizador,
+                idPropuesta);
+    }
+
+    public void seleccionarPropuesta(
+            int idOrganizador,
+            int idPropuesta) {
+
+        if (idOrganizador <= 0 || idPropuesta <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+
+        repositoryPropuestas.seleccionarPropuesta(
+                idOrganizador,
+                idPropuesta);
+    }
+
+    public List<PropuestaServicio> listarPropuestasOrganizador(
+            int idOrganizador) {
+
+        if (idOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del organizador no es valido.");
+        }
+
+        return repositoryPropuestas.listarPropuestasOrganizador(
+                idOrganizador);
+    }
+
+    public List<String> listarNecesidadesOrganizador(
+            int idOrganizador) {
+
+        if (idOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "El organizador no es valido.");
+        }
+
+        return repository.listarNecesidadesOrganizador(
+                idOrganizador);
+    }
+
+    public int crearSolicitudParaNecesidad(
+            int idOrganizador,
+            int idEvento,
+            int idServicio,
+            int idNecesidadExistente) {
+
+        if (idOrganizador <= 0
+                || idEvento <= 0
+                || idServicio <= 0
+                || idNecesidadExistente <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+
+        return repository.crearSolicitudParaNecesidad(
+                idOrganizador,
+                idEvento,
+                idServicio,
+                idNecesidadExistente,
+                null);
+    }
+
+    public int crearSolicitud(
+            int idOrganizador,
+            int idEvento,
+            int idServicio,
+            String descripcionNecesidad) {
+
+        if (idOrganizador <= 0
+                || idEvento <= 0
+                || idServicio <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+
+        if (descripcionNecesidad == null
+                || descripcionNecesidad.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Debes describir la necesidad del evento.");
+        }
+
+        String descripcion = descripcionNecesidad.trim();
+
+        if (descripcion.length() > 500) {
+            throw new IllegalArgumentException(
+                    "La descripcion no puede superar los 500 caracteres.");
+        }
+
+        return repository.crearSolicitud(
+                idOrganizador,
+                idEvento,
+                idServicio,
+                descripcion);
     }
 
     public List<PropuestaServicio> listarHistorialPropuestas(
