@@ -8,6 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 /**
@@ -33,6 +34,8 @@ public class Navegacion {
     private final Map<Pantalla, Supplier<Parent>> fabricas = new EnumMap<>(Pantalla.class);
     private final Map<Pantalla, Parent> creadas = new EnumMap<>(Pantalla.class);
     private Scene scene;
+    /** Si se usa, las pantallas se muestran en el centro de este contenedor (por ejemplo, después del login). */
+    private BorderPane contenedor;
 
     public Navegacion registrar(Pantalla pantalla, Supplier<Parent> fabrica) {
         fabricas.put(pantalla, fabrica);
@@ -44,10 +47,25 @@ public class Navegacion {
         return scene;
     }
 
+    /** Muestra las pantallas dentro de un contenedor que ya está en la escena. */
+    public void mostrarEn(BorderPane contenedor, Pantalla inicial) {
+        this.contenedor = contenedor;
+        ir(inicial);
+    }
+
     public void ir(Pantalla pantalla) {
-        if (scene == null || !fabricas.containsKey(pantalla)) return;
-        scene.setRoot(obtener(pantalla));
-        if (scene.getWindow() instanceof Stage stage) stage.setTitle(pantalla.titulo);
+        if (!fabricas.containsKey(pantalla)) return;
+        Scene actual;
+        if (contenedor != null) {
+            contenedor.setCenter(obtener(pantalla));
+            actual = contenedor.getScene();
+        } else if (scene != null) {
+            scene.setRoot(obtener(pantalla));
+            actual = scene;
+        } else {
+            return;
+        }
+        if (actual != null && actual.getWindow() instanceof Stage stage) stage.setTitle(pantalla.titulo);
     }
 
     private Parent obtener(Pantalla pantalla) {
