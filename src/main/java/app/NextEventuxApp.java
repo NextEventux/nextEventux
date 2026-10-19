@@ -35,8 +35,6 @@ import views.ViewEdicion;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
-import views.ViewRespuestaInvitacion;
-import views.ViewMesaRegalos;
 import views.ViewMisEventos;
 import views.ViewCancelacion;
 
@@ -121,51 +119,13 @@ public class NextEventuxApp extends Application {
     // Acceso del invitado (CU-16 y CU-20), sin cuenta: se identifica con
     // su correo y su teléfono en cada pantalla.
     // ------------------------------------------------------------------
-    private ViewRespuestaInvitacion vistaRespuesta;
-    private ViewMesaRegalos vistaMesaRegalos;
-    private String correoInvitado;
-    private String telefonoInvitado;
-
     private void mostrarInvitado() {
 
         sesionActual = null;
-        correoInvitado = null;
-        telefonoInvitado = null;
         contenedor.setTop(null);
-        navegacion = new Navegacion();
-
-        ControllerInvitados controllerInvitados =
-                new ControllerInvitados(new ServiceInvitados());
-
-        navegacion
-                .registrar(Navegacion.Pantalla.MIS_INVITACIONES, () -> {
-                    vistaRespuesta = new ViewRespuestaInvitacion(controllerInvitados,
-                            this::irMisInvitaciones, this::irMesaRegalos,
-                            this::mostrarLogin, this::recordarInvitado);
-                    return vistaRespuesta.crearPantalla();
-                })
-                .registrar(Navegacion.Pantalla.MESA_REGALOS, () -> {
-                    vistaMesaRegalos = new ViewMesaRegalos(controllerInvitados,
-                            this::irMisInvitaciones, this::irMesaRegalos,
-                            this::mostrarLogin, this::recordarInvitado);
-                    return vistaMesaRegalos.crearPantalla();
-                })
+        navegacion = null;
+        new AccesoInvitado(new ControllerInvitados(new ServiceInvitados()), this::mostrarLogin)
                 .mostrarEn(contenedor, Navegacion.Pantalla.MIS_INVITACIONES);
-    }
-
-    private void recordarInvitado(String correo, String telefono) {
-        correoInvitado = correo;
-        telefonoInvitado = telefono;
-    }
-
-    private void irMisInvitaciones() {
-        navegacion.ir(Navegacion.Pantalla.MIS_INVITACIONES);
-        vistaRespuesta.usarDatos(correoInvitado, telefonoInvitado);
-    }
-
-    private void irMesaRegalos() {
-        navegacion.ir(Navegacion.Pantalla.MESA_REGALOS);
-        vistaMesaRegalos.usarDatos(correoInvitado, telefonoInvitado);
     }
 
     private void procesarSesion(SesionUsuario sesion) {
