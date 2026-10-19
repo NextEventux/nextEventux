@@ -14,25 +14,61 @@ public class ServicePublicacion {
         this.eventos = eventos;
     }
 
-    public List<Organizador> listarOrganizadores() { return eventos.listarOrganizadores(); }
-    public List<Administrador> listarAdministradores() { return repository.listarAdministradores(); }
-    public List<Evento> listarEventos(int organizador) {
-        return eventos.listarEventos().stream().filter(e -> e.getIdOrganizador() == organizador).toList();
+    public boolean esAdministrador(SesionUsuario sesion) {
+        validarSesion(sesion);
+        return "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario());
     }
-    public void solicitar(int organizador, int evento) {
-        if (organizador <= 0 || evento <= 0) throw new IllegalArgumentException("Selecciona un organizador y un evento.");
+
+    public String nombreUsuario(SesionUsuario sesion) {
+        validarSesion(sesion);
+        return sesion.getNombre();
+    }
+
+    private void validarSesion(SesionUsuario sesion) {
+        if (sesion == null || sesion.getIdUsuario() <= 0 || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario()))
+            throw new IllegalStateException("Inicia sesión para acceder a la publicación de eventos.");
+        if ("ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                && sesion.getIdActor() > 0 && "ACTIVO".equalsIgnoreCase(sesion.getEstadoActor())
+                && eventos.organizadorActivo(sesion.getIdUsuario(), sesion.getIdActor())) return;
+        if ("ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                && repository.listarAdministradores().stream().anyMatch(a -> a.id() == sesion.getIdUsuario())) return;
+        throw new IllegalStateException("Tu cuenta no tiene un rol activo para acceder a la publicación de eventos.");
+    }
+
+    private int organizador(SesionUsuario sesion) {
+        if (esAdministrador(sesion)) throw new IllegalStateException("Solo el organizador puede solicitar la publicación de sus eventos.");
+        return sesion.getIdActor();
+    }
+
+    public List<Evento> listarEventos(SesionUsuario sesion) {
+        return eventos.listarEventosPorOrganizador(organizador(sesion));
+    }
+
+    public void solicitar(SesionUsuario sesion, int evento) {
+        int organizador = organizador(sesion);
+        if (evento <= 0) throw new IllegalArgumentException("Selecciona un evento de tu cuenta.");
         repository.solicitar(organizador, evento);
     }
-    public void revisar(int solicitud, int administrador, boolean aprobar, String motivo) {
-        if (solicitud <= 0 || administrador <= 0) throw new IllegalArgumentException("Selecciona un administrador y una solicitud.");
+
+    public void revisar(SesionUsuario sesion, int solicitud, boolean aprobar, String motivo) {
+        if (!esAdministrador(sesion)) throw new IllegalStateException("Solo un administrador puede revisar solicitudes.");
+        if (solicitud <= 0) throw new IllegalArgumentException("Selecciona una solicitud pendiente.");
         if (!aprobar && (motivo == null || motivo.isBlank() || motivo.trim().length() > 250))
             throw new IllegalArgumentException("Escribe el motivo del rechazo, de hasta 250 caracteres.");
-        repository.revisar(solicitud, administrador, aprobar, aprobar ? null : motivo.trim());
+        repository.revisar(solicitud, sesion.getIdUsuario(), aprobar, aprobar ? null : motivo.trim());
     }
-    public List<SolicitudPublicacion> listarSolicitudes(Integer organizador) { return repository.listarSolicitudes(organizador); }
-    public List<PlantillaEvento> listarPlantillas() { return repository.listarPlantillas(); }
-    public List<String> notificacionesOrganizador(int organizador) {
-        return repository.listarNotificaciones(repository.usuarioOrganizador(organizador));
+
+    public List<SolicitudPublicacion> listarSolicitudes(SesionUsuario sesion) {
+        return repository.listarSolicitudes(esAdministrador(sesion) ? null : sesion.getIdActor());
     }
-    public List<String> notificacionesAdministrador(int administrador) { return repository.listarNotificaciones(administrador); }
+
+    public List<PlantillaEvento> listarPlantillas(SesionUsuario sesion) {
+        validarSesion(sesion);
+        return repository.listarPlantillas();
+    }
+
+    public List<String> notificaciones(SesionUsuario sesion) {
+        validarSesion(sesion);
+        return repository.listarNotificaciones(sesion.getIdUsuario());
+    }
 }
