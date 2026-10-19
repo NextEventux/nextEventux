@@ -5,11 +5,12 @@ import entities.Invitacion;
 import entities.InvitacionRecibida;
 import entities.Invitado;
 import entities.Lugar;
+import entities.Regalo;
 import java.util.List;
 import java.util.Map;
 import services.ServiceInvitados;
 
-/** Intermediario entre las vistas del módulo de invitados y ServiceInvitados (CU-16 y CU-17). */
+/** Intermediario entre las vistas del módulo de invitados y ServiceInvitados (CU-16, CU-17 y CU-20). */
 public class ControllerInvitados {
 
     private final ServiceInvitados serviceInvitados;
@@ -68,5 +69,33 @@ public class ControllerInvitados {
 
     public void gestionarRespuestaInvitacion(int idInvitado, String respuesta) {
         serviceInvitados.gestionarRespuestaInvitacion(idInvitado, respuesta);
+    }
+
+    public List<Regalo> listarRegalos(int idInvitacion) {
+        return serviceInvitados.listarRegalos(idInvitacion);
+    }
+
+    public void agregarRegalo(int idInvitacion, Regalo datos) {
+        serviceInvitados.agregarRegalo(idInvitacion, datos);
+    }
+
+    public void quitarRegalo(int idRegalo) {
+        serviceInvitados.quitarRegalo(idRegalo);
+    }
+
+    public List<Regalo> consultarRegalosDisponibles(int idInvitado) {
+        return serviceInvitados.consultarRegalosDisponibles(idInvitado);
+    }
+
+    public boolean validarDisponibilidadRegalo(int idRegalo) {
+        return serviceInvitados.validarDisponibilidadRegalo(idRegalo);
+    }
+
+    public void reservarRegalo(int idInvitado, int idRegalo) {
+        serviceInvitados.reservarRegalo(idInvitado, idRegalo);
+    }
+
+    public void cancelarReservaRegalo(int idInvitado, int idRegalo) {
+        serviceInvitados.cancelarReservaRegalo(idInvitado, idRegalo);
     }
 }
