@@ -75,3 +75,6 @@ ON Propuesta(id_solicitud, numero_version);
 
 ALTER TABLE Mensaje
 ADD COLUMN IF NOT EXISTS adjunto_url VARCHAR(1000);
+-- Una solicitud tiene una sola conversacion privada
+CREATE UNIQUE INDEX IF NOT EXISTS uq_conversacion_solicitud
+ON Conversacion(id_solicitud);

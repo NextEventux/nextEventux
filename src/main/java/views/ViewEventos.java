@@ -1,12 +1,5 @@
 package views;
 
-import controllers.ControllerEventos;
-import entities.Evento;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
@@ -15,8 +8,33 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
+import controllers.ControllerEventos;
+import entities.Evento;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
 public class ViewEventos {
+
     private final ControllerEventos controller;
+    private final Runnable abrirCatalogo;
+    private final Runnable cerrarSesion;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final TextField organizador = campo("organizador", "Identificador del organizador");
@@ -33,8 +51,24 @@ public class ViewEventos {
     private final Label mensaje = new Label();
     private final NumberFormat formatoCOP = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
 
-    public ViewEventos(ControllerEventos controller) {
-        this.controller = controller;
+public ViewEventos(ControllerEventos controller) {
+    this(controller, null, null);
+}
+
+public ViewEventos(
+        ControllerEventos controller,
+        Runnable abrirCatalogo) {
+
+    this(controller, abrirCatalogo, null);
+}
+
+public ViewEventos(
+        ControllerEventos controller,
+        Runnable abrirCatalogo,
+        Runnable cerrarSesion) {
+    this.controller = controller;
+    this.abrirCatalogo = abrirCatalogo;
+    this.cerrarSesion = cerrarSesion;
         formatoCOP.setMaximumFractionDigits(2);
         tipo.setId("tipo");
         tipo.setPromptText("Seleccionar tipo");
@@ -104,7 +138,9 @@ public class ViewEventos {
             if (ancho != (GridPane.getColumnIndex(panel) == 1)) {
                 columnas.getChildren().clear();
                 columnas.getColumnConstraints().setAll(izquierda);
-                if (ancho) columnas.getColumnConstraints().add(derecha);
+                if (ancho) {
+                    columnas.getColumnConstraints().add(derecha);
+                }
                 columnas.add(formulario, 0, 0);
                 columnas.add(panel, ancho ? 1 : 0, ancho ? 0 : 1);
                 panel.setMaxWidth(Double.MAX_VALUE);
@@ -130,7 +166,19 @@ public class ViewEventos {
         for (String opcion : opciones) {
             Label item = etiqueta(opcion, "menu-item");
             item.setMaxWidth(Double.MAX_VALUE);
-            if (opcion.contains("Crear evento")) item.getStyleClass().add("active");
+            if (opcion.contains("Crear evento")) {
+                item.getStyleClass().add("active");
+            }
+
+            if (opcion.contains("Proveedores")
+                    && abrirCatalogo != null) {
+
+                item.setOnMouseClicked(
+                        event -> abrirCatalogo.run());
+
+                item.setStyle("-fx-cursor: hand;");
+            }
+
             menu.getChildren().add(item);
         }
         Region espacio = new Region();
@@ -206,8 +254,9 @@ public class ViewEventos {
 
     private void crearDesdeFormulario() {
         try {
-            if (fechaInicio.getValue() == null || fechaFin.getValue() == null)
+            if (fechaInicio.getValue() == null || fechaFin.getValue() == null) {
                 throw new IllegalArgumentException("Selecciona las fechas de inicio y fin.");
+            }
             LocalTime inicio = leerHora(horaInicio.getText(), "inicio");
             LocalTime fin = leerHora(horaFin.getText(), "fin");
             BigDecimal valor;
@@ -260,7 +309,9 @@ public class ViewEventos {
     }
 
     private void limpiarFormulario() {
-        for (TextField campo : new TextField[]{nombre, organizador, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) campo.clear();
+        for (TextField campo : new TextField[]{nombre, organizador, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) {
+            campo.clear();
+        }
         tipo.getSelectionModel().clearSelection();
         fechaInicio.setValue(null);
         fechaFin.setValue(null);
@@ -310,7 +361,9 @@ public class ViewEventos {
 
     private VBox grupo(String titulo, javafx.scene.Node control, String ayuda) {
         VBox grupo = new VBox(9, etiqueta(titulo, "field-label"), control);
-        if (ayuda != null) grupo.getChildren().add(etiqueta(ayuda, "hint"));
+        if (ayuda != null) {
+            grupo.getChildren().add(etiqueta(ayuda, "hint"));
+        }
         return grupo;
     }
 
