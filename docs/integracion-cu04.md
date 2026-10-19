@@ -68,3 +68,10 @@ revocar la invitación. También comprueba el cambio de cuenta/correo.
 ![Bandeja del proveedor](evidencias/cu04-avisos-proveedor.png)
 
 ![Aviso del invitado tras la revocación](evidencias/cu04-avisos-invitado.png)
+
+
+## Compatibilidad con main
+
+CU04 incorpora las conciliaciones de CU02 y CU03 con main. Conserva el catálogo,
+la navegación a Invitados, la gestión de servicios y las bandejas de avisos. El
+login mantiene el manejo de errores de main y las conexiones aisladas de pruebas.
