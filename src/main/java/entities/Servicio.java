@@ -1,41 +1,37 @@
 package entities;
 
+// Representa uno de los servicios que un proveedor puede ofrecer en la plataforma
 public class Servicio {
-    
-    // Atributos
+
+    // Identificadores para saber que servicio es y a que proveedor pertenece
     private int idServicio;
     private int idProveedor;
+
+    // Informacion principal que se muestra del servicio
     private String nombre;
     private String descripcion;
     private double precio;
     private String categoria;
+    // Datos que definen las condiciones en las que se puede ofrecer el servicio
+    private String tipo;
+    private Integer cantidadMaximaPersonas;
+    private String ciudadZona;
+    private int anticipacionMinima;
+
+    // Sirve para saber si el servicio esta activo, retirado, etc.
     private String estado;
 
-    // Constructor vacío (siempre es buena práctica tener uno por defecto)
-    public Servicio() {
-    }
-
-    // Constructor con todos los atributos
-    public Servicio(int idServicio, int idProveedor, String nombre, String descripcion, double precio, String categoria, String estado) {
-        this.idServicio = idServicio;
-        this.idProveedor = idProveedor;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.precio = precio;
-        this.categoria = categoria;
-        this.estado = estado;
-    }
-
-    // --- Getters y Setters ---
-
+    // Permite consultar el identificador del servicio
     public int getIdServicio() {
         return idServicio;
     }
 
+    // Permite asignar el identificador del servicio
     public void setIdServicio(int idServicio) {
         this.idServicio = idServicio;
     }
 
+    // Permite saber a que proveedor pertenece el servicio
     public int getIdProveedor() {
         return idProveedor;
     }
@@ -82,5 +78,37 @@ public class Servicio {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public Integer getCantidadMaximaPersonas() {
+        return cantidadMaximaPersonas;
+    }
+
+    public void setCantidadMaximaPersonas(Integer cantidadMaximaPersonas) {
+        this.cantidadMaximaPersonas = cantidadMaximaPersonas;
+    }
+
+    public String getCiudadZona() {
+        return ciudadZona;
+    }
+
+    public void setCiudadZona(String ciudadZona) {
+        this.ciudadZona = ciudadZona;
+    }
+
+    public int getAnticipacionMinima() {
+        return anticipacionMinima;
+    }
+
+    public void setAnticipacionMinima(int anticipacionMinima) {
+        this.anticipacionMinima = anticipacionMinima;
     }
 }
