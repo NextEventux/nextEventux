@@ -43,8 +43,13 @@ public class RepositoryCancelacion {
                 // Libera solo las reservas de este evento que no tengan otro compromiso activo.
                 actualizar(connection, "UPDATE Disponibilidad_Servicio d SET estado='DISPONIBLE' WHERE "
                         + "d.id_disponibilidad IN (SELECT id_disponibilidad FROM Contratacion WHERE id_evento=? AND UPPER(estado) IN ('ACTIVA','CONFIRMADA')) "
-                        + "AND NOT EXISTS (SELECT 1 FROM Contratacion c WHERE c.id_disponibilidad=d.id_disponibilidad "
-                        + "AND UPPER(c.estado) IN ('ACTIVA','CONFIRMADA') AND c.id_evento<>?)", evento, evento);
+                        + "AND NOT EXISTS (SELECT 1 FROM Contratacion c "
+                        + "JOIN Propuesta p ON p.id_propuesta=c.id_propuesta "
+                        + "JOIN Solicitud_Ejecucion s ON s.id_solicitud=p.id_solicitud "
+                        + "WHERE UPPER(c.estado) IN ('ACTIVA','CONFIRMADA') AND c.id_evento<>? "
+                        + "AND (c.id_disponibilidad=d.id_disponibilidad OR (c.id_disponibilidad IS NULL "
+                        + "AND s.id_servicio=d.id_servicio AND c.fecha_servicio=d.fecha "
+                        + "AND c.hora_inicio=d.hora_inicio AND c.hora_fin=d.hora_fin)))", evento, evento);
                 actualizar(connection, "UPDATE Lugar l SET estado='DISPONIBLE' WHERE l.id_lugar IN "
                         + "(SELECT id_lugar FROM Evento WHERE id_evento=?) AND NOT EXISTS "
                         + "(SELECT 1 FROM Evento e WHERE e.id_lugar=l.id_lugar AND e.id_evento<>? "

@@ -22,7 +22,7 @@ class IntegracionCancelacionModulosTest {
         try(Connection c=DatabaseConnection.getConnection(url)) {CargarDatosEjemplo.cargar(c);}
         disponibilidades=new RepositoryDisponibilidadServicio();
         disponibilidad(1); disponibilidad(3);
-        // Fixture de contratación: el productor de CU09/CU12 todavía debe integrarse.
+        // Fixture de contratación: el productor de CU12/CU13 todavía debe integrarse.
         sql("UPDATE Disponibilidad_Servicio SET estado='RESERVADO'");
         sql("UPDATE Contratacion SET fecha_servicio=DATE '2026-11-15',hora_inicio=TIME '15:00:00',hora_fin=TIME '23:00:00'");
         sql("UPDATE Contratacion SET estado='CONFIRMADA' WHERE id_contratacion=1");
@@ -74,6 +74,30 @@ class IntegracionCancelacionModulosTest {
         assertEquals(0,disponibilidades.contarDisponibilidades(1));
     }
 
+    @Test void conservaLaReservaDeOtraContratacionActivaSinVinculoDirecto() throws Exception {
+        contratarSinVinculo("ACTIVA", "2026-11-15");
+        eventos.cancelarEvento(1,organizador,true);
+        assertEquals(0,disponibilidades.contarDisponibilidades(1));
+        assertNull(valor("SELECT id_disponibilidad FROM Contratacion WHERE id_evento=2"));
+        assertEquals("ACTIVA",valor("SELECT estado FROM Contratacion WHERE id_evento=2"));
+    }
+
+    @Test void liberaLaReservaAlCancelarLaUltimaContratacionConfirmadaSinVinculo() throws Exception {
+        contratarSinVinculo("CONFIRMADA", "2026-11-15");
+        eventos.cancelarEvento(1,organizador,true);
+        assertEquals(0,disponibilidades.contarDisponibilidades(1));
+        eventos.cancelarEvento(2,login.iniciarSesion("carlos.rodriguez","clave456"),true);
+        assertEquals(1,disponibilidades.contarDisponibilidades(1));
+        assertEquals("CANCELADA",valor("SELECT estado FROM Contratacion WHERE id_evento=2"));
+    }
+
+    @Test void unaContratacionDeOtraFechaNoRetieneLaReservaCancelada() throws Exception {
+        contratarSinVinculo("CONFIRMADA", "2026-11-16");
+        eventos.cancelarEvento(1,organizador,true);
+        assertEquals(1,disponibilidades.contarDisponibilidades(1));
+        assertEquals("CONFIRMADA",valor("SELECT estado FROM Contratacion WHERE id_evento=2"));
+    }
+
     @Test void avisosDelProveedorSeFiltranPorSuCuentaYSeBloqueanAlSalir() throws Exception {
         eventos.cancelarEvento(1,organizador,true);
         SesionUsuario proveedor=login.iniciarSesion("decoraciones.arcoiris","clave789");
@@ -102,6 +126,12 @@ class IntegracionCancelacionModulosTest {
                 r.next(); assertNull(r.getObject(1));
             }
         }
+    }
+
+    private void contratarSinVinculo(String estado, String fecha) throws Exception {
+        sql("UPDATE Solicitud_Ejecucion SET id_servicio=1 WHERE id_solicitud=3");
+        sql("INSERT INTO Contratacion (id_propuesta,id_evento,fecha_contratacion,estado,fecha_servicio,hora_inicio,hora_fin) "
+                + "VALUES (3,2,CURRENT_TIMESTAMP,'"+estado+"',DATE '"+fecha+"',TIME '15:00:00',TIME '23:00:00')");
     }
 
     private void disponibilidad(int servicio) {
