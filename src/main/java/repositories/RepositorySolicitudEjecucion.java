@@ -118,6 +118,7 @@ public class RepositorySolicitudEjecucion {
                               AND id_evento = ?
                               AND UPPER(estado) = 'ABIERTA'
                               AND id_propuesta_seleccionada IS NULL
+                            FOR UPDATE
                             """;
 
                     try (PreparedStatement statement

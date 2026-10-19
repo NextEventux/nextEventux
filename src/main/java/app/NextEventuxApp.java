@@ -20,6 +20,7 @@ import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
 import repositories.RepositoryPublicacion;
+import repositories.RepositoryPropuestaServicio;
 import repositories.RepositoryServicio;
 import repositories.RepositorySolicitudEjecucion;
 import services.ServiceAutenticacion;
@@ -70,10 +71,6 @@ public class NextEventuxApp extends Application {
                         new RepositoryServicio(),
                         new RepositoryDisponibilidadServicio()));
 
-        controllerSolicitudes = new ControllerSolicitudes(
-                new ServiceSolicitudes(
-                        new RepositorySolicitudEjecucion()));
-
         contenedor = new BorderPane();
 
         Rectangle2D pantalla = Screen.getPrimary().getVisualBounds();
@@ -112,6 +109,7 @@ public class NextEventuxApp extends Application {
         servicioProveedorSeleccionado = null;
         eventoSeleccionado = null;
         controllerEventos = null;
+        controllerSolicitudes = null;
         publicaciones = null;
         contenedor.setTop(null);
         stage.setTitle("NextEventux | Iniciar sesión");
@@ -147,6 +145,12 @@ public class NextEventuxApp extends Application {
             mostrarLogin();
             return;
         }
+
+        controllerSolicitudes = new ControllerSolicitudes(
+                new ServiceSolicitudes(
+                        new RepositorySolicitudEjecucion(),
+                        new RepositoryPropuestaServicio(),
+                        sesionActual));
 
         contenedor.setTop(null);
         navegacion = new Navegacion();

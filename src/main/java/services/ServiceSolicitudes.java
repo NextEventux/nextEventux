@@ -5,6 +5,7 @@ import java.util.List;
 
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
+import entities.SesionUsuario;
 import entities.SolicitudEjecucion;
 import repositories.RepositoryMensajesSolicitud;
 import repositories.RepositoryPropuestaServicio;
@@ -16,17 +17,58 @@ public class ServiceSolicitudes {
     private final RepositoryPropuestaServicio repositoryPropuestas;
     private final RepositoryMensajesSolicitud repositoryMensajes
             = new RepositoryMensajesSolicitud();
-
-    public ServiceSolicitudes(RepositorySolicitudEjecucion repository) {
-        this(repository, new RepositoryPropuestaServicio());
-    }
+    private final SesionUsuario sesion;
 
     public ServiceSolicitudes(
             RepositorySolicitudEjecucion repository,
-            RepositoryPropuestaServicio repositoryPropuestas) {
+            RepositoryPropuestaServicio repositoryPropuestas,
+            SesionUsuario sesion) {
+
+        if (sesion == null) {
+            throw new IllegalArgumentException(
+                    "Se requiere una sesion para habilitar CU12.");
+        }
 
         this.repository = repository;
         this.repositoryPropuestas = repositoryPropuestas;
+        this.sesion = sesion;
+    }
+
+    private void exigirSesion(String rolRequerido, int idActor) {
+        exigirSesionAutenticada();
+
+        if (!rolRequerido.equalsIgnoreCase(sesion.getTipoUsuario())) {
+            throw new IllegalStateException(
+                    "Tu rol no permite realizar esta operacion.");
+        }
+
+        if (sesion.getIdActor() != idActor) {
+            throw new IllegalStateException(
+                    "La operacion no pertenece a tu cuenta.");
+        }
+    }
+
+    private void exigirSesionAutenticada() {
+        if (sesion == null
+                || sesion.getIdUsuario() <= 0
+                || sesion.getIdActor() <= 0
+                || !"ACTIVO".equalsIgnoreCase(
+                        sesion.getEstadoUsuario())) {
+            throw new IllegalStateException(
+                    "Se requiere una sesion activa para esta operacion.");
+        }
+
+        String tipo = sesion.getTipoUsuario();
+        boolean actorActivo
+                = "PROVEEDOR".equalsIgnoreCase(tipo)
+                ? "APROBADO".equalsIgnoreCase(sesion.getEstadoActor())
+                : "ORGANIZADOR".equalsIgnoreCase(tipo)
+                && "ACTIVO".equalsIgnoreCase(sesion.getEstadoActor());
+
+        if (!actorActivo) {
+            throw new IllegalStateException(
+                    "La cuenta no tiene permisos activos para esta operacion.");
+        }
     }
 
     public List<SolicitudEjecucion> listarSolicitudesProveedor(
@@ -36,6 +78,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "El proveedor no es valido.");
         }
+        exigirSesion("PROVEEDOR", idProveedor);
 
         return repository.listarPorProveedor(idProveedor);
     }
@@ -49,6 +92,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesion("PROVEEDOR", idProveedor);
 
         if (motivo == null || motivo.isBlank()) {
             throw new IllegalArgumentException(
@@ -85,6 +129,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesion("PROVEEDOR", idProveedor);
 
         if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException(
@@ -142,6 +187,11 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesionAutenticada();
+        if (idUsuario != sesion.getIdUsuario()) {
+            throw new IllegalStateException(
+                    "No puedes consultar mensajes con otra cuenta.");
+        }
 
         return repositoryMensajes.listarMensajes(
                 idSolicitud,
@@ -157,6 +207,11 @@ public class ServiceSolicitudes {
         if (idSolicitud <= 0 || idUsuario <= 0) {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
+        }
+        exigirSesionAutenticada();
+        if (idUsuario != sesion.getIdUsuario()) {
+            throw new IllegalStateException(
+                    "No puedes enviar mensajes con otra cuenta.");
         }
 
         if (contenido == null || contenido.isBlank()) {
@@ -198,6 +253,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesion("ORGANIZADOR", idOrganizador);
 
         repositoryPropuestas.rechazarPropuesta(
                 idOrganizador,
@@ -212,6 +268,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesion("ORGANIZADOR", idOrganizador);
 
         repositoryPropuestas.seleccionarPropuesta(
                 idOrganizador,
@@ -225,6 +282,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "El identificador del organizador no es valido.");
         }
+        exigirSesion("ORGANIZADOR", idOrganizador);
 
         return repositoryPropuestas.listarPropuestasOrganizador(
                 idOrganizador);
@@ -237,6 +295,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "El organizador no es valido.");
         }
+        exigirSesion("ORGANIZADOR", idOrganizador);
 
         return repository.listarNecesidadesOrganizador(
                 idOrganizador);
@@ -256,6 +315,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesion("ORGANIZADOR", idOrganizador);
 
         return repository.crearSolicitudParaNecesidad(
                 idOrganizador,
@@ -278,6 +338,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesion("ORGANIZADOR", idOrganizador);
 
         if (descripcionNecesidad == null
                 || descripcionNecesidad.isBlank()) {
@@ -308,6 +369,7 @@ public class ServiceSolicitudes {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
         }
+        exigirSesion("PROVEEDOR", idProveedor);
 
         return repositoryPropuestas.listarHistorial(
                 idProveedor,
