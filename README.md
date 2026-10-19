@@ -47,7 +47,7 @@ La especificación detallada de cada comportamiento pertenece al SRS y a los ane
 | Área | Tecnología | Uso |
 | --- | --- | --- |
 | Lenguaje | Java | Implementación de funcionalidades y reglas de negocio. |
-| Interfaz | JavaFX | Construcción de las pantallas de escritorio. |
+| Interfaz | JavaFX y CSS | JavaFX construye las pantallas de escritorio y CSS define sus colores, fuentes, bordes y espacios. |
 | Persistencia | H2 | Base de datos relacional embebida obligatoria para el proyecto. |
 | Pruebas | JUnit | Pruebas automatizadas de clases, validaciones y reglas críticas. |
 | Modelado | UML y draw.io | Representación visual de casos de uso y conceptos del sistema. |
