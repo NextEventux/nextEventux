@@ -4,7 +4,7 @@ import javafx.application.Application;
 
 //Punto de entrada para abrir la pantalla de segmentos
 public class MarketingLauncher {
-    public static void main(String[] args) {
+    public static void main(String[] args) {C
         Application.launch(MarketingDemoApp.class, args);
     }
 }
