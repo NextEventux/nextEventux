@@ -2,6 +2,8 @@ package repositories;
 
 import config.DatabaseConnection;
 import entities.Evento;
+import entities.EdicionEvento;
+import entities.Organizador;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,22 +64,87 @@ public class RepositoryEvento {
         }
     }
 
+    public List<Organizador> listarOrganizadores() {
+        List<Organizador> organizadores = new ArrayList<>();
+        String sql = "SELECT o.id_organizador, u.nombre FROM Organizador o "
+                + "JOIN Usuario u ON u.id_usuario = o.id_usuario ORDER BY u.nombre, o.id_organizador";
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                organizadores.add(new Organizador(result.getInt("id_organizador"), result.getString("nombre")));
+            }
+            return organizadores;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron cargar los organizadores. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
     public List<Evento> listarEventos() {
         List<Evento> eventos = new ArrayList<>();
         try (Connection connection = conectar();
              PreparedStatement statement = connection.prepareStatement("SELECT * FROM Evento ORDER BY id_evento");
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-                eventos.add(new Evento(result.getInt("id_evento"), result.getInt("id_organizador"),
-                        result.getString("nombre"), result.getString("tipo"), result.getString("descripcion"),
-                        result.getTimestamp("fecha_inicio").toLocalDateTime(),
-                        result.getTimestamp("fecha_fin").toLocalDateTime(), result.getString("ubicacion"),
-                        result.getBigDecimal("presupuesto"), result.getObject("invitados_iniciales", Integer.class),
-                        result.getString("estado"), result.getTimestamp("fecha_creacion").toLocalDateTime()));
+                eventos.add(leerEvento(result));
             }
             return eventos;
         } catch (SQLException e) {
             throw new IllegalStateException("No se pudieron consultar los eventos. Revisa la conexión con la base de datos.", e);
         }
     }
+    public boolean organizadorActivo(int usuario, int organizador) {
+        String sql="SELECT 1 FROM Organizador o JOIN Usuario u ON u.id_usuario=o.id_usuario "
+                + "WHERE o.id_organizador=? AND u.id_usuario=? AND UPPER(o.estado)='ACTIVO' "
+                + "AND UPPER(u.estado)='ACTIVO' AND UPPER(u.tipo_usuario)='ORGANIZADOR'";
+        try (Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(sql)) {
+            statement.setInt(1,organizador); statement.setInt(2,usuario);
+            try(ResultSet result=statement.executeQuery()) { return result.next(); }
+        } catch(SQLException e) { throw new IllegalStateException("No se pudo validar tu sesión. Vuelve a intentarlo.",e); }
+    }
+
+    public List<Evento> listarEventosPorOrganizador(int organizador) {
+        List<Evento> eventos=new ArrayList<>();
+        try(Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(
+                "SELECT * FROM Evento WHERE id_organizador=? ORDER BY id_evento")) {
+            statement.setInt(1,organizador);
+            try(ResultSet result=statement.executeQuery()) { while(result.next()) eventos.add(leerEvento(result)); }
+            return eventos;
+        } catch(SQLException e) { throw new IllegalStateException("No se pudieron cargar tus eventos. Vuelve a intentarlo.",e); }
+    }
+
+    public Evento buscarEvento(int evento, int organizador) {
+        try (Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(
+                "SELECT * FROM Evento WHERE id_evento=? AND id_organizador=?")) {
+            statement.setInt(1,evento); statement.setInt(2,organizador);
+            try (ResultSet result=statement.executeQuery()) { return result.next()?leerEvento(result):null; }
+        } catch (SQLException e) { throw new IllegalStateException("No se pudo cargar el evento. Vuelve a intentarlo.",e); }
+    }
+
+    public void editarEvento(int evento, int organizador, EdicionEvento datos) {
+        // Un solo UPDATE es atómico; su condición vuelve a verificar estado y pertenencia al guardar.
+        String sql="UPDATE Evento SET nombre=?,tipo=?,fecha_inicio=?,fecha_fin=?,ubicacion=? "
+                + "WHERE id_evento=? AND id_organizador=? AND UPPER(estado)='PLANEADO'";
+        try (Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(sql)) {
+            statement.setString(1,datos.nombre()); statement.setString(2,datos.tipo());
+            statement.setTimestamp(3,Timestamp.valueOf(datos.inicio())); statement.setTimestamp(4,Timestamp.valueOf(datos.fin()));
+            statement.setString(5,datos.lugar()); statement.setInt(6,evento); statement.setInt(7,organizador);
+            if(statement.executeUpdate()!=1) {
+                Evento actual=buscarEvento(evento,organizador);
+                if(actual==null) throw new IllegalArgumentException("Selecciona un evento existente del organizador elegido.");
+                throw new IllegalArgumentException("No se puede editar: el evento está en estado " + actual.getEstado() + ".");
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron guardar los cambios. Los datos anteriores se conservaron; vuelve a intentarlo.",e);
+        }
+    }
+
+    private Evento leerEvento(ResultSet result) throws SQLException {
+        return new Evento(result.getInt("id_evento"),result.getInt("id_organizador"),
+                result.getString("nombre"),result.getString("tipo"),result.getString("descripcion"),
+                result.getTimestamp("fecha_inicio").toLocalDateTime(),result.getTimestamp("fecha_fin").toLocalDateTime(),
+                result.getString("ubicacion"),result.getBigDecimal("presupuesto"),result.getObject("invitados_iniciales",Integer.class),
+                result.getString("estado"),result.getTimestamp("fecha_creacion").toLocalDateTime());
+    }
+
 }
