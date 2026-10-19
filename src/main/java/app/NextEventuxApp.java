@@ -1,12 +1,15 @@
 package app;
 
+import controllers.ControllerAdministracion;
 import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
 import controllers.ControllerPublicacion;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
+
 import entities.Servicio;
 import entities.SesionUsuario;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -18,16 +21,22 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
 import repositories.RepositoryPublicacion;
 import repositories.RepositoryServicio;
+import repositories.RepositoryOrganizador;
+import repositories.RepositoryContratacion;
+
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
 import services.ServicePublicacion;
 import services.ServiceInvitados;
 import services.ServiceProveedores;
+import services.ServiceAdministracion;
+
 import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
@@ -37,6 +46,7 @@ import views.ViewEdicion;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
+import views.ViewAdministracion;
 
 public class NextEventuxApp extends Application {
 
@@ -51,10 +61,12 @@ public class NextEventuxApp extends Application {
 
     @Override
     public void start(Stage stage) {
+
         this.stage = stage;
 
         controllerAutenticacion = new ControllerAutenticacion(
-                new ServiceAutenticacion(new RepositoryAutenticacion()));
+                new ServiceAutenticacion(
+                        new RepositoryAutenticacion()));
 
         controllerProveedores = new ControllerProveedores(
                 new ServiceProveedores(
@@ -63,7 +75,8 @@ public class NextEventuxApp extends Application {
 
         contenedor = new BorderPane();
 
-        Rectangle2D pantalla = Screen.getPrimary().getVisualBounds();
+        Rectangle2D pantalla =
+                Screen.getPrimary().getVisualBounds();
 
         double ancho = Math.min(1440, pantalla.getWidth());
         double alto = Math.min(900, pantalla.getHeight());
@@ -71,13 +84,19 @@ public class NextEventuxApp extends Application {
         Scene scene = new Scene(contenedor, ancho, alto);
 
         scene.getStylesheets().add(
-                getClass().getResource("/styles/eventos.css").toExternalForm());
+                getClass()
+                        .getResource("/styles/eventos.css")
+                        .toExternalForm());
 
         scene.getStylesheets().add(
-                getClass().getResource("/styles/proveedores.css").toExternalForm());
+                getClass()
+                        .getResource("/styles/proveedores.css")
+                        .toExternalForm());
 
         scene.getStylesheets().add(
-                getClass().getResource("/styles/login.css").toExternalForm());
+                getClass()
+                        .getResource("/styles/login.css")
+                        .toExternalForm());
 
         mostrarLogin();
 
@@ -92,11 +111,16 @@ public class NextEventuxApp extends Application {
 
     private void mostrarLogin() {
 
-        if (sesionActual != null) sesionActual.cerrar();
+        if (sesionActual != null) {
+            sesionActual.cerrar();
+        }
+
         sesionActual = null;
         controllerEventos = null;
         publicaciones = null;
+
         contenedor.setTop(null);
+
         stage.setTitle("NextEventux | Iniciar sesión");
 
         contenedor.setCenter(
@@ -109,15 +133,25 @@ public class NextEventuxApp extends Application {
     private void procesarSesion(SesionUsuario sesion) {
 
         sesionActual = sesion;
-        publicaciones = new ControllerPublicacion(new ServicePublicacion(
-                new RepositoryPublicacion(), new RepositoryEvento()), sesion);
-        controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
+
+        publicaciones = new ControllerPublicacion(
+                new ServicePublicacion(
+                        new RepositoryPublicacion(),
+                        new RepositoryEvento()),
+                sesion);
+
+        controllerEventos = new ControllerEventos(
+                new ServiceEventos(new RepositoryEvento()),
+                sesion);
 
         String tipo = sesion.getTipoUsuario();
 
+        // Permitir únicamente los tipos de usuario que tienen
+        // una ruta de navegación definida en la aplicación.
         if (!"ORGANIZADOR".equalsIgnoreCase(tipo)
                 && !"PROVEEDOR".equalsIgnoreCase(tipo)
-                && !"ADMINISTRADOR".equalsIgnoreCase(tipo)) {
+                && !"ADMINISTRADOR".equalsIgnoreCase(tipo)
+                && !"CLIENTE".equalsIgnoreCase(tipo)) {
 
             mostrarLogin();
             return;
@@ -132,22 +166,59 @@ public class NextEventuxApp extends Application {
         cerrarSesion.setOnAction(
                 event -> mostrarLogin());
 
-        FlowPane barra = new FlowPane(15, 8, usuario, cerrarSesion);
+        FlowPane barra = new FlowPane(
+                15, 8, usuario, cerrarSesion);
 
-        if ("ORGANIZADOR".equalsIgnoreCase(tipo) || "ADMINISTRADOR".equalsIgnoreCase(tipo)) {
-            Button publicar = new Button("Publicaciones"); publicar.setId("abrirPublicacionSesion");
-            publicar.setOnAction(event -> mostrarPublicacion()); barra.getChildren().add(0, publicar);
+        // Navegación de los clientes al caso de uso CU-026.
+        if ("CLIENTE".equalsIgnoreCase(tipo)) {
+
+            Button contratar =
+                    new Button("Contratar organizador");
+
+            contratar.setId("abrirContratarOrganizador");
+
+            contratar.setOnAction(
+                    event -> mostrarContratarOrganizador());
+
+            barra.getChildren().add(0, contratar);
         }
+
+        if ("ORGANIZADOR".equalsIgnoreCase(tipo)
+                || "ADMINISTRADOR".equalsIgnoreCase(tipo)) {
+
+            Button publicar = new Button("Publicaciones");
+            publicar.setId("abrirPublicacionSesion");
+
+            publicar.setOnAction(
+                    event -> mostrarPublicacion());
+
+            barra.getChildren().add(0, publicar);
+        }
+
         if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
 
             Button crear = new Button("Crear evento");
-            crear.setId("abrirCrearSesion"); crear.setOnAction(event -> mostrarEventos());
+            crear.setId("abrirCrearSesion");
+            crear.setOnAction(
+                    event -> mostrarEventos());
+
             Button editar = new Button("Editar evento");
-            editar.setId("abrirEdicionSesion"); editar.setOnAction(event -> mostrarEdicion());
+            editar.setId("abrirEdicionSesion");
+            editar.setOnAction(
+                    event -> mostrarEdicion());
+
             Button invitados = new Button("Invitados");
-            invitados.setId("abrirInvitadosSesion"); invitados.setOnAction(event -> mostrarInvitados());
-            barra.getChildren().addAll(0, java.util.List.of(crear, editar, invitados));
-            Button catalogo = new Button("Catálogo de proveedores");
+            invitados.setId("abrirInvitadosSesion");
+            invitados.setOnAction(
+                    event -> mostrarInvitados());
+
+            barra.getChildren().addAll(
+                    0,
+                    java.util.List.of(crear, editar, invitados));
+
+            Button catalogo =
+                    new Button("Catálogo de proveedores");
+
             catalogo.setId("abrirCatalogoSesion");
 
             catalogo.setOnAction(
@@ -161,6 +232,7 @@ public class NextEventuxApp extends Application {
 
         contenedor.setTop(barra);
 
+        // Abrir la pantalla inicial según el tipo de usuario.
         if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
 
             mostrarEventos();
@@ -169,7 +241,12 @@ public class NextEventuxApp extends Application {
 
             mostrarProveedores();
 
+        } else if ("CLIENTE".equalsIgnoreCase(tipo)) {
+
+            mostrarContratarOrganizador();
+
         } else {
+
             mostrarPublicacion();
         }
     }
@@ -188,38 +265,90 @@ public class NextEventuxApp extends Application {
             return;
         }
 
-        // El menú lateral permite ir de Eventos a Invitados (CU-17) y volver.
+        // Permite navegar entre Eventos e Invitados (CU-17).
         new Navegacion()
-                .registrar(Navegacion.Pantalla.EVENTOS,
-                        () -> new ViewEventos(controllerEventos, sesionActual, this::mostrarEdicion, this::mostrarPublicacion).crearPantalla())
-                .registrar(Navegacion.Pantalla.INVITADOS,
-                        () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
-                .mostrarEn(contenedor, Navegacion.Pantalla.EVENTOS);
+                .registrar(
+                        Navegacion.Pantalla.EVENTOS,
+                        () -> new ViewEventos(
+                                controllerEventos,
+                                sesionActual,
+                                this::mostrarEdicion,
+                                this::mostrarPublicacion)
+                                .crearPantalla())
+                .registrar(
+                        Navegacion.Pantalla.INVITADOS,
+                        () -> new ViewInvitados(
+                                new ControllerInvitados(
+                                        new ServiceInvitados()))
+                                .crearPantalla())
+                .mostrarEn(
+                        contenedor,
+                        Navegacion.Pantalla.EVENTOS);
     }
 
     private void mostrarEdicion() {
-        if (!esOrganizador()) { mostrarLogin(); return; }
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
         stage.setTitle("NextEventux | Editar evento");
-        contenedor.setCenter(new ViewEdicion(controllerEventos, this::mostrarEventos).crearPantalla());
+
+        contenedor.setCenter(
+                new ViewEdicion(
+                        controllerEventos,
+                        this::mostrarEventos)
+                        .crearPantalla());
     }
 
     private void mostrarInvitados() {
-        if (!esOrganizador()) { mostrarLogin(); return; }
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
         stage.setTitle("NextEventux | Invitaciones");
+
         new Navegacion()
-                .registrar(Navegacion.Pantalla.EVENTOS,
-                        () -> new ViewEventos(controllerEventos, sesionActual, this::mostrarEdicion, this::mostrarPublicacion).crearPantalla())
-                .registrar(Navegacion.Pantalla.INVITADOS,
-                        () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
-                .mostrarEn(contenedor, Navegacion.Pantalla.INVITADOS);
+                .registrar(
+                        Navegacion.Pantalla.EVENTOS,
+                        () -> new ViewEventos(
+                                controllerEventos,
+                                sesionActual,
+                                this::mostrarEdicion,
+                                this::mostrarPublicacion)
+                                .crearPantalla())
+                .registrar(
+                        Navegacion.Pantalla.INVITADOS,
+                        () -> new ViewInvitados(
+                                new ControllerInvitados(
+                                        new ServiceInvitados()))
+                                .crearPantalla())
+                .mostrarEn(
+                        contenedor,
+                        Navegacion.Pantalla.INVITADOS);
     }
 
     private void mostrarPublicacion() {
+
         stage.setTitle("NextEventux | Publicación de eventos");
-        contenedor.setCenter(new ViewPublicacion(publicaciones, () -> {
-            if (esOrganizador()) mostrarEventos();
-            else contenedor.setCenter(new Label("Selecciona Publicaciones para revisar las solicitudes."));
-        }).crearPantalla());
+
+        contenedor.setCenter(
+                new ViewPublicacion(
+                        publicaciones,
+                        () -> {
+                            if (esOrganizador()) {
+                                mostrarEventos();
+                            } else {
+                                contenedor.setCenter(
+                                        new Label(
+                                                "Selecciona Publicaciones "
+                                                + "para revisar las solicitudes."));
+                            }
+                        })
+                        .crearPantalla());
     }
 
     private void mostrarCatalogoServicios() {
@@ -307,6 +436,39 @@ public class NextEventuxApp extends Application {
                         this::mostrarLogin,
                         idServicio,
                         this::mostrarProveedores)
+                        .crearPantalla());
+    }
+
+    /**
+     * Abre CU-026 para el cliente autenticado.
+     */
+    private void mostrarContratarOrganizador() {
+
+        if (sesionActual == null
+                || !"CLIENTE".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        ServiceAdministracion servicio =
+                new ServiceAdministracion(
+                        new RepositoryContratacion(),
+                        new RepositoryOrganizador());
+
+        ControllerAdministracion controlador =
+                new ControllerAdministracion(
+                        servicio,
+                        sesionActual);
+
+        stage.setTitle(
+                "NextEventux | Contratar organizador");
+
+        contenedor.setCenter(
+                new ViewAdministracion(
+                        controlador,
+                        sesionActual)
                         .crearPantalla());
     }
 }
