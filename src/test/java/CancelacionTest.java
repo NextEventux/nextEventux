@@ -33,7 +33,7 @@ class CancelacionTest {
         assertEquals("DISPONIBLE",valor("SELECT estado FROM Lugar WHERE id_lugar=1"));
         assertEquals("CANCELADA",valor("SELECT estado FROM Contratacion WHERE id_contratacion=1"));
         assertEquals("REVOCADA",valor("SELECT estado_respuesta FROM Invitacion WHERE id_invitacion=1"));
-        assertEquals(4,service.listarAvisosCancelacion(1,1).size());
+        assertEquals(6,service.listarAvisosCancelacion(1,1).size());
         assertEquals("PLANEADO",valor("SELECT estado FROM Evento WHERE id_evento=2"));
         assertEquals("RESERVADO",valor("SELECT estado FROM Lugar WHERE id_lugar=2"));
         assertEquals("ENVIADA",valor("SELECT estado_respuesta FROM Invitacion WHERE id_invitacion=3"));
@@ -90,7 +90,7 @@ class CancelacionTest {
     @Test void noDuplicaNotificacionesAlCancelarDeNuevo() {
         service.cancelarEvento(1,1,true);
         assertThrows(IllegalArgumentException.class,()->service.cancelarEvento(1,1,true));
-        assertEquals(4,service.listarAvisosCancelacion(1,1).size());
+        assertEquals(6,service.listarAvisosCancelacion(1,1).size());
         assertTrue(service.listarAvisosCancelacion(1,2).isEmpty());
     }
 

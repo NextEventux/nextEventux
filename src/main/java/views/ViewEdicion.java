@@ -3,7 +3,6 @@ package views;
 import controllers.ControllerEventos;
 import entities.EdicionEvento;
 import entities.Evento;
-import entities.Organizador;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
@@ -14,7 +13,7 @@ import java.time.LocalTime;
 public class ViewEdicion {
     private final ControllerEventos controller;
     private final Runnable volver;
-    private final ComboBox<Organizador> organizador=new ComboBox<>();
+    private final Label organizador=new Label();
     private final ComboBox<Evento> evento=new ComboBox<>();
     private final ComboBox<String> tipo=new ComboBox<>();
     private final TextField nombre=new TextField(), lugar=new TextField(), horaInicio=new TextField(), horaFin=new TextField();
@@ -26,7 +25,7 @@ public class ViewEdicion {
     public ViewEdicion(ControllerEventos controller,Runnable volver) { this.controller=controller; this.volver=volver; }
 
     public Parent crearPantalla() {
-        organizador.setId("organizadorEdicion"); organizador.setPromptText("Seleccionar organizador");
+        organizador.setId("nombreOrganizadorEdicion");
         evento.setId("eventoEdicion"); evento.setPromptText("Seleccionar evento");
         evento.setCellFactory(lista->celdaEvento()); evento.setButtonCell(celdaEvento());
         nombre.setId("nombreEdicion"); tipo.setId("tipoEdicion"); lugar.setId("lugarEdicion");
@@ -34,9 +33,9 @@ public class ViewEdicion {
         horaInicio.setId("horaInicioEdicion"); horaFin.setId("horaFinEdicion");
         horaInicio.setPromptText("HH:mm"); horaFin.setPromptText("HH:mm");
         tipo.getItems().addAll("Corporativo","Social","Cultural","Otro"); tipo.setPromptText("Seleccionar tipo");
-        for(Control campo:new Control[]{organizador,evento,tipo,inicio,fin}) campo.setMaxWidth(Double.MAX_VALUE);
+        for(Control campo:new Control[]{evento,tipo,inicio,fin}) campo.setMaxWidth(Double.MAX_VALUE);
         mensaje.setId("mensajeEdicion"); mensaje.setWrapText(true); mensaje.setVisible(false); mensaje.setManaged(false);
-        organizador.setOnAction(e->cargarEventos()); evento.setOnAction(e->precargar());
+        evento.setOnAction(e->precargar());
         GridPane fechas=new GridPane(); fechas.setHgap(20); fechas.setVgap(14);
         for(int i=0;i<2;i++) { ColumnConstraints c=new ColumnConstraints(); c.setPercentWidth(50); fechas.getColumnConstraints().add(c); }
         fechas.add(campo("Fecha de inicio",inicio),0,0); fechas.add(campo("Fecha de fin",fin),1,0);
@@ -45,32 +44,30 @@ public class ViewEdicion {
         Button restablecer=new Button("Restablecer"); restablecer.getStyleClass().add("btn-secondary"); restablecer.setOnAction(e->precargar());
         formulario.getChildren().addAll(campo("Nombre del evento",nombre),campo("Tipo de evento",tipo),fechas,campo("Lugar",lugar),new HBox(12,restablecer,guardar));
         formulario.getStyleClass().add("card"); formulario.setDisable(true);
-        VBox seleccion=new VBox(14,campo("Organizador",organizador),campo("Evento",evento)); seleccion.getStyleClass().add("card");
+        VBox seleccion=new VBox(14,campo("Organizador de la sesión",organizador),campo("Evento",evento)); seleccion.getStyleClass().add("card");
         Button regresar=new Button("← Crear evento"); regresar.getStyleClass().add("btn-secondary"); regresar.setOnAction(e->volver.run());
         Label titulo=new Label("Editar evento"); titulo.getStyleClass().add("page-title");
         Label ayuda=new Label("Solo se pueden editar eventos en planeación. Presupuesto, invitados y organizador se conservarán."); ayuda.setWrapText(true); ayuda.getStyleClass().add("muted");
-        Label demo=new Label("Selección de organizador para demostración. Inicio de sesión pendiente de integración."); demo.setWrapText(true); demo.getStyleClass().add("status");
-        VBox contenido=new VBox(22,regresar,titulo,ayuda,demo,seleccion,mensaje,formulario); contenido.setMaxWidth(950); contenido.getStyleClass().add("content");
+        VBox contenido=new VBox(22,regresar,titulo,ayuda,seleccion,mensaje,formulario); contenido.setMaxWidth(950); contenido.getStyleClass().add("content");
         StackPane centro=new StackPane(contenido); centro.setAlignment(Pos.TOP_CENTER);
         ScrollPane scroll=new ScrollPane(centro); scroll.setFitToWidth(true); scroll.getStyleClass().add("content-scroll");
         BorderPane raiz=new BorderPane(scroll); raiz.getStyleClass().add("app");
-        try { organizador.getItems().setAll(controller.listarOrganizadores()); }
+        try { organizador.setText(controller.nombreOrganizadorEdicion()); cargarEventos(); }
         catch(IllegalStateException e) { mostrar(e.getMessage(),false); }
         return raiz;
     }
 
     private void cargarEventos() {
         limpiar();
-        if(organizador.getValue()==null) { evento.getItems().clear(); return; }
-        try { evento.getItems().setAll(controller.listarEventos(organizador.getValue().id())); }
+        try { evento.getItems().setAll(controller.listarEventosParaEditar()); }
         catch(IllegalStateException e) { mostrar(e.getMessage(),false); }
     }
 
     private void precargar() {
         limpiar();
-        if(evento.getValue()==null || organizador.getValue()==null) return;
+        if(evento.getValue()==null) return;
         try {
-            actual=controller.consultarEventoParaEditar(evento.getValue().getIdEvento(),organizador.getValue().id());
+            actual=controller.consultarEventoParaEditar(evento.getValue().getIdEvento());
             nombre.setText(actual.getNombre()); tipo.setValue(actual.getTipo()); lugar.setText(actual.getUbicacion());
             inicio.setValue(actual.getFechaInicio().toLocalDate()); fin.setValue(actual.getFechaFin().toLocalDate());
             horaInicio.setText(actual.getFechaInicio().toLocalTime().toString()); horaFin.setText(actual.getFechaFin().toLocalTime().toString());
@@ -83,10 +80,10 @@ public class ViewEdicion {
         int id=actual.getIdEvento();
         try {
             EdicionEvento datos=new EdicionEvento(nombre.getText().trim(),tipo.getValue(),fecha(inicio,horaInicio),fecha(fin,horaFin),lugar.getText().trim());
-            controller.editarEvento(id,organizador.getValue().id(),datos);
+            controller.editarEvento(id,datos);
         } catch(IllegalArgumentException | IllegalStateException e) { mostrar(e.getMessage(),false); return; }
         try {
-            evento.getItems().setAll(controller.listarEventos(organizador.getValue().id()));
+            evento.getItems().setAll(controller.listarEventosParaEditar());
             evento.getItems().stream().filter(e->e.getIdEvento()==id).findFirst().ifPresent(e->evento.setValue(e));
             mostrar("Cambios guardados. El evento conserva su estado de planeación.",true);
         } catch(IllegalStateException e) { mostrar("Los cambios se guardaron, pero no se pudo actualizar la lista. Vuelve a abrir la pantalla.",false); }

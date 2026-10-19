@@ -93,6 +93,26 @@ public class RepositoryEvento {
             throw new IllegalStateException("No se pudieron consultar los eventos. Revisa la conexión con la base de datos.", e);
         }
     }
+    public boolean organizadorActivo(int usuario, int organizador) {
+        String sql="SELECT 1 FROM Organizador o JOIN Usuario u ON u.id_usuario=o.id_usuario "
+                + "WHERE o.id_organizador=? AND u.id_usuario=? AND UPPER(o.estado)='ACTIVO' "
+                + "AND UPPER(u.estado)='ACTIVO' AND UPPER(u.tipo_usuario)='ORGANIZADOR'";
+        try (Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(sql)) {
+            statement.setInt(1,organizador); statement.setInt(2,usuario);
+            try(ResultSet result=statement.executeQuery()) { return result.next(); }
+        } catch(SQLException e) { throw new IllegalStateException("No se pudo validar tu sesión. Vuelve a intentarlo.",e); }
+    }
+
+    public List<Evento> listarEventosPorOrganizador(int organizador) {
+        List<Evento> eventos=new ArrayList<>();
+        try(Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(
+                "SELECT * FROM Evento WHERE id_organizador=? ORDER BY id_evento")) {
+            statement.setInt(1,organizador);
+            try(ResultSet result=statement.executeQuery()) { while(result.next()) eventos.add(leerEvento(result)); }
+            return eventos;
+        } catch(SQLException e) { throw new IllegalStateException("No se pudieron cargar tus eventos. Vuelve a intentarlo.",e); }
+    }
+
     public Evento buscarEvento(int evento, int organizador) {
         try (Connection connection=conectar(); PreparedStatement statement=connection.prepareStatement(
                 "SELECT * FROM Evento WHERE id_evento=? AND id_organizador=?")) {

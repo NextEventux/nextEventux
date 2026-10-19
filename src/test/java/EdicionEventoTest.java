@@ -1,5 +1,8 @@
 import entities.EdicionEvento;
 import entities.Evento;
+import entities.SesionUsuario;
+import repositories.RepositoryAutenticacion;
+import services.ServiceAutenticacion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -18,10 +21,16 @@ class EdicionEventoTest {
     private RepositoryEvento repository;
     private ServiceEventos service;
     private Evento original;
+    private SesionUsuario sesion, otraSesion;
 
     @BeforeEach void preparar() throws Exception {
         url="jdbc:h2:"+directorio.resolve("edicion");
         BaseDatosPrueba.preparar(url);
+        sql("INSERT INTO Usuario (id_usuario,nombre,usuario,contraseña,estado,tipo_usuario,fecha_registro,acepta_marketing) VALUES (2,'Otro','otro','clave','ACTIVO','ORGANIZADOR',CURRENT_TIMESTAMP,FALSE)");
+        sql("INSERT INTO Organizador (id_organizador,id_usuario,estado) VALUES (2,2,'ACTIVO')");
+        ServiceAutenticacion login = new ServiceAutenticacion(new RepositoryAutenticacion(url));
+        sesion=login.iniciarSesion("prueba","solo-prueba");
+        otraSesion=login.iniciarSesion("otro","clave");
         repository=new RepositoryEvento(url); service=new ServiceEventos(repository);
         Evento evento=new Evento(1,"Evento original","Social","Descripción conservada",LocalDateTime.of(2026,11,1,9,0),
                 LocalDateTime.of(2026,11,1,18,0),"Bogotá",new BigDecimal("1500000.25"),100);
@@ -30,15 +39,15 @@ class EdicionEventoTest {
     }
 
     @Test void precargaSoloEventosDelOrganizadorEnPlaneacion() {
-        assertEquals(original.getNombre(),service.consultarEventoParaEditar(original.getIdEvento(),1).getNombre());
-        assertThrows(IllegalArgumentException.class,()->service.consultarEventoParaEditar(original.getIdEvento(),2));
-        assertThrows(IllegalArgumentException.class,()->service.consultarEventoParaEditar(999,1));
-        assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),2,cambios()));
-        assertThrows(IllegalArgumentException.class,()->service.editarEvento(999,1,cambios()));
+        assertEquals(original.getNombre(),service.consultarEventoParaEditar(original.getIdEvento(),sesion).getNombre());
+        assertThrows(IllegalArgumentException.class,()->service.consultarEventoParaEditar(original.getIdEvento(),otraSesion));
+        assertThrows(IllegalArgumentException.class,()->service.consultarEventoParaEditar(999,sesion));
+        assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),otraSesion,cambios()));
+        assertThrows(IllegalArgumentException.class,()->service.editarEvento(999,sesion,cambios()));
     }
 
     @Test void guardaSoloLosCamposPermitidosYConservaElEstado() {
-        service.editarEvento(original.getIdEvento(),1,cambios());
+        service.editarEvento(original.getIdEvento(),sesion,cambios());
         Evento editado=new RepositoryEvento(url).buscarEvento(original.getIdEvento(),1);
         assertEquals("Actualizado",editado.getNombre());
         assertEquals("Cultural",editado.getTipo());
@@ -57,17 +66,17 @@ class EdicionEventoTest {
     @Test void bloqueaOtrosEstadosSinCambiarLosDatos() throws Exception {
         for(String estado:new String[]{"CONFIRMADO","CANCELADO","FINALIZADO"}) {
             sql("UPDATE Evento SET estado='"+estado+"'");
-            assertThrows(IllegalArgumentException.class,()->service.consultarEventoParaEditar(original.getIdEvento(),1));
-            assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),1,cambios()));
+            assertThrows(IllegalArgumentException.class,()->service.consultarEventoParaEditar(original.getIdEvento(),sesion));
+            assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),sesion,cambios()));
             assertEquals(original.getNombre(),repository.buscarEvento(original.getIdEvento(),1).getNombre());
             assertEquals(estado,repository.buscarEvento(original.getIdEvento(),1).getEstado());
         }
     }
 
     @Test void revalidaElEstadoSiCambiaDespuesDePrecargar() throws Exception {
-        service.consultarEventoParaEditar(original.getIdEvento(),1);
+        service.consultarEventoParaEditar(original.getIdEvento(),sesion);
         sql("UPDATE Evento SET estado='CONFIRMADO'");
-        assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),1,cambios()));
+        assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),sesion,cambios()));
         assertEquals(original.getNombre(),repository.buscarEvento(original.getIdEvento(),1).getNombre());
     }
 
@@ -83,23 +92,23 @@ class EdicionEventoTest {
                 new EdicionEvento("Evento","Social",inicio,inicio.minusHours(1),"Bogotá"),
                 new EdicionEvento("Evento","Social",inicio,fin,""),
                 new EdicionEvento("Evento","Social",inicio,fin,"x".repeat(256))};
-        for(EdicionEvento datos:invalidos) assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),1,datos));
+        for(EdicionEvento datos:invalidos) assertThrows(IllegalArgumentException.class,()->service.editarEvento(original.getIdEvento(),sesion,datos));
         comprobarOriginal();
     }
 
     @Test void falloTecnicoConservaTodosLosDatosYPermiteReintentar() throws Exception {
         sql("ALTER TABLE Evento ADD CONSTRAINT fallo_edicion CHECK (nombre <> 'Actualizado')");
-        IllegalStateException error=assertThrows(IllegalStateException.class,()->service.editarEvento(original.getIdEvento(),1,cambios()));
+        IllegalStateException error=assertThrows(IllegalStateException.class,()->service.editarEvento(original.getIdEvento(),sesion,cambios()));
         assertTrue(error.getMessage().contains("anteriores se conservaron"));
         comprobarOriginal();
         sql("ALTER TABLE Evento DROP CONSTRAINT fallo_edicion");
-        service.editarEvento(original.getIdEvento(),1,cambios());
+        service.editarEvento(original.getIdEvento(),sesion,cambios());
         assertEquals("Actualizado",repository.buscarEvento(original.getIdEvento(),1).getNombre());
     }
 
     @Test void permiteEditarHistoricosSinInventarPresupuestoNiInvitados() throws Exception {
         sql("UPDATE Evento SET presupuesto=NULL,invitados_iniciales=NULL");
-        service.editarEvento(original.getIdEvento(),1,cambios());
+        service.editarEvento(original.getIdEvento(),sesion,cambios());
         Evento editado=repository.buscarEvento(original.getIdEvento(),1);
         assertNull(editado.getPresupuesto()); assertNull(editado.getInvitadosIniciales());
         assertEquals(original.getDescripcion(),editado.getDescripcion());
@@ -107,7 +116,7 @@ class EdicionEventoTest {
 
     @Test void noNormalizaNiReemplazaElEstadoAlGuardar() throws Exception {
         sql("UPDATE Evento SET estado='planeado'");
-        service.editarEvento(original.getIdEvento(),1,cambios());
+        service.editarEvento(original.getIdEvento(),sesion,cambios());
         assertEquals("planeado",repository.buscarEvento(original.getIdEvento(),1).getEstado());
     }
 

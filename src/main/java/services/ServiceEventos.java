@@ -3,6 +3,7 @@ package services;
 import entities.Evento;
 import entities.EdicionEvento;
 import entities.Organizador;
+import entities.SesionUsuario;
 import java.util.List;
 import repositories.RepositoryEvento;
 import repositories.RepositoryCancelacion;
@@ -38,16 +39,37 @@ public class ServiceEventos {
         return cancelaciones.listarAvisos(evento, organizador);
     }
 
-    public Evento consultarEventoParaEditar(int evento, int organizador) {
+    public List<Evento> listarEventosParaEditar(SesionUsuario sesion) {
+        return repositoryEvento.listarEventosPorOrganizador(validarSesionEdicion(sesion));
+    }
+
+    public String nombreOrganizadorEdicion(SesionUsuario sesion) {
+        validarSesionEdicion(sesion);
+        return sesion.getNombre();
+    }
+
+    private int validarSesionEdicion(SesionUsuario sesion) {
+        if(sesion==null || sesion.getIdUsuario()<=0 || sesion.getIdActor()<=0
+                || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoActor())
+                || !repositoryEvento.organizadorActivo(sesion.getIdUsuario(),sesion.getIdActor()))
+            throw new IllegalStateException("Inicia sesión como organizador activo para editar tus eventos.");
+        return sesion.getIdActor();
+    }
+
+    public Evento consultarEventoParaEditar(int evento, SesionUsuario sesion) {
+        int organizador=validarSesionEdicion(sesion);
         Evento actual=repositoryEvento.buscarEvento(evento,organizador);
-        if(actual==null) throw new IllegalArgumentException("Selecciona un evento existente del organizador elegido.");
+        if(actual==null) throw new IllegalArgumentException("Selecciona un evento existente de tu cuenta.");
         if(!Evento.ESTADO_INICIAL.equalsIgnoreCase(actual.getEstado()))
             throw new IllegalArgumentException("No se puede editar: el evento está en estado " + actual.getEstado() + ".");
         return actual;
     }
 
-    public void editarEvento(int evento, int organizador, EdicionEvento datos) {
-        if(evento<=0 || organizador<=0) throw new IllegalArgumentException("Selecciona un organizador y un evento.");
+    public void editarEvento(int evento, SesionUsuario sesion, EdicionEvento datos) {
+        int organizador=validarSesionEdicion(sesion);
+        if(evento<=0) throw new IllegalArgumentException("Selecciona un evento de tu cuenta.");
         if(datos==null) throw new IllegalArgumentException("Completa los datos del evento.");
         String error=errorDatosGenerales(datos.nombre(),datos.tipo(),datos.inicio(),datos.fin(),datos.lugar());
         if(error!=null) throw new IllegalArgumentException(error);
