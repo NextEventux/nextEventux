@@ -24,6 +24,7 @@ public class ViewEventos {
     private final ControllerEventos controller;
     private SesionUsuario sesion;
     private boolean publicacionDisponible;
+    private boolean cancelacionDisponible;
     private Runnable abrirPublicacion = () -> {};
     private Runnable abrirCancelacion = () -> {};
     private Runnable abrirEdicion = () -> {};
@@ -108,6 +109,13 @@ public class ViewEventos {
         this(controller, sesion, abrirEdicion);
         this.abrirPublicacion = abrirPublicacion;
         this.publicacionDisponible = true;
+    }
+
+    public ViewEventos(ControllerEventos controller, SesionUsuario sesion, Runnable abrirEdicion,
+                       Runnable abrirPublicacion, Runnable abrirCancelacion) {
+        this(controller, sesion, abrirEdicion, abrirPublicacion);
+        this.abrirCancelacion = abrirCancelacion;
+        this.cancelacionDisponible = true;
     }
 
     public Parent crearPantalla() {
@@ -214,7 +222,7 @@ public class ViewEventos {
         publicaciones.setOnAction(event -> abrirPublicacion.run());
         menu.getChildren().add(publicaciones);
         Button cancelar = new Button("Cancelar evento");
-        cancelar.setDisable(sesion != null);
+        cancelar.setDisable(sesion != null && !cancelacionDisponible);
         cancelar.setId("abrirCancelacion"); cancelar.getStyleClass().add("btn-secondary");
         cancelar.setMaxWidth(Double.MAX_VALUE); cancelar.setOnAction(event -> abrirCancelacion.run());
         menu.getChildren().add(cancelar);
@@ -235,7 +243,7 @@ public class ViewEventos {
         publicar.setDisable(sesion != null && !publicacionDisponible);
         publicar.setOnAction(event -> abrirPublicacion.run());
         MenuItem cancelar = new MenuItem("Cancelar evento");
-        cancelar.setDisable(sesion != null);
+        cancelar.setDisable(sesion != null && !cancelacionDisponible);
         cancelar.setOnAction(event -> abrirCancelacion.run());
         MenuItem editar = new MenuItem("Editar evento"); editar.setOnAction(event -> abrirEdicion.run());
         MenuButton eventos = new MenuButton("Eventos", null, editar, publicar, cancelar);

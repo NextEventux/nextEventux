@@ -25,18 +25,19 @@ public class ControllerEventos {
         return serviceEventos.listarOrganizadores();
     }
 
-    public List<Evento> listarEventos(int organizador) { return serviceEventos.listarEventos(organizador); }
-    public void cancelarEvento(int evento, int organizador, boolean confirmado) { serviceEventos.cancelarEvento(evento, organizador, confirmado); }
-    public List<String> listarAvisosCancelacion(int evento, int organizador) { return serviceEventos.listarAvisosCancelacion(evento, organizador); }
+    public List<Evento> listarEventosParaCancelar() { return serviceEventos.listarEventosParaCancelar(sesion); }
+    public String nombreOrganizadorCancelacion() { return serviceEventos.nombreOrganizador(sesion); }
+    public void cancelarEvento(int evento, boolean confirmado) { serviceEventos.cancelarEvento(evento, sesion, confirmado); }
+    public List<String> listarAvisosCancelacion(int evento) { return serviceEventos.listarAvisosCancelacion(evento, sesion); }
 
     public List<Evento> listarEventosParaEditar() { return serviceEventos.listarEventosParaEditar(sesion); }
-    public String nombreOrganizadorEdicion() { return serviceEventos.nombreOrganizadorEdicion(sesion); }
+    public String nombreOrganizadorEdicion() { return serviceEventos.nombreOrganizador(sesion); }
     public Evento consultarEventoParaEditar(int evento) { return serviceEventos.consultarEventoParaEditar(evento,sesion); }
     public void editarEvento(int evento,EdicionEvento datos) { serviceEventos.editarEvento(evento,sesion,datos); }
 
     public void crearEvento(Evento datos) {
         if (sesion != null) {
-            serviceEventos.nombreOrganizadorEdicion(sesion);
+            serviceEventos.nombreOrganizador(sesion);
             if (datos != null && datos.getIdOrganizador() != sesion.getIdActor())
                 throw new IllegalArgumentException("El evento debe pertenecer a tu cuenta.");
         }

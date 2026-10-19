@@ -2,7 +2,6 @@ package views;
 
 import controllers.ControllerEventos;
 import entities.Evento;
-import entities.Organizador;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
@@ -11,7 +10,7 @@ import javafx.scene.layout.*;
 public class ViewCancelacion {
     private final ControllerEventos controller;
     private final Runnable volver;
-    private final ComboBox<Organizador> organizador = new ComboBox<>();
+    private final Label organizador = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
     private final CheckBox confirmar = new CheckBox("Confirmo que deseo cancelar el evento y revocar sus invitaciones.");
     private final Label mensaje = new Label();
@@ -23,7 +22,7 @@ public class ViewCancelacion {
     }
 
     public Parent crearPantalla() {
-        organizador.setId("organizadorCancelacion"); organizador.setPromptText("Seleccionar organizador");
+        organizador.setId("nombreOrganizadorCancelacion");
         evento.setId("eventoCancelacion"); evento.setPromptText("Seleccionar evento");
         organizador.setMaxWidth(Double.MAX_VALUE); evento.setMaxWidth(Double.MAX_VALUE);
         evento.setCellFactory(lista->celdaEvento()); evento.setButtonCell(celdaEvento());
@@ -38,52 +37,53 @@ public class ViewCancelacion {
                 setGraphic(texto);
             }
         });
-        organizador.setOnAction(e->cargarEventos());
         evento.setOnAction(e-> { confirmar.setSelected(false); cargarAvisos(); });
         Button cancelar=new Button("Cancelar evento"); cancelar.setId("cancelarEvento"); cancelar.getStyleClass().add("btn-primary");
-        cancelar.disableProperty().bind(organizador.valueProperty().isNull().or(evento.valueProperty().isNull()).or(confirmar.selectedProperty().not()));
+        cancelar.disableProperty().bind(evento.valueProperty().isNull().or(confirmar.selectedProperty().not()));
         cancelar.setOnAction(e->cancelar());
         Button regresar=new Button("← Crear evento"); regresar.setOnAction(e->volver.run()); regresar.getStyleClass().add("btn-secondary");
         Label titulo=new Label("Cancelar evento"); titulo.getStyleClass().add("page-title");
         Label ayuda=new Label("Se liberarán las reservas del evento y se revocarán las invitaciones enviadas. No se puede cancelar un evento finalizado.");
         ayuda.getStyleClass().add("muted"); ayuda.setWrapText(true);
-        Label demo=new Label("Selección de organizador para demostración. Inicio de sesión pendiente de integración.");
-        demo.getStyleClass().add("status"); demo.setWrapText(true);
-        VBox tarjeta=new VBox(16,new Label("Organizador"),organizador,new Label("Evento"),evento,confirmar,cancelar,
+        VBox tarjeta=new VBox(16,new Label("Organizador de la sesión"),organizador,new Label("Evento"),evento,confirmar,cancelar,
                 mensaje,new Separator(),new Label("Avisos internos registrados para los afectados"),avisos);
         tarjeta.getStyleClass().add("card");
-        VBox contenido=new VBox(22,regresar,titulo,ayuda,demo,tarjeta);
+        VBox contenido=new VBox(22,regresar,titulo,ayuda,tarjeta);
         contenido.getStyleClass().add("content"); contenido.setMaxWidth(950);
         StackPane centro=new StackPane(contenido); centro.setAlignment(Pos.TOP_CENTER);
         ScrollPane scroll=new ScrollPane(centro); scroll.setFitToWidth(true); scroll.getStyleClass().add("content-scroll");
         BorderPane raiz=new BorderPane(scroll); raiz.getStyleClass().add("app");
-        try { organizador.getItems().setAll(controller.listarOrganizadores()); }
+        try { organizador.setText(controller.nombreOrganizadorCancelacion()); cargarEventos(); }
         catch(IllegalStateException e) { mostrar(e.getMessage(),false); }
         return raiz;
     }
 
     private void cancelar() {
+        if (evento.getValue() == null) return;
         try {
-            controller.cancelarEvento(evento.getValue().getIdEvento(),organizador.getValue().id(),confirmar.isSelected());
-            mostrar("El evento fue cancelado. Se liberaron sus compromisos y se registraron los avisos internos.",true);
+            controller.cancelarEvento(evento.getValue().getIdEvento(), confirmar.isSelected());
+        } catch (IllegalArgumentException | IllegalStateException e) { mostrar(e.getMessage(),false); return; }
+        confirmar.setSelected(false);
+        try {
             cargarEventos();
-        } catch(IllegalArgumentException | IllegalStateException e) { mostrar(e.getMessage(),false); }
+            mostrar("El evento fue cancelado. Se liberaron sus compromisos y se registraron los avisos internos.",true);
+        } catch (IllegalStateException e) {
+            mostrar("El evento fue cancelado, pero no se pudo actualizar la pantalla. Vuelve a abrirla para consultar los avisos.",false);
+        }
     }
 
     private void cargarEventos() {
         Evento anterior=evento.getValue(); confirmar.setSelected(false); avisos.getItems().clear();
-        if(organizador.getValue()==null) { evento.getItems().clear(); return; }
-        try {
-            evento.getItems().setAll(controller.listarEventos(organizador.getValue().id()));
-            if(anterior!=null) evento.getItems().stream().filter(e->e.getIdEvento().equals(anterior.getIdEvento())).findFirst()
-                    .ifPresent(e->evento.setValue(e));
-        } catch(IllegalStateException e) { mostrar(e.getMessage(),false); }
+        evento.getItems().clear();
+        evento.getItems().setAll(controller.listarEventosParaCancelar());
+        if(anterior!=null) evento.getItems().stream().filter(e->e.getIdEvento().equals(anterior.getIdEvento())).findFirst()
+                .ifPresent(e->evento.setValue(e));
     }
 
     private void cargarAvisos() {
         avisos.getItems().clear();
-        if(evento.getValue()==null || organizador.getValue()==null) return;
-        try { avisos.getItems().setAll(controller.listarAvisosCancelacion(evento.getValue().getIdEvento(),organizador.getValue().id())); }
+        if(evento.getValue()==null) return;
+        try { avisos.getItems().setAll(controller.listarAvisosCancelacion(evento.getValue().getIdEvento())); }
         catch(IllegalStateException e) { mostrar(e.getMessage(),false); }
     }
 

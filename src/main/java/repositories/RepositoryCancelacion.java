@@ -21,7 +21,7 @@ public class RepositoryCancelacion {
                         "SELECT estado FROM Evento WHERE id_evento=? AND id_organizador=? FOR UPDATE")) {
                     consulta.setInt(1, evento); consulta.setInt(2, organizador);
                     try (ResultSet result = consulta.executeQuery()) {
-                        if (!result.next()) throw new IllegalArgumentException("Selecciona un evento del organizador elegido.");
+                        if (!result.next()) throw new IllegalArgumentException("Selecciona un evento existente de tu cuenta.");
                         String estado = result.getString(1);
                         if ("CANCELADO".equalsIgnoreCase(estado) || "FINALIZADO".equalsIgnoreCase(estado))
                             throw new IllegalArgumentException("No puedes cancelar un evento cancelado o finalizado.");

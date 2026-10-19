@@ -25,41 +25,42 @@ public class ServiceEventos {
         return repositoryEvento.listarOrganizadores();
     }
 
-    public List<Evento> listarEventos(int organizador) {
-        return repositoryEvento.listarEventos().stream().filter(e -> e.getIdOrganizador() == organizador).toList();
+    public List<Evento> listarEventosParaCancelar(SesionUsuario sesion) {
+        return repositoryEvento.listarEventosPorOrganizador(validarSesionOrganizador(sesion));
     }
 
-    public void cancelarEvento(int evento, int organizador, boolean confirmado) {
-        if (evento <= 0 || organizador <= 0) throw new IllegalArgumentException("Selecciona un organizador y un evento.");
+    public void cancelarEvento(int evento, SesionUsuario sesion, boolean confirmado) {
+        int organizador = validarSesionOrganizador(sesion);
+        if (evento <= 0) throw new IllegalArgumentException("Selecciona un evento de tu cuenta.");
         if (!confirmado) throw new IllegalArgumentException("Confirma explícitamente que deseas cancelar el evento.");
         cancelaciones.cancelar(evento, organizador);
     }
 
-    public List<String> listarAvisosCancelacion(int evento, int organizador) {
-        return cancelaciones.listarAvisos(evento, organizador);
+    public List<String> listarAvisosCancelacion(int evento, SesionUsuario sesion) {
+        return cancelaciones.listarAvisos(evento, validarSesionOrganizador(sesion));
     }
 
     public List<Evento> listarEventosParaEditar(SesionUsuario sesion) {
-        return repositoryEvento.listarEventosPorOrganizador(validarSesionEdicion(sesion));
+        return repositoryEvento.listarEventosPorOrganizador(validarSesionOrganizador(sesion));
     }
 
-    public String nombreOrganizadorEdicion(SesionUsuario sesion) {
-        validarSesionEdicion(sesion);
+    public String nombreOrganizador(SesionUsuario sesion) {
+        validarSesionOrganizador(sesion);
         return sesion.getNombre();
     }
 
-    private int validarSesionEdicion(SesionUsuario sesion) {
+    private int validarSesionOrganizador(SesionUsuario sesion) {
         if(sesion==null || sesion.getIdUsuario()<=0 || sesion.getIdActor()<=0
                 || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
                 || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario())
                 || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoActor())
                 || !repositoryEvento.organizadorActivo(sesion.getIdUsuario(),sesion.getIdActor()))
-            throw new IllegalStateException("Inicia sesión como organizador activo para editar tus eventos.");
+            throw new IllegalStateException("Inicia sesión como organizador activo para gestionar tus eventos.");
         return sesion.getIdActor();
     }
 
     public Evento consultarEventoParaEditar(int evento, SesionUsuario sesion) {
-        int organizador=validarSesionEdicion(sesion);
+        int organizador=validarSesionOrganizador(sesion);
         Evento actual=repositoryEvento.buscarEvento(evento,organizador);
         if(actual==null) throw new IllegalArgumentException("Selecciona un evento existente de tu cuenta.");
         if(!Evento.ESTADO_INICIAL.equalsIgnoreCase(actual.getEstado()))
@@ -68,7 +69,7 @@ public class ServiceEventos {
     }
 
     public void editarEvento(int evento, SesionUsuario sesion, EdicionEvento datos) {
-        int organizador=validarSesionEdicion(sesion);
+        int organizador=validarSesionOrganizador(sesion);
         if(evento<=0) throw new IllegalArgumentException("Selecciona un evento de tu cuenta.");
         if(datos==null) throw new IllegalArgumentException("Completa los datos del evento.");
         String error=errorDatosGenerales(datos.nombre(),datos.tipo(),datos.inicio(),datos.fin(),datos.lugar());

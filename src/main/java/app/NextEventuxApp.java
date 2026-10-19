@@ -12,7 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
@@ -25,6 +25,7 @@ import views.ViewEdicion;
 import views.ViewEventos;
 import views.ViewLogin;
 import views.ViewPublicacion;
+import views.ViewCancelacion;
 
 public class NextEventuxApp extends Application {
     private final ServiceEventos eventos = new ServiceEventos(new RepositoryEvento());
@@ -69,7 +70,7 @@ public class NextEventuxApp extends Application {
         Button salir = new Button("Cerrar sesión");
         salir.setId("cerrarSesion");
         salir.setOnAction(event -> mostrarLogin());
-        HBox barra = new HBox(15, new Label(sesion.getNombre()), salir);
+        FlowPane barra = new FlowPane(15, 8, new Label(sesion.getNombre()), salir);
         barra.setAlignment(Pos.CENTER_RIGHT);
         barra.setPadding(new Insets(10));
         contenedor.setTop(barra);
@@ -86,7 +87,10 @@ public class NextEventuxApp extends Application {
             Button editar = new Button("Editar evento");
             editar.setId("abrirEdicionSesion");
             editar.setOnAction(event -> mostrarEdicion());
-            barra.getChildren().addAll(0, java.util.List.of(crear, editar));
+            Button cancelar = new Button("Cancelar evento");
+            cancelar.setId("abrirCancelacionSesion");
+            cancelar.setOnAction(event -> mostrarCancelacion());
+            barra.getChildren().addAll(0, java.util.List.of(crear, editar, cancelar));
             mostrarCrear();
         } else if ("ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
             mostrarPublicacion();
@@ -98,12 +102,17 @@ public class NextEventuxApp extends Application {
 
     private void mostrarCrear() {
         stage.setTitle("NextEventux | Crear evento");
-        contenedor.setCenter(new ViewEventos(controller, sesion, this::mostrarEdicion, this::mostrarPublicacion).crearPantalla());
+        contenedor.setCenter(new ViewEventos(controller, sesion, this::mostrarEdicion, this::mostrarPublicacion, this::mostrarCancelacion).crearPantalla());
     }
 
     private void mostrarEdicion() {
         stage.setTitle("NextEventux | Editar evento");
         contenedor.setCenter(new ViewEdicion(controller, this::mostrarCrear).crearPantalla());
+    }
+
+    private void mostrarCancelacion() {
+        stage.setTitle("NextEventux | Cancelar evento");
+        contenedor.setCenter(new ViewCancelacion(controller, this::mostrarCrear).crearPantalla());
     }
 
     private void mostrarPublicacion() {
