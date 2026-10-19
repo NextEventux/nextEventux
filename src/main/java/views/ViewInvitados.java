@@ -5,6 +5,7 @@ import entities.Evento;
 import entities.Invitacion;
 import entities.Invitado;
 import entities.Lugar;
+import entities.Regalo;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.text.Normalizer;
@@ -843,31 +844,35 @@ public final class ViewInvitados {
 
     // ------------------------------------------------------------------
     // Mesa de regalos de una invitación (CU-20, lado del organizador)
-    // Mockup: datos de ejemplo; los botones todavía no guardan en H2.
     // ------------------------------------------------------------------
-    private record RegaloLista(String nombre, String descripcion, BigDecimal precio, String estado) {
-    }
-
     private void abrirRegalos(FilaInvitacion fila) {
         if (fila == null) return;
         Evento evento = selectorEvento.getValue();
-        NumberFormat pesos = NumberFormat.getNumberInstance(new Locale("es", "CO"));
-        ObservableList<RegaloLista> lista = FXCollections.observableArrayList(
-                new RegaloLista("Pañitos para bebé", "Paquete de pañitos húmedos", new BigDecimal("25000"), "RESERVADO"),
-                new RegaloLista("Kit de biberones", "Kit de biberones para recién nacido", new BigDecimal("80000"), "RESERVADO"),
-                new RegaloLista("Cobija para bebé", "Cobija suave para recién nacido", new BigDecimal("60000"), "DISPONIBLE"),
-                new RegaloLista("Ropa de bebé", "Conjunto de ropa para recién nacido", new BigDecimal("50000"), "DISPONIBLE"));
-        long reservados = lista.stream().filter(r -> "RESERVADO".equals(r.estado())).count();
-        Label resumenValor = etiqueta(lista.size() + " regalos  ·  " + reservados + " reservados  ·  "
-                + (lista.size() - reservados) + " disponibles", "summary-value");
+        NumberFormat pesos = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
+        pesos.setMaximumFractionDigits(0);
+        ObservableList<Regalo> lista = FXCollections.observableArrayList();
+        Label resumenValor = etiqueta("", "summary-value");
+        Label error = mensajeDialogo();
 
-        TableView<RegaloLista> tablaRegalos = new TableView<>(lista);
+        TableView<Regalo> tablaRegalos = new TableView<>(lista);
         tablaRegalos.setId("tablaRegalos");
         tablaRegalos.setFixedCellSize(50);
-        tablaRegalos.setPrefHeight(54 + 50 * 4);
+        tablaRegalos.setPrefHeight(66 + 50 * 4);
         tablaRegalos.setPlaceholder(etiqueta("Esta invitación todavía no tiene regalos en su mesa.", "muted"));
 
-        TableColumn<RegaloLista, String> estado = columnaTexto("Estado", RegaloLista::estado, 100, 110);
+        Runnable refrescar = () -> {
+            try {
+                lista.setAll(controller.listarRegalos(fila.id()));
+                long reservados = lista.stream().filter(Regalo::estaReservado).count();
+                resumenValor.setText(lista.size() + (lista.size() == 1 ? " regalo" : " regalos") + "  ·  "
+                        + reservados + " reservados  ·  " + (lista.size() - reservados) + " disponibles");
+            } catch (IllegalStateException e) {
+                mostrarError(error, e.getMessage());
+            }
+        };
+
+        TableColumn<Regalo, String> estado = columnaTexto("Estado",
+                r -> r.estaReservado() ? Regalo.ESTADO_RESERVADO : Regalo.ESTADO_DISPONIBLE, 100, 110);
         estado.setCellFactory(col -> new TableCell<>() {
             private final Label pill = new Label();
             { pill.setMinWidth(Region.USE_PREF_SIZE); }
@@ -879,13 +884,13 @@ public final class ViewInvitados {
                 } else {
                     pill.setText(valor);
                     pill.getStyleClass().setAll("label", "status",
-                            "DISPONIBLE".equals(valor) ? "status-confirmada" : "status-enviada");
+                            Regalo.ESTADO_DISPONIBLE.equals(valor) ? "status-confirmada" : "status-enviada");
                     setGraphic(pill);
                 }
                 setText(null);
             }
         });
-        TableColumn<RegaloLista, RegaloLista> quitar = new TableColumn<>("");
+        TableColumn<Regalo, Regalo> quitar = new TableColumn<>("");
         quitar.setCellValueFactory(c -> new SimpleObjectProperty<>(c.getValue()));
         quitar.setSortable(false);
         quitar.setMinWidth(85);
@@ -894,36 +899,55 @@ public final class ViewInvitados {
             private final Button boton = new Button("Quitar");
             {
                 boton.getStyleClass().addAll("btn-danger", "btn-small");
-                boton.setOnAction(e -> mostrarAviso("Quitar regalo",
-                        "Aquí se quitará \"" + getItem().nombre() + "\" de la mesa de regalos."));
+                boton.setOnAction(e -> {
+                    try {
+                        controller.quitarRegalo(getItem().getIdRegalo());
+                        error.setVisible(false);
+                        error.setManaged(false);
+                        refrescar.run();
+                    } catch (IllegalArgumentException | IllegalStateException ex) {
+                        mostrarError(error, ex.getMessage());
+                    }
+                });
             }
             @Override
-            protected void updateItem(RegaloLista regalo, boolean vacio) {
+            protected void updateItem(Regalo regalo, boolean vacio) {
                 super.updateItem(regalo, vacio);
                 if (!vacio && regalo != null) {
-                    boolean reservado = "RESERVADO".equals(regalo.estado());
-                    boton.setDisable(reservado);
-                    boton.setTooltip(reservado ? new Tooltip("No se puede quitar un regalo que ya fue reservado.") : null);
+                    boton.setDisable(regalo.estaReservado());
+                    boton.setTooltip(regalo.estaReservado()
+                            ? new Tooltip("Reservado por " + regalo.getReservadoPor() + "; no se puede quitar.") : null);
                 }
                 setGraphic(vacio || regalo == null || !fila.activa() ? null : boton);
             }
         });
         ajustarColumnas(tablaRegalos);
         tablaRegalos.getColumns().addAll(List.of(
-                this.<RegaloLista>columnaTexto("Regalo", RegaloLista::nombre, 130, 160),
-                this.<RegaloLista>columnaTexto("Descripción", RegaloLista::descripcion, 150, 210),
-                this.<RegaloLista>columnaTexto("Precio estimado", r -> "$" + pesos.format(r.precio()), 100, 110),
+                this.<Regalo>columnaTexto("Regalo", Regalo::getNombre, 130, 160),
+                this.<Regalo>columnaTexto("Descripción", r -> r.getDescripcion() == null ? "-" : r.getDescripcion(), 150, 210),
+                this.<Regalo>columnaTexto("Precio estimado",
+                        r -> r.getPrecioEstimado() == null ? "-" : "$" + pesos.format(r.getPrecioEstimado()), 100, 110),
                 estado, quitar));
 
         TextField nombre = campoDialogo("regNombre", "Nombre del regalo *");
-        TextField precio = campoDialogo("regPrecio", "Precio estimado *");
+        TextField precio = campoDialogo("regPrecio", "Precio estimado * (ej. 50000)");
         TextField descripcion = campoDialogo("regDescripcion", "Descripción");
         Button agregar = new Button("Agregar regalo");
         agregar.setId("agregarRegalo");
         agregar.getStyleClass().add("btn-primary");
         agregar.setDefaultButton(true);
-        agregar.setOnAction(e -> mostrarAviso("Agregar regalo",
-                "Aquí se agregará el regalo a la mesa de la invitación #" + fila.id() + " como DISPONIBLE."));
+        agregar.setOnAction(e -> {
+            try {
+                controller.agregarRegalo(fila.id(), new Regalo(nombre.getText(), descripcion.getText(), leerPrecio(precio.getText())));
+                for (TextField campo : new TextField[]{nombre, precio, descripcion}) campo.clear();
+                error.setVisible(false);
+                error.setManaged(false);
+                nombre.requestFocus();
+                refrescar.run();
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                mostrarError(error, ex.getMessage());
+            }
+        });
         GridPane formulario = new GridPane();
         formulario.setHgap(12);
         formulario.setVgap(12);
@@ -950,13 +974,28 @@ public final class ViewInvitados {
         Label subtitulo = etiqueta(evento.getNombre() + "  ·  "
                 + (fila.invitacion().getMensaje() == null ? "" : fila.invitacion().getMensaje()), "muted");
         subtitulo.setWrapText(true);
-        VBox contenido = new VBox(16, subtitulo, resumen, tablaRegalos, new Separator(), agregarCaja);
+        VBox contenido = new VBox(16, subtitulo, resumen, tablaRegalos, new Separator(), agregarCaja, error);
         contenido.setPrefWidth(720);
 
         Dialog<ButtonType> dialogo = crearDialogo("Regalos de la invitación #" + fila.id(), contenido);
         dialogo.getDialogPane().getButtonTypes().add(new ButtonType("Cerrar", ButtonBar.ButtonData.CANCEL_CLOSE));
         estilizarBotones(dialogo, null);
+        refrescar.run();
         dialogo.showAndWait();
+    }
+
+    /** Convierte el precio escrito (acepta "50000", "50.000" o "$50.000") a número; vacío o inválido da null. */
+    private static BigDecimal leerPrecio(String texto) {
+        if (texto == null || texto.isBlank()) return null;
+        String limpio = texto.replace("$", "").replace(" ", "");
+        // Formato colombiano con puntos de miles (50.000 o 1.250.000,50); si no, el punto o la coma son decimales.
+        limpio = limpio.matches("\\d{1,3}(\\.\\d{3})+(,\\d+)?")
+                ? limpio.replace(".", "").replace(",", ".") : limpio.replace(",", ".");
+        try {
+            return new BigDecimal(limpio);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Escribe el precio estimado solo con números, por ejemplo 50000.");
+        }
     }
 
     // ------------------------------------------------------------------

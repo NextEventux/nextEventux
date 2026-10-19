@@ -1,9 +1,11 @@
 package views;
 
+import controllers.ControllerInvitados;
+import entities.InvitacionRecibida;
+import entities.Regalo;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.text.NumberFormat;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -16,16 +18,17 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.util.StringConverter;
 
 /**
  * CU-20 - Interactuar con la mesa de regalos virtual (vista del invitado).
  *
  * Corresponde a mostrarMesaRegalos() de ViewInvitados en el diagrama de clases.
  * Flujo del diagrama VP-04: el invitado selecciona un regalo; si está disponible lo
- * reserva y queda asociado a él; si otro invitado ya lo reservó, se le avisa.
+ * reserva y queda asociado a él; si otro invitado ya lo reservó, se le avisa (R43).
  *
- * Por ahora es solo la interfaz con datos de prueba (cargarDatosMock()); todavía no
- * guarda nada. Después se conectará con ControllerInvitados.
+ * Los datos llegan de H2 por ControllerInvitados -> ServiceInvitados -> Repository.
+ * Esta clase no contiene SQL ni reglas de negocio.
  */
 public final class ViewMesaRegalos {
 
@@ -45,23 +48,14 @@ public final class ViewMesaRegalos {
     private static final String[] PRESUPUESTOS = {
             "Cualquier precio", "Hasta $30.000", "$30.000 a $60.000", "$60.000 a $100.000", "Más de $100.000"};
 
-    /** Regalo de la mesa tal como lo ve el invitado (Regalo + Reserva_regalo). */
-    public record RegaloMesa(int idRegalo, String nombre, String descripcion, BigDecimal precio, String estado) {
-    }
-
-    /** Evento cuya mesa de regalos puede ver el invitado. */
-    public record EventoMesa(int idEvento, String nombre, LocalDateTime fecha, String lugar) {
-        @Override
-        public String toString() {
-            return nombre;
-        }
-    }
-
+    private final ControllerInvitados controller;
     private final NumberFormat pesos = NumberFormat.getNumberInstance(ES);
 
-    private List<RegaloMesa> regalos = List.of();
+    private List<Regalo> regalos = List.of();
+    /** Invitación (evento) cuya mesa se está mostrando. */
+    private InvitacionRecibida actual;
     private final TextField correo = new TextField();
-    private final ComboBox<EventoMesa> selectorEvento = new ComboBox<>();
+    private final ComboBox<InvitacionRecibida> selectorEvento = new ComboBox<>();
     private final TextField buscador = new TextField();
     private final ComboBox<String> filtro = new ComboBox<>();
     private final ComboBox<String> presupuesto = new ComboBox<>();
@@ -74,12 +68,12 @@ public final class ViewMesaRegalos {
     private final Label misReservasValor = new Label("0");
     private final Label detalleEvento = new Label();
 
-    public ViewMesaRegalos() {
+    public ViewMesaRegalos(ControllerInvitados controller) {
+        this.controller = controller;
         pesos.setMaximumFractionDigits(0);
 
         correo.setId("correoInvitado");
         correo.setPromptText("Ej. camila@email.com");
-        correo.setText("camila@email.com");
         correo.setPrefWidth(260);
         correo.setMinWidth(180);
         correo.setOnAction(e -> consultar());
@@ -88,6 +82,17 @@ public final class ViewMesaRegalos {
         selectorEvento.setPromptText("Selecciona un evento");
         selectorEvento.setPrefWidth(240);
         selectorEvento.setMinWidth(180);
+        selectorEvento.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(InvitacionRecibida inv) {
+                return inv == null ? "" : inv.getEvento();
+            }
+
+            @Override
+            public InvitacionRecibida fromString(String texto) {
+                return null;
+            }
+        });
         selectorEvento.valueProperty().addListener((obs, anterior, actual) -> mostrarEvento(actual));
 
         buscador.setId("buscarRegalo");
@@ -119,21 +124,6 @@ public final class ViewMesaRegalos {
         tarjetas.setPrefWrapLength(ANCHO_TARJETA * 3 + 32);
         detalleEvento.getStyleClass().add("muted");
         detalleEvento.setWrapText(true);
-    }
-
-    // ------------------------------------------------------------------
-    // Datos de prueba (basados en seed.sql). Se reemplazan por el Controller.
-    // ------------------------------------------------------------------
-    private List<EventoMesa> eventosMock() {
-        return List.of(new EventoMesa(2, "Baby Shower Valentina", LocalDateTime.of(2026, 12, 5, 14, 0), "Jardín Los Pinos"));
-    }
-
-    private List<RegaloMesa> regalosMock() {
-        return List.of(
-                new RegaloMesa(1, "Pañitos para bebé", "Paquete de pañitos húmedos", new BigDecimal("25000"), RESERVADO),
-                new RegaloMesa(2, "Kit de biberones", "Kit de biberones para recién nacido", new BigDecimal("80000"), MIO),
-                new RegaloMesa(3, "Cobija para bebé", "Cobija suave para recién nacido", new BigDecimal("60000"), DISPONIBLE),
-                new RegaloMesa(4, "Ropa de bebé", "Conjunto de ropa para recién nacido", new BigDecimal("50000"), DISPONIBLE));
     }
 
     // ------------------------------------------------------------------
@@ -234,7 +224,7 @@ public final class ViewMesaRegalos {
             sidebar.setManaged(sidebar.isVisible());
         });
 
-        consultar();
+        mostrarEvento(null);
         return raiz;
     }
 
@@ -360,31 +350,99 @@ public final class ViewMesaRegalos {
     }
 
     // ------------------------------------------------------------------
-    // Comportamiento (solo interfaz)
+    // Comportamiento (Controller)
     // ------------------------------------------------------------------
+    /** R37: busca las invitaciones activas del correo; cada una tiene su mesa de regalos. */
     private void consultar() {
-        String texto = correo.getText() == null ? "" : correo.getText().trim().toLowerCase(Locale.ROOT);
-        List<EventoMesa> eventos = "camila@email.com".equals(texto) ? eventosMock() : List.of();
-        selectorEvento.getItems().setAll(eventos);
-        if (eventos.isEmpty()) {
-            mostrarMensaje("No hay mesas de regalos para \"" + correo.getText().trim() + "\".", false);
+        String texto = correo.getText() == null ? "" : correo.getText().trim();
+        if (texto.isEmpty()) {
+            mostrarMensaje("Escribe el correo con el que recibiste la invitación.", false);
+            return;
+        }
+        List<InvitacionRecibida> invitaciones;
+        try {
+            invitaciones = controller.consultarInvitacionesPorCorreo(texto);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            selectorEvento.getItems().clear();
+            mostrarEvento(null);
+            mostrarMensaje(e.getMessage(), false);
+            return;
+        }
+        int idAnterior = actual == null ? -1 : actual.getIdInvitado();
+        selectorEvento.getItems().setAll(invitaciones);
+        if (invitaciones.isEmpty()) {
             selectorEvento.setValue(null);
             mostrarEvento(null);
+            mostrarMensaje("No hay invitaciones activas asociadas a \"" + texto + "\".", false);
+            return;
+        }
+        ocultarMensaje();
+        InvitacionRecibida elegida = invitaciones.stream().filter(inv -> inv.getIdInvitado() == idAnterior)
+                .findFirst().orElse(invitaciones.get(0));
+        if (elegida == selectorEvento.getValue()) mostrarEvento(elegida);
+        else selectorEvento.setValue(elegida);
+    }
+
+    private void mostrarEvento(InvitacionRecibida invitacion) {
+        actual = invitacion;
+        if (invitacion == null) {
+            regalos = List.of();
+            detalleEvento.setText("Escribe tu correo y presiona Consultar para ver la mesa de regalos de tus eventos.");
         } else {
-            ocultarMensaje();
-            selectorEvento.setValue(eventos.get(0));
+            detalleEvento.setText(invitacion.getInicio().format(FECHA) + " · " + invitacion.getLugar()
+                    + " · Invitado: " + invitacion.getNombreInvitado());
+            cargarRegalos();
+        }
+        pintarRegalos();
+    }
+
+    private void cargarRegalos() {
+        try {
+            regalos = controller.consultarRegalosDisponibles(actual.getIdInvitado());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            regalos = List.of();
+            mostrarMensaje(e.getMessage(), false);
         }
     }
 
-    private void mostrarEvento(EventoMesa evento) {
-        if (evento == null) {
-            regalos = List.of();
-            detalleEvento.setText("Escribe tu correo para ver las mesas de regalos de tus eventos.");
-        } else {
-            regalos = regalosMock();
-            detalleEvento.setText(evento.fecha().format(FECHA) + " · " + evento.lugar());
+    /** VP-04: si el regalo sigue disponible queda reservado a nombre del invitado. */
+    private void reservar(Regalo regalo) {
+        try {
+            controller.reservarRegalo(actual.getIdInvitado(), regalo.getIdRegalo());
+            mostrarMensaje("Reservaste \"" + regalo.getNombre() + "\". Quedó registrado a tu nombre.", true);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
         }
+        cargarRegalos();
         pintarRegalos();
+    }
+
+    private void cancelarReserva(Regalo regalo) {
+        Alert confirmar = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmar.setTitle("Cancelar reserva");
+        confirmar.setHeaderText("¿Cancelar tu reserva de \"" + regalo.getNombre() + "\"?");
+        confirmar.setContentText("El regalo quedará disponible para que otro invitado lo elija.");
+        prepararDialogo(confirmar);
+        ButtonType cancelar = new ButtonType("Cancelar reserva", ButtonBar.ButtonData.OK_DONE);
+        ButtonType volver = new ButtonType("Volver", ButtonBar.ButtonData.CANCEL_CLOSE);
+        confirmar.getButtonTypes().setAll(volver, cancelar);
+        confirmar.getDialogPane().lookupButton(cancelar).getStyleClass().add("btn-primary");
+        confirmar.getDialogPane().lookupButton(volver).getStyleClass().add("btn-secondary");
+        if (confirmar.showAndWait().orElse(volver) != cancelar) return;
+        try {
+            controller.cancelarReservaRegalo(actual.getIdInvitado(), regalo.getIdRegalo());
+            mostrarMensaje("Cancelaste tu reserva de \"" + regalo.getNombre() + "\".", true);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
+        }
+        cargarRegalos();
+        pintarRegalos();
+    }
+
+    /** Estado del regalo para este invitado: disponible, reservado por otro o reservado por él. */
+    private String estadoVista(Regalo regalo) {
+        if (actual != null && regalo.estaReservadoPor(actual.getIdInvitado())) return MIO;
+        return regalo.estaReservado() ? RESERVADO : DISPONIBLE;
     }
 
     private void pintarRegalos() {
@@ -392,25 +450,29 @@ public final class ViewMesaRegalos {
         String vista = filtro.getValue() == null ? "Todos" : filtro.getValue();
         tarjetas.getChildren().clear();
         int disponibles = 0, reservados = 0, mios = 0;
-        for (RegaloMesa regalo : regalos) {
-            switch (regalo.estado()) {
+        for (Regalo regalo : regalos) {
+            String estado = estadoVista(regalo);
+            switch (estado) {
                 case DISPONIBLE -> disponibles++;
                 case MIO -> mios++;
                 default -> reservados++;
             }
-            boolean coincideTexto = texto.isEmpty() || (regalo.nombre() + " " + regalo.descripcion()).toLowerCase(ES).contains(texto);
+            String descripcion = regalo.getDescripcion() == null ? "" : regalo.getDescripcion();
+            boolean coincideTexto = texto.isEmpty() || (regalo.getNombre() + " " + descripcion).toLowerCase(ES).contains(texto);
             boolean coincideFiltro = switch (vista) {
-                case "Disponibles" -> regalo.estado().equals(DISPONIBLE);
-                case "Reservados" -> regalo.estado().equals(RESERVADO);
-                case "Mis reservas" -> regalo.estado().equals(MIO);
+                case "Disponibles" -> estado.equals(DISPONIBLE);
+                case "Reservados" -> estado.equals(RESERVADO);
+                case "Mis reservas" -> estado.equals(MIO);
                 default -> true;
             };
-            if (coincideTexto && coincideFiltro && dentroDelPresupuesto(regalo.precio()))
-                tarjetas.getChildren().add(tarjetaRegalo(regalo));
+            if (coincideTexto && coincideFiltro && dentroDelPresupuesto(regalo.getPrecioEstimado()))
+                tarjetas.getChildren().add(tarjetaRegalo(regalo, estado));
         }
         if (tarjetas.getChildren().isEmpty()) {
-            Label vacio = etiqueta(regalos.isEmpty() ? "No hay regalos para mostrar." : "Ningún regalo coincide con la búsqueda.", "muted");
-            tarjetas.getChildren().add(vacio);
+            String vacio = actual == null ? "Consulta tu correo para ver los regalos."
+                    : regalos.isEmpty() ? "El organizador todavía no ha agregado regalos a esta mesa."
+                    : "Ningún regalo coincide con la búsqueda.";
+            tarjetas.getChildren().add(etiqueta(vacio, "muted"));
         }
         disponiblesValor.setText(String.valueOf(disponibles));
         reservadosValor.setText(String.valueOf(reservados));
@@ -429,34 +491,34 @@ public final class ViewMesaRegalos {
         return true;
     }
 
-    private Node tarjetaRegalo(RegaloMesa regalo) {
-        Label inicial = new Label(regalo.nombre().substring(0, 1).toUpperCase(ES));
+    private Node tarjetaRegalo(Regalo regalo, String estadoVista) {
+        Label inicial = new Label(regalo.getNombre().substring(0, 1).toUpperCase(ES));
         inicial.getStyleClass().add("gift-thumb");
         inicial.setMaxWidth(Double.MAX_VALUE);
-        Label estado = pill(regalo.estado());
+        Label estado = pill(estadoVista);
         StackPane imagen = new StackPane(inicial, estado);
         StackPane.setAlignment(estado, Pos.TOP_RIGHT);
         StackPane.setMargin(estado, new Insets(8));
-        Label nombre = etiqueta(regalo.nombre(), "summary-value");
+        Label nombre = etiqueta(regalo.getNombre(), "summary-value");
         nombre.setStyle("-fx-font-size: 14px;");
         nombre.setWrapText(true);
-        Label descripcion = etiqueta(regalo.descripcion(), "hint");
+        Label descripcion = etiqueta(regalo.getDescripcion() == null ? "" : regalo.getDescripcion(), "hint");
         descripcion.setWrapText(true);
         descripcion.setMinHeight(32);
-        Label precio = etiqueta("$" + pesos.format(regalo.precio()), "gift-price");
+        Label precio = etiqueta(precio(regalo.getPrecioEstimado()), "gift-price");
 
         Button accion = new Button();
         accion.setMaxWidth(Double.MAX_VALUE);
-        switch (regalo.estado()) {
+        switch (estadoVista) {
             case DISPONIBLE -> {
                 accion.setText("Reservar");
                 accion.getStyleClass().add("btn-primary");
-                accion.setOnAction(e -> aviso("Reservar regalo", "Reservarás \"" + regalo.nombre() + "\"."));
+                accion.setOnAction(e -> reservar(regalo));
             }
             case MIO -> {
                 accion.setText("Cancelar reserva");
                 accion.getStyleClass().add("btn-secondary");
-                accion.setOnAction(e -> aviso("Cancelar reserva", "Cancelarás tu reserva de \"" + regalo.nombre() + "\"."));
+                accion.setOnAction(e -> cancelarReserva(regalo));
             }
             default -> {
                 accion.setText("No disponible");
@@ -466,7 +528,7 @@ public final class ViewMesaRegalos {
         }
         VBox tarjeta = new VBox(10, imagen, nombre, descripcion, precio, accion);
         tarjeta.getStyleClass().add("gift-card");
-        if (regalo.estado().equals(MIO)) tarjeta.getStyleClass().add("mine");
+        if (estadoVista.equals(MIO)) tarjeta.getStyleClass().add("mine");
         tarjeta.setPrefWidth(ANCHO_TARJETA);
         tarjeta.setMaxWidth(ANCHO_TARJETA);
         return tarjeta;
@@ -474,17 +536,17 @@ public final class ViewMesaRegalos {
 
     private void pintarMisReservas() {
         misReservas.getChildren().clear();
-        for (RegaloMesa regalo : regalos) {
-            if (!regalo.estado().equals(MIO)) continue;
-            Label nombre = etiqueta(regalo.nombre(), "summary-value");
+        for (Regalo regalo : regalos) {
+            if (!estadoVista(regalo).equals(MIO)) continue;
+            Label nombre = etiqueta(regalo.getNombre(), "summary-value");
             nombre.setWrapText(true);
-            VBox textos = new VBox(4, nombre, etiqueta("$" + pesos.format(regalo.precio()), "hint"));
+            VBox textos = new VBox(4, nombre, etiqueta(precio(regalo.getPrecioEstimado()), "hint"));
             textos.setMinWidth(0);
             HBox.setHgrow(textos, Priority.ALWAYS);
             Button cancelar = new Button("Cancelar");
             cancelar.getStyleClass().addAll("btn-danger", "btn-small");
             cancelar.setMinWidth(Region.USE_PREF_SIZE);
-            cancelar.setOnAction(e -> aviso("Cancelar reserva", "Cancelarás tu reserva de \"" + regalo.nombre() + "\"."));
+            cancelar.setOnAction(e -> cancelarReserva(regalo));
             HBox item = new HBox(10, textos, cancelar);
             item.setAlignment(Pos.CENTER_LEFT);
             item.getStyleClass().add("invitation-item");
@@ -497,16 +559,14 @@ public final class ViewMesaRegalos {
         }
     }
 
-    private void aviso(String titulo, String texto) {
-        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
-        alerta.setTitle(titulo);
-        alerta.setHeaderText(titulo);
-        alerta.setContentText(texto + "\n\nEsta acción se guardará cuando la pantalla se conecte con la base de datos.");
+    private String precio(BigDecimal valor) {
+        return valor == null ? "-" : "$" + pesos.format(valor);
+    }
+
+    private void prepararDialogo(Dialog<?> dialogo) {
         URL css = getClass().getResource(CSS);
-        if (css != null) alerta.getDialogPane().getStylesheets().add(css.toExternalForm());
-        if (correo.getScene() != null) alerta.initOwner(correo.getScene().getWindow());
-        alerta.getDialogPane().lookupButton(ButtonType.OK).getStyleClass().add("btn-primary");
-        alerta.showAndWait();
+        if (css != null) dialogo.getDialogPane().getStylesheets().add(css.toExternalForm());
+        if (correo.getScene() != null) dialogo.initOwner(correo.getScene().getWindow());
     }
 
     private Label pill(String estado) {
