@@ -43,7 +43,14 @@ public class PruebaMarketingCU21 {
                 "Deben quedar 6 segmentos activos (3 de ejemplo + 3 nuevos).");
         comprobar(contar(url, "SELECT COUNT(*) FROM Segmento_cliente") == 17,
                 "Deben guardarse 17 relaciones segmento-cliente (6 + 6 + 5).");
-
+        // Los segmentos activos se pueden volver a leer de la base de datos.
+        List<Segmentacion> activos = servicio.listarSegmentosActivos();
+        int clientesEnActivos = 0;
+        for (Segmentacion activo : activos) {
+            clientesEnActivos += activo.getCantidadClientes();
+        }
+        comprobar(activos.size() == 6, "Deben listarse 6 segmentos activos.");
+        comprobar(clientesEnActivos == 17, "Los segmentos activos deben sumar 17 clientes (los de ejemplo no tienen).");
         // 2. Regenerar: los segmentos automáticos anteriores pasan a inactivos; los de ejemplo no se tocan.
         servicio.segmentarClientes(idAdmin, HOY);
         comprobar(contar(url, "SELECT COUNT(*) FROM Segmentacion WHERE estados = 'ACTIVA'") == 6,
