@@ -24,6 +24,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import views.components.MenuCompartido;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -39,6 +40,7 @@ public class ViewListaServiciosProveedor {
     private final int idProveedor;
     private final SesionUsuario sesion;
     private final Runnable cerrarSesion;
+    private final Runnable abrirServicios;
     private final Consumer<Integer> abrirDetalle;
     private final Runnable nuevoServicio;
 
@@ -77,10 +79,30 @@ public class ViewListaServiciosProveedor {
             Consumer<Integer> abrirDetalle,
             Runnable nuevoServicio) {
 
+        this(
+                controller,
+                idProveedor,
+                sesion,
+                cerrarSesion,
+                abrirDetalle,
+                nuevoServicio,
+                null);
+    }
+
+    public ViewListaServiciosProveedor(
+            ControllerProveedores controller,
+            int idProveedor,
+            SesionUsuario sesion,
+            Runnable cerrarSesion,
+            Consumer<Integer> abrirDetalle,
+            Runnable nuevoServicio,
+            Runnable abrirServicios) {
+
         this.controller = controller;
         this.idProveedor = idProveedor;
         this.sesion = sesion;
         this.cerrarSesion = cerrarSesion;
+        this.abrirServicios = abrirServicios;
         this.abrirDetalle = abrirDetalle;
         this.nuevoServicio = nuevoServicio;
     }
@@ -989,218 +1011,20 @@ public class ViewListaServiciosProveedor {
     }
 
     private VBox crearMenu() {
-
-        VBox menu =
-                new VBox(7);
-
-        menu
-                .getStyleClass()
-                .add("sidebar");
-
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-
-        VBox marca =
-                new VBox(
-                        5,
-                        etiqueta(
-                                "🎪",
-                                "brand-icon"),
-                        etiqueta(
-                                "nextEventux",
-                                "brand"),
-                        etiqueta(
-                                "GESTIÓN DE EVENTOS",
-                                "brand-caption"));
-
-        marca.setAlignment(
-                Pos.CENTER);
-
-        VBox.setMargin(
-                marca,
-                new Insets(
-                        0,
-                        0,
-                        38,
-                        0));
-
-        menu
-                .getChildren()
-                .addAll(
-                        marca,
-                        etiqueta(
-                                "MENÚ PRINCIPAL",
-                                "menu-title"));
-
-        String[] opciones = {
-            "⌂  Inicio",
-            "♧  Mis servicios",
-            "⚙  Configuración"
-        };
-
-        for (String opcion : opciones) {
-
-            Label item =
-                    etiqueta(
-                            opcion,
-                            "menu-item");
-
-            item.setMaxWidth(
-                    Double.MAX_VALUE);
-
-            if (opcion.contains(
-                    "Mis servicios")) {
-
-                item
-                        .getStyleClass()
-                        .add("active");
-            }
-
-            menu
-                    .getChildren()
-                    .add(item);
-        }
-
-        Region espacio =
-                new Region();
-
-        VBox.setVgrow(
-                espacio,
-                Priority.ALWAYS);
-
-        Label salir =
-                etiqueta(
-                        "Cerrar sesión",
-                        "logout-link");
-
-        if (cerrarSesion != null) {
-
-            salir.setOnMouseClicked(
-                    event -> cerrarSesion.run());
-        }
-
-        VBox perfil =
-                new VBox(
-                        4,
-                        etiqueta(
-                                nombreSesion(),
-                                "profile-name"),
-                        etiqueta(
-                                rolSesion(),
-                                "hint"),
-                        salir);
-
-        HBox cuenta =
-                new HBox(
-                        12,
-                        etiqueta(
-                                inicialesSesion(),
-                                "avatar"),
-                        perfil);
-
-        cuenta.setAlignment(
-                Pos.CENTER_LEFT);
-
-        cuenta
-                .getStyleClass()
-                .add("sidebar-bottom");
-
-        menu
-                .getChildren()
-                .addAll(
-                        espacio,
-                        cuenta);
-
-        return menu;
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.MIS_SERVICIOS,
+                null,
+                null,
+                null,
+                abrirServicios,
+                cerrarSesion);
     }
 
     private HBox crearBarraSuperior() {
-
-        HBox barra =
-                new HBox(
-                        18,
-                        etiqueta(
-                                "Inicio / Proveedores /",
-                                "breadcrumb"),
-                        etiqueta(
-                                "Mis servicios",
-                                "breadcrumb-current"),
-                        espacioHorizontal(),
-                        etiqueta(
-                                "♧",
-                                "notification"),
-                        etiqueta(
-                                nombreSesion(),
-                                "user-badge"));
-
-        barra.setAlignment(
-                Pos.CENTER_LEFT);
-
-        barra
-                .getStyleClass()
-                .add("topbar");
-
-        return barra;
-    }
-
-    private String nombreSesion() {
-
-        if (sesion == null
-                || sesion.getNombre() == null
-                || sesion.getNombre().isBlank()) {
-
-            return "Proveedor";
-        }
-
-        return sesion.getNombre();
-    }
-
-    private String rolSesion() {
-
-        if (sesion == null
-                || sesion.getTipoUsuario() == null
-                || sesion.getTipoUsuario().isBlank()) {
-
-            return "Proveedor";
-        }
-
-        String rol =
-                sesion
-                        .getTipoUsuario()
-                        .toLowerCase();
-
-        return Character.toUpperCase(
-                rol.charAt(0))
-                + rol.substring(1);
-    }
-
-    private String inicialesSesion() {
-
-        String[] partes =
-                nombreSesion()
-                        .trim()
-                        .split("\\s+");
-
-        StringBuilder iniciales =
-                new StringBuilder();
-
-        for (String parte : partes) {
-
-            if (!parte.isBlank()) {
-
-                iniciales.append(
-                        Character.toUpperCase(
-                                parte.charAt(0)));
-            }
-
-            if (iniciales.length() == 2) {
-                break;
-            }
-        }
-
-        return iniciales.length() == 0
-                ? "PR"
-                : iniciales.toString();
+        return MenuCompartido.crearBarraSuperior(
+                sesion,
+                "Mis servicios");
     }
 
     private String seguro(
