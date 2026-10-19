@@ -41,8 +41,10 @@ public class ViewLogin {
         this.controller = controller;
         this.alIngresar = alIngresar;
 
+        usuario.setId("usuarioLogin");
         usuario.setPromptText("Usuario");
 
+        contrasena.setId("contrasenaLogin");
         contrasena.setPromptText("Contraseña");
         contrasenaVisible.setPromptText("Contraseña");
 
@@ -69,6 +71,7 @@ public class ViewLogin {
         mensaje.getStyleClass().add(
                 "login-error");
 
+        mensaje.setId("mensajeLogin");
         mensaje.setWrapText(true);
         mensaje.setVisible(false);
         mensaje.setManaged(false);
@@ -119,6 +122,7 @@ public class ViewLogin {
 
         Button ingresar =
                 new Button("Ingresar");
+        ingresar.setId("ingresarLogin");
 
         ingresar.getStyleClass().add(
                 "login-button");
