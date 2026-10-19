@@ -14,8 +14,8 @@ import java.util.function.Function;
 public class ViewPublicacion {
     private final ControllerPublicacion controller;
     private final Runnable volver;
-    private final ComboBox<Organizador> organizador = new ComboBox<>();
-    private final ComboBox<Administrador> administrador = new ComboBox<>();
+    private boolean esAdministrador;
+    private final Label usuario = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
     private final ListView<SolicitudPublicacion> misSolicitudes = new ListView<>();
     private final ListView<SolicitudPublicacion> pendientes = new ListView<>();
@@ -28,11 +28,8 @@ public class ViewPublicacion {
     public ViewPublicacion(ControllerPublicacion controller, Runnable volver) {
         this.controller = controller;
         this.volver = volver;
-        configurarCombo(organizador, "organizadorPublicacion", "Seleccionar organizador", Organizador::nombre);
-        configurarCombo(administrador, "administradorPublicacion", "Seleccionar administrador", Administrador::nombre);
+        usuario.setId("usuarioPublicacion");
         configurarCombo(evento, "eventoPublicacion", "Seleccionar evento", e -> e.getNombre() + " — " + estado(e.getEstado()));
-        organizador.setOnAction(e -> actualizarOrganizador());
-        administrador.setOnAction(e -> actualizarAdministrador());
         pendientes.setId("solicitudesPendientes");
         misSolicitudes.setId("misSolicitudes");
         plantillas.setId("plantillasPublicadas");
@@ -72,18 +69,23 @@ public class ViewPublicacion {
         contenido.getStyleClass().add("content");
         Label explicacion = etiqueta("Comparte un evento finalizado como plantilla. La publicación requiere aprobación del administrador.","muted");
         explicacion.setWrapText(true);
-        Label demo = etiqueta("Modo demostración: selección de perfiles hasta integrar el inicio de sesión.","status");
-        demo.setWrapText(true);
+        try {
+            esAdministrador = controller.esAdministrador();
+            usuario.setText(controller.nombreUsuario());
+        } catch (IllegalStateException e) {
+            mostrar(e.getMessage(), false);
+            return new VBox(20, mensaje);
+        }
         Tab organizacion = new Tab("Solicitar publicación", panelOrganizador());
         organizacion.setId("tabOrganizador");
         Tab revision = new Tab("Revisión del administrador", panelAdministrador());
         revision.setId("tabAdministrador");
         Tab catalogo = new Tab("Plantillas publicadas", panelPlantillas());
         catalogo.setId("tabPlantillas");
-        TabPane tabs = new TabPane(organizacion,revision,catalogo);
+        TabPane tabs = new TabPane(esAdministrador ? revision : organizacion, catalogo);
         tabs.setId("tabsPublicacion");
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        contenido.getChildren().addAll(etiqueta("Subir evento al repositorio","page-title"),explicacion,demo,mensaje,tabs);
+        contenido.getChildren().addAll(etiqueta("Subir evento al repositorio","page-title"),explicacion,usuario,mensaje,tabs);
         ScrollPane scroll = new ScrollPane(contenido); scroll.setFitToWidth(true); scroll.getStyleClass().add("content-scroll");
         BorderPane principal = new BorderPane(scroll,barra,null,null,null);
         raiz.setCenter(principal);
@@ -91,26 +93,22 @@ public class ViewPublicacion {
             menu.setVisible(ancho.doubleValue()>=1100); menu.setManaged(menu.isVisible());
         });
         // La navegación de regreso permanece disponible incluso si se oculta el menú.
-        Button regresar = boton("← Crear evento","volverCrearCompacto",volver,false);
+        Button regresar = boton(esAdministrador ? "← Inicio" : "← Crear evento","volverCrearCompacto",volver,false);
         barra.getChildren().add(0,regresar);
-        try {
-            organizador.getItems().setAll(controller.listarOrganizadores());
-            administrador.getItems().setAll(controller.listarAdministradores());
-        } catch (IllegalStateException e) { mostrar(e.getMessage(),false); }
         actualizar();
         return raiz;
     }
 
     private VBox panelOrganizador() {
         Button solicitar = boton("↑ Solicitar publicación","solicitarPublicacion",()-> {
-            if (organizador.getValue()==null || evento.getValue()==null) {
-                mostrar("Selecciona un organizador y un evento.",false); return;
+            if (evento.getValue()==null) {
+                mostrar("Selecciona un evento de tu cuenta.",false); return;
             }
-            ejecutar(()->controller.solicitar(organizador.getValue().id(),evento.getValue().getIdEvento()),
+            ejecutar(()->controller.solicitar(evento.getValue().getIdEvento()),
                     "Solicitud enviada al administrador. El evento todavía no está publicado.");
         },true);
         VBox panel = tarjeta(etiqueta("Selecciona el evento que quieres compartir","card-title"),
-                campo("Organizador",organizador),campo("Evento",evento),
+                campo("Evento",evento),
                 etiqueta("Solo pueden publicarse eventos finalizados.","hint"),solicitar,
                 etiqueta("Mis solicitudes","section-title"),misSolicitudes,
                 etiqueta("Notificaciones internas","section-title"),avisosOrganizador);
@@ -121,7 +119,7 @@ public class ViewPublicacion {
         Button aprobar = boton("Aprobar y publicar","aprobarPublicacion",()->revisar(true),true);
         Button rechazar = boton("Rechazar","rechazarPublicacion",()->revisar(false),false);
         HBox acciones = new HBox(12,aprobar,rechazar);
-        return tarjeta(etiqueta("Revisar solicitudes de publicación","card-title"),campo("Administrador",administrador),
+        return tarjeta(etiqueta("Revisar solicitudes de publicación","card-title"),
                 etiqueta("Solicitudes pendientes","section-title"),pendientes,campo("Motivo del rechazo",motivo),acciones,
                 etiqueta("Notificaciones internas","section-title"),avisosAdministrador);
     }
@@ -134,11 +132,11 @@ public class ViewPublicacion {
     }
 
     private void revisar(boolean aprobar) {
-        if (administrador.getValue()==null || pendientes.getSelectionModel().getSelectedItem()==null) {
-            mostrar("Selecciona un administrador y una solicitud pendiente.",false); return;
+        if (pendientes.getSelectionModel().getSelectedItem()==null) {
+            mostrar("Selecciona una solicitud pendiente.",false); return;
         }
         int solicitud=pendientes.getSelectionModel().getSelectedItem().id();
-        ejecutar(()->controller.revisar(solicitud,administrador.getValue().id(),aprobar,motivo.getText()),
+        ejecutar(()->controller.revisar(solicitud,aprobar,motivo.getText()),
                 aprobar ? "Plantilla publicada. Se notificó al organizador." : "Solicitud rechazada. Se notificó el motivo al organizador.");
     }
 
@@ -156,32 +154,25 @@ public class ViewPublicacion {
 
     private void actualizar() {
         mensaje.getStyleClass().remove("error");
+        // Limpiar primero evita mostrar datos anteriores si la sesión dejó de ser válida.
+        pendientes.getItems().clear(); misSolicitudes.getItems().clear();
+        avisosOrganizador.getItems().clear(); avisosAdministrador.getItems().clear();
+        plantillas.getItems().clear();
+        Evento anterior = evento.getValue();
+        evento.getItems().clear();
         try {
-            pendientes.getItems().setAll(controller.listarSolicitudes(null));
+            if (esAdministrador) {
+                pendientes.getItems().setAll(controller.listarSolicitudes());
+                avisosAdministrador.getItems().setAll(controller.notificaciones());
+            } else {
+                evento.getItems().setAll(controller.listarEventos());
+                if (anterior != null) evento.getItems().stream().filter(e -> e.getIdEvento().equals(anterior.getIdEvento()))
+                        .findFirst().ifPresent(e -> evento.getSelectionModel().select(e));
+                misSolicitudes.getItems().setAll(controller.listarSolicitudes());
+                avisosOrganizador.getItems().setAll(controller.notificaciones());
+            }
             plantillas.getItems().setAll(controller.listarPlantillas());
         } catch (IllegalStateException e) { mostrar(e.getMessage(),false); }
-        actualizarOrganizador();
-        actualizarAdministrador();
-    }
-
-    private void actualizarOrganizador() {
-        misSolicitudes.getItems().clear(); avisosOrganizador.getItems().clear();
-        if(organizador.getValue()==null) { evento.getItems().clear(); return; }
-        try {
-            Evento anterior=evento.getValue();
-            evento.getItems().setAll(controller.listarEventos(organizador.getValue().id()));
-            if(anterior!=null) evento.getItems().stream().filter(e->e.getIdEvento().equals(anterior.getIdEvento())).findFirst()
-                    .ifPresent(e->evento.getSelectionModel().select(e));
-            misSolicitudes.getItems().setAll(controller.listarSolicitudes(organizador.getValue().id()));
-            avisosOrganizador.getItems().setAll(controller.notificacionesOrganizador(organizador.getValue().id()));
-        } catch (IllegalArgumentException | IllegalStateException e) { mostrar(e.getMessage(),false); }
-    }
-
-    private void actualizarAdministrador() {
-        avisosAdministrador.getItems().clear();
-        if(administrador.getValue()==null) return;
-        try { avisosAdministrador.getItems().setAll(controller.notificacionesAdministrador(administrador.getValue().id())); }
-        catch (IllegalStateException e) { mostrar(e.getMessage(),false); }
     }
 
     private void mostrar(String texto,boolean exito) {

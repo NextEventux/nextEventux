@@ -5,6 +5,8 @@ import org.junit.jupiter.api.io.TempDir;
 import repositories.RepositoryEvento;
 import repositories.RepositoryPublicacion;
 import services.ServicePublicacion;
+import repositories.RepositoryAutenticacion;
+import services.ServiceAutenticacion;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,11 +21,14 @@ class PublicacionDemoTest {
             assertThrows(SQLException.class,()->CargarDemoPublicacion.cargar(connection));
         }
         var service=new ServicePublicacion(new RepositoryPublicacion(url),new RepositoryEvento(url));
-        var finalizado=service.listarEventos(1).stream().filter(e->"FINALIZADO".equals(e.getEstado())).findFirst().orElseThrow();
-        service.solicitar(1,finalizado.getIdEvento());
-        var solicitud=service.listarSolicitudes(1).get(0);
-        service.revisar(solicitud.id(),service.listarAdministradores().get(0).id(),true,null);
-        assertEquals(1,service.listarPlantillas().size());
-        assertEquals(1,service.notificacionesOrganizador(1).size());
+        var login=new ServiceAutenticacion(new RepositoryAutenticacion(url));
+        var organizador=login.iniciarSesion("laura.gomez","clave123");
+        var administrador=login.iniciarSesion("admin.demo","solo-demostracion");
+        var finalizado=service.listarEventos(organizador).stream().filter(e->"FINALIZADO".equals(e.getEstado())).findFirst().orElseThrow();
+        service.solicitar(organizador,finalizado.getIdEvento());
+        var solicitud=service.listarSolicitudes(organizador).get(0);
+        service.revisar(administrador,solicitud.id(),true,null);
+        assertEquals(1,service.listarPlantillas(organizador).size());
+        assertEquals(1,service.notificaciones(organizador).size());
     }
 }

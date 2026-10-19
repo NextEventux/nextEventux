@@ -47,7 +47,7 @@ La especificación detallada de cada comportamiento pertenece al SRS y a los ane
 | Área | Tecnología | Uso |
 | --- | --- | --- |
 | Lenguaje | Java | Implementación de funcionalidades y reglas de negocio. |
-| Interfaz | JavaFX | Construcción de las pantallas de escritorio. |
+| Interfaz | JavaFX y CSS | JavaFX construye las pantallas de escritorio y CSS define sus colores, fuentes, bordes y espacios. |
 | Persistencia | H2 | Base de datos relacional embebida obligatoria para el proyecto. |
 | Pruebas | JUnit | Pruebas automatizadas de clases, validaciones y reglas críticas. |
 | Modelado | UML y draw.io | Representación visual de casos de uso y conceptos del sistema. |
@@ -350,29 +350,30 @@ muestra un mensaje y no se permite crear sin seleccionar uno.
 
 ## CU03 — Subir evento al repositorio
 
-La rama `CU03-subir-evento-repositorio` parte del avance local de CU01 para
-reutilizar la pantalla JavaFX, el logo y la persistencia existentes. Sus cambios
-se mantienen en commits separados; CU01 debe integrarse antes o coordinarse como
-dependencia al preparar el PR de CU03.
+La rama `CU03-subir-evento-repositorio` incorpora la base autenticada de
+`CU02-editar-evento`. Esa dependencia debe conservarse al preparar su PR.
+Esta integración no añade tablas ni dependencias.
 
-Desde Crear evento, el botón **Subir al repositorio** abre tres secciones:
+Iniciar sesión y entrar por **Publicaciones** o **Eventos → Subir al repositorio**.
+El administrador entra directamente a la revisión al iniciar sesión.
 
-- **Solicitar publicación:** seleccionar un organizador por nombre y uno de sus
-  eventos. Solo se aceptan eventos finalizados. Se registra la solicitud pendiente
-  y se envía una notificación interna a los administradores activos.
-- **Revisión del administrador:** seleccionar un administrador activo con el rol
-  ADMINISTRADOR y una solicitud pendiente. Aprobar publica la plantilla; rechazar
-  exige un motivo de hasta 250 caracteres. Ambas decisiones notifican al organizador.
-- **Plantillas publicadas:** lista las estructuras aprobadas, disponibles para
-  futura reutilización. Esta pantalla no implementa una operación de clonación.
+- **Organizador:** selecciona uno de sus eventos y solicita su publicación. Solo
+  se aceptan eventos finalizados. Consulta sus solicitudes y avisos internos.
+- **Administrador:** consulta solicitudes pendientes. Aprobar publica la plantilla;
+  rechazar exige un motivo de hasta 250 caracteres. Ambas decisiones notifican al
+  organizador. Esta sección solo se muestra al administrador.
+- **Plantillas publicadas:** catálogo disponible a ambos perfiles con estructuras
+  aprobadas para futura reutilización. No implementa una operación de clonación.
 
 ### Alcance y privacidad
 
-La selección de perfiles es **solo para demostración**. No autentica usuarios y
-no sustituye la sesión que está desarrollando el equipo. Antes de dar CU03 por
-completado debe integrarse esa sesión para obtener el organizador/administrador
-autenticado, proteger las consultas y ocultar las funciones de otros roles. La
-comprobación del rol activo en H2 no equivale a una autenticación.
+La identidad se obtiene del login, sin selectores de organizador o administrador.
+El controlador conserva la sesión y el servicio comprueba su tipo, estado y
+relación con H2 antes de cada consulta u operación. Para el administrador también
+se comprueba el rol ADMINISTRADOR activo. Cerrar sesión invalida los controladores
+anteriores. El organizador no puede consultar solicitudes ni avisos de otras
+cuentas, ni aprobar publicaciones. El administrador no puede solicitar en nombre
+de un organizador. Los proveedores no tienen acceso a CU03.
 
 La publicación copia únicamente el tipo y la duración en minutos. Genera un título
 genérico a partir del tipo; no copia el nombre original, descripción, lugar,
@@ -403,9 +404,9 @@ usan parámetros JDBC.
 
 Si no hay administradores activos con el rol correspondiente, la solicitud se
 bloquea con un mensaje; no se simula un envío ni una aprobación automática.
-El botón Actualizar recarga solicitudes, catálogo y avisos de los perfiles
-seleccionados. Para cargar nuevos perfiles creados desde otra pantalla, volver a
-abrir CU03.
+El botón Actualizar recarga las solicitudes, el catálogo y los avisos permitidos
+para la sesión actual. Si falla una operación, se conserva el motivo escrito para
+reintentar.
 
 ### Demostración en una base vacía
 
@@ -422,9 +423,11 @@ En Windows, sustituir `:` por `;` en el classpath. No ejecutar previamente
 El comando no borra datos existentes; rechaza la carga si alguna tabla contiene
 registros. Los ejemplos no se cargan al abrir la aplicación.
 
-Elegir Laura Gómez y «Evento finalizado de demostración», enviar la solicitud y
-revisarla como «Administrador de demostración». Probar rechazo con motivo o
-aprobación; consultar después Mis solicitudes, Notificaciones y Plantillas.
+Iniciar sesión con la cuenta de prueba `laura.gomez` / `clave123`, abrir
+Publicaciones y elegir «Evento finalizado de demostración». Enviar la solicitud,
+cerrar sesión e ingresar como `admin.demo` / `solo-demostracion` para revisarla.
+Probar rechazo con motivo o aprobación; volver a la cuenta del organizador para
+consultar Mis solicitudes, Notificaciones y Plantillas.
 El evento finalizado es una fixture de demostración; este comando no implementa
 ni ejecuta el proceso de finalización CU05. Si ya hay datos reales, usar los
 organizadores, eventos finalizados y administradores registrados, sin cargar
@@ -432,7 +435,9 @@ la demostración ni eliminar la base de datos.
 
 ### Verificación de CU03
 
-- 30 pruebas JUnit en total: 16 anteriores y 14 de publicación/demostración.
+- 91 pruebas JUnit en total después de incorporar main. Las 14 pruebas anteriores de CU03 ahora usan login
+  real; se añadieron 9 de sesión, aislamiento entre cuentas, cierre de sesión,
+  permisos de cada perfil y revocación del rol o desactivación después del login.
 - Cobertura nueva: solicitud pendiente, propiedad del evento, estados, administrador
   con rol activo, motivo obligatorio, duplicados, publicación sin datos sensibles,
   conservación del original, notificaciones, rechazo y nuevo envío, persistencia,
@@ -448,10 +453,11 @@ JavaFX/H2 ya disponibles. En un entorno con Maven, usar `mvn clean test`.
 Las pruebas usan bases temporales; no modifican los registros de la aplicación.
 La comprobación visual se realizó en macOS; no se ha validado esta pantalla en Windows.
 
-Quedan pendientes la integración con la autenticación real y la revisión del equipo
-de las tablas/interacciones que afectan a Administración y a las notificaciones.
-No debe marcarse CU03 como completado en el control institucional hasta integrar
-esas dependencias y superar la revisión correspondiente.
+Se verificó además el recorrido JavaFX con sesiones reales: solicitud, bloqueo de
+duplicados, rechazo con motivo, aviso al organizador, reenvío, aprobación y catálogo.
+Queda pendiente la revisión del equipo de las tablas e interacciones que afectan
+a Administración y a las notificaciones. El cierre institucional requiere esa
+revisión y la integración del PR.
 
 ## CU04 — Cancelar evento
 
@@ -576,15 +582,13 @@ organizador, además de su vínculo en la base. Cerrar sesión invalida el objet
 sesión y vuelve al login. La aplicación no permite elegir otra identidad.
 
 Desde la sesión de organizador están disponibles Crear y Editar evento. Crear
-conserva el organizador de la sesión. Los accesos a las pantallas de demostración
-de CU03 y CU04 están deshabilitados hasta integrar sus propios flujos de sesión;
-su código se conserva. Se mantiene la navegación de main hacia Invitados y el
-catálogo de proveedores, además de la gestión de servicios del proveedor.
-La cuenta de administrador muestra el mensaje de integración pendiente.
+conserva el organizador de la sesión. CU03 también está disponible mediante Publicaciones, con permisos por sesión.
+El acceso a CU04 permanece deshabilitado hasta integrar su flujo con la sesión.
+La cuenta de administrador abre CU03; el módulo de proveedor sigue pendiente.
 
 ### Pruebas de CU02
 
-82 pruebas JUnit correctas en total tras integrar main, incluidas 8 de edición y 7 de
+82 pruebas JUnit correctas tras integrar main, incluidas 8 de edición y 7 nuevas de
 integración con la sesión. Las pruebas de edición
 comprueban precarga y propiedad, campos permitidos, conservación de los demás
 datos, estados bloqueados, cambio de estado después de cargar, entradas inválidas,
@@ -606,8 +610,6 @@ La comprobación JavaFX con H2 temporal también recorre login inválido y váli
 navegación a CU02, selección exclusiva de eventos propios, validación, guardado,
 cierre de sesión y entrada con una segunda cuenta sin mezclar sus eventos.
 
-La resolución de conflictos con main conserva las migraciones de proveedores,
-publicaciones y cancelación. El repositorio de autenticación mantiene el manejo
-de errores de main y permite una URL de prueba aislada. Se comprobó en JavaFX el
-login, la edición y el guardado, el cambio de cuenta, el catálogo de proveedores,
-la navegación a Invitados y la pantalla de servicios del proveedor.
+La conciliación de CU03 con CU02 y main conserva el catálogo de proveedores, la
+pantalla de gestión de servicios y la navegación a Invitados. Se mantienen las
+migraciones de los módulos y el manejo de errores de autenticación de main.

@@ -9,7 +9,7 @@ import java.sql.Statement;
 public class CargarDemoPublicacion {
     public static void main(String[] args) throws Exception {
         try (Connection connection = DatabaseConnection.getConnection()) { cargar(connection); }
-        System.out.println("Demostración CU03 cargada: selecciona Laura Gómez y el evento finalizado de demostración.");
+        System.out.println("Demostración CU03 cargada: inicia sesión como laura.gomez y abre Publicaciones.");
     }
 
     public static void cargar(Connection connection) throws Exception {
