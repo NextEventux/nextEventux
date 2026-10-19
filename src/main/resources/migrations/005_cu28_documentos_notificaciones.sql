@@ -35,11 +35,11 @@ CREATE TABLE IF NOT EXISTS Notificacion_Proveedor (
     fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     leida BOOLEAN NOT NULL DEFAULT FALSE,
 
-    CONSTRAINT fk_notificacion_usuario
+    CONSTRAINT fk_notif_proveedor_usuario_cu28
         FOREIGN KEY (id_usuario_destinatario)
         REFERENCES Usuario(id_usuario),
 
-    CONSTRAINT fk_notificacion_proveedor
+    CONSTRAINT fk_notif_proveedor_proveedor_cu28
         FOREIGN KEY (id_proveedor)
         REFERENCES Proveedor(id_proveedor)
 );
