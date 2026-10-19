@@ -83,19 +83,19 @@ public class ControllerInvitados {
         serviceInvitados.quitarRegalo(idRegalo);
     }
 
-    public List<Regalo> consultarRegalosDisponibles(int idInvitado) {
-        return serviceInvitados.consultarRegalosDisponibles(idInvitado);
+    public List<Regalo> consultarRegalosDisponibles(int idInvitado, String correo, String telefono) {
+        return serviceInvitados.consultarRegalosDisponibles(idInvitado, correo, telefono);
     }
 
     public boolean validarDisponibilidadRegalo(int idRegalo) {
         return serviceInvitados.validarDisponibilidadRegalo(idRegalo);
     }
 
-    public void reservarRegalo(int idInvitado, int idRegalo) {
-        serviceInvitados.reservarRegalo(idInvitado, idRegalo);
+    public void reservarRegalo(int idInvitado, String correo, String telefono, int idRegalo) {
+        serviceInvitados.reservarRegalo(idInvitado, correo, telefono, idRegalo);
     }
 
-    public void cancelarReservaRegalo(int idInvitado, int idRegalo) {
-        serviceInvitados.cancelarReservaRegalo(idInvitado, idRegalo);
+    public void cancelarReservaRegalo(int idInvitado, String correo, String telefono, int idRegalo) {
+        serviceInvitados.cancelarReservaRegalo(idInvitado, correo, telefono, idRegalo);
     }
 }
