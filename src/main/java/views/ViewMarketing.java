@@ -185,4 +185,70 @@ public class ViewMarketing {
         mensaje.setManaged(true);
     }
 
+        private VBox crearMenu() {
+        VBox menu = new VBox(7);
+        menu.getStyleClass().add("sidebar");
+        menu.setPrefWidth(250);
+        menu.setMinWidth(250);
+        VBox marca = new VBox(5, etiqueta("🎪", "brand-icon"), etiqueta("nextEventux", "brand"),
+                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        marca.setAlignment(Pos.CENTER);
+        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
+        menu.getChildren().addAll(marca, etiqueta("MARKETING", "menu-title"));
+        String[] opciones = {"⌂  Inicio", "♙  Segmentos", "▦  Campañas", "⚙  Configuración"};
+        for (String opcion : opciones) {
+            Label item = etiqueta(opcion, "menu-item");
+            item.setMaxWidth(Double.MAX_VALUE);
+            if (opcion.contains("Segmentos")) {
+                item.getStyleClass().add("active");
+            }
+            menu.getChildren().add(item);
+        }
+        Region espacio = new Region();
+        VBox.setVgrow(espacio, Priority.ALWAYS);
+        VBox perfil = new VBox(4, etiqueta("Administrador", "profile-name"), etiqueta("Mi cuenta", "hint"));
+        HBox cuenta = new HBox(12, etiqueta("AD", "avatar"), perfil);
+        cuenta.setAlignment(Pos.CENTER_LEFT);
+        cuenta.getStyleClass().add("sidebar-bottom");
+        menu.getChildren().addAll(espacio, cuenta);
+        return menu;
+    }
+
+    private HBox crearBarraSuperior() {
+        HBox barra = new HBox(18, etiqueta("Inicio / Marketing /", "breadcrumb"),
+                etiqueta("Segmentos", "breadcrumb-current"), espacioHorizontal(),
+                etiqueta("♧", "notification"), etiqueta("Administrador", "user-badge"));
+        barra.setAlignment(Pos.CENTER_LEFT);
+        barra.getStyleClass().add("topbar");
+        return barra;
+    }
+
+    private Label etiqueta(String texto, String estilo) {
+        Label label = new Label(texto);
+        label.getStyleClass().add(estilo);
+        return label;
+    }
+
+    private Region espacioHorizontal() {
+        Region espacio = new Region();
+        HBox.setHgrow(espacio, Priority.ALWAYS);
+        return espacio;
+    }
+
+    private VBox informacion(String titulo, String texto) {
+        Label descripcion = etiqueta(texto, "muted");
+        descripcion.setWrapText(true);
+        VBox tarjeta = new VBox(14, etiqueta(titulo, "card-title"), descripcion);
+        tarjeta.getStyleClass().add("info-card");
+        return tarjeta;
+    }
+
+    private HBox filaResumen(String titulo, Label valor) {
+        valor.getStyleClass().add("summary-value");
+        HBox fila = new HBox(10, etiqueta(titulo, "hint"), espacioHorizontal(), valor);
+        fila.setAlignment(Pos.CENTER_LEFT);
+        return fila;
+    }
+}
+
     
