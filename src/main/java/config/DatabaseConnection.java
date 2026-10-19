@@ -1,11 +1,11 @@
 package config;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 import org.h2.tools.RunScript;
 
@@ -16,7 +16,8 @@ public class DatabaseConnection {
     private static final String PASSWORD = "";
 
     public static Connection getConnection() throws SQLException {
-        return getConnection(URL);
+        return getConnection(
+                System.getProperty("nexteventux.db.url", URL));
     }
 
     public static Connection getConnection(String url) throws SQLException {
@@ -43,16 +44,21 @@ public class DatabaseConnection {
 
         ejecutarScript(connection, "/schema.sql");
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
-        ejecutarScript(connection, "/migrations/002_proveedor_cu28.sql");
 
-        // CU-028: documentos, correcciones y notificaciones internas.
-        ejecutarScript(connection,
-                "/migrations/003_cu28_documentos_notificaciones.sql");
+        // Migraciones integradas de main.
+        ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
+        ejecutarScript(connection, "/migrations/003_proveedores_cu11_publicacion.sql");
+        ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
+        ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
+
+        // Migraciones propias de CU-028, después de las de main.
+        ejecutarScript(connection, "/migrations/004_proveedor_cu28.sql");
+        ejecutarScript(connection, "/migrations/005_cu28_documentos_notificaciones.sql");
 
         actualizarContadorEventos(connection);
     }
 
-    // Evita conflictos cuando existen eventos con identificadores explícitos.
+    // Mantiene el contador después de insertar eventos con IDs explícitos.
     private static void actualizarContadorEventos(Connection connection)
             throws SQLException {
 
@@ -85,9 +91,9 @@ public class DatabaseConnection {
         }
     }
 
-    private static void ejecutarScript(Connection connection,
-                                       String recurso)
-            throws SQLException {
+    private static void ejecutarScript(
+            Connection connection,
+            String recurso) throws SQLException {
 
         InputStream schema =
                 DatabaseConnection.class.getResourceAsStream(recurso);
@@ -97,14 +103,17 @@ public class DatabaseConnection {
                     "No se encontró el recurso " + recurso);
         }
 
-        try (InputStreamReader reader = new InputStreamReader(
-                schema, StandardCharsets.UTF_8)) {
+        try (InputStreamReader reader =
+                     new InputStreamReader(
+                             schema,
+                             StandardCharsets.UTF_8)) {
 
             RunScript.execute(connection, reader);
 
         } catch (java.io.IOException e) {
             throw new SQLException(
-                    "No se pudo leer el esquema de la base de datos.", e);
+                    "No se pudo leer el esquema de la base de datos.",
+                    e);
         }
     }
 }

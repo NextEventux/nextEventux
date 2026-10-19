@@ -37,8 +37,16 @@ VALUES
 (4, 'Sabores & Eventos', 'sabores.eventos', 'clave321', 'ACTIVO', TIMESTAMP '2026-10-03 14:00:00', FALSE, 'PROVEEDOR'),
 (5, 'Ana Martínez', 'ana.martinez', 'clave654', 'ACTIVO', TIMESTAMP '2026-10-04 08:30:00', TRUE, 'CLIENTE'),
 (6, 'Diego Pérez', 'diego.perez', 'clave987', 'ACTIVO', TIMESTAMP '2026-10-05 16:00:00', FALSE, 'CLIENTE'),
-(7, 'Diana Rojas', 'diana.rojas', 'clave654', 'ACTIVO', TIMESTAMP '2026-10-08 09:30:00', FALSE, 'PROVEEDOR');
-
+(7, 'Administrador NextEventux', 'admin.nexteventux', 'claveadmin', 'ACTIVO', TIMESTAMP '2026-10-18 09:00:00', FALSE, 'ADMINISTRADOR'),
+(8, 'Valentina Flores', 'valentina', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'),
+(9, 'Santiago Rivera', 'santiago', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'),
+(10, 'Juliana Torres', 'juliana', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'),
+(11, 'Luna Decoraciones', 'luna', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'PROVEEDOR'),
+(12, 'Sabor & Fiesta Catering', 'sabor', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'PROVEEDOR'),
+(13, 'Flash Studio Fotografía', 'flash', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'PROVEEDOR'),
+(14, 'Camila Reyes', 'camila', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ADMINISTRADOR'),
+(15, 'Mateo Castillo', 'mateo', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ADMINISTRADOR'),
+(16, 'Shirly Montenegro', 'shirly', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ADMINISTRADOR');
 
 -- ---------------------------------------------------------
 -- ROLES Y PERMISOS
@@ -68,7 +76,16 @@ VALUES
 (4, 4, 3),
 (5, 5, 4),
 (6, 6, 4),
-(7, 7, 3);
+(7, 7, 1),
+(8, 8, 2),
+(9, 9, 2),
+(10, 10, 2),
+(11, 11, 3),
+(12, 12, 3),
+(13, 13, 3),
+(14, 14, 1),
+(15, 15, 1),
+(16, 16, 1);
 
 
 -- ---------------------------------------------------------
@@ -91,7 +108,10 @@ INSERT INTO Organizador
 (id_organizador, id_usuario, empresa, telefono, estado)
 VALUES
 (1, 1, 'Eventos Laura', '3001234567', 'ACTIVO'),
-(2, 2, 'Celebraciones CR', '3017654321', 'ACTIVO');
+(2, 2, 'Celebraciones CR', '3017654321', 'ACTIVO'),
+(3, 8, 'Momentos Valentina', '3005550101', 'ACTIVO'),
+(4, 9, 'Eventos Rivera', '3005550102', 'ACTIVO'),
+(5, 10, 'Sueños de Juliana', '3005550103', 'ACTIVO');
 
 
 -- ---------------------------------------------------------
@@ -103,7 +123,9 @@ INSERT INTO Proveedor
 VALUES
 (1, 3, 'Mariana López', 'Decoraciones Arcoíris', 'contacto@arcoiris.com', '3101234567', 'Carrera 15 #80-20', 'APROBADO'),
 (2, 4, 'Andrés Torres', 'Sabores & Eventos', 'contacto@saboreseventos.com', '3117654321', 'Calle 90 #20-30', 'APROBADO'),
-(3, 7, 'Diana Rojas', 'Floristería Jardín', 'contacto@floristeriajardin.com', '3201234567', 'Carrera 13 #76-20', 'PENDIENTE_VERIFICACION');
+(3, 11, 'Luna Decoraciones', 'Luna Decoraciones', 'luna@ejemplo.com', '3005550201', 'Bogotá', 'APROBADO'),
+(4, 12, 'Sabor & Fiesta Catering', 'Sabor & Fiesta Catering', 'sabor@ejemplo.com', '3005550202', 'Bogotá', 'APROBADO'),
+(5, 13, 'Flash Studio Fotografía', 'Flash Studio Fotografía', 'flash@ejemplo.com', '3005550203', 'Bogotá', 'APROBADO');
 
 
 -- ---------------------------------------------------------
@@ -151,7 +173,10 @@ VALUES
 (1, 1, 'Sofía Cortés', '3005551111', 'Calle 50 #10-20', 'CONFIRMADO', 'sofia@email.com'),
 (2, 2, 'Juan García', '3005552222', 'Carrera 20 #30-40', 'PENDIENTE', 'juan@email.com'),
 (3, 3, 'Camila Torres', '3005553333', 'Calle 70 #15-25', 'CONFIRMADO', 'camila@email.com'),
-(4, 3, 'Natalia Ruiz', '3005554444', 'Carrera 12 #45-60', 'PENDIENTE', 'natalia@email.com');
+(4, 3, 'Natalia Ruiz', '3005554444', 'Carrera 12 #45-60', 'PENDIENTE', 'natalia@email.com'),
+(5, 1, 'Emilia Navarro', '3005550301', 'Bogotá', 'CONFIRMADO', 'emilia@ejemplo.com'),
+(6, 2, 'Nicolás Vega', '3005550302', 'Bogotá', 'PENDIENTE', 'nicolas@ejemplo.com'),
+(7, 3, 'Renata Morales', '3005550303', 'Bogotá', 'CONFIRMADO', 'renata@ejemplo.com');
 
 
 -- ---------------------------------------------------------
@@ -380,16 +405,16 @@ VALUES
 -- Continuar los identificadores automáticos después de los datos de ejemplo.
 ALTER TABLE Permiso ALTER COLUMN id_permiso RESTART WITH 5;
 ALTER TABLE Rol ALTER COLUMN id_rol RESTART WITH 5;
-ALTER TABLE Usuario ALTER COLUMN id_usuario RESTART WITH 7;
+ALTER TABLE Usuario ALTER COLUMN id_usuario RESTART WITH 17;
 ALTER TABLE Rol_permiso ALTER COLUMN id_rol_permiso RESTART WITH 7;
-ALTER TABLE Usuario_rol ALTER COLUMN id_usuario_rol RESTART WITH 7;
+ALTER TABLE Usuario_rol ALTER COLUMN id_usuario_rol RESTART WITH 17;
 ALTER TABLE Lugar ALTER COLUMN id_lugar RESTART WITH 4;
-ALTER TABLE Organizador ALTER COLUMN id_organizador RESTART WITH 3;
-ALTER TABLE Proveedor ALTER COLUMN id_proveedor RESTART WITH 3;
+ALTER TABLE Organizador ALTER COLUMN id_organizador RESTART WITH 6;
+ALTER TABLE Proveedor ALTER COLUMN id_proveedor RESTART WITH 6;
 ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH 3;
 ALTER TABLE Planificacion ALTER COLUMN id_planificacion RESTART WITH 4;
 ALTER TABLE Invitacion ALTER COLUMN id_invitacion RESTART WITH 4;
-ALTER TABLE Invitado ALTER COLUMN id_invitado RESTART WITH 5;
+ALTER TABLE Invitado ALTER COLUMN id_invitado RESTART WITH 8;
 ALTER TABLE Acompanante ALTER COLUMN id_acompanante RESTART WITH 4;
 ALTER TABLE Necesidad_Especial ALTER COLUMN id_necesidad RESTART WITH 3;
 ALTER TABLE Regalo ALTER COLUMN id_regalo RESTART WITH 5;

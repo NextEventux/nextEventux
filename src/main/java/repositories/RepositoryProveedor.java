@@ -654,7 +654,7 @@ public class RepositoryProveedor {
 
         String sql = "SELECT id_notificacion, id_usuario_destinatario, "
                 + "id_proveedor, tipo, titulo, mensaje, fecha_creacion, leida "
-                + "FROM Notificacion_Interna "
+                + "FROM Notificacion_Proveedor "
                 + "WHERE id_usuario_destinatario = ? "
                 + "ORDER BY fecha_creacion DESC, id_notificacion DESC";
 
@@ -698,7 +698,7 @@ public class RepositoryProveedor {
             String titulo,
             String mensaje) throws SQLException {
 
-        String sql = "INSERT INTO Notificacion_Interna "
+        String sql = "INSERT INTO Notificacion_Proveedor "
                 + "(id_usuario_destinatario, id_proveedor, tipo, titulo, mensaje) "
                 + "VALUES (?, ?, ?, ?, ?)";
 

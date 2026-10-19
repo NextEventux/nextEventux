@@ -25,7 +25,7 @@ CREATE INDEX IF NOT EXISTS idx_documento_proveedor
 ON Documento_Proveedor(id_proveedor);
 
 -- Notificaciones internas dirigidas al usuario del proveedor.
-CREATE TABLE IF NOT EXISTS Notificacion_Interna (
+CREATE TABLE IF NOT EXISTS Notificacion_Proveedor (
     id_notificacion INT PRIMARY KEY AUTO_INCREMENT,
     id_usuario_destinatario INT NOT NULL,
     id_proveedor INT NOT NULL,
@@ -44,5 +44,5 @@ CREATE TABLE IF NOT EXISTS Notificacion_Interna (
         REFERENCES Proveedor(id_proveedor)
 );
 
-CREATE INDEX IF NOT EXISTS idx_notificacion_usuario_fecha
-ON Notificacion_Interna(id_usuario_destinatario, fecha_creacion);
+CREATE INDEX IF NOT EXISTS idx_notificacion_proveedor_usuario_fecha
+ON Notificacion_Proveedor(id_usuario_destinatario, fecha_creacion);
