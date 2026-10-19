@@ -19,6 +19,7 @@ class RespuestaInvitacionTest {
     private static final int EVENTO = DatosInvitacionesPrueba.EVENTO;
     private static final int GRANDE = DatosInvitacionesPrueba.LUGAR_GRANDE;
     private static final int PEQUENO = DatosInvitacionesPrueba.LUGAR_PEQUENO;
+    private static final String TEL = "300 111 2222";
 
     @TempDir Path directorio;
     private String url;
@@ -44,7 +45,7 @@ class RespuestaInvitacionTest {
         agregar(segunda, "Ana", "ana@correo.com");
         agregar(primera, "Luis", "luis@correo.com");
 
-        List<InvitacionRecibida> encontradas = new ControllerInvitados(service).consultarInvitacionesPorCorreo("  ANA@correo.com ");
+        List<InvitacionRecibida> encontradas = new ControllerInvitados(service).consultarInvitacionesPorCorreo("  ANA@correo.com ", TEL);
         assertEquals(2, encontradas.size());
         InvitacionRecibida boda = encontradas.get(0);
         assertEquals("Boda", boda.getEvento());
@@ -59,9 +60,9 @@ class RespuestaInvitacionTest {
         int id = crear(EVENTO, GRANDE);
         agregar(id, "Ana", "ana@correo.com");
         service.revocarInvitacion(id);
-        assertTrue(service.consultarInvitacionesPorCorreo("ana@correo.com").isEmpty());
-        assertMensaje(() -> service.consultarInvitacionesPorCorreo("sin-arroba"), "correo válido");
-        assertMensaje(() -> service.consultarInvitacionesPorCorreo(" "), "correo válido");
+        assertTrue(service.consultarInvitacionesPorCorreo("ana@correo.com", TEL).isEmpty());
+        assertMensaje(() -> service.consultarInvitacionesPorCorreo("sin-arroba", TEL), "correo válido");
+        assertMensaje(() -> service.consultarInvitacionesPorCorreo(" ", TEL), "correo válido");
     }
 
     // ---------------------------------------------------------------- R38 responder
@@ -70,7 +71,7 @@ class RespuestaInvitacionTest {
         int id = crear(EVENTO, GRANDE);
         int ana = agregar(id, "Ana", "ana@correo.com");
         agregar(id, "Luis", "luis@correo.com");
-        new ControllerInvitados(service).gestionarRespuestaInvitacion(ana, "confirmado");
+        new ControllerInvitados(service).gestionarRespuestaInvitacion(ana, "ana@correo.com", "300-111-2222", "confirmado");
         assertEquals(Invitado.ESTADO_CONFIRMADO, invitados.buscarInvitado(ana).getEstado());
         assertEquals(Invitacion.ESTADO_ACEPTADA, invitaciones.buscarInvitacion(id).getEstadoRespuesta());
     }
@@ -80,9 +81,9 @@ class RespuestaInvitacionTest {
         int id = crear(EVENTO, GRANDE);
         int ana = agregar(id, "Ana", "ana@correo.com");
         int luis = agregar(id, "Luis", "luis@correo.com");
-        service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_RECHAZADO);
+        responder(ana, Invitado.ESTADO_RECHAZADO);
         assertEquals(Invitacion.ESTADO_ENVIADA, invitaciones.buscarInvitacion(id).getEstadoRespuesta());
-        service.gestionarRespuestaInvitacion(luis, Invitado.ESTADO_RECHAZADO);
+        responder(luis, Invitado.ESTADO_RECHAZADO);
         assertEquals(Invitacion.ESTADO_RECHAZADA, invitaciones.buscarInvitacion(id).getEstadoRespuesta());
     }
 
@@ -90,11 +91,11 @@ class RespuestaInvitacionTest {
     void validaLaRespuestaYNoRepiteLaMisma() {
         int id = crear(EVENTO, GRANDE);
         int ana = agregar(id, "Ana", "ana@correo.com");
-        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, "QUIZAS"), "Elige");
-        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, null), "Elige");
-        assertMensaje(() -> service.gestionarRespuestaInvitacion(999, Invitado.ESTADO_CONFIRMADO), "no existe");
-        service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_CONFIRMADO);
-        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_CONFIRMADO), "Ya habías confirmado");
+        assertMensaje(() -> responder(ana, "QUIZAS"), "Elige");
+        assertMensaje(() -> responder(ana, null), "Elige");
+        assertMensaje(() -> service.gestionarRespuestaInvitacion(999, "x@correo.com", TEL, Invitado.ESTADO_CONFIRMADO), "no existe");
+        responder(ana, Invitado.ESTADO_CONFIRMADO);
+        assertMensaje(() -> responder(ana, Invitado.ESTADO_CONFIRMADO), "Ya habías confirmado");
     }
 
     @Test
@@ -102,12 +103,12 @@ class RespuestaInvitacionTest {
         int id = crear(EVENTO, GRANDE);
         int ana = agregar(id, "Ana", "ana@correo.com");
         service.revocarInvitacion(id);
-        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_CONFIRMADO), "revocada");
+        assertMensaje(() -> responder(ana, Invitado.ESTADO_CONFIRMADO), "revocada");
 
         int pasada = DatosInvitacionesPrueba.insertarInvitacion(url, DatosInvitacionesPrueba.EVENTO_PASADO, GRANDE);
-        Invitado luis = new Invitado(0, pasada, "Luis", null, null, Invitado.ESTADO_PENDIENTE, "luis@correo.com");
+        Invitado luis = new Invitado(0, pasada, "Luis", TEL, null, Invitado.ESTADO_PENDIENTE, "luis@correo.com");
         invitados.guardarInvitado(luis);
-        assertMensaje(() -> service.gestionarRespuestaInvitacion(luis.getIdInvitado(), Invitado.ESTADO_CONFIRMADO), "ya comenzó");
+        assertMensaje(() -> responder(luis.getIdInvitado(), Invitado.ESTADO_CONFIRMADO), "ya comenzó");
         assertEquals(Invitado.ESTADO_PENDIENTE, invitados.buscarInvitado(luis.getIdInvitado()).getEstado());
     }
 
@@ -120,7 +121,7 @@ class RespuestaInvitacionTest {
         assertEquals(2, service.contarAsistentes(EVENTO, PEQUENO));
         assertMensaje(() -> agregar(id, "Luis", "luis@correo.com"), "aforo");
 
-        service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_RECHAZADO);
+        responder(ana, Invitado.ESTADO_RECHAZADO);
         assertEquals(0, service.contarAsistentes(EVENTO, PEQUENO));
         agregar(id, "Luis", "luis@correo.com");
         assertEquals(1, service.contarAsistentes(EVENTO, PEQUENO));
@@ -131,19 +132,60 @@ class RespuestaInvitacionTest {
         int id = crear(EVENTO, PEQUENO);
         int ana = agregar(id, "Ana", "ana@correo.com");
         DatosInvitacionesPrueba.agregarAcompanante(url, ana);
-        service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_RECHAZADO);
+        responder(ana, Invitado.ESTADO_RECHAZADO);
         agregar(id, "Luis", "luis@correo.com");
         // Quedan 1 de 2 cupos: Ana necesita 2 (ella y su acompañante).
-        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_CONFIRMADO), "cupo");
+        assertMensaje(() -> responder(ana, Invitado.ESTADO_CONFIRMADO), "cupo");
         assertEquals(Invitado.ESTADO_RECHAZADO, invitados.buscarInvitado(ana).getEstado());
 
         int luis = invitados.listarInvitados(id).get(1).getIdInvitado();
-        service.gestionarRespuestaInvitacion(luis, Invitado.ESTADO_RECHAZADO);
-        service.gestionarRespuestaInvitacion(ana, Invitado.ESTADO_CONFIRMADO);
+        responder(luis, Invitado.ESTADO_RECHAZADO);
+        responder(ana, Invitado.ESTADO_CONFIRMADO);
         assertEquals(Invitado.ESTADO_CONFIRMADO, invitados.buscarInvitado(ana).getEstado());
     }
 
+    // ---------------------------------------------------------------- permisos del invitado
+    @Test
+    void nadiePuedeConsultarNiResponderPorOtroInvitado() {
+        int id = crear(EVENTO, GRANDE);
+        int ana = agregar(id, "Ana", "ana@correo.com", "300 111 2222");
+        int luis = agregar(id, "Luis", "luis@correo.com", "310 999 8888");
+
+        // Luis conoce el correo de Ana, pero no su teléfono: no ve sus invitaciones.
+        assertTrue(service.consultarInvitacionesPorCorreo("ana@correo.com", "310 999 8888").isEmpty());
+        assertEquals(1, service.consultarInvitacionesPorCorreo("ana@correo.com", "3001112222").size());
+
+        // Tampoco puede responder por ella, ni con sus propios datos ni con un teléfono equivocado.
+        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, "luis@correo.com", "310 999 8888",
+                Invitado.ESTADO_RECHAZADO), "Solo el invitado");
+        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, "ana@correo.com", "310 999 8888",
+                Invitado.ESTADO_RECHAZADO), "Solo el invitado");
+        assertEquals(Invitado.ESTADO_PENDIENTE, invitados.buscarInvitado(ana).getEstado());
+
+        // Cada uno sí responde la suya.
+        service.gestionarRespuestaInvitacion(ana, "ANA@correo.com", "(300) 111-2222", Invitado.ESTADO_CONFIRMADO);
+        service.gestionarRespuestaInvitacion(luis, "luis@correo.com", "3109998888", Invitado.ESTADO_RECHAZADO);
+        assertEquals(Invitado.ESTADO_CONFIRMADO, invitados.buscarInvitado(ana).getEstado());
+        assertEquals(Invitado.ESTADO_RECHAZADO, invitados.buscarInvitado(luis).getEstado());
+    }
+
+    @Test
+    void sinTelefonoRegistradoNoSePuedeVerificarAlInvitado() {
+        int id = crear(EVENTO, GRANDE);
+        int ana = agregar(id, "Ana", "ana@correo.com", null);
+        assertMensaje(() -> service.consultarInvitacionesPorCorreo("ana@correo.com", " "), "teléfono");
+        assertTrue(service.consultarInvitacionesPorCorreo("ana@correo.com", "3001112222").isEmpty());
+        assertMensaje(() -> service.gestionarRespuestaInvitacion(ana, "ana@correo.com", "3001112222",
+                Invitado.ESTADO_CONFIRMADO), "Solo el invitado");
+    }
+
     // ---------------------------------------------------------------- utilidades
+    /** Responde como el propio invitado, con su correo y teléfono registrados. */
+    private void responder(int idInvitado, String respuesta) {
+        Invitado invitado = invitados.buscarInvitado(idInvitado);
+        service.gestionarRespuestaInvitacion(idInvitado, invitado.getCorreo(), invitado.getTelefono(), respuesta);
+    }
+
     private int crear(int evento, int lugar) {
         Invitacion invitacion = new Invitacion();
         invitacion.setIdLugar(lugar);
@@ -153,7 +195,11 @@ class RespuestaInvitacionTest {
     }
 
     private int agregar(int idInvitacion, String nombre, String correo) {
-        Invitado invitado = new Invitado(nombre, correo, null, null);
+        return agregar(idInvitacion, nombre, correo, TEL);
+    }
+
+    private int agregar(int idInvitacion, String nombre, String correo, String telefono) {
+        Invitado invitado = new Invitado(nombre, correo, telefono, null);
         service.agregarInvitado(idInvitacion, invitado);
         return invitado.getIdInvitado();
     }
