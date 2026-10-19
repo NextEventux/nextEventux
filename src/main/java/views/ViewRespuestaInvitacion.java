@@ -46,6 +46,10 @@ public final class ViewRespuestaInvitacion {
     private final Label estadoRespuesta = new Label();
 
     private final TextField correo = new TextField();
+    private final TextField telefono = new TextField();
+    /** Datos con los que se verificó al invitado en la última consulta; se reenvían al responder. */
+    private String correoVerificado;
+    private String telefonoVerificado;
     private final VBox listaInvitaciones = new VBox(10);
     private final Label cantidad = new Label();
     private final Label mensaje = new Label();
@@ -69,6 +73,9 @@ public final class ViewRespuestaInvitacion {
         correo.setPromptText("Ej. sofia@email.com");
         correo.setOnAction(e -> consultar());
         HBox.setHgrow(correo, Priority.ALWAYS);
+        telefono.setId("telefonoInvitado");
+        telefono.setPromptText("Tu teléfono");
+        telefono.setOnAction(e -> consultar());
 
         mensaje.setId("mensaje");
         mensaje.setWrapText(true);
@@ -236,21 +243,23 @@ public final class ViewRespuestaInvitacion {
     }
 
     private VBox crearTarjetaBusqueda() {
-        Label ayuda = etiqueta("Escribe el correo con el que recibiste la invitación.", "muted");
+        Label ayuda = etiqueta("Escribe el correo con el que recibiste la invitación y tu teléfono.", "muted");
         ayuda.setWrapText(true);
         VBox textos = new VBox(6, etiqueta("Buscar mis invitaciones", "card-title"), ayuda);
         textos.setMinWidth(0);
         HBox.setHgrow(textos, Priority.ALWAYS);
 
-        correo.setPrefWidth(300);
-        correo.setMinWidth(200);
+        correo.setPrefWidth(260);
+        correo.setMinWidth(180);
+        telefono.setPrefWidth(160);
+        telefono.setMinWidth(130);
         Button consultar = new Button("Consultar");
         consultar.setId("consultarInvitaciones");
         consultar.getStyleClass().add("btn-primary");
         consultar.setMinWidth(Region.USE_PREF_SIZE);
         consultar.setOnAction(e -> consultar());
 
-        HBox fila = new HBox(16, etiqueta("✉", "heading-icon"), textos, correo, consultar);
+        HBox fila = new HBox(16, etiqueta("✉", "heading-icon"), textos, correo, telefono, consultar);
         fila.setAlignment(Pos.CENTER_LEFT);
         VBox tarjeta = new VBox(fila);
         tarjeta.getStyleClass().add("card");
@@ -374,12 +383,15 @@ public final class ViewRespuestaInvitacion {
 
     private void consultar(int idInvitadoSeleccionar) {
         String texto = correo.getText() == null ? "" : correo.getText().trim();
-        if (texto.isEmpty()) {
-            mostrarMensaje("Escribe el correo con el que recibiste la invitación.", false);
+        String tel = telefono.getText() == null ? "" : telefono.getText().trim();
+        if (texto.isEmpty() || tel.isEmpty()) {
+            mostrarMensaje("Escribe el correo con el que recibiste la invitación y tu teléfono.", false);
             return;
         }
+        correoVerificado = null;
+        telefonoVerificado = null;
         try {
-            encontradas = controller.consultarInvitacionesPorCorreo(texto);
+            encontradas = controller.consultarInvitacionesPorCorreo(texto, tel);
         } catch (IllegalArgumentException | IllegalStateException e) {
             encontradas = List.of();
             mostrarListaVacia("No se pudieron consultar las invitaciones.");
@@ -389,11 +401,14 @@ public final class ViewRespuestaInvitacion {
         }
         int n = encontradas.size();
         if (n == 0) {
-            mostrarListaVacia("No encontramos invitaciones activas para ese correo.");
+            mostrarListaVacia("No encontramos invitaciones activas con esos datos.");
             seleccionar(null);
-            mostrarMensaje("No hay invitaciones activas asociadas a \"" + texto + "\".", false);
+            mostrarMensaje("No encontramos invitaciones activas para ese correo y teléfono. "
+                    + "Si el organizador no registró tu teléfono, pídele que lo agregue.", false);
             return;
         }
+        correoVerificado = texto;
+        telefonoVerificado = tel;
         ocultarMensaje();
         listaInvitaciones.getChildren().clear();
         for (InvitacionRecibida inv : encontradas) listaInvitaciones.getChildren().add(itemInvitacion(inv));
@@ -489,7 +504,7 @@ public final class ViewRespuestaInvitacion {
         if (!asiste && !confirmarRechazo()) return;
         InvitacionRecibida actual = seleccionada;
         try {
-            controller.gestionarRespuestaInvitacion(actual.getIdInvitado(), nueva);
+            controller.gestionarRespuestaInvitacion(actual.getIdInvitado(), correoVerificado, telefonoVerificado, nueva);
         } catch (IllegalArgumentException | IllegalStateException e) {
             mostrarMensaje(e.getMessage(), false);
             return;
