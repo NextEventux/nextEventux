@@ -56,4 +56,12 @@ public class SesionUsuario {
     public void setEstadoActor(String estadoActor) {
         this.estadoActor = estadoActor;
     }
+    public void cerrar() {
+        idUsuario = 0;
+        idActor = 0;
+        nombre = null;
+        tipoUsuario = null;
+        estadoUsuario = null;
+        estadoActor = null;
+    }
 }

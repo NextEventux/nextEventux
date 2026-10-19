@@ -274,7 +274,7 @@ resumen del presupuesto en COP y de los invitados. El panel baja en ventanas
 pequeñas y el contenido se puede desplazar para acceder a los botones.
 
 El formulario añade los campos requeridos por la entidad conciliada: organizador
-por identificador, inicio y fin con hora y descripción opcional. Las horas usan
+seleccionado por nombre desde H2, inicio y fin con hora y descripción opcional. Las horas usan
 `HH:mm`, los invitados son enteros y los decimales del presupuesto usan punto.
 El selector de tipo contiene Corporativo, Social, Cultural y Otro. La interfaz
 muestra «En planeación» y el servicio conserva el valor `PLANEADO`.
@@ -303,8 +303,8 @@ mvn javafx:run
 ```
 
 En Windows usa `;` como separador del classpath. La carga es explícita y se rechaza
-si hay registros en cualquier tabla, para proteger los datos existentes. Los
-organizadores de ejemplo tienen identificadores 1 y 2. La aplicación no carga
+si hay registros en cualquier tabla, para proteger los datos existentes. El desplegable muestra los nombres de los
+organizadores de ejemplo. La aplicación no carga
 estos ejemplos automáticamente. Si ya existen datos reales, usa un organizador
 registrado y omite la carga de ejemplos.
 
@@ -312,14 +312,14 @@ registrado y omite la carga de ejemplos.
 
 1. Abrir con `mvn javafx:run` y verificar la distribución y el desplazamiento.
 2. Escribir presupuesto e invitados y comprobar el resumen en vivo.
-3. Crear con nombre, tipo, organizador positivo, fechas y horas válidas, lugar,
+3. Crear con nombre, tipo, organizador seleccionado, fechas y horas válidas, lugar,
    presupuesto no negativo con hasta dos decimales e invitados enteros no negativos.
 4. Probar un campo obligatorio vacío, `NaN`, invitados decimales, hora `24:00` y
    fin anterior al inicio: deben mostrarse errores y conservarse los campos.
 5. Pulsar Cancelar: deben limpiarse los campos y el mensaje, y el resumen volver a cero.
 6. Reducir y ampliar la ventana: el formulario y sus acciones deben seguir accesibles.
 
-Verificación de esta implementación: 14 pruebas JUnit sin fallos que cubren
+Verificación de esta implementación: 16 pruebas JUnit sin fallos que cubren
 validaciones, creación mediante controlador y repositorio JDBC, identificador
 automático, organizador inexistente, recuperación tras cerrar y reabrir H2,
 registros históricos nulos, error de conexión, migración y carga segura de ejemplos.
@@ -341,3 +341,273 @@ La existencia del organizador en H2 no equivale a autenticación ni autorizació
 La persistencia del evento no sustituye estas reglas. El PR se mantiene como
 primera iteración para revisión; no debe registrarse CU01 como completado en el
 Control de Alcance hasta implementar, probar e integrar los requisitos pendientes.
+
+El campo Organizador consulta H2 y muestra únicamente los nombres de los usuarios
+asociados a organizadores, ordenados por nombre. El identificador permanece
+interno y se utiliza al guardar. No se selecciona un organizador automáticamente;
+Cancelar borra la selección. Si no hay organizadores o falla la consulta, se
+muestra un mensaje y no se permite crear sin seleccionar uno.
+
+## CU03 — Subir evento al repositorio
+
+La rama `CU03-subir-evento-repositorio` parte del avance local de CU01 para
+reutilizar la pantalla JavaFX, el logo y la persistencia existentes. Sus cambios
+se mantienen en commits separados; CU01 debe integrarse antes o coordinarse como
+dependencia al preparar el PR de CU03.
+
+Desde Crear evento, el botón **Subir al repositorio** abre tres secciones:
+
+- **Solicitar publicación:** seleccionar un organizador por nombre y uno de sus
+  eventos. Solo se aceptan eventos finalizados. Se registra la solicitud pendiente
+  y se envía una notificación interna a los administradores activos.
+- **Revisión del administrador:** seleccionar un administrador activo con el rol
+  ADMINISTRADOR y una solicitud pendiente. Aprobar publica la plantilla; rechazar
+  exige un motivo de hasta 250 caracteres. Ambas decisiones notifican al organizador.
+- **Plantillas publicadas:** lista las estructuras aprobadas, disponibles para
+  futura reutilización. Esta pantalla no implementa una operación de clonación.
+
+### Alcance y privacidad
+
+La selección de perfiles es **solo para demostración**. No autentica usuarios y
+no sustituye la sesión que está desarrollando el equipo. Antes de dar CU03 por
+completado debe integrarse esa sesión para obtener el organizador/administrador
+autenticado, proteger las consultas y ocultar las funciones de otros roles. La
+comprobación del rol activo en H2 no equivale a una autenticación.
+
+La publicación copia únicamente el tipo y la duración en minutos. Genera un título
+genérico a partir del tipo; no copia el nombre original, descripción, lugar,
+fechas exactas, invitados, identificadores de personas ni presupuesto. La tabla
+pública de plantillas no contiene esas columnas. La referencia interna a la
+solicitud se utiliza para asegurar una sola plantilla por aprobación, y no se
+expone en la vista pública. El evento original no cambia de estado ni pierde datos.
+
+No se permiten solicitudes duplicadas mientras haya una pendiente o aprobada.
+Después de un rechazo, el organizador puede solicitar de nuevo expresamente; se
+conservan la solicitud anterior y su motivo. Las notificaciones se guardan en H2
+por usuario y se consultan dentro de la aplicación; no se envían correos.
+
+### Persistencia y errores
+
+La migración repetible `migrations/002_publicacion_eventos.sql` añade:
+
+- `Solicitud_publicacion`, con estado, motivo y administrador revisor.
+- `Plantilla_evento`, con los datos estructurales de la plantilla.
+- `Notificacion_interna`, con destinatario, mensaje y fecha.
+
+La comprobación del evento, registro de solicitud y notificaciones forman una
+transacción. La aprobación también confirma conjuntamente la plantilla, decisión
+y notificación. Ante un fallo se revierten los cambios, se muestra un mensaje
+claro y se conserva el formulario para reintentar. Se bloquea el evento al procesar
+la solicitud y se vuelve a comprobar su estado antes de aprobar. Las consultas
+usan parámetros JDBC.
+
+Si no hay administradores activos con el rol correspondiente, la solicitud se
+bloquea con un mensaje; no se simula un envío ni una aprobación automática.
+El botón Actualizar recarga solicitudes, catálogo y avisos de los perfiles
+seleccionados. Para cargar nuevos perfiles creados desde otra pantalla, volver a
+abrir CU03.
+
+### Demostración en una base vacía
+
+Con Maven instalado:
+
+```bash
+mvn test-compile dependency:copy-dependencies
+java -cp "target/classes:target/dependency/*" config.CargarDemoPublicacion
+mvn javafx:run
+```
+
+En Windows, sustituir `:` por `;` en el classpath. No ejecutar previamente
+`CargarDatosEjemplo`: la demostración CU03 ya lo llama y exige una base vacía.
+El comando no borra datos existentes; rechaza la carga si alguna tabla contiene
+registros. Los ejemplos no se cargan al abrir la aplicación.
+
+Elegir Laura Gómez y «Evento finalizado de demostración», enviar la solicitud y
+revisarla como «Administrador de demostración». Probar rechazo con motivo o
+aprobación; consultar después Mis solicitudes, Notificaciones y Plantillas.
+El evento finalizado es una fixture de demostración; este comando no implementa
+ni ejecuta el proceso de finalización CU05. Si ya hay datos reales, usar los
+organizadores, eventos finalizados y administradores registrados, sin cargar
+la demostración ni eliminar la base de datos.
+
+### Verificación de CU03
+
+- 30 pruebas JUnit en total: 16 anteriores y 14 de publicación/demostración.
+- Cobertura nueva: solicitud pendiente, propiedad del evento, estados, administrador
+  con rol activo, motivo obligatorio, duplicados, publicación sin datos sensibles,
+  conservación del original, notificaciones, rechazo y nuevo envío, persistencia,
+  reversión por fallo y reintento.
+- Prueba JavaFX con H2 temporal: solicitud bloqueada por estado, envío, rechazo sin
+  motivo, rechazo válido, notificación, reenvío, fallo durante aprobación con
+  conservación del formulario, reintento exitoso y consulta de plantilla.
+- Inspección de capturas de las tres secciones de JavaFX.
+
+En este equipo no hay Maven instalado: la verificación se ejecutó compilando con
+`javac --release 17` y usando JUnit Platform Console 1.10.2, con las dependencias
+JavaFX/H2 ya disponibles. En un entorno con Maven, usar `mvn clean test`.
+Las pruebas usan bases temporales; no modifican los registros de la aplicación.
+La comprobación visual se realizó en macOS; no se ha validado esta pantalla en Windows.
+
+Quedan pendientes la integración con la autenticación real y la revisión del equipo
+de las tablas/interacciones que afectan a Administración y a las notificaciones.
+No debe marcarse CU03 como completado en el control institucional hasta integrar
+esas dependencias y superar la revisión correspondiente.
+
+## CU04 — Cancelar evento
+
+Esta primera iteración reutiliza `ControllerEventos`, `ServiceEventos` y el CSS
+actual. Añade únicamente el repositorio de cancelación, una pantalla JavaFX y una
+migración. La rama `CU04-cancelar-evento` parte de CU03 porque reutiliza su tabla de
+notificaciones; esa dependencia debe conservarse al integrar las ramas.
+
+### Uso
+
+Desde Crear evento, elegir **Cancelar evento** en el menú lateral o en el menú
+**Eventos** de la barra superior, disponible también en ventanas pequeñas.
+Seleccionar organizador y evento por nombre y marcar la confirmación explícita.
+El botón permanece deshabilitado hasta confirmar. Cambiar de evento borra esa
+confirmación para evitar cancelar otra selección por accidente.
+
+Se bloquean eventos cancelados, finalizados, inexistentes o de otro organizador.
+Al cancelar se liberan los horarios de servicios vinculados, se cancelan las
+contrataciones activas, se libera el lugar cuando corresponde, se revocan las
+invitaciones enviadas y se registran los avisos internos para proveedores e
+invitados. No se modifica la aprobación del proveedor ni se eliminan invitados.
+Los borradores y las invitaciones ya revocadas se conservan.
+
+Todos los cambios se confirman juntos. Si falla una liberación o notificación,
+se revierte la operación completa, se mantiene la selección del formulario y se
+permite reintentar. La confirmación de éxito aparece solo después del commit.
+
+### Vínculos de reservas e integración
+
+La migración `003_cancelacion_eventos.sql` agrega:
+
+- `Contratacion.id_disponibilidad`, para identificar el horario exacto que se libera.
+- `Evento.id_lugar`, para identificar el lugar reservado mediante su clave real.
+- La tabla `Disponibilidad_Servicio` con la estructura ya definida en la rama CU11.
+  Si esa tabla existe, no se recrean sus datos.
+- Destinatario `id_invitado` y referencia `id_evento` en `Notificacion_interna`.
+  La restricción exige un destinatario: usuario o invitado, nunca ambos.
+
+El módulo de contratación debe guardar `id_disponibilidad`; la reserva de lugar
+debe guardar `id_lugar`. No se infieren esos vínculos de los textos ni se rellenan
+identificadores arbitrarios en datos existentes. Si una contratación activa carece
+de una reserva válida o una invitación apunta a un lugar reservado sin vínculo
+coherente con el evento, se bloquea la cancelación sin modificar datos.
+
+Una reserva compartida no se libera mientras otro evento mantenga un compromiso
+activo. El estado global de Lugar permanece reservado si otro evento activo lo
+utiliza; el modelo actual no contiene un calendario independiente de reservas de
+lugares. Ese comportamiento debe coordinarse con el módulo responsable.
+
+Los avisos para proveedores se dirigen a su Usuario. Invitado no tiene una cuenta
+Usuario en el esquema actual: su aviso se guarda mediante `id_invitado`, sin
+buscar cuentas por nombre o correo. La pantalla muestra el resumen de avisos del
+evento; integrar su lectura en la bandeja del módulo de Invitados sigue pendiente.
+Los avisos de proveedores pueden consultarse por `id_usuario` en la misma tabla.
+
+La selección de organizador sigue siendo de demostración mientras se corrige e
+integra el login. No equivale a autenticación. CU04 no debe declararse completo
+hasta integrar esa sesión y coordinar las reservas y bandejas con los otros módulos.
+
+### Pruebas
+
+41 pruebas JUnit correctas en total, incluidas 11 de CU04: confirmación, propiedad,
+estados, reservas válidas, liberación sin afectar otros eventos, reserva compartida,
+revocación, destinatarios, persistencia y rollback si falla un servicio o un aviso.
+La prueba de liberación compartida comprueba que el último evento cancelado deja
+el recurso disponible. Las pruebas utilizan exclusivamente bases temporales.
+
+La ventana JavaFX también se comprobó con una base temporal: selección por nombre,
+confirmación obligatoria, fallo simulado, conservación del formulario, reintento,
+estado actualizado y cuatro avisos registrados para los afectados de los ejemplos.
+Se inspeccionaron capturas de la pantalla antes y después de cancelar.
+
+Con Maven instalado:
+
+```bash
+mvn clean test
+mvn javafx:run
+```
+
+Como Maven no está instalado en este equipo, se verificó compilando con
+`javac --release 17` y ejecutando JUnit Platform Console 1.10.2 con H2 2.3.232.
+Las pruebas no ejecutan el login de la rama externa ni tocan la base de la aplicación.
+
+## CU02 — Editar evento
+
+Implementación sencilla sobre el controlador, servicio y repositorio de eventos
+existentes. La rama `CU02-editar-evento` parte del avance local de CU04 para mantener
+la navegación disponible; conserva esa dependencia al preparar sus PRs.
+No añade tablas ni dependencias.
+
+Desde Crear evento, usar **Eventos → Editar evento** o el botón del menú lateral.
+Iniciar sesión como organizador y seleccionar un evento propio por nombre. El
+organizador se obtiene de la sesión y se muestra como texto, sin selector. Solo los eventos en estado de
+planeación (`PLANEADO`) habilitan el formulario. El estado y la pertenencia se
+consultan otra vez al precargar, y también se comprueban en el UPDATE al guardar.
+Si otro proceso cambia el estado después de cargar el formulario, la edición se
+bloquea sin sobrescribir los datos.
+
+Campos permitidos: nombre, tipo, fecha/hora de inicio, fecha/hora de fin y lugar.
+La edición de inicio y fin con hora fue confirmada por la usuaria para adaptar
+la «fecha» de la especificación al modelo actual. Las horas admiten HH:mm; si un
+registro previo contiene segundos, se precargan y conservan sin truncarlos.
+Se aplican las mismas validaciones generales de CU01, sin duplicar sus reglas.
+
+El objeto `EdicionEvento` contiene solo estos campos. El UPDATE no modifica
+organizador, descripción, presupuesto, invitados, estado, fecha de creación ni
+vínculos de reservas. Los valores históricos NULL de presupuesto e invitados se
+conservan: no es necesario inventarlos para editar los datos generales. La
+coordinación de horarios y reservas contratadas con los otros módulos deberá
+validarse según las reglas que defina el equipo; este flujo no cambia contratos.
+
+**Guardar cambios** confirma la edición; **Restablecer** vuelve a cargar los datos
+actuales. Si falla el guardado, el UPDATE se revierte como una única operación
+atómica, la base conserva sus datos anteriores y la pantalla mantiene lo escrito
+para reintentar. Los mensajes son claros y no muestran errores SQL al usuario.
+
+Se integró `feature/login-h2-compartido` (254d348). El controlador recibe la sesión
+validada por el login; las consultas filtran en H2 por su identificador de
+organizador, que puede ser distinto del identificador de usuario. Al listar,
+precargar y guardar se comprueban el rol y los estados activos del usuario y del
+organizador, además de su vínculo en la base. Cerrar sesión invalida el objeto de
+sesión y vuelve al login. La aplicación no permite elegir otra identidad.
+
+Desde la sesión de organizador están disponibles Crear y Editar evento. Crear
+conserva el organizador de la sesión. Los accesos a las pantallas de demostración
+de CU03 y CU04 están deshabilitados hasta integrar sus propios flujos de sesión;
+su código se conserva. Se mantiene la navegación de main hacia Invitados y el
+catálogo de proveedores, además de la gestión de servicios del proveedor.
+La cuenta de administrador muestra el mensaje de integración pendiente.
+
+### Pruebas de CU02
+
+82 pruebas JUnit correctas en total tras integrar main, incluidas 8 de edición y 7 de
+integración con la sesión. Las pruebas de edición
+comprueban precarga y propiedad, campos permitidos, conservación de los demás
+datos, estados bloqueados, cambio de estado después de cargar, entradas inválidas,
+fallo técnico con reintento e históricos NULL. Las pruebas de sesión comprueban
+login real, identificadores distintos, filtrado por cuenta, rechazo de eventos
+ajenos, ausencia de sesión, roles no autorizados, cierre de sesión y desactivación
+del usuario u organizador después del login. Las bases de prueba son temporales.
+
+Se comprobó además la ventana JavaFX: precarga, rechazo de hora 24:00, conservación
+de los datos ingresados ante un fallo simulado, guardado exitoso, preservación de
+segundos en las horas y bloqueo de un evento que pasó a Confirmado. Se revisaron
+capturas antes y después del guardado.
+
+Con Maven instalado: `mvn clean test` y `mvn javafx:run`. En este equipo se compiló
+con `javac --release 17` y se ejecutaron las pruebas mediante JUnit Platform Console
+1.10.2, sin modificar la base de datos de la aplicación.
+
+La comprobación JavaFX con H2 temporal también recorre login inválido y válido,
+navegación a CU02, selección exclusiva de eventos propios, validación, guardado,
+cierre de sesión y entrada con una segunda cuenta sin mezclar sus eventos.
+
+La resolución de conflictos con main conserva las migraciones de proveedores,
+publicaciones y cancelación. El repositorio de autenticación mantiene el manejo
+de errores de main y permite una URL de prueba aislada. Se comprobó en JavaFX el
+login, la edición y el guardado, el cambio de cuenta, el catálogo de proveedores,
+la navegación a Invitados y la pantalla de servicios del proveedor.

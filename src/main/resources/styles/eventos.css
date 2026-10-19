@@ -1,8 +1,6 @@
 .root { -fx-font-family: "System"; -fx-font-size: 13px; -fx-text-fill: #252638; -fx-background-color: #F8F9FC; }
 .label { -fx-text-fill: #252638; }
 .sidebar { -fx-background-color: white; -fx-border-color: transparent #E8E9EF transparent transparent; -fx-padding: 28 18; }
-.brand-icon { -fx-font-size: 42px; -fx-text-fill: #D71920; }
-.brand { -fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #D71920; }
 .brand-caption { -fx-font-size: 11px; -fx-text-fill: #858899; }
 .menu-title { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #A0A3B0; -fx-padding: 0 15 15 15; }
 .menu-item { -fx-padding: 14 17; -fx-font-size: 14px; -fx-text-fill: #626578; -fx-background-radius: 11; }
@@ -46,3 +44,12 @@
 .message { -fx-padding: 15 18; -fx-background-radius: 10; -fx-max-width: infinity; }
 .message.success { -fx-background-color: #EAF8EF; -fx-text-fill: #247443; }
 .message.error { -fx-background-color: #FFF0F0; -fx-text-fill: #BA2424; }
+/* CU03: conserva la paleta del formulario de eventos. */
+.publicacion .tab-pane { -fx-tab-min-height: 42; }
+.publicacion .tab-header-background { -fx-background-color: transparent; }
+.publicacion .tab { -fx-background-color: #F1F2F6; -fx-padding: 8 16; }
+.publicacion .tab:selected { -fx-background-color: #FFF0F1; }
+.publicacion .tab:selected .tab-label { -fx-text-fill: #D71920; -fx-font-weight: bold; }
+.publicacion .list-view { -fx-border-color: #E8E9EF; -fx-background-color: white; }
+.publicacion .list-cell { -fx-padding: 12; }
+.publicacion .list-cell:filled:selected { -fx-background-color: #FFF0F1; -fx-text-fill: #252638; }
