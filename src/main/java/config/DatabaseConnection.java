@@ -70,9 +70,6 @@ public class DatabaseConnection {
                     "/migrations/004_cu30_verificar_categorizar_organizador.sql");
         }
 
-        // Garantiza una cuenta de pruebas para el equipo.
-        asegurarAdministradorPruebas(connection);
-
         actualizarContadorEventos(connection);
     }
 

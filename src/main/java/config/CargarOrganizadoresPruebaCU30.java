@@ -14,6 +14,9 @@ import java.util.List;
 public class CargarOrganizadoresPruebaCU30 {
 
     private static final String CLAVE_PRUEBAS = "PruebasCU30";
+    private static final String ADMIN_NOMBRE = "Administrador CU-030";
+    private static final String ADMIN_USUARIO = "admin.cu030";
+    private static final String ADMIN_CLAVE = "AdminCU0302026";
 
     /*
      * Los documentos y perfiles de este cargador son ficticios.
@@ -204,6 +207,7 @@ public class CargarOrganizadoresPruebaCU30 {
         int documentosNuevos = 0;
 
         try {
+            asegurarAdministradorPruebas(connection);
             int rolOrganizador = obtenerOCrearRol(
                     connection,
                     "ORGANIZADOR",
@@ -638,4 +642,40 @@ public class CargarOrganizadoresPruebaCU30 {
             String estado,
             LocalDate vencimiento) {
     }
+    private static void asegurarAdministradorPruebas(
+        Connection connection) throws SQLException {
+
+    String actualizar =
+            "UPDATE Usuario SET nombre = ?, contraseña = ?, "
+            + "estado = 'ACTIVO', acepta_marketing = FALSE, "
+            + "tipo_usuario = 'ADMINISTRADOR' WHERE usuario = ?";
+
+    try (PreparedStatement statement =
+                 connection.prepareStatement(actualizar)) {
+
+        statement.setString(1, ADMIN_NOMBRE);
+        statement.setString(2, ADMIN_CLAVE);
+        statement.setString(3, ADMIN_USUARIO);
+
+        if (statement.executeUpdate() > 0) {
+            return;
+        }
+    }
+
+    String insertar =
+            "INSERT INTO Usuario "
+            + "(nombre, usuario, contraseña, estado, fecha_registro, "
+            + "acepta_marketing, tipo_usuario) "
+            + "VALUES (?, ?, ?, 'ACTIVO', CURRENT_TIMESTAMP, "
+            + "FALSE, 'ADMINISTRADOR')";
+
+    try (PreparedStatement statement =
+                 connection.prepareStatement(insertar)) {
+
+        statement.setString(1, ADMIN_NOMBRE);
+        statement.setString(2, ADMIN_USUARIO);
+        statement.setString(3, ADMIN_CLAVE);
+        statement.executeUpdate();
+    }
+}
 }
