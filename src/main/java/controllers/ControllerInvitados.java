@@ -2,13 +2,14 @@ package controllers;
 
 import entities.Evento;
 import entities.Invitacion;
+import entities.InvitacionRecibida;
 import entities.Invitado;
 import entities.Lugar;
 import java.util.List;
 import java.util.Map;
 import services.ServiceInvitados;
 
-/** Intermediario entre ViewInvitados y ServiceInvitados (CU-17). */
+/** Intermediario entre las vistas del módulo de invitados y ServiceInvitados (CU-16 y CU-17). */
 public class ControllerInvitados {
 
     private final ServiceInvitados serviceInvitados;
@@ -59,5 +60,13 @@ public class ControllerInvitados {
 
     public void quitarInvitado(int idInvitado) {
         serviceInvitados.quitarInvitado(idInvitado);
+    }
+
+    public List<InvitacionRecibida> consultarInvitacionesPorCorreo(String correo, String telefono) {
+        return serviceInvitados.consultarInvitacionesPorCorreo(correo, telefono);
+    }
+
+    public void gestionarRespuestaInvitacion(int idInvitado, String correo, String telefono, String respuesta) {
+        serviceInvitados.gestionarRespuestaInvitacion(idInvitado, correo, telefono, respuesta);
     }
 }
