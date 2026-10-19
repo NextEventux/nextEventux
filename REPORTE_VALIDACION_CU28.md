@@ -1,5 +1,8 @@
 # Reporte de primera validación — CU-028 Aprobar proveedores
 
+> Este reporte conserva la primera iteración. El estado posterior de sesión,
+> documentos y notificaciones está en [correcciones de CU28](docs/correcciones-cu28.md).
+
 **Proyecto:** NextEventux  
 **Responsable:** Juan Diego Rojas Zárate  
 **Módulo:** Administración  
