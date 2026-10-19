@@ -4,6 +4,8 @@ import entities.ClienteMarketing;
 import entities.RangoEdad;
 import entities.SegmentoCalculado;
 import entities.SolicitudEvento;
+import entities.Segmentacion;
+import repositories.RepositoryMarketing;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
@@ -13,18 +15,57 @@ import java.util.List;
 public class ServiceMarketing {
     public static final int MINIMO_CLIENTES_POR_SEGMENTO = 5;
 
+    private final RepositoryMarketing repositorio;
+
+    public ServiceMarketing(RepositoryMarketing repositorio) {
+        this.repositorio = repositorio;
+    }
+
     // Clientes que comparten país, ciudad y rango de edad.
-    private record GrupoClientes(String pais, String ciudad, RangoEdad rangoEdad,
-                                 List<ClienteMarketing> miembros) {
+    private record GrupoClientes(String pais, String ciudad, RangoEdad rangoEdad, List<ClienteMarketing> miembros) {
 
         boolean coincideCon(String otroPais, String otraCiudad, RangoEdad otroRango) {
             return pais.equals(otroPais) && ciudad.equals(otraCiudad) && rangoEdad == otroRango;
         }
     }
 
-    public List<SegmentoCalculado> calcularSegmentos(List<ClienteMarketing> clientes,
-                                                     List<SolicitudEvento> solicitudes,
-                                                     LocalDate hoy) {
+    public List<Segmentacion> segmentarClientes(int idAdministrador) {
+        return segmentarClientes(idAdministrador, LocalDate.now());
+    }
+
+    public List<Segmentacion> segmentarClientes(int idAdministrador, LocalDate hoy) {
+        if (!repositorio.existeAdministradorActivo(idAdministrador)) {
+            throw new IllegalArgumentException("Solo un administrador activo puede segmentar clientes.");
+        }
+
+        List<SegmentoCalculado> calculados = calcularSegmentos(
+                repositorio.listarClientesActivos(), repositorio.contarSolicitudesPorTipo(), hoy);
+        if (calculados.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Segmentacion> segmentos = new ArrayList<>();
+        for (SegmentoCalculado calculado : calculados) {
+            segmentos.add(convertirEnSegmentacion(idAdministrador, calculado));
+        }
+        return repositorio.reemplazarSegmentosAutomaticos(segmentos);
+    }
+
+    private Segmentacion convertirEnSegmentacion(int idAdministrador, SegmentoCalculado calculado) {
+        String edad = calculado.getRangoEdad().getEtiqueta();
+        String nombre = calculado.getCiudad() + " " + edad + " - " + calculado.getTipoEvento();
+        String criterios = Segmentacion.PREFIJO_CRITERIOS_AUTOMATICOS
+                + "pais=" + calculado.getPais()
+                + "|ciudad=" + calculado.getCiudad()
+                + "|edad=" + edad
+                + "|tipo=" + calculado.getTipoEvento();
+        String descripcion = "Clientes de " + calculado.getCiudad() + " (" + calculado.getPais() + ") de "
+                + edad + " años que más solicitan eventos de tipo " + calculado.getTipoEvento();
+        return new Segmentacion(idAdministrador, nombre, criterios, descripcion,
+                Segmentacion.ESTADO_ACTIVA, calculado.getIdsClientes());
+    }
+    
+    public List<SegmentoCalculado> calcularSegmentos(List<ClienteMarketing> clientes, List<SolicitudEvento> solicitudes, LocalDate hoy) {
         if (clientes == null || solicitudes == null || hoy == null) {
             throw new IllegalArgumentException("Se requieren los clientes, las solicitudes y la fecha actual.");
         }
