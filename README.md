@@ -508,7 +508,8 @@ de una reserva válida o una invitación apunta a un lugar reservado sin víncul
 coherente con el evento, se bloquea la cancelación sin modificar datos.
 
 Una reserva compartida no se libera mientras otro evento mantenga un compromiso
-activo. El estado global de Lugar permanece reservado si otro evento activo lo
+activo, aunque ese contrato solo identifique el servicio, la fecha y las horas.
+El estado global de Lugar permanece reservado si otro evento activo lo
 utiliza; el modelo actual no contiene un calendario independiente de reservas de
 lugares. Ese comportamiento debe coordinarse con el módulo responsable.
 
@@ -528,15 +529,18 @@ proveedores y sesiones cerradas no tienen acceso a CU04. La cancelación vuelve 
 comprobar la propiedad y el estado del evento dentro de la transacción.
 
 Se incorporaron las ramas de CU11 y CU16 y se conectó la consulta de avisos.
-Falta identificar la rama que registra contrataciones y reservas de lugares para
-verificar sus escrituras reales. La revisión de los módulos y la definición del
+Falta identificar la implementación de CU12/CU13 de Proveedores y el flujo de
+reserva del lugar para verificar sus escrituras reales. La revisión de los
+módulos y la definición del
 acceso de invitados siguen pendientes. Detalles y contrato de datos en
 [Integración de CU04](docs/integracion-cu04.md).
 
 ### Pruebas
 
-La integración de proveedores e invitados amplía la suite a 114 pruebas JUnit,
-incluidas 7 nuevas que cruzan los módulos. Se mantienen las 11 de cancelación adaptadas
+La integración de proveedores e invitados amplía la suite a 117 pruebas JUnit,
+incluidas 10 que cruzan los módulos. Las tres últimas verifican las reservas
+compartidas sin vínculo directo y que una contratación de otra fecha no retenga
+la disponibilidad cancelada. Se mantienen las 11 de cancelación adaptadas
 al login real y 8 nuevas de integración con la sesión. Se comprueban confirmación, propiedad,
 estados, reservas válidas, liberación sin afectar otros eventos, reserva compartida,
 revocación, destinatarios, persistencia y rollback si falla un servicio o un aviso.

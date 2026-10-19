@@ -21,7 +21,10 @@ pertenezca al evento. Un vínculo directo incompatible también se rechaza.
 
 La resolución del vínculo, liberación, cancelación y avisos ocurren dentro de la
 misma transacción. Si falta una reserva o hay una incoherencia, no se guarda nada.
-Una contratación ACTIVA o CONFIRMADA de otro evento mantiene la reserva ocupada.
+Una contratación ACTIVA o CONFIRMADA de otro evento mantiene la reserva ocupada,
+tanto si tiene el vínculo directo como si coincide exactamente por servicio,
+fecha y horas. Cancelar el último compromiso libera la disponibilidad sin cambiar
+los contratos de otros eventos. Una contratación de otra fecha no retiene esa reserva.
 
 Las migraciones no rellenan vínculos basándose en identificadores de ejemplos.
 Los servicios de las solicitudes de demostración se especifican solo en seed.sql.
@@ -34,8 +37,8 @@ lugar reservado sin un vínculo coherente con el evento, la cancelación se bloq
 
 No se encontró en las ramas consultadas el código que registra la contratación
 ni la reserva del lugar. Las pruebas construyen esas contrataciones como fixtures;
-no equivalen a ejecutar CU09/CU12. Falta identificar e integrar ese productor y
-verificar el recorrido desde la contratación/reserva hasta la cancelación.
+no equivalen a ejecutar CU12/CU13 de Proveedores. Falta identificar e integrar
+ese productor y verificar el recorrido desde la contratación/reserva hasta la cancelación.
 
 ## Lectura de avisos
 
