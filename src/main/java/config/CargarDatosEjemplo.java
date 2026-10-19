@@ -19,9 +19,11 @@ public class CargarDatosEjemplo {
 
     public static void cargar(Connection connection) throws Exception {
         try (Statement tablas = connection.createStatement();
-             ResultSet result = tablas.executeQuery(
-                     "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES "
-                     + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_TYPE = 'BASE TABLE'")) {
+     ResultSet result = tablas.executeQuery(
+             "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES "
+             + "WHERE TABLE_SCHEMA = 'PUBLIC' "
+             + "AND TABLE_TYPE = 'BASE TABLE' "
+             + "AND TABLE_NAME <> 'CONFIGURACION_EVALUACION_ORGANIZADOR'")) {
             while (result.next()) {
                 String tabla = result.getString(1).replace("\"", "\"\"");
                 try (Statement statement = connection.createStatement();

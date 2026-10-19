@@ -90,6 +90,7 @@ public class RepositoryAutenticacion {
             }
 
         } catch (SQLException e) {
+            e.printStackTrace();
             throw new IllegalStateException(
                     "No se pudo iniciar sesion.",
                     e);
