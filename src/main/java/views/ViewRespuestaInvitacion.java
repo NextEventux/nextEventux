@@ -9,7 +9,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.BiConsumer;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
@@ -66,7 +65,7 @@ public final class ViewRespuestaInvitacion {
 
     private InvitacionRecibida seleccionada;
 
-    /** Acciones del menú del invitado; son null cuando la pantalla se abre sola con su lanzador. */
+    /** Acciones del menú compartido del invitado. */
     private Runnable abrirInvitaciones;
     private Runnable abrirMesaRegalos;
     private Runnable salir;
@@ -82,7 +81,7 @@ public final class ViewRespuestaInvitacion {
         this.alVerificar = alVerificar;
     }
 
-    public ViewRespuestaInvitacion(ControllerInvitados controller) {
+    private ViewRespuestaInvitacion(ControllerInvitados controller) {
         this.controller = controller;
         correo.setId("correoInvitado");
         correo.setPromptText("Ej. sofia@email.com");
@@ -222,27 +221,8 @@ public final class ViewRespuestaInvitacion {
     }
 
     private VBox crearMenu() {
-        if (abrirInvitaciones != null || abrirMesaRegalos != null || salir != null) {
-            return MenuCompartido.crearInvitado(MenuCompartido.Pagina.MIS_INVITACIONES,
-                    abrirInvitaciones, abrirMesaRegalos, salir);
-        }
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-        VBox marca = new VBox(
-                10,
-                MenuCompartido.crearLogo(),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
-        marca.setAlignment(Pos.CENTER);
-        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
-        menu.getChildren().addAll(
-                marca,
-                etiqueta("RESPUESTA DE INVITACIÓN", "menu-title"));
-        Region espacio = new Region();
-        VBox.setVgrow(espacio, Priority.ALWAYS);
-        menu.getChildren().add(espacio);
-        return menu;
+        return MenuCompartido.crearInvitado(MenuCompartido.Pagina.MIS_INVITACIONES,
+                abrirInvitaciones, abrirMesaRegalos, salir);
     }
 
     private HBox crearBarraSuperior() {

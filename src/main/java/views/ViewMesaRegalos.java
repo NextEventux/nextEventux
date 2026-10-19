@@ -71,7 +71,7 @@ public final class ViewMesaRegalos {
     private final Label misReservasValor = new Label("0");
     private final Label detalleEvento = new Label();
 
-    /** Acciones del menú del invitado; son null cuando la pantalla se abre sola con su lanzador. */
+    /** Acciones del menú compartido del invitado. */
     private Runnable abrirInvitaciones;
     private Runnable abrirMesaRegalos;
     private Runnable salir;
@@ -87,7 +87,7 @@ public final class ViewMesaRegalos {
         this.alVerificar = alVerificar;
     }
 
-    public ViewMesaRegalos(ControllerInvitados controller) {
+    private ViewMesaRegalos(ControllerInvitados controller) {
         this.controller = controller;
         pesos.setMaximumFractionDigits(0);
 
@@ -263,27 +263,8 @@ public final class ViewMesaRegalos {
     }
 
     private VBox crearMenu() {
-        if (abrirInvitaciones != null || abrirMesaRegalos != null || salir != null) {
-            return MenuCompartido.crearInvitado(MenuCompartido.Pagina.MESA_REGALOS,
-                    abrirInvitaciones, abrirMesaRegalos, salir);
-        }
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-        VBox marca = new VBox(
-                10,
-                MenuCompartido.crearLogo(),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
-        marca.setAlignment(Pos.CENTER);
-        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
-        menu.getChildren().addAll(
-                marca,
-                etiqueta("MESA DE REGALOS", "menu-title"));
-        Region espacio = new Region();
-        VBox.setVgrow(espacio, Priority.ALWAYS);
-        menu.getChildren().add(espacio);
-        return menu;
+        return MenuCompartido.crearInvitado(MenuCompartido.Pagina.MESA_REGALOS,
+                abrirInvitaciones, abrirMesaRegalos, salir);
     }
 
     private HBox crearBarraSuperior() {
