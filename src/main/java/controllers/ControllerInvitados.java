@@ -62,11 +62,11 @@ public class ControllerInvitados {
         serviceInvitados.quitarInvitado(idInvitado);
     }
 
-    public List<InvitacionRecibida> consultarInvitacionesPorCorreo(String correo) {
-        return serviceInvitados.consultarInvitacionesPorCorreo(correo);
+    public List<InvitacionRecibida> consultarInvitacionesPorCorreo(String correo, String telefono) {
+        return serviceInvitados.consultarInvitacionesPorCorreo(correo, telefono);
     }
 
-    public void gestionarRespuestaInvitacion(int idInvitado, String respuesta) {
-        serviceInvitados.gestionarRespuestaInvitacion(idInvitado, respuesta);
+    public void gestionarRespuestaInvitacion(int idInvitado, String correo, String telefono, String respuesta) {
+        serviceInvitados.gestionarRespuestaInvitacion(idInvitado, correo, telefono, respuesta);
     }
 }
