@@ -773,7 +773,7 @@ public final class ViewInvitados {
 
         TextField nombre = campoDialogo("invNombre", "Nombre completo *");
         TextField correo = campoDialogo("invCorreo", "correo@ejemplo.com *");
-        TextField telefono = campoDialogo("invTelefono", "Teléfono");
+        TextField telefono = campoDialogo("invTelefono", "Teléfono (lo usa el invitado para responder)");
         TextField direccion = campoDialogo("invDireccion", "Dirección");
         Button agregar = new Button("Agregar invitado");
         agregar.setId("agregarInvitado");
