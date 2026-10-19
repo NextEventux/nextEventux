@@ -75,6 +75,21 @@
     -fx-background-color: #bd151b;
 }
 
+.login-guest-button {
+    -fx-background-color: white;
+    -fx-text-fill: #d71920;
+    -fx-font-weight: bold;
+    -fx-border-color: #d71920;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 20px;
+    -fx-cursor: hand;
+}
+
+.login-guest-button:hover {
+    -fx-background-color: #fff0f1;
+}
+
 .login-error {
     -fx-text-fill: #c62828;
     -fx-font-size: 12px;

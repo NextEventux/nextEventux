@@ -33,6 +33,8 @@ import views.ViewEventos;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
+import views.ViewMesaRegalos;
+import views.ViewRespuestaInvitacion;
 
 public class NextEventuxApp extends Application {
 
@@ -91,11 +93,50 @@ public class NextEventuxApp extends Application {
         sesionActual = null;
         contenedor.setTop(null);
 
+        if (contenedor.getScene() != null
+                && contenedor.getScene().getWindow() instanceof Stage stage) {
+            stage.setTitle("NextEventux");
+        }
+
         contenedor.setCenter(
                 new ViewLogin(
                         controllerAutenticacion,
-                        this::procesarSesion)
+                        this::procesarSesion,
+                        this::mostrarInvitado)
                         .crearPantalla());
+    }
+
+    /**
+     * Acceso del invitado sin cuenta: se identifica con su correo en cada pantalla.
+     * El menú lateral lleva de "Mis invitaciones" (CU-16) a "Mesa de regalos" (CU-20).
+     */
+    private void mostrarInvitado() {
+
+        sesionActual = null;
+
+        Label usuario = new Label("Invitado");
+
+        Button salir = new Button("Cerrar sesión");
+
+        salir.setOnAction(
+                event -> mostrarLogin());
+
+        HBox barra = new HBox(20, usuario, salir);
+
+        barra.setAlignment(Pos.CENTER_RIGHT);
+        barra.setPadding(new Insets(12));
+
+        contenedor.setTop(barra);
+
+        ControllerInvitados controllerInvitados =
+                new ControllerInvitados(new ServiceInvitados());
+
+        new Navegacion()
+                .registrar(Navegacion.Pantalla.MIS_INVITACIONES,
+                        () -> new ViewRespuestaInvitacion(controllerInvitados).crearPantalla())
+                .registrar(Navegacion.Pantalla.MESA_REGALOS,
+                        () -> new ViewMesaRegalos(controllerInvitados).crearPantalla())
+                .mostrarEn(contenedor, Navegacion.Pantalla.MIS_INVITACIONES);
     }
 
     private void procesarSesion(SesionUsuario sesion) {

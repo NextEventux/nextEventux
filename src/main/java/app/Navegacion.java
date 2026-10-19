@@ -22,7 +22,9 @@ public class Navegacion {
 
     public enum Pantalla {
         EVENTOS("NextEventux | Crear evento"),
-        INVITADOS("NextEventux | Invitaciones");
+        INVITADOS("NextEventux | Invitaciones"),
+        MIS_INVITACIONES("NextEventux | Mis invitaciones"),
+        MESA_REGALOS("NextEventux | Mesa de regalos");
 
         private final String titulo;
 
@@ -91,6 +93,8 @@ public class Navegacion {
         if (texto == null) return null;
         if (texto.contains("Crear evento") || texto.contains("Mis eventos")) return Pantalla.EVENTOS;
         if (texto.contains("Invitados")) return Pantalla.INVITADOS;
+        if (texto.contains("Mis invitaciones")) return Pantalla.MIS_INVITACIONES;
+        if (texto.contains("Mesa de regalos")) return Pantalla.MESA_REGALOS;
         return null;
     }
 }

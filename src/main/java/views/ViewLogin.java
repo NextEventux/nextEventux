@@ -4,21 +4,29 @@ import controllers.ControllerAutenticacion;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.net.URL;
 import java.util.function.Consumer;
 
 public class ViewLogin {
 
     private final ControllerAutenticacion controller;
     private final Consumer<SesionUsuario> alIngresar;
+
+    // Acceso sin cuenta para invitados (CU-16 y CU-20). Puede ser null.
+    private final Runnable alEntrarComoInvitado;
 
     private final TextField usuario =
             new TextField();
@@ -38,8 +46,17 @@ public class ViewLogin {
             ControllerAutenticacion controller,
             Consumer<SesionUsuario> alIngresar) {
 
+        this(controller, alIngresar, null);
+    }
+
+    public ViewLogin(
+            ControllerAutenticacion controller,
+            Consumer<SesionUsuario> alIngresar,
+            Runnable alEntrarComoInvitado) {
+
         this.controller = controller;
         this.alIngresar = alIngresar;
+        this.alEntrarComoInvitado = alEntrarComoInvitado;
 
         usuario.setPromptText("Usuario");
 
@@ -76,18 +93,6 @@ public class ViewLogin {
 
     public Parent crearPantalla() {
 
-        Label icono =
-                new Label("🎪");
-
-        icono.getStyleClass().add(
-                "login-icon");
-
-        Label marca =
-                new Label("nextEventux");
-
-        marca.getStyleClass().add(
-                "login-brand");
-
         Label subtitulo =
                 new Label("GESTIÓN DE EVENTOS");
 
@@ -96,9 +101,8 @@ public class ViewLogin {
 
         VBox cabecera =
                 new VBox(
-                        5,
-                        icono,
-                        marca,
+                        8,
+                        crearLogo(),
                         subtitulo);
 
         cabecera.setAlignment(
@@ -151,6 +155,38 @@ public class ViewLogin {
         formulario.getStyleClass().add(
                 "login-card");
 
+        if (alEntrarComoInvitado != null) {
+
+            Label invitado =
+                    new Label(
+                            "¿Recibiste una invitación? Entra con tu correo, sin cuenta.");
+
+            invitado.getStyleClass().add(
+                    "login-muted");
+
+            invitado.setWrapText(true);
+
+            Button soyInvitado =
+                    new Button("Soy invitado");
+
+            soyInvitado.setId(
+                    "soyInvitado");
+
+            soyInvitado.getStyleClass().add(
+                    "login-guest-button");
+
+            soyInvitado.setMaxWidth(
+                    Double.MAX_VALUE);
+
+            soyInvitado.setOnAction(
+                    event -> alEntrarComoInvitado.run());
+
+            formulario.getChildren().addAll(
+                    new Separator(),
+                    invitado,
+                    soyInvitado);
+        }
+
         VBox contenido =
                 new VBox(
                         30,
@@ -170,6 +206,35 @@ public class ViewLogin {
                 "login-root");
 
         return raiz;
+    }
+
+    // Mismo logo de las pantallas de eventos e invitados.
+    private Node crearLogo() {
+
+        URL imagen =
+                getClass().getResource(
+                        "/images/logo-nexteventux.png");
+
+        if (imagen == null) {
+
+            Label marca =
+                    new Label("nextEventux");
+
+            marca.getStyleClass().add(
+                    "login-brand");
+
+            return marca;
+        }
+
+        ImageView logo =
+                new ImageView(
+                        new Image(imagen.toExternalForm()));
+
+        logo.setFitWidth(230);
+        logo.setPreserveRatio(true);
+        logo.setSmooth(true);
+
+        return logo;
     }
 
     private StackPane crearCampoContrasena() {
