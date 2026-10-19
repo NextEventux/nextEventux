@@ -434,3 +434,22 @@ ALTER TABLE Segmentacion ALTER COLUMN id_segmento RESTART WITH 4;
 ALTER TABLE Campana ALTER COLUMN id_campana RESTART WITH 3;
 ALTER TABLE Envio_Campana ALTER COLUMN id_envio RESTART WITH 5;
 ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 3;
+
+-- ---------------------------------------------------------
+-- ACTUALIZAR CONTADORES AUTOMATICOS DESPUES DEL SEED
+-- ---------------------------------------------------------
+
+ALTER TABLE Usuario
+ALTER COLUMN id_usuario RESTART WITH 17;
+
+ALTER TABLE Usuario_rol
+ALTER COLUMN id_usuario_rol RESTART WITH 17;
+
+ALTER TABLE Organizador
+ALTER COLUMN id_organizador RESTART WITH 6;
+
+ALTER TABLE Proveedor
+ALTER COLUMN id_proveedor RESTART WITH 6;
+
+ALTER TABLE Invitado
+ALTER COLUMN id_invitado RESTART WITH 8;
