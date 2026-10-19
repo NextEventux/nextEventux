@@ -59,6 +59,22 @@ ADD COLUMN IF NOT EXISTS fecha_envio TIMESTAMP;
 ALTER TABLE Propuesta
 ADD COLUMN IF NOT EXISTS vigente BOOLEAN DEFAULT TRUE;
 
+-- Las propuestas anteriores a CU12 reciben inicialmente version 1.
+-- Si una solicitud ya tenía varias, asignamos versiones según su ID
+-- antes de crear la restricción única.
+UPDATE Propuesta p
+SET numero_version = (
+    SELECT COUNT(*)
+    FROM Propuesta anterior
+    WHERE anterior.id_solicitud = p.id_solicitud
+      AND anterior.id_propuesta <= p.id_propuesta
+)
+WHERE p.id_solicitud IN (
+    SELECT id_solicitud
+    FROM Propuesta
+    GROUP BY id_solicitud
+    HAVING COUNT(*) > COUNT(DISTINCT numero_version)
+);
 
 -- Una solicitud no puede tener dos propuestas con igual version
 

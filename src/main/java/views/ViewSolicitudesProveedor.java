@@ -7,6 +7,7 @@ import controllers.ControllerSolicitudes;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SolicitudEjecucion;
+import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -17,11 +18,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
 
 public class ViewSolicitudesProveedor {
 
@@ -29,6 +29,10 @@ public class ViewSolicitudesProveedor {
     private final int idProveedor;
     private final int idUsuario;
     private final Runnable volverServicios;
+    private final SesionUsuario sesion;
+    private final Runnable abrirServicios;
+    private final Runnable abrirSolicitudes;
+    private final Runnable cerrarSesion;
 
     private final ListView<SolicitudEjecucion> lista
             = new ListView<>();
@@ -39,10 +43,28 @@ public class ViewSolicitudesProveedor {
             int idUsuario,
             Runnable volverServicios) {
 
+        this(controller, idProveedor, idUsuario, volverServicios, null,
+                volverServicios, null, null);
+    }
+
+    public ViewSolicitudesProveedor(
+            ControllerSolicitudes controller,
+            int idProveedor,
+            int idUsuario,
+            Runnable volverServicios,
+            SesionUsuario sesion,
+            Runnable abrirServicios,
+            Runnable abrirSolicitudes,
+            Runnable cerrarSesion) {
+
         this.controller = controller;
         this.idProveedor = idProveedor;
         this.idUsuario = idUsuario;
         this.volverServicios = volverServicios;
+        this.sesion = sesion;
+        this.abrirServicios = abrirServicios;
+        this.abrirSolicitudes = abrirSolicitudes;
+        this.cerrarSesion = cerrarSesion;
     }
 
     public Parent crearPantalla() {
@@ -182,47 +204,7 @@ public class ViewSolicitudesProveedor {
         contenido.setPadding(new Insets(30));
         VBox.setVgrow(lista, javafx.scene.layout.Priority.ALWAYS);
 
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-
-        ImageView logo = new ImageView(
-                new Image(
-                        getClass()
-                                .getResource("/images/logo-nexteventux.png")
-                                .toExternalForm()));
-
-        logo.setFitWidth(190);
-        logo.setPreserveRatio(true);
-        logo.setSmooth(true);
-
-        Label subtitulo = new Label("GESTIÓN DE EVENTOS");
-        subtitulo.getStyleClass().add("brand-caption");
-
-        VBox identidad = new VBox(10, logo, subtitulo);
-        identidad.setAlignment(Pos.CENTER);
-        VBox.setMargin(identidad, new Insets(0, 0, 38, 0));
-
-        Label tituloMenu = new Label("MENÚ PRINCIPAL");
-        tituloMenu.getStyleClass().add("menu-title");
-
-        Label misServicios = new Label("♧  Mis servicios");
-        misServicios.getStyleClass().add("menu-item");
-        misServicios.setMaxWidth(Double.MAX_VALUE);
-        misServicios.setOnMouseClicked(
-                event -> volverServicios.run());
-
-        Label solicitudes = new Label("✉  Solicitudes recibidas");
-        solicitudes.getStyleClass().addAll("menu-item", "active");
-        solicitudes.setMaxWidth(Double.MAX_VALUE);
-
-        menu.getChildren().addAll(
-                identidad,
-                tituloMenu,
-                misServicios,
-                solicitudes);
-
+        VBox menu = crearMenu();
         raiz.setLeft(menu);
 
         BorderPane principal = new BorderPane();
@@ -248,33 +230,23 @@ public class ViewSolicitudesProveedor {
 
     private HBox crearBarraSuperior() {
 
-        Label ruta = new Label("Inicio / Mis servicios /");
-        ruta.getStyleClass().add("breadcrumb");
+        return MenuCompartido.crearBarraSuperior(
+                sesion,
+                "Solicitudes recibidas");
+    }
 
-        Label actual = new Label("Solicitudes recibidas");
-        actual.getStyleClass().add("breadcrumb-current");
-
-        javafx.scene.layout.Region espacio
-                = new javafx.scene.layout.Region();
-
-        HBox.setHgrow(
-                espacio,
-                javafx.scene.layout.Priority.ALWAYS);
-
-        Label usuario = new Label("Proveedor");
-        usuario.getStyleClass().add("user-badge");
-
-        HBox barra = new HBox(
-                18,
-                ruta,
-                actual,
-                espacio,
-                usuario);
-
-        barra.setAlignment(Pos.CENTER_LEFT);
-        barra.getStyleClass().add("topbar");
-
-        return barra;
+    private VBox crearMenu() {
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.SOLICITUDES_PROVEEDOR,
+                null,
+                null,
+                null,
+                abrirServicios,
+                cerrarSesion,
+                null,
+                abrirSolicitudes,
+                null);
     }
 
     private void recargarSolicitudes() {

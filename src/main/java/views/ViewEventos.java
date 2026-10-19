@@ -10,7 +10,8 @@ import java.util.Locale;
 
 import controllers.ControllerEventos;
 import entities.Evento;
-import javafx.geometry.Insets;
+import entities.Organizador;
+import entities.SesionUsuario;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -29,15 +30,21 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
 
 public class ViewEventos {
 
     private final ControllerEventos controller;
+    private final SesionUsuario sesion;
+    private final Runnable abrirEventos;
     private final Runnable abrirCatalogo;
+    private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private final Runnable abrirMisEventos;
+    private final Runnable abrirPropuestas;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
-    private final TextField organizador = campo("organizador", "Identificador del organizador");
+    private final ComboBox<Organizador> organizador = new ComboBox<>();
     private final DatePicker fechaInicio = new DatePicker();
     private final DatePicker fechaFin = new DatePicker();
     private final TextField horaInicio = campo("horaInicio", "09:00");
@@ -51,25 +58,72 @@ public class ViewEventos {
     private final Label mensaje = new Label();
     private final NumberFormat formatoCOP = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
 
-public ViewEventos(ControllerEventos controller) {
-    this(controller, null, null);
-}
+    public ViewEventos(ControllerEventos controller) {
+        this(controller, null, null, null, null, null, null, null);
+    }
 
-public ViewEventos(
-        ControllerEventos controller,
-        Runnable abrirCatalogo) {
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirCatalogo,
+            Runnable cerrarSesion) {
 
-    this(controller, abrirCatalogo, null);
-}
+        this(controller, null, abrirCatalogo, null, cerrarSesion, null, null, null);
+    }
 
-public ViewEventos(
-        ControllerEventos controller,
-        Runnable abrirCatalogo,
-        Runnable cerrarSesion) {
-    this.controller = controller;
-    this.abrirCatalogo = abrirCatalogo;
-    this.cerrarSesion = cerrarSesion;
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            SesionUsuario sesion) {
+
+        this(controller, abrirEventos, abrirCatalogo, abrirInvitados, cerrarSesion, sesion, null, null);
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            SesionUsuario sesion,
+            Runnable abrirMisEventos) {
+
+        this(controller, abrirEventos, abrirCatalogo, abrirInvitados,
+                cerrarSesion, sesion, abrirMisEventos, null);
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            SesionUsuario sesion,
+            Runnable abrirMisEventos,
+            Runnable abrirPropuestas) {
+
+        this.controller = controller;
+        this.abrirEventos = abrirEventos;
+        this.abrirCatalogo = abrirCatalogo;
+        this.abrirInvitados = abrirInvitados;
+        this.cerrarSesion = cerrarSesion;
+        this.sesion = sesion;
+        this.abrirMisEventos = abrirMisEventos;
+        this.abrirPropuestas = abrirPropuestas;
+
         formatoCOP.setMaximumFractionDigits(2);
+        organizador.setId("organizador");
+        organizador.setPromptText("Seleccionar organizador");
+        organizador.setMaxWidth(Double.MAX_VALUE);
+        organizador.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Organizador item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(item == null ? organizador.getPromptText() : item.nombre());
+            }
+        });
         tipo.setId("tipo");
         tipo.setPromptText("Seleccionar tipo");
         tipo.getItems().addAll("Corporativo", "Social", "Cultural", "Otro");
@@ -149,55 +203,43 @@ public ViewEventos(
             sidebar.setVisible(actual.doubleValue() >= 1000);
             sidebar.setManaged(sidebar.isVisible());
         });
+        cargarOrganizadores();
         return raiz;
     }
 
-    private VBox crearMenu() {
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-        VBox marca = new VBox(5, etiqueta("🎪", "brand-icon"), etiqueta("nextEventux", "brand"),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
-        marca.setAlignment(Pos.CENTER);
-        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
-        menu.getChildren().addAll(marca, etiqueta("MENÚ PRINCIPAL", "menu-title"));
-        String[] opciones = {"⌂  Inicio", "▦  Mis eventos", "＋  Crear evento", "♧  Proveedores", "♙  Invitados", "⚙  Configuración"};
-        for (String opcion : opciones) {
-            Label item = etiqueta(opcion, "menu-item");
-            item.setMaxWidth(Double.MAX_VALUE);
-            if (opcion.contains("Crear evento")) {
-                item.getStyleClass().add("active");
+    private void cargarOrganizadores() {
+        try {
+            if (sesion == null) {
+                organizador.getItems().setAll(controller.listarOrganizadores());
+            } else {
+                organizador.getItems().setAll(new Organizador(sesion.getIdActor(), controller.nombreOrganizadorEdicion()));
+                organizador.getSelectionModel().selectFirst();
+                organizador.setDisable(true);
             }
-
-            if (opcion.contains("Proveedores")
-                    && abrirCatalogo != null) {
-
-                item.setOnMouseClicked(
-                        event -> abrirCatalogo.run());
-
-                item.setStyle("-fx-cursor: hand;");
+            if (organizador.getItems().isEmpty()) {
+                mostrarMensaje("No hay organizadores registrados. Registra un organizador antes de crear el evento.", false);
             }
-
-            menu.getChildren().add(item);
+        } catch (IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
         }
-        Region espacio = new Region();
-        VBox.setVgrow(espacio, Priority.ALWAYS);
-        VBox perfil = new VBox(4, etiqueta("Organizador", "profile-name"), etiqueta("Mi cuenta", "hint"));
-        HBox cuenta = new HBox(12, etiqueta("SC", "avatar"), perfil);
-        cuenta.setAlignment(Pos.CENTER_LEFT);
-        cuenta.getStyleClass().add("sidebar-bottom");
-        menu.getChildren().addAll(espacio, cuenta);
-        return menu;
+    }
+
+    private VBox crearMenu() {
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.CREAR_EVENTO,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                null,
+                cerrarSesion,
+                abrirMisEventos,
+                null,
+                abrirPropuestas);
     }
 
     private HBox crearBarraSuperior() {
-        HBox barra = new HBox(18, etiqueta("Inicio / Mis eventos /", "breadcrumb"),
-                etiqueta("Crear evento", "breadcrumb-current"), espacioHorizontal(),
-                etiqueta("♧", "notification"), etiqueta("Organizador", "user-badge"));
-        barra.setAlignment(Pos.CENTER_LEFT);
-        barra.getStyleClass().add("topbar");
-        return barra;
+        return MenuCompartido.crearBarraSuperior(sesion, "Crear evento");
     }
 
     private VBox crearFormulario() {
@@ -210,7 +252,7 @@ public ViewEventos(
         GridPane datos = grilla();
         datos.add(grupo("Nombre del evento *", nombre, null), 0, 0, 2, 1);
         datos.add(grupo("Tipo de evento *", tipo, null), 0, 1);
-        datos.add(grupo("Organizador (ID) *", organizador, null), 1, 1);
+        datos.add(grupo("Organizador *", organizador, null), 1, 1);
         datos.add(grupo("Fecha de inicio *", fechaInicio, null), 0, 2);
         datos.add(grupo("Hora de inicio *", horaInicio, "Formato de 24 horas: HH:mm"), 1, 2);
         datos.add(grupo("Fecha de fin *", fechaFin, null), 0, 3);
@@ -254,6 +296,9 @@ public ViewEventos(
 
     private void crearDesdeFormulario() {
         try {
+            if (organizador.getValue() == null) {
+                throw new IllegalArgumentException("Selecciona un organizador.");
+            }
             if (fechaInicio.getValue() == null || fechaFin.getValue() == null) {
                 throw new IllegalArgumentException("Selecciona las fechas de inicio y fin.");
             }
@@ -265,7 +310,7 @@ public ViewEventos(
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Ingresa un presupuesto numérico; usa punto para los decimales.");
             }
-            Evento datos = new Evento(leerEntero(organizador.getText(), "organizador"), nombre.getText().trim(),
+            Evento datos = new Evento(organizador.getValue().id(), nombre.getText().trim(),
                     tipo.getValue(), descripcion.getText().trim(), LocalDateTime.of(fechaInicio.getValue(), inicio),
                     LocalDateTime.of(fechaFin.getValue(), fin), lugar.getText().trim(), valor,
                     leerEntero(invitados.getText(), "invitados iniciales"));
@@ -309,9 +354,10 @@ public ViewEventos(
     }
 
     private void limpiarFormulario() {
-        for (TextField campo : new TextField[]{nombre, organizador, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) {
+        for (TextField campo : new TextField[]{nombre, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) {
             campo.clear();
         }
+        if (sesion == null) organizador.getSelectionModel().clearSelection();
         tipo.getSelectionModel().clearSelection();
         fechaInicio.setValue(null);
         fechaFin.setValue(null);

@@ -32,6 +32,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import views.components.MenuCompartido;
 
 public class ViewListaServiciosProveedor {
 
@@ -39,6 +40,7 @@ public class ViewListaServiciosProveedor {
     private final int idProveedor;
     private final SesionUsuario sesion;
     private final Runnable cerrarSesion;
+    private final Runnable abrirServicios;
     private final Consumer<Integer> abrirDetalle;
     private final Runnable nuevoServicio;
     private final Runnable abrirSolicitudes;
@@ -76,19 +78,50 @@ public class ViewListaServiciosProveedor {
             SesionUsuario sesion,
             Runnable cerrarSesion,
             Consumer<Integer> abrirDetalle,
+            Runnable nuevoServicio) {
+
+        this(controller, idProveedor, sesion, cerrarSesion,
+                abrirDetalle, nuevoServicio, null, null);
+    }
+
+    public ViewListaServiciosProveedor(
+            ControllerProveedores controller,
+            int idProveedor,
+            SesionUsuario sesion,
+            Runnable cerrarSesion,
+            Consumer<Integer> abrirDetalle,
             Runnable nuevoServicio,
             Runnable abrirSolicitudes) {
+        this(controller, idProveedor, sesion, cerrarSesion,
+                abrirDetalle, nuevoServicio, null, abrirSolicitudes);
+    }
 
+    public ViewListaServiciosProveedor(
+            ControllerProveedores controller,
+            int idProveedor,
+            SesionUsuario sesion,
+            Runnable cerrarSesion,
+            Consumer<Integer> abrirDetalle,
+            Runnable nuevoServicio,
+            Runnable abrirServicios,
+            Runnable abrirSolicitudes) {
+
+        System.out.printf(
+                "[MIS_SERVICIOS] constructor actorId=%d rol=%s%n",
+                idProveedor,
+                sesion == null ? null : sesion.getTipoUsuario());
         this.controller = controller;
         this.idProveedor = idProveedor;
         this.sesion = sesion;
         this.cerrarSesion = cerrarSesion;
+        this.abrirServicios = abrirServicios;
         this.abrirDetalle = abrirDetalle;
         this.nuevoServicio = nuevoServicio;
         this.abrirSolicitudes = abrirSolicitudes;
     }
 
     public Parent crearPantalla() {
+        System.out.println("[MIS_SERVICIOS] creando pantalla");
 
         BorderPane raiz
                 = new BorderPane();
@@ -99,6 +132,7 @@ public class ViewListaServiciosProveedor {
 
         VBox sidebar
                 = crearMenu();
+        System.out.println("[MIS_SERVICIOS] menu compartido creado");
 
         raiz.setLeft(sidebar);
 
@@ -166,7 +200,9 @@ public class ViewListaServiciosProveedor {
                         });
 
         configurarFiltros();
+        System.out.println("[MIS_SERVICIOS] consultando servicios");
         recargarServicios();
+        System.out.println("[MIS_SERVICIOS] pantalla creada");
 
         return raiz;
     }
@@ -314,13 +350,20 @@ public class ViewListaServiciosProveedor {
     private void recargarServicios() {
 
         servicios.clear();
+        boolean errorCarga = false;
 
         try {
 
+            System.out.printf(
+                    "[MIS_SERVICIOS] consultando actorId=%d%n",
+                    idProveedor);
             List<Servicio> encontrados
                     = controller
                             .listarServiciosProveedor(
                                     idProveedor);
+            System.out.printf(
+                    "[MIS_SERVICIOS] consulta completada cantidad=%d%n",
+                    encontrados.size());
 
             for (Servicio servicio
                     : encontrados) {
@@ -330,13 +373,24 @@ public class ViewListaServiciosProveedor {
                                 servicio));
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
 
+            registrarExcepcion("consulta de servicios", e);
             servicios.clear();
+            errorCarga = true;
         }
 
         actualizarContadores();
         aplicarFiltros();
+
+        if (errorCarga) {
+            resumen.setText(
+                    "No se pudieron cargar los servicios. "
+                    + "Vuelve a intentarlo más tarde.");
+            resumen.getStyleClass().add("provider-gallery-error");
+        } else {
+            resumen.getStyleClass().remove("provider-gallery-error");
+        }
     }
 
     private ServicioVista crearVista(
@@ -367,6 +421,7 @@ public class ViewListaServiciosProveedor {
 
         } catch (Exception e) {
 
+            registrarExcepcion("carga de imagenes", e);
             portada = null;
         }
 
@@ -390,6 +445,7 @@ public class ViewListaServiciosProveedor {
 
         } catch (Exception e) {
 
+            registrarExcepcion("consulta de preguntas", e);
             preguntasPendientes = 0;
         }
 
@@ -771,7 +827,7 @@ public class ViewListaServiciosProveedor {
 
             } catch (Exception e) {
 
-                // Si la imagen no carga se muestra el icono
+                registrarExcepcion("renderizado de portada", e);
             }
         }
 
@@ -992,223 +1048,33 @@ public class ViewListaServiciosProveedor {
     }
 
     private VBox crearMenu() {
-
-        VBox menu
-                = new VBox(7);
-
-        menu
-                .getStyleClass()
-                .add("sidebar");
-
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-
-        VBox marca
-                = new VBox(
-                        5,
-                        etiqueta(
-                                "🎪",
-                                "brand-icon"),
-                        etiqueta(
-                                "nextEventux",
-                                "brand"),
-                        etiqueta(
-                                "GESTIÓN DE EVENTOS",
-                                "brand-caption"));
-
-        marca.setAlignment(
-                Pos.CENTER);
-
-        VBox.setMargin(
-                marca,
-                new Insets(
-                        0,
-                        0,
-                        38,
-                        0));
-
-        menu
-                .getChildren()
-                .addAll(
-                        marca,
-                        etiqueta(
-                                "MENÚ PRINCIPAL",
-                                "menu-title"));
-
-        String[] opciones = {
-            "⌂  Inicio",
-            "♧  Mis servicios",
-            "✉  Solicitudes recibidas",
-            "⚙  Configuración"
-        };
-
-        for (String opcion : opciones) {
-
-            Label item
-                    = etiqueta(
-                            opcion,
-                            "menu-item");
-
-            item.setMaxWidth(Double.MAX_VALUE);
-
-            if (opcion.contains("Solicitudes recibidas")) {
-                item.setOnMouseClicked(
-                        event -> abrirSolicitudes.run());
-            }
-
-            if (opcion.contains(
-                    "Mis servicios")) {
-
-                item
-                        .getStyleClass()
-                        .add("active");
-            }
-
-            menu
-                    .getChildren()
-                    .add(item);
-        }
-
-        Region espacio
-                = new Region();
-
-        VBox.setVgrow(
-                espacio,
-                Priority.ALWAYS);
-
-        Label salir
-                = etiqueta(
-                        "Cerrar sesión",
-                        "logout-link");
-
-        if (cerrarSesion != null) {
-
-            salir.setOnMouseClicked(
-                    event -> cerrarSesion.run());
-        }
-
-        VBox perfil
-                = new VBox(
-                        4,
-                        etiqueta(
-                                nombreSesion(),
-                                "profile-name"),
-                        etiqueta(
-                                rolSesion(),
-                                "hint"),
-                        salir);
-
-        HBox cuenta
-                = new HBox(
-                        12,
-                        etiqueta(
-                                inicialesSesion(),
-                                "avatar"),
-                        perfil);
-
-        cuenta.setAlignment(
-                Pos.CENTER_LEFT);
-
-        cuenta
-                .getStyleClass()
-                .add("sidebar-bottom");
-
-        menu
-                .getChildren()
-                .addAll(
-                        espacio,
-                        cuenta);
-
-        return menu;
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.MIS_SERVICIOS,
+                null,
+                null,
+                null,
+                abrirServicios,
+                cerrarSesion,
+                null,
+                abrirSolicitudes,
+                null);
     }
 
     private HBox crearBarraSuperior() {
-
-        HBox barra
-                = new HBox(
-                        18,
-                        etiqueta(
-                                "Inicio / Proveedores /",
-                                "breadcrumb"),
-                        etiqueta(
-                                "Mis servicios",
-                                "breadcrumb-current"),
-                        espacioHorizontal(),
-                        etiqueta(
-                                "♧",
-                                "notification"),
-                        etiqueta(
-                                nombreSesion(),
-                                "user-badge"));
-
-        barra.setAlignment(
-                Pos.CENTER_LEFT);
-
-        barra
-                .getStyleClass()
-                .add("topbar");
-
-        return barra;
+        return MenuCompartido.crearBarraSuperior(
+                sesion,
+                "Mis servicios");
     }
 
-    private String nombreSesion() {
-
-        if (sesion == null
-                || sesion.getNombre() == null
-                || sesion.getNombre().isBlank()) {
-
-            return "Proveedor";
+    private void registrarExcepcion(String paso, Exception e) {
+        System.err.printf(
+                "[MIS_SERVICIOS] paso=%s excepcion=%s%n",
+                paso,
+                e.getClass().getName());
+        for (StackTraceElement frame : e.getStackTrace()) {
+            System.err.println("[MIS_SERVICIOS]   at " + frame);
         }
-
-        return sesion.getNombre();
-    }
-
-    private String rolSesion() {
-
-        if (sesion == null
-                || sesion.getTipoUsuario() == null
-                || sesion.getTipoUsuario().isBlank()) {
-
-            return "Proveedor";
-        }
-
-        String rol
-                = sesion
-                        .getTipoUsuario()
-                        .toLowerCase();
-
-        return Character.toUpperCase(
-                rol.charAt(0))
-                + rol.substring(1);
-    }
-
-    private String inicialesSesion() {
-
-        String[] partes
-                = nombreSesion()
-                        .trim()
-                        .split("\\s+");
-
-        StringBuilder iniciales
-                = new StringBuilder();
-
-        for (String parte : partes) {
-
-            if (!parte.isBlank()) {
-
-                iniciales.append(
-                        Character.toUpperCase(
-                                parte.charAt(0)));
-            }
-
-            if (iniciales.length() == 2) {
-                break;
-            }
-        }
-
-        return iniciales.length() == 0
-                ? "PR"
-                : iniciales.toString();
     }
 
     private String seguro(
