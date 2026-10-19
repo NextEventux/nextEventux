@@ -181,7 +181,7 @@ public class RepositoryServicio {
                 SELECT COUNT(*)
                 FROM Solicitud_Ejecucion
                 WHERE id_servicio = ?
-                  AND UPPER(estado) = 'PENDIENTE'
+                  AND UPPER(estado) IN ('PENDIENTE', 'EN_NEGOCIACION')
                 """;
 
         try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {

@@ -1,10 +1,10 @@
-
 package app;
 
 import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
+import controllers.ControllerSolicitudes;
 import entities.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
@@ -22,16 +22,19 @@ import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
 import repositories.RepositoryServicio;
+import repositories.RepositorySolicitudEjecucion;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
 import services.ServiceInvitados;
 import services.ServiceProveedores;
+import services.ServiceSolicitudes;
 import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
 import views.ViewEventos;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
+import views.ViewSolicitudesProveedor;
 import views.ViewLogin;
 
 public class NextEventuxApp extends Application {
@@ -40,6 +43,7 @@ public class NextEventuxApp extends Application {
     private ControllerEventos controllerEventos;
     private ControllerAutenticacion controllerAutenticacion;
     private ControllerProveedores controllerProveedores;
+    private ControllerSolicitudes controllerSolicitudes;
 
     private SesionUsuario sesionActual;
 
@@ -56,6 +60,10 @@ public class NextEventuxApp extends Application {
                 new ServiceProveedores(
                         new RepositoryServicio(),
                         new RepositoryDisponibilidadServicio()));
+
+        controllerSolicitudes = new ControllerSolicitudes(
+                new ServiceSolicitudes(
+                        new RepositorySolicitudEjecucion()));
 
         contenedor = new BorderPane();
 
@@ -243,7 +251,8 @@ public class NextEventuxApp extends Application {
                         sesionActual,
                         this::mostrarLogin,
                         this::mostrarDetalleServicioProveedor,
-                        () -> mostrarDetalleServicioProveedor(null))
+                        () -> mostrarDetalleServicioProveedor(null),
+                        this::mostrarSolicitudesProveedor)
                         .crearPantalla());
     }
 
@@ -270,4 +279,25 @@ public class NextEventuxApp extends Application {
                         this::mostrarProveedores)
                         .crearPantalla());
     }
+
+    private void mostrarSolicitudesProveedor() {
+
+        if (sesionActual == null
+                || !"PROVEEDOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        contenedor.setTop(null);
+
+        contenedor.setCenter(
+                new ViewSolicitudesProveedor(
+                        controllerSolicitudes,
+                        sesionActual.getIdActor(),
+                        this::mostrarProveedores)
+                        .crearPantalla());
+    }
+
 }
