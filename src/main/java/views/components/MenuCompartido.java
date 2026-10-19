@@ -20,6 +20,7 @@ import javafx.scene.layout.VBox;
 public final class MenuCompartido {
 
     public enum Pagina {
+        MIS_EVENTOS,
         CREAR_EVENTO,
         INVITADOS,
         CATALOGO,
@@ -38,6 +39,26 @@ public final class MenuCompartido {
             Runnable abrirServicios,
             Runnable cerrarSesion) {
 
+        return crear(
+                sesion,
+                paginaActiva,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                abrirServicios,
+                cerrarSesion,
+                null);
+    }
+
+    public static VBox crear(
+            SesionUsuario sesion,
+            Pagina paginaActiva,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirServicios,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos) {
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
@@ -63,6 +84,12 @@ public final class MenuCompartido {
                     paginaActiva == Pagina.MIS_SERVICIOS,
                     abrirServicios);
         } else {
+            if (abrirMisEventos != null) {
+                agregarOpcion(menu, "▦  Mis eventos",
+                        paginaActiva == Pagina.MIS_EVENTOS,
+                        abrirMisEventos);
+            }
+
             agregarOpcion(menu, "＋  Crear evento",
                     paginaActiva == Pagina.CREAR_EVENTO,
                     abrirEventos);

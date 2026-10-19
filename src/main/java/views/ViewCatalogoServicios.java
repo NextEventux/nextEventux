@@ -37,6 +37,7 @@ public class ViewCatalogoServicios {
     private final Runnable abrirCatalogo;
     private final Runnable abrirEventos;
     private final Runnable abrirInvitados;
+    private final Runnable abrirMisEventos;
     private final Runnable cerrarSesion;
     private final Consumer<Servicio> abrirDetalle;
 
@@ -94,11 +95,26 @@ public class ViewCatalogoServicios {
             Runnable cerrarSesion,
             Consumer<Servicio> abrirDetalle) {
 
+        this(controller, sesion, abrirEventos, abrirInvitados, abrirCatalogo,
+                cerrarSesion, abrirDetalle, null);
+    }
+
+    public ViewCatalogoServicios(
+            ControllerProveedores controller,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable cerrarSesion,
+            Consumer<Servicio> abrirDetalle,
+            Runnable abrirMisEventos) {
+
         this.controller = controller;
         this.sesion = sesion;
         this.abrirCatalogo = abrirCatalogo;
         this.abrirEventos = abrirEventos;
         this.abrirInvitados = abrirInvitados;
+        this.abrirMisEventos = abrirMisEventos;
         this.cerrarSesion = cerrarSesion;
         this.abrirDetalle = abrirDetalle;
 
@@ -223,7 +239,8 @@ public class ViewCatalogoServicios {
                 abrirInvitados,
                 abrirCatalogo,
                 null,
-                cerrarSesion);
+                cerrarSesion,
+                abrirMisEventos);
     }
 
     private HBox crearBarraSuperior() {
