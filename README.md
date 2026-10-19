@@ -500,7 +500,10 @@ La migración `003_cancelacion_eventos.sql` agrega:
 
 El módulo de contratación debe guardar `id_disponibilidad`; la reserva de lugar
 debe guardar `id_lugar`. No se infieren esos vínculos de los textos ni se rellenan
-identificadores arbitrarios en datos existentes. Si una contratación activa carece
+identificadores arbitrarios en datos existentes. Cuando falta el vínculo directo,
+CU04 admite la coincidencia exacta del servicio, fecha y horas que utiliza CU11;
+el vínculo se guarda dentro de la misma transacción de cancelación. Se contemplan
+contrataciones ACTIVA y CONFIRMADA. Si una contratación activa carece
 de una reserva válida o una invitación apunta a un lugar reservado sin vínculo
 coherente con el evento, se bloquea la cancelación sin modificar datos.
 
@@ -512,8 +515,10 @@ lugares. Ese comportamiento debe coordinarse con el módulo responsable.
 Los avisos para proveedores se dirigen a su Usuario. Invitado no tiene una cuenta
 Usuario en el esquema actual: su aviso se guarda mediante `id_invitado`, sin
 buscar cuentas por nombre o correo. La pantalla muestra el resumen de avisos del
-evento; integrar su lectura en la bandeja del módulo de Invitados sigue pendiente.
-Los avisos de proveedores pueden consultarse por `id_usuario` en la misma tabla.
+evento. El proveedor los consulta en **Mis avisos** después de iniciar sesión.
+El invitado entra por **Consultar mis invitaciones** en el login: CU16 consulta
+los avisos por correo aunque la invitación haya sido revocada. Esa consulta por
+correo es el mecanismo existente de CU16 y no autentica al invitado.
 
 El controlador recibe la sesión del login. El servicio comprueba que el usuario
 y el organizador sigan activos y vinculados en H2 antes de listar, cancelar o
@@ -522,13 +527,16 @@ sesión, que puede diferir del identificador de usuario. Administradores,
 proveedores y sesiones cerradas no tienen acceso a CU04. La cancelación vuelve a
 comprobar la propiedad y el estado del evento dentro de la transacción.
 
-Queda pendiente coordinar los vínculos de reservas y la lectura de avisos con los
-módulos responsables. El cierre institucional requiere esa integración y la
-revisión del equipo.
+Se incorporaron las ramas de CU11 y CU16 y se conectó la consulta de avisos.
+Falta identificar la rama que registra contrataciones y reservas de lugares para
+verificar sus escrituras reales. La revisión de los módulos y la definición del
+acceso de invitados siguen pendientes. Detalles y contrato de datos en
+[Integración de CU04](docs/integracion-cu04.md).
 
 ### Pruebas
 
-80 pruebas JUnit correctas en total, incluidas las 11 de cancelación adaptadas
+La integración de proveedores e invitados amplía la suite a 114 pruebas JUnit,
+incluidas 7 nuevas que cruzan los módulos. Se mantienen las 11 de cancelación adaptadas
 al login real y 8 nuevas de integración con la sesión. Se comprueban confirmación, propiedad,
 estados, reservas válidas, liberación sin afectar otros eventos, reserva compartida,
 revocación, destinatarios, persistencia y rollback si falla un servicio o un aviso.
@@ -600,7 +608,7 @@ sesión y vuelve al login. La aplicación no permite elegir otra identidad.
 Desde la sesión de organizador están disponibles Crear y Editar evento. Crear
 conserva el organizador de la sesión. CU03 también está disponible mediante Publicaciones, con permisos por sesión.
 CU04 está disponible para el organizador desde Cancelar evento, con permisos por sesión.
-La cuenta de administrador abre CU03; el módulo de proveedor sigue pendiente.
+La cuenta de administrador abre CU03; el proveedor accede a sus servicios y avisos.
 
 ### Pruebas de CU02
 
