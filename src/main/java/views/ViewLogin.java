@@ -4,20 +4,18 @@ import controllers.ControllerAutenticacion;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
 
-import java.net.URL;
 import java.util.function.Consumer;
 
 public class ViewLogin {
@@ -96,6 +94,8 @@ public class ViewLogin {
 
     public Parent crearPantalla() {
 
+        ImageView logo = MenuCompartido.crearLogo();
+
         Label subtitulo =
                 new Label("GESTIÓN DE EVENTOS");
 
@@ -104,8 +104,8 @@ public class ViewLogin {
 
         VBox cabecera =
                 new VBox(
-                        8,
-                        crearLogo(),
+                        10,
+                        logo,
                         subtitulo);
 
         cabecera.setAlignment(
@@ -210,35 +210,6 @@ public class ViewLogin {
                 "login-root");
 
         return raiz;
-    }
-
-    // Mismo logo de las pantallas de eventos e invitados.
-    private Node crearLogo() {
-
-        URL imagen =
-                getClass().getResource(
-                        "/images/logo-nexteventux.png");
-
-        if (imagen == null) {
-
-            Label marca =
-                    new Label("nextEventux");
-
-            marca.getStyleClass().add(
-                    "login-brand");
-
-            return marca;
-        }
-
-        ImageView logo =
-                new ImageView(
-                        new Image(imagen.toExternalForm()));
-
-        logo.setFitWidth(230);
-        logo.setPreserveRatio(true);
-        logo.setSmooth(true);
-
-        return logo;
     }
 
     private StackPane crearCampoContrasena() {

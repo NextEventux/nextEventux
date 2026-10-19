@@ -3,16 +3,25 @@ package views;
 import controllers.ControllerEventos;
 import entities.EdicionEvento;
 import entities.Evento;
+import entities.SesionUsuario;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import views.components.MenuCompartido;
 
 public class ViewEdicion {
     private final ControllerEventos controller;
     private final Runnable volver;
+    private final Integer eventoInicial;
+    private final SesionUsuario sesion;
+    private final Runnable abrirEventos;
+    private final Runnable abrirMisEventos;
+    private final Runnable abrirCatalogo;
+    private final Runnable abrirInvitados;
+    private final Runnable cerrarSesion;
     private final Label organizador=new Label();
     private final ComboBox<Evento> evento=new ComboBox<>();
     private final ComboBox<String> tipo=new ComboBox<>();
@@ -22,7 +31,35 @@ public class ViewEdicion {
     private final Label mensaje=new Label();
     private Evento actual;
 
-    public ViewEdicion(ControllerEventos controller,Runnable volver) { this.controller=controller; this.volver=volver; }
+    public ViewEdicion(ControllerEventos controller,Runnable volver) {
+        this(controller,volver,null);
+    }
+
+    public ViewEdicion(ControllerEventos controller,Runnable volver,Integer eventoInicial) {
+        this(controller,volver,eventoInicial,null,null,null,null,null,null);
+    }
+
+    public ViewEdicion(
+            ControllerEventos controller,
+            Runnable volver,
+            Integer eventoInicial,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirMisEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion) {
+
+        this.controller=controller;
+        this.volver=volver;
+        this.eventoInicial=eventoInicial;
+        this.sesion=sesion;
+        this.abrirEventos=abrirEventos;
+        this.abrirMisEventos=abrirMisEventos;
+        this.abrirCatalogo=abrirCatalogo;
+        this.abrirInvitados=abrirInvitados;
+        this.cerrarSesion=cerrarSesion;
+    }
 
     public Parent crearPantalla() {
         organizador.setId("nombreOrganizadorEdicion");
@@ -45,13 +82,19 @@ public class ViewEdicion {
         formulario.getChildren().addAll(campo("Nombre del evento",nombre),campo("Tipo de evento",tipo),fechas,campo("Lugar",lugar),new HBox(12,restablecer,guardar));
         formulario.getStyleClass().add("card"); formulario.setDisable(true);
         VBox seleccion=new VBox(14,campo("Organizador de la sesión",organizador),campo("Evento",evento)); seleccion.getStyleClass().add("card");
-        Button regresar=new Button("← Crear evento"); regresar.getStyleClass().add("btn-secondary"); regresar.setOnAction(e->volver.run());
         Label titulo=new Label("Editar evento"); titulo.getStyleClass().add("page-title");
         Label ayuda=new Label("Solo se pueden editar eventos en planeación. Presupuesto, invitados y organizador se conservarán."); ayuda.setWrapText(true); ayuda.getStyleClass().add("muted");
-        VBox contenido=new VBox(22,regresar,titulo,ayuda,seleccion,mensaje,formulario); contenido.setMaxWidth(950); contenido.getStyleClass().add("content");
+        VBox contenido=new VBox(22,titulo,ayuda,seleccion,mensaje,formulario); contenido.setMaxWidth(950); contenido.getStyleClass().add("content");
         StackPane centro=new StackPane(contenido); centro.setAlignment(Pos.TOP_CENTER);
         ScrollPane scroll=new ScrollPane(centro); scroll.setFitToWidth(true); scroll.getStyleClass().add("content-scroll");
-        BorderPane raiz=new BorderPane(scroll); raiz.getStyleClass().add("app");
+        BorderPane principal=new BorderPane(scroll);
+        principal.setTop(MenuCompartido.crearBarraSuperior(sesion,"Editar evento","Mis eventos",volver));
+        BorderPane raiz=new BorderPane();
+        raiz.setLeft(MenuCompartido.crear(
+                sesion,MenuCompartido.Pagina.MIS_EVENTOS,abrirEventos,
+                abrirInvitados,abrirCatalogo,null,cerrarSesion,abrirMisEventos));
+        raiz.setCenter(principal);
+        raiz.getStyleClass().add("app");
         try { organizador.setText(controller.nombreOrganizadorEdicion()); cargarEventos(); }
         catch(IllegalStateException e) { mostrar(e.getMessage(),false); }
         return raiz;
@@ -59,7 +102,21 @@ public class ViewEdicion {
 
     private void cargarEventos() {
         limpiar();
-        try { evento.getItems().setAll(controller.listarEventosParaEditar()); }
+        try {
+            evento.getItems().setAll(controller.listarEventosParaEditar());
+            if(eventoInicial!=null) {
+                Evento seleccionado=evento.getItems().stream()
+                        .filter(e->eventoInicial.equals(e.getIdEvento()))
+                        .findFirst()
+                        .orElse(null);
+                if(seleccionado==null) {
+                    mostrar("El evento seleccionado ya no está disponible para esta cuenta.",false);
+                } else {
+                    evento.getSelectionModel().select(seleccionado);
+                    evento.setDisable(true);
+                }
+            }
+        }
         catch(IllegalStateException e) { mostrar(e.getMessage(),false); }
     }
 
