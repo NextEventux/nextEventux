@@ -1,4 +1,6 @@
+
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -15,8 +17,8 @@ import services.ServiceAutenticacion;
 
 public class DatosDemostracionH2Test {
 
-    private static final String TEST_URL =
-            "jdbc:h2:mem:datos_demostracion;DB_CLOSE_DELAY=-1";
+    private static final String TEST_URL
+            = "jdbc:h2:mem:datos_demostracion;DB_CLOSE_DELAY=-1";
 
     @Test
     void usuariosDeDemostracionDebenPoderIngresar() throws Exception {
@@ -24,8 +26,8 @@ public class DatosDemostracionH2Test {
         System.setProperty("nexteventux.db.url", TEST_URL);
 
         try {
-            try (Connection connection =
-                         DatabaseConnection.getConnection(TEST_URL)) {
+            try (Connection connection
+                    = DatabaseConnection.getConnection(TEST_URL)) {
 
                 assertTrue(
                         connection.getMetaData()
@@ -35,8 +37,8 @@ public class DatosDemostracionH2Test {
                 CargarDatosEjemplo.cargar(connection);
             }
 
-            ServiceAutenticacion service =
-                    new ServiceAutenticacion(
+            ServiceAutenticacion service
+                    = new ServiceAutenticacion(
                             new RepositoryAutenticacion());
 
             comprobarUsuario(service, "valentina", "ORGANIZADOR");
@@ -51,12 +53,10 @@ public class DatosDemostracionH2Test {
             comprobarUsuario(service, "mateo", "ADMINISTRADOR");
             comprobarUsuario(service, "shirly", "ADMINISTRADOR");
 
-            try (Connection connection =
-                         DatabaseConnection.getConnection(TEST_URL);
-                 Statement statement =
-                         connection.createStatement();
-                 ResultSet result =
-                         statement.executeQuery("""
+            try (Connection connection
+                    = DatabaseConnection.getConnection(TEST_URL); Statement statement
+                    = connection.createStatement(); ResultSet result
+                    = statement.executeQuery("""
                                  SELECT COUNT(*)
                                  FROM Invitado
                                  WHERE id_invitado IN (5, 6, 7)
@@ -64,6 +64,41 @@ public class DatosDemostracionH2Test {
 
                 assertTrue(result.next());
                 assertEquals(3, result.getInt(1));
+            }
+
+            try (Connection connection
+                    = DatabaseConnection.getConnection(TEST_URL)) {
+
+                comprobarContador(connection, "USUARIO", "ID_USUARIO", 17);
+                comprobarContador(connection, "USUARIO_ROL", "ID_USUARIO_ROL", 17);
+                comprobarContador(connection, "ORGANIZADOR", "ID_ORGANIZADOR", 6);
+                comprobarContador(connection, "PROVEEDOR", "ID_PROVEEDOR", 6);
+                comprobarContador(connection, "INVITADO", "ID_INVITADO", 8);
+
+                String sql = """
+                        INSERT INTO Usuario
+                        (nombre, usuario, contraseña, estado,
+                         fecha_registro, acepta_marketing, tipo_usuario)
+                        VALUES
+                        ('Usuario nuevo de prueba', 'nuevo.prueba',
+                         '1234', 'ACTIVO', CURRENT_TIMESTAMP,
+                         FALSE, 'ORGANIZADOR')
+                        """;
+
+                try (PreparedStatement statement
+                        = connection.prepareStatement(
+                                sql,
+                                Statement.RETURN_GENERATED_KEYS)) {
+
+                    assertEquals(1, statement.executeUpdate());
+
+                    try (ResultSet keys
+                            = statement.getGeneratedKeys()) {
+
+                        assertTrue(keys.next());
+                        assertEquals(17, keys.getInt(1));
+                    }
+                }
             }
 
         } finally {
@@ -76,10 +111,38 @@ public class DatosDemostracionH2Test {
             String usuario,
             String tipoEsperado) {
 
-        SesionUsuario sesion =
-                service.iniciarSesion(usuario, "1234");
+        SesionUsuario sesion
+                = service.iniciarSesion(usuario, "1234");
 
         assertNotNull(sesion);
         assertEquals(tipoEsperado, sesion.getTipoUsuario());
+    }
+
+    private void comprobarContador(
+            Connection connection,
+            String tabla,
+            String columna,
+            long siguienteId) throws Exception {
+
+        String sql = """
+                SELECT IDENTITY_BASE
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = 'PUBLIC'
+                  AND TABLE_NAME = ?
+                  AND COLUMN_NAME = ?
+                """;
+
+        try (PreparedStatement statement
+                = connection.prepareStatement(sql)) {
+
+            statement.setString(1, tabla);
+            statement.setString(2, columna);
+
+            try (ResultSet result = statement.executeQuery()) {
+
+                assertTrue(result.next());
+                assertEquals(siguienteId, result.getLong(1));
+            }
+        }
     }
 }
