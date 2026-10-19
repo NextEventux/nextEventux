@@ -2,7 +2,12 @@ package views;
 
 import controllers.ControllerEventos;
 import entities.Evento;
+import entities.SesionUsuario;
+import entities.Organizador;
 import javafx.geometry.Insets;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
@@ -17,9 +22,13 @@ import java.util.Locale;
 
 public class ViewEventos {
     private final ControllerEventos controller;
+    private SesionUsuario sesion;
+    private Runnable abrirPublicacion = () -> {};
+    private Runnable abrirCancelacion = () -> {};
+    private Runnable abrirEdicion = () -> {};
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
-    private final TextField organizador = campo("organizador", "Identificador del organizador");
+    private final ComboBox<Organizador> organizador = new ComboBox<>();
     private final DatePicker fechaInicio = new DatePicker();
     private final DatePicker fechaFin = new DatePicker();
     private final TextField horaInicio = campo("horaInicio", "09:00");
@@ -36,6 +45,16 @@ public class ViewEventos {
     public ViewEventos(ControllerEventos controller) {
         this.controller = controller;
         formatoCOP.setMaximumFractionDigits(2);
+        organizador.setId("organizador");
+        organizador.setPromptText("Seleccionar organizador");
+        organizador.setMaxWidth(Double.MAX_VALUE);
+        organizador.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Organizador item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(item == null ? organizador.getPromptText() : item.nombre());
+            }
+        });
         tipo.setId("tipo");
         tipo.setPromptText("Seleccionar tipo");
         tipo.getItems().addAll("Corporativo", "Social", "Cultural", "Otro");
@@ -61,6 +80,27 @@ public class ViewEventos {
         resumenInvitados.setId("resumenInvitados");
         presupuesto.textProperty().addListener((observable, anterior, actual) -> actualizarResumen());
         invitados.textProperty().addListener((observable, anterior, actual) -> actualizarResumen());
+    }
+
+    public ViewEventos(ControllerEventos controller, Runnable abrirPublicacion) {
+        this(controller);
+        this.abrirPublicacion = abrirPublicacion;
+    }
+
+    public ViewEventos(ControllerEventos controller, Runnable abrirPublicacion, Runnable abrirCancelacion) {
+        this(controller, abrirPublicacion);
+        this.abrirCancelacion = abrirCancelacion;
+    }
+
+    public ViewEventos(ControllerEventos controller, Runnable abrirPublicacion, Runnable abrirCancelacion, Runnable abrirEdicion) {
+        this(controller, abrirPublicacion, abrirCancelacion);
+        this.abrirEdicion = abrirEdicion;
+    }
+
+    public ViewEventos(ControllerEventos controller, SesionUsuario sesion, Runnable abrirEdicion) {
+        this(controller);
+        this.sesion = sesion;
+        this.abrirEdicion = abrirEdicion;
     }
 
     public Parent crearPantalla() {
@@ -113,7 +153,25 @@ public class ViewEventos {
             sidebar.setVisible(actual.doubleValue() >= 1000);
             sidebar.setManaged(sidebar.isVisible());
         });
+        cargarOrganizadores();
         return raiz;
+    }
+
+    private void cargarOrganizadores() {
+        try {
+            if (sesion == null) {
+                organizador.getItems().setAll(controller.listarOrganizadores());
+            } else {
+                organizador.getItems().setAll(new Organizador(sesion.getIdActor(), controller.nombreOrganizadorEdicion()));
+                organizador.getSelectionModel().selectFirst();
+                organizador.setDisable(true);
+            }
+            if (organizador.getItems().isEmpty()) {
+                mostrarMensaje("No hay organizadores registrados. Registra un organizador antes de crear el evento.", false);
+            }
+        } catch (IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), false);
+        }
     }
 
     private VBox crearMenu() {
@@ -121,8 +179,16 @@ public class ViewEventos {
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
-        VBox marca = new VBox(5, etiqueta("🎪", "brand-icon"), etiqueta("nextEventux", "brand"),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        ImageView logo = new ImageView(new Image(
+                getClass().getResource("/images/nexteventux-logo.png").toExternalForm()));
+        // Excluir el margen blanco al mostrar la imagen, sin modificar el archivo original.
+        logo.setViewport(new Rectangle2D(75, 225, 1110, 725));
+        logo.setFitWidth(210);
+        logo.setFitHeight(138);
+        logo.setPreserveRatio(true);
+        logo.setSmooth(true);
+        logo.setAccessibleText("Logo de NextEventux");
+        VBox marca = new VBox(5, logo, etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
         marca.setAlignment(Pos.CENTER);
         VBox.setMargin(marca, new Insets(0, 0, 38, 0));
         menu.getChildren().addAll(marca, etiqueta("MENÚ PRINCIPAL", "menu-title"));
@@ -133,6 +199,20 @@ public class ViewEventos {
             if (opcion.contains("Crear evento")) item.getStyleClass().add("active");
             menu.getChildren().add(item);
         }
+        Button publicaciones = new Button("↑ Subir al repositorio");
+        publicaciones.setId("abrirPublicacion");
+        publicaciones.setDisable(sesion != null);
+        publicaciones.getStyleClass().add("btn-secondary");
+        publicaciones.setMaxWidth(Double.MAX_VALUE);
+        publicaciones.setOnAction(event -> abrirPublicacion.run());
+        menu.getChildren().add(publicaciones);
+        Button cancelar = new Button("Cancelar evento");
+        cancelar.setDisable(sesion != null);
+        cancelar.setId("abrirCancelacion"); cancelar.getStyleClass().add("btn-secondary");
+        cancelar.setMaxWidth(Double.MAX_VALUE); cancelar.setOnAction(event -> abrirCancelacion.run());
+        menu.getChildren().add(cancelar);
+        Button editar = new Button("Editar evento"); editar.setId("abrirEdicion"); editar.getStyleClass().add("btn-secondary");
+        editar.setMaxWidth(Double.MAX_VALUE); editar.setOnAction(event -> abrirEdicion.run()); menu.getChildren().add(editar);
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
         VBox perfil = new VBox(4, etiqueta("Organizador", "profile-name"), etiqueta("Mi cuenta", "hint"));
@@ -144,8 +224,17 @@ public class ViewEventos {
     }
 
     private HBox crearBarraSuperior() {
+        MenuItem publicar = new MenuItem("Subir al repositorio");
+        publicar.setDisable(sesion != null);
+        publicar.setOnAction(event -> abrirPublicacion.run());
+        MenuItem cancelar = new MenuItem("Cancelar evento");
+        cancelar.setDisable(sesion != null);
+        cancelar.setOnAction(event -> abrirCancelacion.run());
+        MenuItem editar = new MenuItem("Editar evento"); editar.setOnAction(event -> abrirEdicion.run());
+        MenuButton eventos = new MenuButton("Eventos", null, editar, publicar, cancelar);
+        eventos.setId("menuEventos");
         HBox barra = new HBox(18, etiqueta("Inicio / Mis eventos /", "breadcrumb"),
-                etiqueta("Crear evento", "breadcrumb-current"), espacioHorizontal(),
+                etiqueta("Crear evento", "breadcrumb-current"), espacioHorizontal(), eventos,
                 etiqueta("♧", "notification"), etiqueta("Organizador", "user-badge"));
         barra.setAlignment(Pos.CENTER_LEFT);
         barra.getStyleClass().add("topbar");
@@ -162,7 +251,7 @@ public class ViewEventos {
         GridPane datos = grilla();
         datos.add(grupo("Nombre del evento *", nombre, null), 0, 0, 2, 1);
         datos.add(grupo("Tipo de evento *", tipo, null), 0, 1);
-        datos.add(grupo("Organizador (ID) *", organizador, null), 1, 1);
+        datos.add(grupo("Organizador *", organizador, null), 1, 1);
         datos.add(grupo("Fecha de inicio *", fechaInicio, null), 0, 2);
         datos.add(grupo("Hora de inicio *", horaInicio, "Formato de 24 horas: HH:mm"), 1, 2);
         datos.add(grupo("Fecha de fin *", fechaFin, null), 0, 3);
@@ -206,6 +295,8 @@ public class ViewEventos {
 
     private void crearDesdeFormulario() {
         try {
+            if (organizador.getValue() == null)
+                throw new IllegalArgumentException("Selecciona un organizador.");
             if (fechaInicio.getValue() == null || fechaFin.getValue() == null)
                 throw new IllegalArgumentException("Selecciona las fechas de inicio y fin.");
             LocalTime inicio = leerHora(horaInicio.getText(), "inicio");
@@ -216,7 +307,7 @@ public class ViewEventos {
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Ingresa un presupuesto numérico; usa punto para los decimales.");
             }
-            Evento datos = new Evento(leerEntero(organizador.getText(), "organizador"), nombre.getText().trim(),
+            Evento datos = new Evento(organizador.getValue().id(), nombre.getText().trim(),
                     tipo.getValue(), descripcion.getText().trim(), LocalDateTime.of(fechaInicio.getValue(), inicio),
                     LocalDateTime.of(fechaFin.getValue(), fin), lugar.getText().trim(), valor,
                     leerEntero(invitados.getText(), "invitados iniciales"));
@@ -260,7 +351,8 @@ public class ViewEventos {
     }
 
     private void limpiarFormulario() {
-        for (TextField campo : new TextField[]{nombre, organizador, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) campo.clear();
+        for (TextField campo : new TextField[]{nombre, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) campo.clear();
+        if (sesion == null) organizador.getSelectionModel().clearSelection();
         tipo.getSelectionModel().clearSelection();
         fechaInicio.setValue(null);
         fechaFin.setValue(null);
