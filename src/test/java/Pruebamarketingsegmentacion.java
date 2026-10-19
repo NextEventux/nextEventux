@@ -60,7 +60,7 @@ public class PruebaMarketingSegmentacion {
         solicitudes.add(new SolicitudEvento(15, "Cultural", 2));
         solicitudes.add(new SolicitudEvento(16, "Corporativo", 2));
 
-        List<SegmentoCalculado> segmentos = new ServiceMarketing().calcularSegmentos(clientes, solicitudes, HOY);
+        List<SegmentoCalculado> segmentos = new ServiceMarketing(new RepositoryMarketing()).calcularSegmentos(clientes, solicitudes, HOY);
 
         comprobar(segmentos.size() == 2, "Deben resultar 2 segmentos.");
 
@@ -79,7 +79,7 @@ public class PruebaMarketingSegmentacion {
         comprobar(cartagena.getTipoEvento().equals("Corporativo"), "En el empate debe ganar Corporativo.");
 
         try {
-            new ServiceMarketing().calcularSegmentos(null, solicitudes, HOY);
+            new ServiceMarketing(new RepositoryMarketing()).calcularSegmentos(null, solicitudes, HOY);
             throw new AssertionError("Debió rechazar una lista de clientes nula.");
         } catch (IllegalArgumentException esperado) {
             // Es el comportamiento correcto.
@@ -95,7 +95,7 @@ public class PruebaMarketingSegmentacion {
         }
 
         RepositoryMarketing repositorio = new RepositoryMarketing(url);
-        List<SegmentoCalculado> segmentos = new ServiceMarketing().calcularSegmentos(
+        List<SegmentoCalculado> segmentos = new ServiceMarketing(repositorio).calcularSegmentos(
                 repositorio.listarClientesActivos(), repositorio.contarSolicitudesPorTipo(), HOY);
         for (SegmentoCalculado segmento : segmentos) {
             System.out.println(segmento.getCiudad() + " | " + segmento.getRangoEdad().getEtiqueta()
