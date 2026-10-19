@@ -347,13 +347,19 @@ public class ViewSolicitudesProveedor {
         BigDecimal valor;
 
         try {
-            valor = new BigDecimal(
-                    precioIngresado.get().trim());
+            valor = PrecioPropuestaParser.parsear(
+                    precioIngresado.get());
 
         } catch (NumberFormatException e) {
             mostrarError(
                     "El precio debe ser un numero valido. "
                     + "Ejemplo: 1500000");
+            return;
+        }
+
+        if (valor.signum() <= 0) {
+            mostrarError(
+                    "El precio final debe ser mayor que cero.");
             return;
         }
 
