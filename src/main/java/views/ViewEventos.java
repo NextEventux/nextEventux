@@ -23,6 +23,7 @@ import java.util.Locale;
 public class ViewEventos {
     private final ControllerEventos controller;
     private SesionUsuario sesion;
+    private boolean publicacionDisponible;
     private Runnable abrirPublicacion = () -> {};
     private Runnable abrirCancelacion = () -> {};
     private Runnable abrirEdicion = () -> {};
@@ -101,6 +102,12 @@ public class ViewEventos {
         this(controller);
         this.sesion = sesion;
         this.abrirEdicion = abrirEdicion;
+    }
+
+    public ViewEventos(ControllerEventos controller, SesionUsuario sesion, Runnable abrirEdicion, Runnable abrirPublicacion) {
+        this(controller, sesion, abrirEdicion);
+        this.abrirPublicacion = abrirPublicacion;
+        this.publicacionDisponible = true;
     }
 
     public Parent crearPantalla() {
@@ -201,7 +208,7 @@ public class ViewEventos {
         }
         Button publicaciones = new Button("↑ Subir al repositorio");
         publicaciones.setId("abrirPublicacion");
-        publicaciones.setDisable(sesion != null);
+        publicaciones.setDisable(sesion != null && !publicacionDisponible);
         publicaciones.getStyleClass().add("btn-secondary");
         publicaciones.setMaxWidth(Double.MAX_VALUE);
         publicaciones.setOnAction(event -> abrirPublicacion.run());
@@ -225,7 +232,7 @@ public class ViewEventos {
 
     private HBox crearBarraSuperior() {
         MenuItem publicar = new MenuItem("Subir al repositorio");
-        publicar.setDisable(sesion != null);
+        publicar.setDisable(sesion != null && !publicacionDisponible);
         publicar.setOnAction(event -> abrirPublicacion.run());
         MenuItem cancelar = new MenuItem("Cancelar evento");
         cancelar.setDisable(sesion != null);
