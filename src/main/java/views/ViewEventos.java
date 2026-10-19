@@ -2,6 +2,7 @@ package views;
 
 import controllers.ControllerEventos;
 import entities.Evento;
+import entities.SesionUsuario;
 import entities.Organizador;
 import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
@@ -21,6 +22,7 @@ import java.util.Locale;
 
 public class ViewEventos {
     private final ControllerEventos controller;
+    private SesionUsuario sesion;
     private Runnable abrirPublicacion = () -> {};
     private Runnable abrirCancelacion = () -> {};
     private Runnable abrirEdicion = () -> {};
@@ -95,6 +97,12 @@ public class ViewEventos {
         this.abrirEdicion = abrirEdicion;
     }
 
+    public ViewEventos(ControllerEventos controller, SesionUsuario sesion, Runnable abrirEdicion) {
+        this(controller);
+        this.sesion = sesion;
+        this.abrirEdicion = abrirEdicion;
+    }
+
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().add("app");
@@ -151,7 +159,13 @@ public class ViewEventos {
 
     private void cargarOrganizadores() {
         try {
-            organizador.getItems().setAll(controller.listarOrganizadores());
+            if (sesion == null) {
+                organizador.getItems().setAll(controller.listarOrganizadores());
+            } else {
+                organizador.getItems().setAll(new Organizador(sesion.getIdActor(), controller.nombreOrganizadorEdicion()));
+                organizador.getSelectionModel().selectFirst();
+                organizador.setDisable(true);
+            }
             if (organizador.getItems().isEmpty()) {
                 mostrarMensaje("No hay organizadores registrados. Registra un organizador antes de crear el evento.", false);
             }
@@ -187,11 +201,13 @@ public class ViewEventos {
         }
         Button publicaciones = new Button("↑ Subir al repositorio");
         publicaciones.setId("abrirPublicacion");
+        publicaciones.setDisable(sesion != null);
         publicaciones.getStyleClass().add("btn-secondary");
         publicaciones.setMaxWidth(Double.MAX_VALUE);
         publicaciones.setOnAction(event -> abrirPublicacion.run());
         menu.getChildren().add(publicaciones);
         Button cancelar = new Button("Cancelar evento");
+        cancelar.setDisable(sesion != null);
         cancelar.setId("abrirCancelacion"); cancelar.getStyleClass().add("btn-secondary");
         cancelar.setMaxWidth(Double.MAX_VALUE); cancelar.setOnAction(event -> abrirCancelacion.run());
         menu.getChildren().add(cancelar);
@@ -209,8 +225,10 @@ public class ViewEventos {
 
     private HBox crearBarraSuperior() {
         MenuItem publicar = new MenuItem("Subir al repositorio");
+        publicar.setDisable(sesion != null);
         publicar.setOnAction(event -> abrirPublicacion.run());
         MenuItem cancelar = new MenuItem("Cancelar evento");
+        cancelar.setDisable(sesion != null);
         cancelar.setOnAction(event -> abrirCancelacion.run());
         MenuItem editar = new MenuItem("Editar evento"); editar.setOnAction(event -> abrirEdicion.run());
         MenuButton eventos = new MenuButton("Eventos", null, editar, publicar, cancelar);
@@ -334,7 +352,7 @@ public class ViewEventos {
 
     private void limpiarFormulario() {
         for (TextField campo : new TextField[]{nombre, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) campo.clear();
-        organizador.getSelectionModel().clearSelection();
+        if (sesion == null) organizador.getSelectionModel().clearSelection();
         tipo.getSelectionModel().clearSelection();
         fechaInicio.setValue(null);
         fechaFin.setValue(null);
