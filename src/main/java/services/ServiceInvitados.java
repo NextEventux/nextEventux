@@ -84,6 +84,7 @@ public class ServiceInvitados {
     public void actualizarInvitacion(int idInvitacion, Invitacion datos) {
         if (datos == null) throw new IllegalArgumentException("Completa los datos de la invitación.");
         Invitacion actual = buscarInvitacionActiva(idInvitacion);
+        validarEventoModificable(actual.getIdEvento());
         Lugar lugar = buscarLugar(datos.getIdLugar());
         validarMensaje(datos.getMensaje());
         if (lugar.getIdLugar() != actual.getIdLugar()) {
@@ -103,6 +104,7 @@ public class ServiceInvitados {
 
     public void revocarInvitacion(int idInvitacion) {
         Invitacion actual = buscarInvitacionActiva(idInvitacion);
+        validarEventoModificable(actual.getIdEvento());
         actual.setEstadoRespuesta(Invitacion.ESTADO_REVOCADA);
         repositoryInvitacion.actualizarInvitacion(actual);
     }
@@ -113,6 +115,7 @@ public class ServiceInvitados {
     public void agregarInvitado(int idInvitacion, Invitado datos) {
         if (datos == null) throw new IllegalArgumentException("Completa los datos del invitado.");
         Invitacion invitacion = buscarInvitacionActiva(idInvitacion);
+        validarEventoModificable(invitacion.getIdEvento());
         String nombre = limpiar(datos.getNombre());
         String correo = limpiar(datos.getCorreo());
         String telefono = limpiar(datos.getTelefono());
@@ -144,6 +147,8 @@ public class ServiceInvitados {
     public void quitarInvitado(int idInvitado) {
         Invitado invitado = repositoryInvitado.buscarInvitado(idInvitado);
         if (invitado == null) throw new IllegalArgumentException("El invitado no existe.");
+        Invitacion invitacion = repositoryInvitacion.buscarInvitacion(invitado.getIdInvitacion());
+        if (invitacion != null) validarEventoModificable(invitacion.getIdEvento());
         if (repositoryInvitado.tieneRegistrosAsociados(idInvitado)) {
             throw new IllegalArgumentException(invitado.getNombre() + " tiene acompañantes, necesidades especiales "
                     + "o regalos registrados; no se puede quitar de la invitación.");
@@ -155,15 +160,33 @@ public class ServiceInvitados {
     // Validaciones auxiliares
     // ------------------------------------------------------------------
     private Evento buscarEventoAbierto(int eventoId) {
-        Evento evento = repositoryEvento.listarEventos().stream()
+        Evento evento = buscarEvento(eventoId);
+        if (estaCerrado(evento)) {
+            throw new IllegalArgumentException("No se pueden enviar invitaciones a un evento "
+                    + evento.getEstado().trim().toLowerCase() + ".");
+        }
+        return evento;
+    }
+
+    /** En un evento cancelado o finalizado ya no se modifican invitaciones ni invitados. */
+    private void validarEventoModificable(int eventoId) {
+        Evento evento = buscarEvento(eventoId);
+        if (estaCerrado(evento)) {
+            throw new IllegalArgumentException("El evento está " + evento.getEstado().trim().toLowerCase()
+                    + "; ya no se pueden modificar sus invitaciones ni sus invitados.");
+        }
+    }
+
+    private Evento buscarEvento(int eventoId) {
+        return repositoryEvento.listarEventos().stream()
                 .filter(e -> e.getIdEvento() != null && e.getIdEvento() == eventoId)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Selecciona un evento registrado."));
-        String estado = evento.getEstado() == null ? "" : evento.getEstado().toUpperCase();
-        if (estado.equals("CANCELADO") || estado.equals("FINALIZADO")) {
-            throw new IllegalArgumentException("No se pueden enviar invitaciones a un evento " + estado.toLowerCase() + ".");
-        }
-        return evento;
+    }
+
+    private static boolean estaCerrado(Evento evento) {
+        String estado = evento.getEstado() == null ? "" : evento.getEstado().trim().toUpperCase();
+        return estado.equals("CANCELADO") || estado.equals("FINALIZADO");
     }
 
     private Invitacion buscarInvitacionActiva(int idInvitacion) {
