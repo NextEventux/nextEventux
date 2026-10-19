@@ -15,4 +15,8 @@ public class ControllerMarketing {
     public List<Segmentacion> segmentarClientes(int idAdministrador) {
         return serviceMarketing.segmentarClientes(idAdministrador);
     }
+
+    public List<Segmentacion> listarSegmentosActivos() {
+        return serviceMarketing.listarSegmentosActivos();
+    }
 }

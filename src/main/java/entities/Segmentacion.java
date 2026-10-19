@@ -62,4 +62,9 @@ public class Segmentacion {
     public int getCantidadClientes() {
         return idsClientes.size();
     }
+    //Segmentos que ya existen en la BD
+    public Segmentacion(Integer idSegmento, int idUsuario, String nombre, String criterios, String descripcion, String estado, List<Integer> idsClientes) {
+        this(idUsuario, nombre, criterios, descripcion, estado, idsClientes);
+        this.idSegmento = idSegmento;
+    }
 }

@@ -153,4 +153,42 @@ public class RepositoryMarketing {
             statement.executeBatch();
         }
     }
+    public List<Segmentacion> listarSegmentosActivos() {
+        String sql = "SELECT id_segmento, id_usuario, nombre, criterios, descripcion, estados " + "FROM Segmentacion WHERE estados = ? ORDER BY id_segmento";
+        List<Segmentacion> segmentos = new ArrayList<>();
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, Segmentacion.ESTADO_ACTIVA);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    int idSegmento = result.getInt("id_segmento");
+                    segmentos.add(new Segmentacion(
+                            idSegmento,
+                            result.getInt("id_usuario"),
+                            result.getString("nombre"),
+                            result.getString("criterios"),
+                            result.getString("descripcion"),
+                            result.getString("estados"),
+                            listarIdsClientes(connection, idSegmento)));
+                }
+            }
+            return segmentos;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron consultar los segmentos. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    private List<Integer> listarIdsClientes(Connection connection, int idSegmento) throws SQLException {
+        String sql = "SELECT id_usuario FROM Segmento_cliente WHERE id_segmento = ? ORDER BY id_usuario";
+        List<Integer> ids = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, idSegmento);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    ids.add(result.getInt("id_usuario"));
+                }
+            }
+        }
+        return ids;
+    }
 }

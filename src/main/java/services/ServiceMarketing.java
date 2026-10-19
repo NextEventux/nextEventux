@@ -29,6 +29,10 @@ public class ServiceMarketing {
         }
     }
 
+    public List<Segmentacion> listarSegmentosActivos() {
+        return repositorio.listarSegmentosActivos();
+    }
+    
     public List<Segmentacion> segmentarClientes(int idAdministrador) {
         return segmentarClientes(idAdministrador, LocalDate.now());
     }
@@ -64,7 +68,7 @@ public class ServiceMarketing {
         return new Segmentacion(idAdministrador, nombre, criterios, descripcion,
                 Segmentacion.ESTADO_ACTIVA, calculado.getIdsClientes());
     }
-    
+
     public List<SegmentoCalculado> calcularSegmentos(List<ClienteMarketing> clientes, List<SolicitudEvento> solicitudes, LocalDate hoy) {
         if (clientes == null || solicitudes == null || hoy == null) {
             throw new IllegalArgumentException("Se requieren los clientes, las solicitudes y la fecha actual.");
