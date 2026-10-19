@@ -18,7 +18,11 @@ public class Navegacion {
         CATALOGO_SERVICIOS("NextEventux | Proveedores"),
         DETALLE_SERVICIO("NextEventux | Detalle del servicio"),
         MIS_SERVICIOS("NextEventux | Mis servicios"),
-        DETALLE_SERVICIO_PROVEEDOR("NextEventux | Administración del servicio");
+        DETALLE_SERVICIO_PROVEEDOR("NextEventux | Administración del servicio"),
+        MIS_EVENTOS("NextEventux | Mis eventos"),
+        EDICION_EVENTO("NextEventux | Editar evento"),
+        CANCELACION_EVENTO("NextEventux | Cancelar evento"),
+        PUBLICACION_EVENTOS("NextEventux | Publicación de eventos");
 
         private final String titulo;
 

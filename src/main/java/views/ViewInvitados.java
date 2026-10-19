@@ -96,6 +96,7 @@ public final class ViewInvitados {
     private final Runnable abrirInvitados;
     private final Runnable abrirCatalogo;
     private final Runnable cerrarSesion;
+    private final Runnable abrirMisEventos;
 
     private final ObservableList<FilaInvitacion> filas = FXCollections.observableArrayList();
     private final FilteredList<FilaInvitacion> filtradas = new FilteredList<>(filas, fila -> true);
@@ -153,12 +154,26 @@ public final class ViewInvitados {
             Runnable cerrarSesion,
             SesionUsuario sesion) {
 
+        this(controller, abrirEventos, abrirInvitados, abrirCatalogo,
+                cerrarSesion, sesion, null);
+    }
+
+    public ViewInvitados(
+            ControllerInvitados controller,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable cerrarSesion,
+            SesionUsuario sesion,
+            Runnable abrirMisEventos) {
+
         this.controller = controller;
         this.abrirEventos = abrirEventos;
         this.abrirInvitados = abrirInvitados;
         this.abrirCatalogo = abrirCatalogo;
         this.cerrarSesion = cerrarSesion;
         this.sesion = sesion;
+        this.abrirMisEventos = abrirMisEventos;
 
         selectorEvento.setId("selectorEvento");
         selectorEvento.setPromptText("Selecciona un evento");
@@ -320,7 +335,8 @@ public final class ViewInvitados {
                 abrirInvitados,
                 abrirCatalogo,
                 null,
-                cerrarSesion);
+                cerrarSesion,
+                abrirMisEventos);
     }
 
     private HBox crearBarraSuperior() {

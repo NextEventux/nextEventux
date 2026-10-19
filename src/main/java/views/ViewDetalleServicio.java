@@ -28,6 +28,7 @@ public class ViewDetalleServicio {
     private final Runnable abrirEventos;
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private final Runnable abrirMisEventos;
 
     private final FlowPane imagenes =
             new FlowPane();
@@ -59,7 +60,8 @@ public class ViewDetalleServicio {
                 volverCatalogo,
                 abrirEventos,
                 null,
-                cerrarSesion);
+                cerrarSesion,
+                null);
     }
 
     public ViewDetalleServicio(
@@ -72,6 +74,21 @@ public class ViewDetalleServicio {
             Runnable abrirInvitados,
             Runnable cerrarSesion) {
 
+        this(controller, servicio, idOrganizador, sesion, volverCatalogo,
+                abrirEventos, abrirInvitados, cerrarSesion, null);
+    }
+
+    public ViewDetalleServicio(
+            ControllerProveedores controller,
+            Servicio servicio,
+            int idOrganizador,
+            SesionUsuario sesion,
+            Runnable volverCatalogo,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos) {
+
         this.controller = controller;
         this.servicio = servicio;
         this.idOrganizador = idOrganizador;
@@ -80,6 +97,7 @@ public class ViewDetalleServicio {
         this.abrirEventos = abrirEventos;
         this.abrirInvitados = abrirInvitados;
         this.cerrarSesion = cerrarSesion;
+        this.abrirMisEventos = abrirMisEventos;
 
         formatoCOP.setMaximumFractionDigits(0);
 
@@ -266,7 +284,8 @@ public class ViewDetalleServicio {
                 abrirInvitados,
                 volverCatalogo,
                 null,
-                cerrarSesion);
+                cerrarSesion,
+                abrirMisEventos);
     }
 
     private HBox crearBarraSuperior() {
