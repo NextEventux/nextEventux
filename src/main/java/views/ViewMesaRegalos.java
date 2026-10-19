@@ -9,16 +9,16 @@ import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiConsumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.util.StringConverter;
+import views.components.MenuCompartido;
 
 /**
  * CU-20 - Interactuar con la mesa de regalos virtual (vista del invitado).
@@ -33,7 +33,6 @@ import javafx.util.StringConverter;
 public final class ViewMesaRegalos {
 
     private static final String CSS = "/styles/invitados.css";
-    private static final String LOGO = "/images/logo-nexteventux.png";
     private static final double ANCHO_PANEL = 300;
     /** Ancho de ventana desde el cual el panel derecho va al lado de los regalos. */
     private static final double ANCHO_PANEL_LATERAL = 1300;
@@ -71,6 +70,22 @@ public final class ViewMesaRegalos {
     private final Label reservadosValor = new Label("0");
     private final Label misReservasValor = new Label("0");
     private final Label detalleEvento = new Label();
+
+    /** Acciones del menú del invitado; son null cuando la pantalla se abre sola con su lanzador. */
+    private Runnable abrirInvitaciones;
+    private Runnable abrirMesaRegalos;
+    private Runnable salir;
+    /** Avisa el correo y el teléfono verificados para no pedirlos otra vez en la otra pantalla. */
+    private BiConsumer<String, String> alVerificar;
+
+    public ViewMesaRegalos(ControllerInvitados controller, Runnable abrirInvitaciones, Runnable abrirMesaRegalos,
+                    Runnable salir, BiConsumer<String, String> alVerificar) {
+        this(controller);
+        this.abrirInvitaciones = abrirInvitaciones;
+        this.abrirMesaRegalos = abrirMesaRegalos;
+        this.salir = salir;
+        this.alVerificar = alVerificar;
+    }
 
     public ViewMesaRegalos(ControllerInvitados controller) {
         this.controller = controller;
@@ -238,49 +253,43 @@ public final class ViewMesaRegalos {
         return raiz;
     }
 
+    /** Llena correo y teléfono ya verificados en la otra pantalla y consulta, si aún no se ha hecho. */
+    public void usarDatos(String correoInvitado, String telefonoInvitado) {
+        if (correoInvitado == null || telefonoInvitado == null) return;
+        if (correoInvitado.equals(correoVerificado) && telefonoInvitado.equals(telefonoVerificado)) return;
+        correo.setText(correoInvitado);
+        telefono.setText(telefonoInvitado);
+        consultar();
+    }
+
     private VBox crearMenu() {
+        if (abrirInvitaciones != null || abrirMesaRegalos != null || salir != null) {
+            return MenuCompartido.crearInvitado(MenuCompartido.Pagina.MESA_REGALOS,
+                    abrirInvitaciones, abrirMesaRegalos, salir);
+        }
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
-        VBox marca = new VBox(10, crearLogo(), etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        VBox marca = new VBox(
+                10,
+                MenuCompartido.crearLogo(),
+                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
         marca.setAlignment(Pos.CENTER);
         VBox.setMargin(marca, new Insets(0, 0, 38, 0));
-        menu.getChildren().addAll(marca, etiqueta("MENÚ DEL INVITADO", "menu-title"));
-        String[] opciones = {"⌂  Inicio", "✉  Mis invitaciones", "♡  Mesa de regalos", "⚙  Mi perfil"};
-        for (String opcion : opciones) {
-            Label item = etiqueta(opcion, "menu-item");
-            item.setMaxWidth(Double.MAX_VALUE);
-            if (opcion.contains("Mesa de regalos")) item.getStyleClass().add("active");
-            menu.getChildren().add(item);
-        }
+        menu.getChildren().addAll(
+                marca,
+                etiqueta("MESA DE REGALOS", "menu-title"));
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
-        VBox perfil = new VBox(4, etiqueta("Invitado", "profile-name"), etiqueta("Mi cuenta", "hint"));
-        HBox cuenta = new HBox(12, etiqueta("IN", "avatar"), perfil);
-        cuenta.setAlignment(Pos.CENTER_LEFT);
-        cuenta.getStyleClass().add("sidebar-bottom");
-        menu.getChildren().addAll(espacio, cuenta);
+        menu.getChildren().add(espacio);
         return menu;
     }
 
-    private Node crearLogo() {
-        URL imagen = getClass().getResource(LOGO);
-        if (imagen == null) return new Region();
-        ImageView logo = new ImageView(new Image(imagen.toExternalForm()));
-        logo.setFitWidth(190);
-        logo.setPreserveRatio(true);
-        logo.setSmooth(true);
-        return logo;
-    }
-
     private HBox crearBarraSuperior() {
-        HBox barra = new HBox(18, etiqueta("Inicio /", "breadcrumb"),
-                etiqueta("Mesa de regalos", "breadcrumb-current"), espacioHorizontal(),
-                etiqueta("♧", "notification"), etiqueta("Invitado", "user-badge"));
-        barra.setAlignment(Pos.CENTER_LEFT);
-        barra.getStyleClass().add("topbar");
-        return barra;
+        return MenuCompartido.crearBarraSuperior(
+                "Mesa de regalos",
+                null);
     }
 
     private VBox crearTarjetaBusqueda() {
@@ -393,6 +402,7 @@ public final class ViewMesaRegalos {
         }
         correoVerificado = texto;
         telefonoVerificado = tel;
+        if (alVerificar != null) alVerificar.accept(texto, tel);
         ocultarMensaje();
         InvitacionRecibida elegida = invitaciones.stream().filter(inv -> inv.getIdInvitado() == idAnterior)
                 .findFirst().orElse(invitaciones.get(0));

@@ -18,9 +18,27 @@ public class LanzadorInvitados extends Application {
     @Override
     public void start(Stage stage) {
         ControllerEventos controller = new ControllerEventos(new ServiceEventos(new RepositoryEvento()));
-        Navegacion navegacion = new Navegacion()
-                .registrar(Navegacion.Pantalla.EVENTOS, () -> new ViewEventos(controller).crearPantalla())
-                .registrar(Navegacion.Pantalla.INVITADOS, () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla());
+        Navegacion navegacion = new Navegacion();
+        navegacion
+                .registrar(
+                        Navegacion.Pantalla.EVENTOS,
+                        () -> new ViewEventos(
+                                controller,
+                                () -> navegacion.ir(Navegacion.Pantalla.EVENTOS),
+                                null,
+                                () -> navegacion.ir(Navegacion.Pantalla.INVITADOS),
+                                null,
+                                null).crearPantalla())
+                .registrar(
+                        Navegacion.Pantalla.INVITADOS,
+                        () -> new ViewInvitados(
+                                new ControllerInvitados(
+                                        new ServiceInvitados()),
+                                () -> navegacion.ir(Navegacion.Pantalla.EVENTOS),
+                                () -> navegacion.ir(Navegacion.Pantalla.INVITADOS),
+                                null,
+                                null,
+                                null).crearPantalla());
         Scene scene = navegacion.crearEscena(Navegacion.Pantalla.INVITADOS, 1440, 900);
         scene.getStylesheets().add(getClass().getResource("/styles/eventos.css").toExternalForm());
         stage.setTitle("NextEventux | Invitaciones");
