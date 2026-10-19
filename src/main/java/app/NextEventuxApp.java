@@ -1,8 +1,11 @@
+
 package app;
 
 import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
 import controllers.ControllerInvitados;
+import controllers.ControllerProveedores;
+import entities.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -16,12 +19,19 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
+import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
+import repositories.RepositoryServicio;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
 import services.ServiceInvitados;
+import services.ServiceProveedores;
+import views.ViewCatalogoServicios;
+import views.ViewDetalleServicio;
+import views.ViewDetalleServicioProveedor;
 import views.ViewEventos;
 import views.ViewInvitados;
+import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
 
 public class NextEventuxApp extends Application {
@@ -29,6 +39,9 @@ public class NextEventuxApp extends Application {
     private BorderPane contenedor;
     private ControllerEventos controllerEventos;
     private ControllerAutenticacion controllerAutenticacion;
+    private ControllerProveedores controllerProveedores;
+
+    private SesionUsuario sesionActual;
 
     @Override
     public void start(Stage stage) {
@@ -38,6 +51,11 @@ public class NextEventuxApp extends Application {
 
         controllerAutenticacion = new ControllerAutenticacion(
                 new ServiceAutenticacion(new RepositoryAutenticacion()));
+
+        controllerProveedores = new ControllerProveedores(
+                new ServiceProveedores(
+                        new RepositoryServicio(),
+                        new RepositoryDisponibilidadServicio()));
 
         contenedor = new BorderPane();
 
@@ -50,6 +68,9 @@ public class NextEventuxApp extends Application {
 
         scene.getStylesheets().add(
                 getClass().getResource("/styles/eventos.css").toExternalForm());
+
+        scene.getStylesheets().add(
+                getClass().getResource("/styles/proveedores.css").toExternalForm());
 
         scene.getStylesheets().add(
                 getClass().getResource("/styles/login.css").toExternalForm());
@@ -67,6 +88,7 @@ public class NextEventuxApp extends Application {
 
     private void mostrarLogin() {
 
+        sesionActual = null;
         contenedor.setTop(null);
 
         contenedor.setCenter(
@@ -77,6 +99,8 @@ public class NextEventuxApp extends Application {
     }
 
     private void procesarSesion(SesionUsuario sesion) {
+
+        sesionActual = sesion;
 
         String tipo = sesion.getTipoUsuario();
 
@@ -98,6 +122,16 @@ public class NextEventuxApp extends Application {
 
         HBox barra = new HBox(20, usuario, cerrarSesion);
 
+        if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
+
+            Button catalogo = new Button("Catálogo de proveedores");
+
+            catalogo.setOnAction(
+                    event -> mostrarCatalogoServicios());
+
+            barra.getChildren().add(1, catalogo);
+        }
+
         barra.setAlignment(Pos.CENTER_RIGHT);
         barra.setPadding(new Insets(12));
 
@@ -105,33 +139,135 @@ public class NextEventuxApp extends Application {
 
         if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
 
-            // El menú lateral permite ir de Eventos a Invitados (CU-17) y volver.
-            new Navegacion()
-                    .registrar(Navegacion.Pantalla.EVENTOS,
-                            () -> new ViewEventos(controllerEventos).crearPantalla())
-                    .registrar(Navegacion.Pantalla.INVITADOS,
-                            () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
-                    .mostrarEn(contenedor, Navegacion.Pantalla.EVENTOS);
+            mostrarEventos();
+
+        } else if ("PROVEEDOR".equalsIgnoreCase(tipo)) {
+
+            mostrarProveedores();
 
         } else {
 
-            String modulo = "ADMINISTRADOR".equalsIgnoreCase(tipo)
-                    ? "administración (CU03)"
-                    : "proveedores";
-
             Label pendiente = new Label(
-                    "Sesión iniciada correctamente como "
-                    + tipo.toLowerCase() + ".\n"
-                    + "El módulo de " + modulo
-                    + " está pendiente de integración.");
+                    "Sesión iniciada correctamente como administrador.\n"
+                    + "El módulo de administración (CU03) "
+                    + "está pendiente de integración.");
 
             pendiente.setStyle("-fx-font-size: 18px;");
             pendiente.setWrapText(true);
 
             contenedor.setCenter(pendiente);
-            BorderPane.setAlignment(
-                    pendiente,
-                    Pos.CENTER);
+            BorderPane.setAlignment(pendiente, Pos.CENTER);
         }
+    }
+
+    private boolean esOrganizador() {
+
+        return sesionActual != null
+                && "ORGANIZADOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario());
+    }
+
+    private void mostrarEventos() {
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        // El menú lateral permite ir de Eventos a Invitados (CU-17) y volver.
+        new Navegacion()
+                .registrar(Navegacion.Pantalla.EVENTOS,
+                        () -> new ViewEventos(controllerEventos).crearPantalla())
+                .registrar(Navegacion.Pantalla.INVITADOS,
+                        () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
+                .mostrarEn(contenedor, Navegacion.Pantalla.EVENTOS);
+    }
+
+    private void mostrarCatalogoServicios() {
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        contenedor.setCenter(
+                new ViewCatalogoServicios(
+                        controllerProveedores,
+                        sesionActual,
+                        this::mostrarEventos,
+                        this::mostrarLogin,
+                        this::mostrarDetalleServicio)
+                        .crearPantalla());
+    }
+
+    private void mostrarDetalleServicio(Servicio servicio) {
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        if (servicio == null) {
+            mostrarCatalogoServicios();
+            return;
+        }
+
+        contenedor.setCenter(
+                new ViewDetalleServicio(
+                        controllerProveedores,
+                        servicio,
+                        sesionActual.getIdActor(),
+                        sesionActual,
+                        this::mostrarCatalogoServicios,
+                        this::mostrarEventos,
+                        this::mostrarLogin)
+                        .crearPantalla());
+    }
+
+    private void mostrarProveedores() {
+
+        if (sesionActual == null
+                || !"PROVEEDOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        contenedor.setTop(null);
+
+        contenedor.setCenter(
+                new ViewListaServiciosProveedor(
+                        controllerProveedores,
+                        sesionActual.getIdActor(),
+                        sesionActual,
+                        this::mostrarLogin,
+                        this::mostrarDetalleServicioProveedor,
+                        () -> mostrarDetalleServicioProveedor(null))
+                        .crearPantalla());
+    }
+
+    private void mostrarDetalleServicioProveedor(
+            Integer idServicio) {
+
+        if (sesionActual == null
+                || !"PROVEEDOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        contenedor.setTop(null);
+
+        contenedor.setCenter(
+                new ViewDetalleServicioProveedor(
+                        controllerProveedores,
+                        sesionActual.getIdActor(),
+                        sesionActual,
+                        this::mostrarLogin,
+                        idServicio,
+                        this::mostrarProveedores)
+                        .crearPantalla());
     }
 }
