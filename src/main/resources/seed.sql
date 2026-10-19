@@ -256,11 +256,11 @@ VALUES
 -- ---------------------------------------------------------
 
 INSERT INTO Solicitud_Ejecucion
-(id_solicitud, id_proveedor, id_evento, fecha_solicitud, estado)
+(id_solicitud, id_proveedor, id_evento, fecha_solicitud, estado, id_servicio)
 VALUES
-(1, 1, 1, TIMESTAMP '2026-10-08 10:00:00', 'RESPONDIDA'),
-(2, 2, 1, TIMESTAMP '2026-10-08 11:30:00', 'RESPONDIDA'),
-(3, 1, 2, TIMESTAMP '2026-10-09 09:00:00', 'PENDIENTE');
+(1, 1, 1, TIMESTAMP '2026-10-08 10:00:00', 'RESPONDIDA', 1),
+(2, 2, 1, TIMESTAMP '2026-10-08 11:30:00', 'RESPONDIDA', 3),
+(3, 1, 2, TIMESTAMP '2026-10-09 09:00:00', 'PENDIENTE', 2);
 
 
 -- ---------------------------------------------------------
@@ -405,16 +405,16 @@ VALUES
 -- Continuar los identificadores automáticos después de los datos de ejemplo.
 ALTER TABLE Permiso ALTER COLUMN id_permiso RESTART WITH 5;
 ALTER TABLE Rol ALTER COLUMN id_rol RESTART WITH 5;
-ALTER TABLE Usuario ALTER COLUMN id_usuario RESTART WITH 7;
+ALTER TABLE Usuario ALTER COLUMN id_usuario RESTART WITH 17;
 ALTER TABLE Rol_permiso ALTER COLUMN id_rol_permiso RESTART WITH 7;
-ALTER TABLE Usuario_rol ALTER COLUMN id_usuario_rol RESTART WITH 7;
+ALTER TABLE Usuario_rol ALTER COLUMN id_usuario_rol RESTART WITH 17;
 ALTER TABLE Lugar ALTER COLUMN id_lugar RESTART WITH 4;
-ALTER TABLE Organizador ALTER COLUMN id_organizador RESTART WITH 3;
-ALTER TABLE Proveedor ALTER COLUMN id_proveedor RESTART WITH 3;
+ALTER TABLE Organizador ALTER COLUMN id_organizador RESTART WITH 6;
+ALTER TABLE Proveedor ALTER COLUMN id_proveedor RESTART WITH 6;
 ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH 3;
 ALTER TABLE Planificacion ALTER COLUMN id_planificacion RESTART WITH 4;
 ALTER TABLE Invitacion ALTER COLUMN id_invitacion RESTART WITH 4;
-ALTER TABLE Invitado ALTER COLUMN id_invitado RESTART WITH 5;
+ALTER TABLE Invitado ALTER COLUMN id_invitado RESTART WITH 8;
 ALTER TABLE Acompanante ALTER COLUMN id_acompanante RESTART WITH 4;
 ALTER TABLE Necesidad_Especial ALTER COLUMN id_necesidad RESTART WITH 3;
 ALTER TABLE Regalo ALTER COLUMN id_regalo RESTART WITH 5;
@@ -434,22 +434,3 @@ ALTER TABLE Segmentacion ALTER COLUMN id_segmento RESTART WITH 4;
 ALTER TABLE Campana ALTER COLUMN id_campana RESTART WITH 3;
 ALTER TABLE Envio_Campana ALTER COLUMN id_envio RESTART WITH 5;
 ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 3;
-
--- ---------------------------------------------------------
--- ACTUALIZAR CONTADORES AUTOMATICOS DESPUES DEL SEED
--- ---------------------------------------------------------
-
-ALTER TABLE Usuario
-ALTER COLUMN id_usuario RESTART WITH 17;
-
-ALTER TABLE Usuario_rol
-ALTER COLUMN id_usuario_rol RESTART WITH 17;
-
-ALTER TABLE Organizador
-ALTER COLUMN id_organizador RESTART WITH 6;
-
-ALTER TABLE Proveedor
-ALTER COLUMN id_proveedor RESTART WITH 6;
-
-ALTER TABLE Invitado
-ALTER COLUMN id_invitado RESTART WITH 8;

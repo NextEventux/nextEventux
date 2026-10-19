@@ -26,6 +26,15 @@ import views.ViewEventos;
 import views.ViewLogin;
 import views.ViewPublicacion;
 import views.ViewCancelacion;
+import views.ViewAvisosProveedor;
+import views.ViewListaServiciosProveedor;
+import views.ViewDetalleServicioProveedor;
+import controllers.ControllerProveedores;
+import repositories.RepositoryServicio;
+import repositories.RepositoryDisponibilidadServicio;
+import repositories.RepositoryAvisosProveedor;
+import services.ServiceProveedores;
+import services.ServiceAvisosProveedor;
 
 public class NextEventuxApp extends Application {
     private final ServiceEventos eventos = new ServiceEventos(new RepositoryEvento());
@@ -36,6 +45,8 @@ public class NextEventuxApp extends Application {
     private ControllerPublicacion publicaciones;
     private SesionUsuario sesion;
     private Stage stage;
+    private final ControllerProveedores proveedores = new ControllerProveedores(new ServiceProveedores(
+            new RepositoryServicio(), new RepositoryDisponibilidadServicio()));
 
     @Override
     public void start(Stage stage) {
@@ -94,6 +105,13 @@ public class NextEventuxApp extends Application {
             mostrarCrear();
         } else if ("ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
             mostrarPublicacion();
+        } else if ("PROVEEDOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
+            Button servicios = new Button("Mis servicios"); servicios.setOnAction(e -> mostrarProveedores());
+            Button avisos = new Button("Mis avisos"); avisos.setId("abrirAvisosProveedor");
+            avisos.setOnAction(e -> contenedor.setCenter(new ViewAvisosProveedor(
+                    new ServiceAvisosProveedor(new RepositoryAvisosProveedor()), sesion).crearPantalla()));
+            barra.getChildren().addAll(0, java.util.List.of(servicios, avisos));
+            mostrarProveedores();
         } else {
             contenedor.setCenter(new Label("Sesión iniciada. El módulo de "
                     + sesion.getTipoUsuario().toLowerCase() + " está pendiente de integración."));
@@ -121,6 +139,16 @@ public class NextEventuxApp extends Application {
             if ("ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())) mostrarCrear();
             else contenedor.setCenter(new Label("Selecciona Publicaciones para revisar las solicitudes."));
         }).crearPantalla());
+    }
+
+    private void mostrarProveedores() {
+        contenedor.setCenter(new ViewListaServiciosProveedor(proveedores, sesion.getIdActor(), sesion,
+                this::mostrarLogin, this::mostrarDetalleProveedor, () -> mostrarDetalleProveedor(null)).crearPantalla());
+    }
+
+    private void mostrarDetalleProveedor(Integer servicio) {
+        contenedor.setCenter(new ViewDetalleServicioProveedor(proveedores, sesion.getIdActor(), sesion,
+                this::mostrarLogin, servicio, this::mostrarProveedores).crearPantalla());
     }
 
     public static void main(String[] args) { launch(args); }
