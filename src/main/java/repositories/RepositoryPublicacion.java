@@ -30,7 +30,7 @@ public class RepositoryPublicacion {
         List<Administrador> lista = new ArrayList<>();
         String sql = "SELECT DISTINCT u.id_usuario, u.nombre FROM Usuario u "
                 + "JOIN Usuario_rol ur ON ur.id_usuario=u.id_usuario JOIN Rol r ON r.id_rol=ur.id_rol "
-                + "WHERE r.nombre='ADMINISTRADOR' AND r.estado='ACTIVO' AND u.estado='ACTIVO' ORDER BY u.nombre";
+                + "WHERE r.nombre='ADMINISTRADOR' AND r.estado='ACTIVO' AND u.estado='ACTIVO' AND u.tipo_usuario='ADMINISTRADOR' ORDER BY u.nombre";
         try (PreparedStatement statement = connection.prepareStatement(sql); ResultSet result = statement.executeQuery()) {
             while (result.next()) lista.add(new Administrador(result.getInt(1), result.getString(2)));
         }
@@ -47,7 +47,7 @@ public class RepositoryPublicacion {
                     statement.setInt(1, idEvento);
                     try (ResultSet result = statement.executeQuery()) {
                         if (!result.next() || result.getInt(3) != idOrganizador)
-                            throw new IllegalArgumentException("Selecciona un evento que pertenezca al organizador elegido.");
+                            throw new IllegalArgumentException("Selecciona un evento que pertenezca a tu cuenta.");
                         if (!"FINALIZADO".equalsIgnoreCase(result.getString(2)))
                             throw new IllegalArgumentException("Solo puedes solicitar la publicación de un evento finalizado.");
                         nombre = result.getString(1);

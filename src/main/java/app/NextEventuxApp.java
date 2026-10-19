@@ -2,6 +2,7 @@ package app;
 
 import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
+import controllers.ControllerPublicacion;
 import entities.SesionUsuario;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -16,11 +17,14 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryEvento;
+import repositories.RepositoryPublicacion;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
+import services.ServicePublicacion;
 import views.ViewEdicion;
 import views.ViewEventos;
 import views.ViewLogin;
+import views.ViewPublicacion;
 
 public class NextEventuxApp extends Application {
     private final ServiceEventos eventos = new ServiceEventos(new RepositoryEvento());
@@ -28,6 +32,7 @@ public class NextEventuxApp extends Application {
             new ServiceAutenticacion(new RepositoryAutenticacion()));
     private final BorderPane contenedor = new BorderPane();
     private ControllerEventos controller;
+    private ControllerPublicacion publicaciones;
     private SesionUsuario sesion;
     private Stage stage;
 
@@ -50,6 +55,7 @@ public class NextEventuxApp extends Application {
         if (sesion != null) sesion.cerrar();
         sesion = null;
         controller = null;
+        publicaciones = null;
         contenedor.setTop(null);
         contenedor.setCenter(new ViewLogin(autenticacion, this::procesarSesion).crearPantalla());
         stage.setTitle("NextEventux | Iniciar sesión");
@@ -58,6 +64,8 @@ public class NextEventuxApp extends Application {
     private void procesarSesion(SesionUsuario usuario) {
         sesion = usuario;
         controller = new ControllerEventos(eventos, sesion);
+        publicaciones = new ControllerPublicacion(new ServicePublicacion(
+                new RepositoryPublicacion(), new RepositoryEvento()), sesion);
         Button salir = new Button("Cerrar sesión");
         salir.setId("cerrarSesion");
         salir.setOnAction(event -> mostrarLogin());
@@ -65,6 +73,13 @@ public class NextEventuxApp extends Application {
         barra.setAlignment(Pos.CENTER_RIGHT);
         barra.setPadding(new Insets(10));
         contenedor.setTop(barra);
+        if ("ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                || "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
+            Button publicar = new Button("Publicaciones");
+            publicar.setId("abrirPublicacionSesion");
+            publicar.setOnAction(event -> mostrarPublicacion());
+            barra.getChildren().add(0, publicar);
+        }
         if ("ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
             Button crear = new Button("Crear evento");
             crear.setOnAction(event -> mostrarCrear());
@@ -73,6 +88,8 @@ public class NextEventuxApp extends Application {
             editar.setOnAction(event -> mostrarEdicion());
             barra.getChildren().addAll(0, java.util.List.of(crear, editar));
             mostrarCrear();
+        } else if ("ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
+            mostrarPublicacion();
         } else {
             contenedor.setCenter(new Label("Sesión iniciada. El módulo de "
                     + sesion.getTipoUsuario().toLowerCase() + " está pendiente de integración."));
@@ -81,12 +98,20 @@ public class NextEventuxApp extends Application {
 
     private void mostrarCrear() {
         stage.setTitle("NextEventux | Crear evento");
-        contenedor.setCenter(new ViewEventos(controller, sesion, this::mostrarEdicion).crearPantalla());
+        contenedor.setCenter(new ViewEventos(controller, sesion, this::mostrarEdicion, this::mostrarPublicacion).crearPantalla());
     }
 
     private void mostrarEdicion() {
         stage.setTitle("NextEventux | Editar evento");
         contenedor.setCenter(new ViewEdicion(controller, this::mostrarCrear).crearPantalla());
+    }
+
+    private void mostrarPublicacion() {
+        stage.setTitle("NextEventux | Publicación de eventos");
+        contenedor.setCenter(new ViewPublicacion(publicaciones, () -> {
+            if ("ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())) mostrarCrear();
+            else contenedor.setCenter(new Label("Selecciona Publicaciones para revisar las solicitudes."));
+        }).crearPantalla());
     }
 
     public static void main(String[] args) { launch(args); }
