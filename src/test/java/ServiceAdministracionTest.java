@@ -62,6 +62,10 @@ class ServiceAdministracionTest {
                     + "'PENDIENTE_VERIFICACION')"
             );
 
+            statement.executeUpdate("INSERT INTO Usuario (id_usuario,nombre,usuario,contraseña,estado,fecha_registro,acepta_marketing,tipo_usuario) VALUES (10,'Admin pruebas','admin_prueba','clave','ACTIVO',CURRENT_TIMESTAMP,FALSE,'ADMINISTRADOR')");
+            statement.executeUpdate("INSERT INTO Rol (id_rol,nombre,estado) VALUES (1,'ADMINISTRADOR','ACTIVO')");
+            statement.executeUpdate("INSERT INTO Usuario_rol (id_usuario,id_rol) VALUES (10,1)");
+
             // Ana tiene un documento validado y vigente.
             // Esto permite probar el flujo principal de aprobación.
             statement.executeUpdate(
@@ -76,7 +80,8 @@ class ServiceAdministracionTest {
         }
 
         repository = new RepositoryProveedor(url);
-        service = new ServiceAdministracion(repository);
+        service = new ServiceAdministracion(repository,new services.ServiceAutenticacion(
+                new repositories.RepositoryAutenticacion(url)).iniciarSesion("admin_prueba","clave"));
         controller = new ControllerAdministracion(service);
     }
 
