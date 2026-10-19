@@ -435,7 +435,7 @@ la demostración ni eliminar la base de datos.
 
 ### Verificación de CU03
 
-- 72 pruebas JUnit en total. Las 14 pruebas anteriores de CU03 ahora usan login
+- 91 pruebas JUnit en total después de incorporar main. Las 14 pruebas anteriores de CU03 ahora usan login
   real; se añadieron 9 de sesión, aislamiento entre cuentas, cierre de sesión,
   permisos de cada perfil y revocación del rol o desactivación después del login.
 - Cobertura nueva: solicitud pendiente, propiedad del evento, estados, administrador
@@ -588,7 +588,7 @@ La cuenta de administrador abre CU03; el módulo de proveedor sigue pendiente.
 
 ### Pruebas de CU02
 
-63 pruebas JUnit correctas en total, incluidas 8 de edición y 7 nuevas de
+82 pruebas JUnit correctas tras integrar main, incluidas 8 de edición y 7 nuevas de
 integración con la sesión. Las pruebas de edición
 comprueban precarga y propiedad, campos permitidos, conservación de los demás
 datos, estados bloqueados, cambio de estado después de cargar, entradas inválidas,
@@ -609,3 +609,7 @@ con `javac --release 17` y se ejecutaron las pruebas mediante JUnit Platform Con
 La comprobación JavaFX con H2 temporal también recorre login inválido y válido,
 navegación a CU02, selección exclusiva de eventos propios, validación, guardado,
 cierre de sesión y entrada con una segunda cuenta sin mezclar sus eventos.
+
+La conciliación de CU03 con CU02 y main conserva el catálogo de proveedores, la
+pantalla de gestión de servicios y la navegación a Invitados. Se mantienen las
+migraciones de los módulos y el manejo de errores de autenticación de main.

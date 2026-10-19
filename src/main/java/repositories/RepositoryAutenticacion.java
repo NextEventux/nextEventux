@@ -1,12 +1,12 @@
 package repositories;
 
-import config.DatabaseConnection;
-import entities.SesionUsuario;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import config.DatabaseConnection;
+import entities.SesionUsuario;
 
 public class RepositoryAutenticacion {
     private final String url;
@@ -46,23 +46,22 @@ public class RepositoryAutenticacion {
                   AND u.contraseña = ?
                 """;
 
-        try (Connection connection =
-                     (url == null ? DatabaseConnection.getConnection() : DatabaseConnection.getConnection(url));
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+        try (Connection connection
+                = (url == null ? DatabaseConnection.getConnection() : DatabaseConnection.getConnection(url)); PreparedStatement statement
+                = connection.prepareStatement(sql)) {
 
             statement.setString(1, usuario);
             statement.setString(2, contrasena);
 
-            try (ResultSet result =
-                         statement.executeQuery()) {
+            try (ResultSet result
+                    = statement.executeQuery()) {
 
                 if (!result.next()) {
                     return null;
                 }
 
-                SesionUsuario sesion =
-                        new SesionUsuario();
+                SesionUsuario sesion
+                        = new SesionUsuario();
 
                 sesion.setIdUsuario(
                         result.getInt("id_usuario"));
@@ -76,8 +75,8 @@ public class RepositoryAutenticacion {
                 sesion.setEstadoUsuario(
                         result.getString("estado_usuario"));
 
-                Object idActor =
-                        result.getObject("id_actor");
+                Object idActor
+                        = result.getObject("id_actor");
 
                 if (idActor != null) {
                     sesion.setIdActor(
@@ -91,7 +90,7 @@ public class RepositoryAutenticacion {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(
+            throw new IllegalStateException(
                     "No se pudo iniciar sesion.",
                     e);
         }
