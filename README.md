@@ -578,12 +578,13 @@ sesión y vuelve al login. La aplicación no permite elegir otra identidad.
 Desde la sesión de organizador están disponibles Crear y Editar evento. Crear
 conserva el organizador de la sesión. Los accesos a las pantallas de demostración
 de CU03 y CU04 están deshabilitados hasta integrar sus propios flujos de sesión;
-su código se conserva. Las cuentas de administrador y proveedor muestran el
-mensaje de integración pendiente de su módulo.
+su código se conserva. Se mantiene la navegación de main hacia Invitados y el
+catálogo de proveedores, además de la gestión de servicios del proveedor.
+La cuenta de administrador muestra el mensaje de integración pendiente.
 
 ### Pruebas de CU02
 
-63 pruebas JUnit correctas en total, incluidas 8 de edición y 7 nuevas de
+82 pruebas JUnit correctas en total tras integrar main, incluidas 8 de edición y 7 de
 integración con la sesión. Las pruebas de edición
 comprueban precarga y propiedad, campos permitidos, conservación de los demás
 datos, estados bloqueados, cambio de estado después de cargar, entradas inválidas,
@@ -604,3 +605,9 @@ con `javac --release 17` y se ejecutaron las pruebas mediante JUnit Platform Con
 La comprobación JavaFX con H2 temporal también recorre login inválido y válido,
 navegación a CU02, selección exclusiva de eventos propios, validación, guardado,
 cierre de sesión y entrada con una segunda cuenta sin mezclar sus eventos.
+
+La resolución de conflictos con main conserva las migraciones de proveedores,
+publicaciones y cancelación. El repositorio de autenticación mantiene el manejo
+de errores de main y permite una URL de prueba aislada. Se comprobó en JavaFX el
+login, la edición y el guardado, el cambio de cuenta, el catálogo de proveedores,
+la navegación a Invitados y la pantalla de servicios del proveedor.
