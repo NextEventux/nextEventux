@@ -543,7 +543,8 @@ la navegación disponible; conserva esa dependencia al preparar sus PRs.
 No añade tablas ni dependencias.
 
 Desde Crear evento, usar **Eventos → Editar evento** o el botón del menú lateral.
-Seleccionar organizador y evento por nombre. Solo los eventos en estado de
+Iniciar sesión como organizador y seleccionar un evento propio por nombre. El
+organizador se obtiene de la sesión y se muestra como texto, sin selector. Solo los eventos en estado de
 planeación (`PLANEADO`) habilitan el formulario. El estado y la pertenencia se
 consultan otra vez al precargar, y también se comprueban en el UPDATE al guardar.
 Si otro proceso cambia el estado después de cargar el formulario, la edición se
@@ -567,17 +568,29 @@ actuales. Si falla el guardado, el UPDATE se revierte como una única operación
 atómica, la base conserva sus datos anteriores y la pantalla mantiene lo escrito
 para reintentar. Los mensajes son claros y no muestran errores SQL al usuario.
 
-La selección de organizador sigue siendo temporal para demostración. Obtener al
-organizador desde la sesión autenticada e impedir seleccionar perfiles ajenos
-queda pendiente de integrar con la rama de login, cuya corrección se está
-coordinando. La comprobación de propiedad por identificador no sustituye la sesión.
+Se integró `feature/login-h2-compartido` (254d348). El controlador recibe la sesión
+validada por el login; las consultas filtran en H2 por su identificador de
+organizador, que puede ser distinto del identificador de usuario. Al listar,
+precargar y guardar se comprueban el rol y los estados activos del usuario y del
+organizador, además de su vínculo en la base. Cerrar sesión invalida el objeto de
+sesión y vuelve al login. La aplicación no permite elegir otra identidad.
+
+Desde la sesión de organizador están disponibles Crear y Editar evento. Crear
+conserva el organizador de la sesión. Los accesos a las pantallas de demostración
+de CU03 y CU04 están deshabilitados hasta integrar sus propios flujos de sesión;
+su código se conserva. Las cuentas de administrador y proveedor muestran el
+mensaje de integración pendiente de su módulo.
 
 ### Pruebas de CU02
 
-49 pruebas JUnit correctas en total: las 41 existentes y 8 de edición. Las nuevas
+63 pruebas JUnit correctas en total, incluidas 8 de edición y 7 nuevas de
+integración con la sesión. Las pruebas de edición
 comprueban precarga y propiedad, campos permitidos, conservación de los demás
 datos, estados bloqueados, cambio de estado después de cargar, entradas inválidas,
-fallo técnico con reintento e históricos NULL. Las bases de prueba son temporales.
+fallo técnico con reintento e históricos NULL. Las pruebas de sesión comprueban
+login real, identificadores distintos, filtrado por cuenta, rechazo de eventos
+ajenos, ausencia de sesión, roles no autorizados, cierre de sesión y desactivación
+del usuario u organizador después del login. Las bases de prueba son temporales.
 
 Se comprobó además la ventana JavaFX: precarga, rechazo de hora 24:00, conservación
 de los datos ingresados ante un fallo simulado, guardado exitoso, preservación de
@@ -587,3 +600,7 @@ capturas antes y después del guardado.
 Con Maven instalado: `mvn clean test` y `mvn javafx:run`. En este equipo se compiló
 con `javac --release 17` y se ejecutaron las pruebas mediante JUnit Platform Console
 1.10.2, sin modificar la base de datos de la aplicación.
+
+La comprobación JavaFX con H2 temporal también recorre login inválido y válido,
+navegación a CU02, selección exclusiva de eventos propios, validación, guardado,
+cierre de sesión y entrada con una segunda cuenta sin mezclar sus eventos.
