@@ -27,6 +27,9 @@ import views.ViewLogin;
 import views.ViewPublicacion;
 import views.ViewCancelacion;
 import views.ViewAvisosProveedor;
+import views.ViewRespuestaInvitacion;
+import controllers.ControllerInvitados;
+import services.ServiceInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewDetalleServicioProveedor;
 import controllers.ControllerProveedores;
@@ -69,7 +72,7 @@ public class NextEventuxApp extends Application {
         controller = null;
         publicaciones = null;
         contenedor.setTop(null);
-        contenedor.setCenter(new ViewLogin(autenticacion, this::procesarSesion).crearPantalla());
+        contenedor.setCenter(new ViewLogin(autenticacion, this::procesarSesion, this::mostrarConsultaInvitado).crearPantalla());
         stage.setTitle("NextEventux | Iniciar sesión");
     }
 
@@ -139,6 +142,13 @@ public class NextEventuxApp extends Application {
             if ("ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())) mostrarCrear();
             else contenedor.setCenter(new Label("Selecciona Publicaciones para revisar las solicitudes."));
         }).crearPantalla());
+    }
+
+    private void mostrarConsultaInvitado() {
+        Button volver = new Button("← Iniciar sesión"); volver.setOnAction(e -> mostrarLogin());
+        contenedor.setTop(volver);
+        contenedor.setCenter(new ViewRespuestaInvitacion(new ControllerInvitados(new ServiceInvitados())).crearPantalla());
+        stage.setTitle("NextEventux | Mis invitaciones y avisos");
     }
 
     private void mostrarProveedores() {

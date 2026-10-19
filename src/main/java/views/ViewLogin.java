@@ -33,6 +33,7 @@ public class ViewLogin {
             new Label();
 
     private boolean mostrarContrasena;
+    private Runnable consultarInvitaciones;
 
     public ViewLogin(
             ControllerAutenticacion controller,
@@ -75,6 +76,11 @@ public class ViewLogin {
         mensaje.setWrapText(true);
         mensaje.setVisible(false);
         mensaje.setManaged(false);
+    }
+
+    public ViewLogin(ControllerAutenticacion controller, Consumer<SesionUsuario> alIngresar, Runnable consultarInvitaciones) {
+        this(controller, alIngresar);
+        this.consultarInvitaciones = consultarInvitaciones;
     }
 
     public Parent crearPantalla() {
@@ -151,6 +157,13 @@ public class ViewLogin {
                         crearCampoContrasena(),
                         mensaje,
                         ingresar);
+
+        if (consultarInvitaciones != null) {
+            Button invitado = new Button("Consultar mis invitaciones");
+            invitado.setId("consultarComoInvitado");
+            invitado.setOnAction(e -> consultarInvitaciones.run());
+            formulario.getChildren().add(invitado);
+        }
 
         formulario.getStyleClass().add(
                 "login-card");

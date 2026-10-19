@@ -114,6 +114,8 @@ class CancelacionTest {
     }
 
     @Test void liberaReservaCompartidaSoloAlCancelarElUltimoEvento() throws Exception {
+        // La solicitud del segundo evento debe referirse al mismo servicio reservado.
+        sql("UPDATE Solicitud_Ejecucion SET id_servicio=1 WHERE id_solicitud=3");
         sql("UPDATE Evento SET id_lugar=1 WHERE id_evento=2");
         sql("UPDATE Invitacion SET id_lugar=1 WHERE id_evento=2");
         sql("INSERT INTO Contratacion (id_propuesta,id_evento,fecha_contratacion,estado,id_disponibilidad) VALUES (3,2,CURRENT_TIMESTAMP,'ACTIVA',1)");

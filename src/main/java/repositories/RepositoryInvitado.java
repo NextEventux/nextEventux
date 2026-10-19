@@ -2,6 +2,7 @@ package repositories;
 
 import config.DatabaseConnection;
 import entities.Invitacion;
+import entities.InvitacionRecibida;
 import entities.Invitado;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,6 +20,10 @@ public class RepositoryInvitado {
             "id_invitado, id_invitacion, nombre, telefono, direccion, estado, correo";
     private static final String INVITACION_ACTIVA =
             "(i.estado_respuesta IS NULL OR UPPER(i.estado_respuesta) <> '" + Invitacion.ESTADO_REVOCADA + "')";
+
+    /** Quien rechazó la invitación libera su cupo y el de sus acompañantes (R39). */
+    private static final String INVITADO_ASISTE =
+            "(v.estado IS NULL OR UPPER(v.estado) <> '" + Invitado.ESTADO_RECHAZADO + "')";
 
     private final String url;
 
@@ -130,7 +135,7 @@ public class RepositoryInvitado {
     /** Invitados y acompañantes de las invitaciones activas de un evento en un lugar. */
     public int contarAsistentes(int idEvento, int idLugar) {
         String filtro = " JOIN Invitacion i ON i.id_invitacion = v.id_invitacion "
-                + "WHERE i.id_evento = ? AND i.id_lugar = ? AND " + INVITACION_ACTIVA;
+                + "WHERE i.id_evento = ? AND i.id_lugar = ? AND " + INVITACION_ACTIVA + " AND " + INVITADO_ASISTE;
         String sql = "SELECT (SELECT COUNT(*) FROM Invitado v" + filtro + ") + "
                 + "(SELECT COUNT(*) FROM Acompanante a JOIN Invitado v ON v.id_invitado = a.id_invitado" + filtro + ")";
         try (Connection connection = conectar();
@@ -168,6 +173,73 @@ public class RepositoryInvitado {
         } catch (SQLException e) {
             throw new IllegalStateException("No se pudieron contar los invitados. Revisa la conexión con la base de datos.", e);
         }
+    }
+
+    /** CU-16: cambia el estado de respuesta del invitado (PENDIENTE, CONFIRMADO o RECHAZADO). */
+    public void actualizarEstado(int idInvitado, String estado) {
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(
+                     "UPDATE Invitado SET estado = ? WHERE id_invitado = ?")) {
+            statement.setString(1, estado);
+            statement.setInt(2, idInvitado);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo guardar la respuesta. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    public int contarAcompanantes(int idInvitado) {
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT COUNT(*) FROM Acompanante WHERE id_invitado = ?")) {
+            statement.setInt(1, idInvitado);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? result.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron contar los acompañantes. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    /** CU-16 (R37): invitaciones activas en las que aparece el correo, con su evento y lugar. */
+    public List<InvitacionRecibida> listarInvitacionesPorCorreo(String correo) {
+        String sql = "SELECT v.id_invitado, v.id_invitacion, v.nombre, v.estado, i.estado_respuesta, i.mensaje, "
+                + "e.id_evento, e.nombre AS evento, e.tipo, e.estado AS estado_evento, e.fecha_inicio, e.fecha_fin, "
+                + "l.id_lugar, l.nombre AS lugar, l.direccion, l.capacidad "
+                + "FROM Invitado v JOIN Invitacion i ON i.id_invitacion = v.id_invitacion "
+                + "JOIN Evento e ON e.id_evento = i.id_evento JOIN Lugar l ON l.id_lugar = i.id_lugar "
+                + "WHERE LOWER(TRIM(v.correo)) = LOWER(TRIM(?)) AND " + INVITACION_ACTIVA + " "
+                + "ORDER BY e.fecha_inicio, v.id_invitado";
+        List<InvitacionRecibida> invitaciones = new ArrayList<>();
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, correo);
+            try (ResultSet r = statement.executeQuery()) {
+                while (r.next()) {
+                    invitaciones.add(new InvitacionRecibida(r.getInt("id_invitado"), r.getInt("id_invitacion"),
+                            r.getString("nombre"), r.getString("estado"), r.getString("estado_respuesta"),
+                            r.getString("mensaje"), r.getInt("id_evento"), r.getString("evento"), r.getString("tipo"),
+                            r.getString("estado_evento"), r.getTimestamp("fecha_inicio").toLocalDateTime(),
+                            r.getTimestamp("fecha_fin").toLocalDateTime(), r.getInt("id_lugar"), r.getString("lugar"),
+                            r.getString("direccion"), r.getInt("capacidad")));
+                }
+            }
+            return invitaciones;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron consultar tus invitaciones. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    /** Los avisos se conservan aunque la cancelación haya revocado la invitación. */
+    public List<String> listarAvisosPorCorreo(String correo) {
+        List<String> avisos = new ArrayList<>();
+        try (Connection c = conectar(); PreparedStatement consulta = c.prepareStatement(
+                "SELECT n.mensaje FROM Notificacion_interna n JOIN Invitado v ON v.id_invitado=n.id_invitado "
+                + "WHERE LOWER(TRIM(v.correo))=LOWER(TRIM(?)) ORDER BY n.id_notificacion DESC")) {
+            consulta.setString(1, correo);
+            try (ResultSet r = consulta.executeQuery()) { while (r.next()) avisos.add(r.getString(1)); }
+            return avisos;
+        } catch (SQLException e) { throw new IllegalStateException("No se pudieron consultar los avisos. Vuelve a intentarlo.", e); }
     }
 
     private Invitado convertir(ResultSet result) throws SQLException {

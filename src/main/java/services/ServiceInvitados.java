@@ -2,6 +2,7 @@ package services;
 
 import entities.Evento;
 import entities.Invitacion;
+import entities.InvitacionRecibida;
 import entities.Invitado;
 import entities.Lugar;
 import java.time.LocalDateTime;
@@ -18,6 +19,8 @@ import repositories.RepositoryLugar;
  * CU-17: crear, actualizar y revocar invitaciones y registrar sus invitados,
  * validando el aforo del lugar y que un invitado no tenga dos invitaciones activas
  * en el mismo evento (R40).
+ * CU-16: el invitado consulta sus invitaciones (R37) y confirma o rechaza su
+ * asistencia (R38); al rechazar libera su cupo (R39).
  */
 public class ServiceInvitados {
     private static final Pattern CORREO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
@@ -154,6 +157,76 @@ public class ServiceInvitados {
                     + "o regalos registrados; no se puede quitar de la invitación.");
         }
         repositoryInvitado.eliminarInvitado(idInvitado);
+    }
+
+    // ------------------------------------------------------------------
+    // CU-16: respuesta del invitado
+    // ------------------------------------------------------------------
+    /** R37: invitaciones activas asociadas al correo del invitado, con los cupos ocupados del lugar. */
+    public List<InvitacionRecibida> consultarInvitacionesPorCorreo(String correo) {
+        String limpio = limpiar(correo);
+        if (limpio == null || limpio.length() > 150 || !CORREO.matcher(limpio).matches())
+            throw new IllegalArgumentException("Ingresa un correo válido para consultar tus invitaciones.");
+        List<InvitacionRecibida> invitaciones = repositoryInvitado.listarInvitacionesPorCorreo(limpio);
+        for (InvitacionRecibida inv : invitaciones) {
+            inv.setOcupados(repositoryInvitado.contarAsistentes(inv.getIdEvento(), inv.getIdLugar()));
+        }
+        return invitaciones;
+    }
+
+    public List<String> consultarAvisosPorCorreo(String correo) {
+        String limpio = limpiar(correo);
+        if (limpio == null || limpio.length() > 150 || !CORREO.matcher(limpio).matches())
+            throw new IllegalArgumentException("Ingresa un correo válido para consultar tus avisos.");
+        return repositoryInvitado.listarAvisosPorCorreo(limpio);
+    }
+
+    /**
+     * R38 y R39: el invitado confirma (CONFIRMADO) o rechaza (RECHAZADO) su asistencia.
+     * Puede cambiar su respuesta mientras el evento no haya comenzado; al confirmar de nuevo
+     * se valida que todavía haya cupo para él y sus acompañantes.
+     */
+    public void gestionarRespuestaInvitacion(int idInvitado, String respuesta) {
+        String nueva = respuesta == null ? "" : respuesta.trim().toUpperCase();
+        if (!nueva.equals(Invitado.ESTADO_CONFIRMADO) && !nueva.equals(Invitado.ESTADO_RECHAZADO))
+            throw new IllegalArgumentException("Elige si asistirás o no al evento.");
+        Invitado invitado = repositoryInvitado.buscarInvitado(idInvitado);
+        if (invitado == null) throw new IllegalArgumentException("El invitado no existe.");
+        Invitacion invitacion = buscarInvitacionActiva(invitado.getIdInvitacion());
+        Evento evento = buscarEventoAbierto(invitacion.getIdEvento());
+        if (!evento.getFechaInicio().isAfter(LocalDateTime.now()))
+            throw new IllegalArgumentException("El evento ya comenzó; no se puede cambiar la respuesta.");
+        String actual = invitado.getEstado() == null ? Invitado.ESTADO_PENDIENTE : invitado.getEstado().toUpperCase();
+        if (actual.equals(nueva)) {
+            throw new IllegalArgumentException(nueva.equals(Invitado.ESTADO_CONFIRMADO)
+                    ? "Ya habías confirmado tu asistencia." : "Ya habías indicado que no asistirás.");
+        }
+        if (nueva.equals(Invitado.ESTADO_CONFIRMADO) && actual.equals(Invitado.ESTADO_RECHAZADO)) {
+            // Al rechazar liberó su cupo: para volver a confirmar debe haber espacio para él y sus acompañantes.
+            Lugar lugar = buscarLugar(invitacion.getIdLugar());
+            int necesarios = 1 + repositoryInvitado.contarAcompanantes(idInvitado);
+            int ocupados = repositoryInvitado.contarAsistentes(invitacion.getIdEvento(), lugar.getIdLugar());
+            if (ocupados + necesarios > lugar.getCapacidad()) {
+                throw new IllegalArgumentException("Ya no hay cupo disponible en " + lugar.getNombre()
+                        + " para confirmar tu asistencia.");
+            }
+        }
+        repositoryInvitado.actualizarEstado(idInvitado, nueva);
+        actualizarEstadoInvitacion(invitacion);
+    }
+
+    /** La invitación queda ACEPTADA si alguien confirmó, RECHAZADA si todos rechazaron, y si no, ENVIADA. */
+    private void actualizarEstadoInvitacion(Invitacion invitacion) {
+        List<Invitado> invitados = repositoryInvitado.listarInvitados(invitacion.getIdInvitacion());
+        boolean alguienConfirma = invitados.stream().anyMatch(i -> Invitado.ESTADO_CONFIRMADO.equalsIgnoreCase(i.getEstado()));
+        boolean todosRechazan = !invitados.isEmpty()
+                && invitados.stream().allMatch(i -> Invitado.ESTADO_RECHAZADO.equalsIgnoreCase(i.getEstado()));
+        String estado = alguienConfirma ? Invitacion.ESTADO_ACEPTADA
+                : todosRechazan ? Invitacion.ESTADO_RECHAZADA : Invitacion.ESTADO_ENVIADA;
+        if (!estado.equals(invitacion.getEstadoRespuesta())) {
+            invitacion.setEstadoRespuesta(estado);
+            repositoryInvitacion.actualizarInvitacion(invitacion);
+        }
     }
 
     // ------------------------------------------------------------------

@@ -2,19 +2,24 @@ package controllers;
 
 import entities.Evento;
 import entities.Invitacion;
+import entities.InvitacionRecibida;
 import entities.Invitado;
 import entities.Lugar;
 import java.util.List;
 import java.util.Map;
 import services.ServiceInvitados;
 
-/** Intermediario entre ViewInvitados y ServiceInvitados (CU-17). */
+/** Intermediario entre las vistas del módulo de invitados y ServiceInvitados (CU-16 y CU-17). */
 public class ControllerInvitados {
 
     private final ServiceInvitados serviceInvitados;
 
     public ControllerInvitados(ServiceInvitados serviceInvitados) {
         this.serviceInvitados = serviceInvitados;
+    }
+
+    public List<String> consultarAvisosPorCorreo(String correo) {
+        return serviceInvitados.consultarAvisosPorCorreo(correo);
     }
 
     public List<Evento> listarEventos() {
@@ -59,5 +64,13 @@ public class ControllerInvitados {
 
     public void quitarInvitado(int idInvitado) {
         serviceInvitados.quitarInvitado(idInvitado);
+    }
+
+    public List<InvitacionRecibida> consultarInvitacionesPorCorreo(String correo) {
+        return serviceInvitados.consultarInvitacionesPorCorreo(correo);
+    }
+
+    public void gestionarRespuestaInvitacion(int idInvitado, String respuesta) {
+        serviceInvitados.gestionarRespuestaInvitacion(idInvitado, respuesta);
     }
 }
