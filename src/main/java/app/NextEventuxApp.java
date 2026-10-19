@@ -3,6 +3,7 @@ package app;
 
 import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
+import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
 import entities.Servicio;
 import entities.SesionUsuario;
@@ -23,11 +24,13 @@ import repositories.RepositoryEvento;
 import repositories.RepositoryServicio;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
+import services.ServiceInvitados;
 import services.ServiceProveedores;
 import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
 import views.ViewEventos;
+import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
 
@@ -171,9 +174,13 @@ public class NextEventuxApp extends Application {
             return;
         }
 
-        contenedor.setCenter(
-                new ViewEventos(controllerEventos)
-                        .crearPantalla());
+        // El menú lateral permite ir de Eventos a Invitados (CU-17) y volver.
+        new Navegacion()
+                .registrar(Navegacion.Pantalla.EVENTOS,
+                        () -> new ViewEventos(controllerEventos).crearPantalla())
+                .registrar(Navegacion.Pantalla.INVITADOS,
+                        () -> new ViewInvitados(new ControllerInvitados(new ServiceInvitados())).crearPantalla())
+                .mostrarEn(contenedor, Navegacion.Pantalla.EVENTOS);
     }
 
     private void mostrarCatalogoServicios() {
