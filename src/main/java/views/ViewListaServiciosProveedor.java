@@ -1,6 +1,8 @@
 package views;
 
 import controllers.ControllerProveedores;
+import entities.ImagenServicio;
+import entities.PreguntaServicio;
 import entities.Servicio;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
@@ -8,18 +10,25 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -33,8 +42,32 @@ public class ViewListaServiciosProveedor {
     private final Consumer<Integer> abrirDetalle;
     private final Runnable nuevoServicio;
 
-    private final ListView<Servicio> listaServicios =
-            new ListView<>();
+    private final List<ServicioVista> servicios =
+            new ArrayList<>();
+
+    private final TextField busqueda =
+            new TextField();
+
+    private final ToggleGroup grupoFiltros =
+            new ToggleGroup();
+
+    private final ToggleButton filtroTodos =
+            crearFiltro("Todos", "TODOS");
+
+    private final ToggleButton filtroDisponibles =
+            crearFiltro("Disponibles", "DISPONIBLES");
+
+    private final ToggleButton filtroPreguntas =
+            crearFiltro("Con preguntas", "PREGUNTAS");
+
+    private final ToggleButton filtroSinFotos =
+            crearFiltro("Sin fotos", "SIN_FOTOS");
+
+    private final TilePane galeria =
+            new TilePane(18, 18);
+
+    private final Label resumen =
+            new Label();
 
     public ViewListaServiciosProveedor(
             ControllerProveedores controller,
@@ -54,40 +87,104 @@ public class ViewListaServiciosProveedor {
 
     public Parent crearPantalla() {
 
-        BorderPane raiz = new BorderPane();
+        BorderPane raiz =
+                new BorderPane();
 
         raiz
                 .getStyleClass()
                 .add("app");
 
-        VBox sidebar = crearMenu();
+        VBox sidebar =
+                crearMenu();
 
         raiz.setLeft(sidebar);
 
-        BorderPane principal = new BorderPane();
+        BorderPane principal =
+                new BorderPane();
 
         principal.setTop(
                 crearBarraSuperior());
 
-        VBox contenido = new VBox(30);
+        VBox contenido =
+                new VBox(
+                        24,
+                        crearEncabezado(),
+                        crearHerramientas(),
+                        galeria);
 
         contenido
                 .getStyleClass()
-                .add("content");
+                .addAll(
+                        "content",
+                        "provider-gallery-content");
 
         contenido.setMaxWidth(1320);
 
-        VBox titulo = new VBox(
-                8,
-                etiqueta(
-                        "Mis servicios",
-                        "page-title"),
-                etiqueta(
-                        "Consulta y administra los servicios que ofreces.",
-                        "muted"));
+        galeria
+                .getStyleClass()
+                .add("provider-gallery");
+
+        galeria.setPrefTileWidth(270);
+        galeria.setPrefTileHeight(285);
+        galeria.setTileAlignment(Pos.TOP_LEFT);
+
+        StackPane centrado =
+                new StackPane(contenido);
+
+        centrado.setAlignment(
+                Pos.TOP_CENTER);
+
+        ScrollPane scroll =
+                new ScrollPane(centrado);
+
+        scroll.setFitToWidth(true);
+
+        scroll.setHbarPolicy(
+                ScrollPane.ScrollBarPolicy.NEVER);
+
+        scroll
+                .getStyleClass()
+                .add("content-scroll");
+
+        principal.setCenter(scroll);
+
+        raiz.setCenter(principal);
+
+        raiz
+                .widthProperty()
+                .addListener(
+                        (observable, anterior, actual) -> {
+
+                            sidebar.setVisible(
+                                    actual.doubleValue() >= 1000);
+
+                            sidebar.setManaged(
+                                    sidebar.isVisible());
+                        });
+
+        configurarFiltros();
+        recargarServicios();
+
+        return raiz;
+    }
+
+    private HBox crearEncabezado() {
+
+        resumen
+                .getStyleClass()
+                .add("provider-gallery-summary");
+
+        VBox titulo =
+                new VBox(
+                        7,
+                        etiqueta(
+                                "Mis servicios",
+                                "page-title"),
+                        resumen);
 
         Button nuevo =
-                new Button("+ Nuevo servicio");
+                new Button(
+                        "+ Nuevo servicio");
 
         nuevo
                 .getStyleClass()
@@ -111,185 +208,644 @@ public class ViewListaServiciosProveedor {
         encabezado.setAlignment(
                 Pos.CENTER_LEFT);
 
-        VBox tarjeta =
-                crearTarjetaServicios();
+        return encabezado;
+    }
 
-        contenido
-                .getChildren()
-                .addAll(
-                        encabezado,
-                        tarjeta);
+    private HBox crearHerramientas() {
 
-        StackPane centrado =
-                new StackPane(contenido);
+        busqueda.setPromptText(
+                "Buscar por nombre, categoría o ciudad...");
 
-        centrado.setAlignment(
-                Pos.TOP_CENTER);
-
-        ScrollPane scroll =
-                new ScrollPane(centrado);
-
-        scroll.setFitToWidth(true);
-
-        scroll
+        busqueda
                 .getStyleClass()
-                .add("content-scroll");
+                .add("provider-search");
 
-        principal.setCenter(scroll);
+        busqueda.setPrefWidth(310);
 
-        raiz.setCenter(principal);
+        HBox filtros =
+                new HBox(
+                        22,
+                        filtroTodos,
+                        filtroDisponibles,
+                        filtroPreguntas,
+                        filtroSinFotos);
 
-        raiz
-                .widthProperty()
+        filtros.setAlignment(
+                Pos.CENTER_LEFT);
+
+        HBox barra =
+                new HBox(
+                        24,
+                        busqueda,
+                        filtros);
+
+        barra.setAlignment(
+                Pos.CENTER_LEFT);
+
+        barra
+                .getStyleClass()
+                .add("provider-gallery-tools");
+
+        HBox.setHgrow(
+                filtros,
+                Priority.ALWAYS);
+
+        return barra;
+    }
+
+    private ToggleButton crearFiltro(
+            String texto,
+            String valor) {
+
+        ToggleButton filtro =
+                new ToggleButton(texto);
+
+        filtro.setUserData(valor);
+
+        filtro
+                .getStyleClass()
+                .add("provider-filter");
+
+        return filtro;
+    }
+
+    private void configurarFiltros() {
+
+        ToggleButton[] filtros = {
+            filtroTodos,
+            filtroDisponibles,
+            filtroPreguntas,
+            filtroSinFotos
+        };
+
+        for (ToggleButton filtro : filtros) {
+
+            filtro.setToggleGroup(
+                    grupoFiltros);
+        }
+
+        filtroTodos.setSelected(true);
+
+        grupoFiltros
+                .selectedToggleProperty()
                 .addListener(
                         (observable, anterior, actual) -> {
 
-                            sidebar.setVisible(
-                                    actual.doubleValue() >= 1000);
+                            if (actual == null
+                                    && anterior != null) {
 
-                            sidebar.setManaged(
-                                    sidebar.isVisible());
+                                anterior.setSelected(true);
+                                return;
+                            }
+
+                            aplicarFiltros();
                         });
 
-        configurarLista();
-        recargarServicios();
-
-        return raiz;
+        busqueda
+                .textProperty()
+                .addListener(
+                        (observable, anterior, actual)
+                        -> aplicarFiltros());
     }
 
-    private VBox crearTarjetaServicios() {
+    private void recargarServicios() {
 
-        VBox tarjeta =
-                new VBox(22);
+        servicios.clear();
 
-        tarjeta
-                .getStyleClass()
-                .add("card");
+        try {
 
-        HBox titulo =
+            List<Servicio> encontrados =
+                    controller
+                            .listarServiciosProveedor(
+                                    idProveedor);
+
+            for (Servicio servicio
+                    : encontrados) {
+
+                servicios.add(
+                        crearVista(
+                                servicio));
+            }
+
+        } catch (Exception e) {
+
+            servicios.clear();
+        }
+
+        actualizarContadores();
+        aplicarFiltros();
+    }
+
+    private ServicioVista crearVista(
+            Servicio servicio) {
+
+        String portada =
+                null;
+
+        int preguntasPendientes =
+                0;
+
+        try {
+
+            List<ImagenServicio> imagenes =
+                    controller
+                            .listarImagenesServicio(
+                                    servicio.getIdServicio());
+
+            portada =
+                    imagenes
+                            .stream()
+                            .min(
+                                    Comparator.comparingInt(
+                                            ImagenServicio::getOrdenImagen))
+                            .map(
+                                    ImagenServicio::getRuta)
+                            .orElse(null);
+
+        } catch (Exception e) {
+
+            portada = null;
+        }
+
+        try {
+
+            List<PreguntaServicio> preguntas =
+                    controller
+                            .listarPreguntasPublicas(
+                                    servicio.getIdServicio());
+
+            for (PreguntaServicio pregunta
+                    : preguntas) {
+
+                if (!"RESPONDIDA"
+                        .equalsIgnoreCase(
+                                pregunta.getEstado())) {
+
+                    preguntasPendientes++;
+                }
+            }
+
+        } catch (Exception e) {
+
+            preguntasPendientes = 0;
+        }
+
+        return new ServicioVista(
+                servicio,
+                portada,
+                preguntasPendientes);
+    }
+
+    private void actualizarContadores() {
+
+        int disponibles =
+                0;
+
+        int conPreguntas =
+                0;
+
+        int sinFotos =
+                0;
+
+        for (ServicioVista vista
+                : servicios) {
+
+            if ("DISPONIBLE"
+                    .equalsIgnoreCase(
+                            vista.servicio.getEstado())) {
+
+                disponibles++;
+            }
+
+            if (vista.preguntasPendientes > 0) {
+                conPreguntas++;
+            }
+
+            if (vista.portada == null) {
+                sinFotos++;
+            }
+        }
+
+        filtroTodos.setText(
+                "Todos  " + servicios.size());
+
+        filtroDisponibles.setText(
+                "Disponibles  " + disponibles);
+
+        filtroPreguntas.setText(
+                "Con preguntas  " + conPreguntas);
+
+        filtroSinFotos.setText(
+                "Sin fotos  " + sinFotos);
+
+        resumen.setText(
+                servicios.size() == 1
+                        ? "1 servicio publicado o en preparación"
+                        : servicios.size()
+                        + " servicios publicados o en preparación");
+    }
+
+    private void aplicarFiltros() {
+
+        galeria
+                .getChildren()
+                .clear();
+
+        String texto =
+                busqueda
+                        .getText()
+                        .trim()
+                        .toLowerCase();
+
+        String filtro =
+                "TODOS";
+
+        if (grupoFiltros.getSelectedToggle()
+                != null) {
+
+            filtro =
+                    String.valueOf(
+                            grupoFiltros
+                                    .getSelectedToggle()
+                                    .getUserData());
+        }
+
+        for (ServicioVista vista
+                : servicios) {
+
+            Servicio servicio =
+                    vista.servicio;
+
+            if (!coincideBusqueda(
+                    servicio,
+                    texto)) {
+
+                continue;
+            }
+
+            if (!coincideFiltro(
+                    vista,
+                    filtro)) {
+
+                continue;
+            }
+
+            galeria
+                    .getChildren()
+                    .add(
+                            crearTarjeta(
+                                    vista));
+        }
+
+        galeria
+                .getChildren()
+                .add(
+                        crearTarjetaNueva());
+    }
+
+    private boolean coincideBusqueda(
+            Servicio servicio,
+            String texto) {
+
+        if (texto.isBlank()) {
+            return true;
+        }
+
+        String nombre =
+                seguro(
+                        servicio.getNombre())
+                        .toLowerCase();
+
+        String categoria =
+                seguro(
+                        servicio.getCategoria())
+                        .toLowerCase();
+
+        String ciudad =
+                seguro(
+                        servicio.getCiudadZona())
+                        .toLowerCase();
+
+        return nombre.contains(texto)
+                || categoria.contains(texto)
+                || ciudad.contains(texto);
+    }
+
+    private boolean coincideFiltro(
+            ServicioVista vista,
+            String filtro) {
+
+        switch (filtro) {
+
+            case "DISPONIBLES":
+
+                return "DISPONIBLE"
+                        .equalsIgnoreCase(
+                                vista.servicio.getEstado());
+
+            case "PREGUNTAS":
+
+                return vista.preguntasPendientes > 0;
+
+            case "SIN_FOTOS":
+
+                return vista.portada == null;
+
+            default:
+
+                return true;
+        }
+    }
+
+    private VBox crearTarjeta(
+            ServicioVista vista) {
+
+        Servicio servicio =
+                vista.servicio;
+
+        StackPane portada =
+                crearPortada(
+                        vista);
+
+        Label nombre =
+                etiqueta(
+                        servicio.getNombre(),
+                        "provider-tile-name");
+
+        nombre.setWrapText(true);
+
+        Label meta =
+                etiqueta(
+                        textoCategoria(
+                                servicio),
+                        "provider-tile-meta");
+
+        Label precio =
+                etiqueta(
+                        formatearPrecio(
+                                servicio.getPrecio()),
+                        "provider-tile-price");
+
+        Label estado =
+                crearEstado(
+                        servicio.getEstado());
+
+        HBox pie =
                 new HBox(
-                        13,
-                        etiqueta(
-                                "♧",
-                                "heading-icon"),
-                        etiqueta(
-                                "Servicios del proveedor",
-                                "card-title"));
+                        10,
+                        precio,
+                        espacioHorizontal(),
+                        estado);
 
-        titulo.setAlignment(
+        pie.setAlignment(
                 Pos.CENTER_LEFT);
 
-        Label ayuda =
-                etiqueta(
-                        "Selecciona un servicio para consultar o modificar su información.",
-                        "muted");
+        VBox tarjeta =
+                new VBox(
+                        portada,
+                        nombre,
+                        meta,
+                        pie);
 
-        ayuda.setWrapText(true);
-
-        listaServicios
-                .getStyleClass()
-                .add("publication-list");
-
-        listaServicios.setPrefHeight(520);
+        tarjeta.setPrefWidth(270);
+        tarjeta.setMaxWidth(270);
 
         tarjeta
-                .getChildren()
-                .addAll(
-                        titulo,
-                        ayuda,
-                        listaServicios);
+                .getStyleClass()
+                .add("provider-tile");
 
-        return tarjeta;
-    }
+        VBox.setMargin(
+                nombre,
+                new Insets(
+                        12,
+                        0,
+                        0,
+                        0));
 
-    private void configurarLista() {
+        VBox.setMargin(
+                meta,
+                new Insets(
+                        4,
+                        0,
+                        0,
+                        0));
 
-        listaServicios.setCellFactory(
-                lista -> new ListCell<>() {
+        VBox.setMargin(
+                pie,
+                new Insets(
+                        10,
+                        0,
+                        0,
+                        0));
 
-                    @Override
-                    protected void updateItem(
-                            Servicio servicio,
-                            boolean empty) {
+        if (vista.preguntasPendientes > 0) {
 
-                        super.updateItem(
-                                servicio,
-                                empty);
+            String texto =
+                    vista.preguntasPendientes == 1
+                            ? "● 1 pregunta sin responder"
+                            : "● "
+                            + vista.preguntasPendientes
+                            + " preguntas sin responder";
 
-                        if (empty
-                                || servicio == null) {
+            Label aviso =
+                    etiqueta(
+                            texto,
+                            "provider-tile-pending");
 
-                            setText(null);
-                            setGraphic(null);
-                            return;
-                        }
+            tarjeta
+                    .getChildren()
+                    .add(aviso);
 
-                        Label icono =
-                                etiqueta(
-                                        iconoCategoria(
-                                                servicio.getCategoria()),
-                                        "service-category-icon");
+            VBox.setMargin(
+                    aviso,
+                    new Insets(
+                            6,
+                            0,
+                            0,
+                            0));
+        }
 
-                        VBox datos =
-                                new VBox(
-                                        5,
-                                        etiqueta(
-                                                servicio.getNombre(),
-                                                "publication-name"),
-                                        etiqueta(
-                                                textoCategoria(
-                                                        servicio),
-                                                "muted"));
-
-                        Label precio =
-                                etiqueta(
-                                        formatearPrecio(
-                                                servicio.getPrecio()),
-                                        "publication-price");
-
-                        Label estado =
-                                crearEstado(
-                                        servicio.getEstado());
-
-                        HBox fila =
-                                new HBox(
-                                        14,
-                                        icono,
-                                        datos,
-                                        espacioHorizontal(),
-                                        precio,
-                                        estado);
-
-                        fila.setAlignment(
-                                Pos.CENTER_LEFT);
-
-                        fila.setPadding(
-                                new Insets(
-                                        10,
-                                        12,
-                                        10,
-                                        12));
-
-                        setText(null);
-                        setGraphic(fila);
-                    }
-                });
-
-        listaServicios.setOnMouseClicked(
+        tarjeta.setOnMouseClicked(
                 event -> {
 
-                    Servicio servicio =
-                            listaServicios
-                                    .getSelectionModel()
-                                    .getSelectedItem();
-
-                    if (servicio != null
-                            && abrirDetalle != null) {
+                    if (abrirDetalle != null) {
 
                         abrirDetalle.accept(
                                 servicio.getIdServicio());
                     }
                 });
+
+        return tarjeta;
+    }
+
+    private StackPane crearPortada(
+            ServicioVista vista) {
+
+        StackPane portada =
+                new StackPane();
+
+        portada.setPrefHeight(170);
+        portada.setMinHeight(170);
+        portada.setMaxHeight(170);
+
+        portada
+                .getStyleClass()
+                .add("provider-cover");
+
+        if (vista.portada != null
+                && !vista.portada.isBlank()) {
+
+            try {
+
+                ImageView imagen =
+                        new ImageView(
+                                new Image(
+                                        vista.portada,
+                                        true));
+
+                imagen.setSmooth(true);
+                imagen.setPreserveRatio(false);
+
+                imagen
+                        .fitWidthProperty()
+                        .bind(
+                                portada
+                                        .widthProperty());
+
+                imagen
+                        .fitHeightProperty()
+                        .bind(
+                                portada
+                                        .heightProperty());
+
+                Rectangle recorte =
+                        new Rectangle();
+
+                recorte
+                        .widthProperty()
+                        .bind(
+                                portada
+                                        .widthProperty());
+
+                recorte
+                        .heightProperty()
+                        .bind(
+                                portada
+                                        .heightProperty());
+
+                recorte.setArcWidth(24);
+                recorte.setArcHeight(24);
+
+                imagen.setClip(
+                        recorte);
+
+                portada
+                        .getChildren()
+                        .add(imagen);
+
+                Label foto =
+                        etiqueta(
+                                "FOTO DEL SERVICIO",
+                                "provider-cover-label");
+
+                StackPane.setAlignment(
+                        foto,
+                        Pos.BOTTOM_LEFT);
+
+                StackPane.setMargin(
+                        foto,
+                        new Insets(
+                                0,
+                                0,
+                                10,
+                                12));
+
+                portada
+                        .getChildren()
+                        .add(foto);
+
+                return portada;
+
+            } catch (Exception e) {
+
+                // Si la imagen no carga se muestra el icono
+            }
+        }
+
+        portada
+                .getStyleClass()
+                .add("provider-cover-empty");
+
+        Label icono =
+                etiqueta(
+                        iconoCategoria(
+                                vista.servicio.getCategoria()),
+                        "provider-cover-icon");
+
+        Label ayuda =
+                etiqueta(
+                        "Sin foto todavía",
+                        "provider-cover-help");
+
+        StackPane.setAlignment(
+                ayuda,
+                Pos.BOTTOM_LEFT);
+
+        StackPane.setMargin(
+                ayuda,
+                new Insets(
+                        0,
+                        0,
+                        11,
+                        13));
+
+        portada
+                .getChildren()
+                .addAll(
+                        icono,
+                        ayuda);
+
+        return portada;
+    }
+
+    private StackPane crearTarjetaNueva() {
+
+        VBox contenido =
+                new VBox(
+                        6,
+                        etiqueta(
+                                "+",
+                                "provider-new-plus"),
+                        etiqueta(
+                                "Nuevo servicio",
+                                "provider-new-text"));
+
+        contenido.setAlignment(
+                Pos.CENTER);
+
+        StackPane nuevo =
+                new StackPane(
+                        contenido);
+
+        nuevo.setPrefWidth(270);
+        nuevo.setMaxWidth(270);
+        nuevo.setPrefHeight(170);
+        nuevo.setMinHeight(170);
+        nuevo.setMaxHeight(170);
+
+        nuevo
+                .getStyleClass()
+                .add("provider-new-tile");
+
+        nuevo.setOnMouseClicked(
+                event -> {
+
+                    if (nuevoServicio != null) {
+                        nuevoServicio.run();
+                    }
+                });
+
+        return nuevo;
     }
 
     private Label crearEstado(
@@ -312,10 +868,7 @@ public class ViewListaServiciosProveedor {
                     .getStyleClass()
                     .add("status-available");
 
-            return etiqueta;
-        }
-
-        if ("BORRADOR"
+        } else if ("BORRADOR"
                 .equalsIgnoreCase(estado)) {
 
             etiqueta.setText(
@@ -325,10 +878,7 @@ public class ViewListaServiciosProveedor {
                     .getStyleClass()
                     .add("status-draft");
 
-            return etiqueta;
-        }
-
-        if ("RETIRADO"
+        } else if ("RETIRADO"
                 .equalsIgnoreCase(estado)) {
 
             etiqueta.setText(
@@ -338,13 +888,11 @@ public class ViewListaServiciosProveedor {
                     .getStyleClass()
                     .add("status-retired");
 
-            return etiqueta;
-        }
+        } else {
 
-        etiqueta.setText(
-                estado == null
-                        ? "Sin estado"
-                        : estado);
+            etiqueta.setText(
+                    seguro(estado));
+        }
 
         return etiqueta;
     }
@@ -357,11 +905,10 @@ public class ViewListaServiciosProveedor {
                         servicio.getCategoria());
 
         String ciudad =
-                servicio.getCiudadZona();
+                seguro(
+                        servicio.getCiudadZona());
 
-        if (ciudad == null
-                || ciudad.isBlank()) {
-
+        if (ciudad.isBlank()) {
             return categoria;
         }
 
@@ -382,18 +929,37 @@ public class ViewListaServiciosProveedor {
         String texto =
                 categoria
                         .toLowerCase()
-                        .replace('_', ' ');
+                        .replace(
+                                '_',
+                                ' ');
 
         return Character.toUpperCase(
                 texto.charAt(0))
                 + texto.substring(1);
     }
 
+    private String formatearPrecio(
+            double precio) {
+
+        DecimalFormatSymbols simbolos =
+                new DecimalFormatSymbols(
+                        new Locale(
+                                "es",
+                                "CO"));
+
+        simbolos.setGroupingSeparator('.');
+
+        return new DecimalFormat(
+                "$#,##0",
+                simbolos)
+                .format(precio);
+    }
+
     private String iconoCategoria(
             String categoria) {
 
         if (categoria == null) {
-            return "◇";
+            return "✦";
         }
 
         switch (categoria.toUpperCase()) {
@@ -418,53 +984,14 @@ public class ViewListaServiciosProveedor {
                 return "▣";
 
             default:
-                return "◇";
-        }
-    }
-
-    private String formatearPrecio(
-            double precio) {
-
-        DecimalFormatSymbols simbolos =
-                new DecimalFormatSymbols(
-                        new Locale(
-                                "es",
-                                "CO"));
-
-        simbolos.setGroupingSeparator('.');
-
-        DecimalFormat formato =
-                new DecimalFormat(
-                        "$#,##0",
-                        simbolos);
-
-        return formato.format(precio);
-    }
-
-    private void recargarServicios() {
-
-        try {
-
-            List<Servicio> servicios =
-                    controller
-                            .listarServiciosProveedor(
-                                    idProveedor);
-
-            listaServicios
-                    .getItems()
-                    .setAll(servicios);
-
-        } catch (Exception e) {
-
-            listaServicios
-                    .getItems()
-                    .clear();
+                return "✦";
         }
     }
 
     private VBox crearMenu() {
 
-        VBox menu = new VBox(7);
+        VBox menu =
+                new VBox(7);
 
         menu
                 .getStyleClass()
@@ -676,6 +1203,14 @@ public class ViewListaServiciosProveedor {
                 : iniciales.toString();
     }
 
+    private String seguro(
+            String texto) {
+
+        return texto == null
+                ? ""
+                : texto;
+    }
+
     private Label etiqueta(
             String texto,
             String clase) {
@@ -700,5 +1235,27 @@ public class ViewListaServiciosProveedor {
                 Priority.ALWAYS);
 
         return espacio;
+    }
+
+    private static class ServicioVista {
+
+        private final Servicio servicio;
+        private final String portada;
+        private final int preguntasPendientes;
+
+        private ServicioVista(
+                Servicio servicio,
+                String portada,
+                int preguntasPendientes) {
+
+            this.servicio =
+                    servicio;
+
+            this.portada =
+                    portada;
+
+            this.preguntasPendientes =
+                    preguntasPendientes;
+        }
     }
 }

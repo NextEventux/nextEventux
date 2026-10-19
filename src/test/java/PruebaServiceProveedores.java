@@ -1,7 +1,7 @@
 import entities.Servicio;
+import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryServicio;
 import services.ServiceProveedores;
-import repositories.RepositoryDisponibilidadServicio;
 
 // Comprueba que el service pueda enviar un servicio al repositorio
 public class PruebaServiceProveedores {
@@ -44,7 +44,7 @@ public class PruebaServiceProveedores {
         servicioModificado.setAnticipacionMinima(6);
 
         // Modificamos el servicio usando su id
-        service.modificarServicio(2, servicioModificado);
+        service.modificarServicio(10, 2, servicioModificado);
 
         Servicio servicioActualizado = repository.buscarServicio(2);
 

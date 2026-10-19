@@ -132,3 +132,269 @@
 .status-retired {
     -fx-text-fill: #B34444;
 }
+/* Prueba de galeria de servicios */
+
+.provider-gallery-content {
+    -fx-padding: 42px 42px 46px 42px;
+}
+
+.provider-gallery-summary {
+    -fx-font-size: 14px;
+    -fx-text-fill: #858899;
+}
+
+.provider-gallery-tools {
+    -fx-padding: 0 0 13px 0;
+    -fx-border-color: transparent transparent #E6E8EF transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.provider-search {
+    -fx-pref-height: 40px;
+    -fx-background-color: white;
+    -fx-background-radius: 9px;
+    -fx-border-color: #DFE2EA;
+    -fx-border-radius: 9px;
+    -fx-padding: 0 13px;
+    -fx-font-size: 13px;
+    -fx-prompt-text-fill: #A0A4B3;
+}
+
+.provider-search:focused {
+    -fx-border-color: #D71920;
+}
+
+.provider-filter {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0px;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2px 0;
+    -fx-padding: 9px 1px;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #858899;
+    -fx-cursor: hand;
+}
+
+.provider-filter:hover {
+    -fx-text-fill: #252638;
+}
+
+.provider-filter:selected {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #D71920 transparent;
+    -fx-text-fill: #D71920;
+}
+
+.provider-gallery {
+    -fx-background-color: transparent;
+    -fx-padding: 2px 0 0 0;
+}
+
+.provider-tile {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+
+.provider-tile:hover .provider-tile-name {
+    -fx-text-fill: #D71920;
+}
+
+.provider-cover {
+    -fx-background-color: #E8E9EF;
+    -fx-background-radius: 12px;
+}
+
+.provider-cover-empty {
+    -fx-background-color: #FDE7E9;
+    -fx-border-color: #F5C4C8;
+    -fx-border-radius: 12px;
+}
+
+.provider-cover-icon {
+    -fx-font-size: 44px;
+    -fx-text-fill: #D71920;
+}
+
+.provider-cover-help {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #D71920;
+}
+
+.provider-cover-label {
+    -fx-background-color: rgba(25, 28, 42, 0.70);
+    -fx-background-radius: 4px;
+    -fx-padding: 3px 7px;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.provider-tile-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.provider-tile-meta {
+    -fx-font-size: 12px;
+    -fx-text-fill: #858899;
+}
+
+.provider-tile-price {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.provider-tile-pending {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #D71920;
+}
+
+.provider-new-tile {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-border-color: #D71920;
+    -fx-border-radius: 12px;
+    -fx-border-width: 2px;
+    -fx-border-style: dashed;
+    -fx-cursor: hand;
+}
+
+.provider-new-tile:hover {
+    -fx-background-color: #FFF7F8;
+}
+
+.provider-new-plus {
+    -fx-font-size: 34px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #D71920;
+}
+
+.provider-new-text {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #D71920;
+}
+/* Detalle del servicio del proveedor */
+
+.provider-detail-content {
+    -fx-padding: 38px 42px 50px 42px;
+}
+
+.provider-detail-panel {
+    -fx-background-color: white;
+    -fx-background-radius: 14px;
+    -fx-border-color: #E7E9EF;
+    -fx-border-radius: 14px;
+    -fx-padding: 28px 30px 32px 30px;
+}
+
+.provider-detail-panel .section-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.provider-detail-panel .separator .line {
+    -fx-border-color: #E9EAF0;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.provider-detail-panel .service-form {
+    -fx-padding: 0;
+}
+
+.provider-detail-panel .service-form .text-field,
+.provider-detail-panel .service-form .date-picker {
+    -fx-pref-height: 40px;
+}
+
+.provider-detail-panel .service-form .text-area {
+    -fx-background-color: white;
+    -fx-background-radius: 9px;
+    -fx-border-color: #DFE2EA;
+    -fx-border-radius: 9px;
+}
+
+.provider-detail-panel .service-form .text-area:focused {
+    -fx-border-color: #D71920;
+}
+
+.provider-detail-panel .availability-list,
+.provider-detail-panel .publication-list {
+    -fx-background-color: white;
+    -fx-border-color: #E4E6ED;
+    -fx-border-radius: 9px;
+    -fx-background-radius: 9px;
+}
+/* Pestañas del detalle del servicio */
+
+.provider-detail-service-name {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.provider-detail-tabs {
+    -fx-background-color: transparent;
+    -fx-tab-min-height: 42px;
+}
+
+.provider-detail-tabs .tab-header-area {
+    -fx-padding: 0;
+}
+
+.provider-detail-tabs .tab-header-background {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #E5E7ED transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.provider-detail-tabs .tab {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+}
+
+.provider-detail-tabs .tab .tab-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #858899;
+}
+
+.provider-detail-tabs .tab:hover .tab-label {
+    -fx-text-fill: #252638;
+}
+
+.provider-detail-tabs .tab:selected {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #D71920 transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.provider-detail-tabs .tab:selected .tab-label {
+    -fx-text-fill: #D71920;
+}
+
+.provider-detail-tabs .tab-content-area {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.provider-tab-content {
+    -fx-padding: 26px 0 6px 0;
+}
+/* Quita el borde azul de foco de las pestanas */
+
+.provider-detail-tabs .tab,
+.provider-detail-tabs .tab:focused,
+.provider-detail-tabs .tab:selected {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}

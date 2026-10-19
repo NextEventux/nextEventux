@@ -1,10 +1,11 @@
 import java.util.Date;
+
 import controllers.ControllerProveedores;
 import entities.DisponibilidadServicio;
 import entities.Servicio;
+import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryServicio;
 import services.ServiceProveedores;
-import repositories.RepositoryDisponibilidadServicio;
 
 // Comprueba el flujo desde el controller hasta el repositorio
 public class PruebaControllerProveedores {
@@ -57,7 +58,7 @@ public class PruebaControllerProveedores {
         servicioModificado.setAnticipacionMinima(7);
 
         // La modificacion entra por el controller
-        controller.modificarServicio(3, servicioModificado);
+        controller.modificarServicio(10, 3, servicioModificado);
 
         // Revisamos que los cambios hayan llegado al repositorio
         Servicio servicioActualizado = repository.buscarServicio(3);
@@ -76,7 +77,11 @@ public class PruebaControllerProveedores {
         Date fecha = new Date();
 
         // Registramos una disponibilidad entrando por el controller
-        controller.registrarDisponibilidadServicio( 3, fecha,"14:00 - 18:00");
+        controller.registrarDisponibilidadServicio(
+        10,
+        3,
+        fecha,
+        "14:00 - 18:00");
 
         // Comprobamos que haya llegado al repositorio
         DisponibilidadServicio disponibilidadEncontrada = repositoryDisponibilidad.buscarDisponibilidad(3, fecha, "14:00 - 18:00");

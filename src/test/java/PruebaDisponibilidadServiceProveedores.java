@@ -1,3 +1,4 @@
+
 import java.util.Date;
 
 import entities.DisponibilidadServicio;
@@ -10,14 +11,14 @@ public class PruebaDisponibilidadServiceProveedores {
 
     public static void main(String[] args) {
 
-        RepositoryServicio repositoryServicio =
-                new RepositoryServicio();
+        RepositoryServicio repositoryServicio
+                = new RepositoryServicio();
 
-        RepositoryDisponibilidadServicio repositoryDisponibilidad =
-                new RepositoryDisponibilidadServicio();
+        RepositoryDisponibilidadServicio repositoryDisponibilidad
+                = new RepositoryDisponibilidadServicio();
 
-        ServiceProveedores service =
-                new ServiceProveedores(
+        ServiceProveedores service
+                = new ServiceProveedores(
                         repositoryServicio,
                         repositoryDisponibilidad);
 
@@ -25,13 +26,14 @@ public class PruebaDisponibilidadServiceProveedores {
 
         // La disponibilidad entra por el service
         service.registrarDisponibilidadServicio(
+                10,
                 3,
                 fecha,
                 "14:00 - 18:00");
 
         // Revisamos que haya llegado al repositorio
-        DisponibilidadServicio encontrada =
-                repositoryDisponibilidad.buscarDisponibilidad(
+        DisponibilidadServicio encontrada
+                = repositoryDisponibilidad.buscarDisponibilidad(
                         3,
                         fecha,
                         "14:00 - 18:00");

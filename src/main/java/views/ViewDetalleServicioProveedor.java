@@ -150,74 +150,33 @@ public class ViewDetalleServicioProveedor {
         principal.setTop(
                 crearBarraSuperior());
 
-        VBox contenido = new VBox(30);
-        contenido.getStyleClass().add("content");
-        contenido.setMaxWidth(1320);
+        VBox contenido = new VBox(24);
+
+        contenido
+                .getStyleClass()
+                .addAll(
+                        "content",
+                        "provider-detail-content");
+
+        contenido.setMaxWidth(1120);
 
         VBox titulo = new VBox(
-                8,
+                6,
                 etiqueta(
-                        "Gestionar servicios",
+                        "Detalle del servicio",
                         "page-title"),
                 etiqueta(
-                        "Administra los servicios que ofreces y sus horarios disponibles.",
+                        "Actualiza la información, disponibilidad, imágenes y preguntas de este servicio.",
                         "muted"));
 
-        HBox encabezado = new HBox(
-                20,
-                titulo,
-                espacioHorizontal(),
-                etiqueta(
-                        "● Proveedor activo",
-                        "status"));
-
-        encabezado.setAlignment(
-                Pos.CENTER_LEFT);
-
-        GridPane columnas = new GridPane();
-
-        columnas.setHgap(25);
-        columnas.setVgap(25);
-
-        ColumnConstraints izquierda
-                = new ColumnConstraints();
-
-        izquierda.setHgrow(
-                Priority.ALWAYS);
-
-        ColumnConstraints derecha
-                = new ColumnConstraints(290);
-
-        columnas
-                .getColumnConstraints()
-                .addAll(
-                        izquierda,
-                        derecha);
-
-        VBox gestion = crearGestionServicios();
-        VBox panel = crearPanelDerecho();
-
-        columnas.add(
-                gestion,
-                0,
-                0);
-
-        columnas.add(
-                panel,
-                1,
-                0);
-
-        GridPane.setHgrow(
-                gestion,
-                Priority.ALWAYS);
-
-        gestion.setMinWidth(0);
+        VBox gestion
+                = crearGestionServicios();
 
         contenido
                 .getChildren()
                 .addAll(
-                        encabezado,
-                        columnas);
+                        titulo,
+                        gestion);
 
         StackPane centrado
                 = new StackPane(contenido);
@@ -229,6 +188,10 @@ public class ViewDetalleServicioProveedor {
                 = new ScrollPane(centrado);
 
         scroll.setFitToWidth(true);
+
+        scroll.setHbarPolicy(
+                ScrollPane.ScrollBarPolicy.NEVER);
+
         scroll
                 .getStyleClass()
                 .add("content-scroll");
@@ -238,6 +201,7 @@ public class ViewDetalleServicioProveedor {
 
         configurarListas();
         recargarServicios();
+
         if (idServicioInicial != null) {
 
             seleccionarServicio(
@@ -248,50 +212,17 @@ public class ViewDetalleServicioProveedor {
             limpiarFormulario();
         }
 
-        raiz.widthProperty().addListener(
-                (observable, anterior, actual) -> {
+        raiz
+                .widthProperty()
+                .addListener(
+                        (observable, anterior, actual) -> {
 
-                    boolean ancho
-                    = actual.doubleValue() >= 1200;
+                            sidebar.setVisible(
+                                    actual.doubleValue() >= 1000);
 
-                    if (ancho
-                    != (GridPane.getColumnIndex(panel) == 1)) {
-
-                        columnas
-                                .getChildren()
-                                .clear();
-
-                        columnas
-                                .getColumnConstraints()
-                                .setAll(izquierda);
-
-                        if (ancho) {
-                            columnas
-                                    .getColumnConstraints()
-                                    .add(derecha);
-                        }
-
-                        columnas.add(
-                                gestion,
-                                0,
-                                0);
-
-                        columnas.add(
-                                panel,
-                                ancho ? 1 : 0,
-                                ancho ? 0 : 1);
-
-                        GridPane.setHgrow(
-                                panel,
-                                Priority.ALWAYS);
-                    }
-
-                    sidebar.setVisible(
-                            actual.doubleValue() >= 1000);
-
-                    sidebar.setManaged(
-                            sidebar.isVisible());
-                });
+                            sidebar.setManaged(
+                                    sidebar.isVisible());
+                        });
 
         return raiz;
     }
@@ -510,44 +441,23 @@ public class ViewDetalleServicioProveedor {
 
     private VBox crearGestionServicios() {
 
-        VBox tarjeta = new VBox(22);
-        tarjeta.getStyleClass().add("card");
-
-        HBox titulo = new HBox(
-                13,
-                etiqueta(
-                        "♧",
-                        "heading-icon"),
-                etiqueta(
-                        "Servicios del proveedor",
-                        "card-title"));
-
-        titulo.setAlignment(
-                Pos.CENTER_LEFT);
-
-        Label ayuda = etiqueta(
-                "Crea, modifica, publica o retira tus servicios y administra su disponibilidad.",
-                "muted");
-
-        ayuda.setWrapText(true);
-
         VBox formulario
                 = crearFormulario();
 
         formulario.setMaxWidth(
                 Double.MAX_VALUE);
 
-        VBox.setVgrow(
-                formulario,
-                Priority.ALWAYS);
-
-        tarjeta
-                .getChildren()
-                .addAll(
-                        titulo,
-                        ayuda,
+        VBox contenedor
+                = new VBox(
+                        20,
                         formulario);
-        return tarjeta;
+
+        contenedor
+                .getStyleClass()
+                .add(
+                        "provider-detail-panel");
+
+        return contenedor;
     }
 
     private VBox crearListaServicios() {
@@ -598,13 +508,26 @@ public class ViewDetalleServicioProveedor {
 
     private VBox crearFormulario() {
 
-        Label titulo = etiqueta(
-                "Información del servicio",
-                "section-title");
-
         estadoServicio
                 .getStyleClass()
                 .add("service-status-detail");
+
+        Label nombreActual = etiqueta(
+                "",
+                "provider-detail-service-name");
+
+        nombreActual
+                .textProperty()
+                .bind(nombre.textProperty());
+
+        HBox identidad = new HBox(
+                14,
+                nombreActual,
+                espacioHorizontal(),
+                estadoServicio);
+
+        identidad.setAlignment(
+                Pos.CENTER_LEFT);
 
         GridPane datos = grilla();
 
@@ -677,6 +600,69 @@ public class ViewDetalleServicioProveedor {
                 2,
                 1);
 
+        VBox informacion = new VBox(
+                18,
+                datos);
+
+        informacion
+                .getStyleClass()
+                .add("provider-tab-content");
+
+        VBox disponibilidad
+                = crearDisponibilidad();
+
+        disponibilidad
+                .getStyleClass()
+                .add("provider-tab-content");
+
+        VBox imagenesServicio
+                = crearImagenesServicio();
+
+        imagenesServicio
+                .getStyleClass()
+                .add("provider-tab-content");
+
+        VBox preguntasServicio
+                = crearPreguntasServicio();
+
+        preguntasServicio
+                .getStyleClass()
+                .add("provider-tab-content");
+
+        Tab tabInformacion
+                = new Tab(
+                        "Información",
+                        informacion);
+
+        Tab tabDisponibilidad
+                = new Tab(
+                        "Disponibilidad",
+                        disponibilidad);
+
+        Tab tabImagenes
+                = new Tab(
+                        "Imágenes",
+                        imagenesServicio);
+
+        Tab tabPreguntas
+                = new Tab(
+                        "Preguntas",
+                        preguntasServicio);
+
+        TabPane pestanas
+                = new TabPane(
+                        tabInformacion,
+                        tabDisponibilidad,
+                        tabImagenes,
+                        tabPreguntas);
+
+        pestanas.setTabClosingPolicy(
+                TabPane.TabClosingPolicy.UNAVAILABLE);
+
+        pestanas
+                .getStyleClass()
+                .add("provider-detail-tabs");
+
         Button guardar
                 = new Button("Guardar");
 
@@ -709,6 +695,7 @@ public class ViewDetalleServicioProveedor {
 
         HBox acciones = new HBox(
                 10,
+                espacioHorizontal(),
                 guardar,
                 publicar,
                 retirar);
@@ -716,27 +703,11 @@ public class ViewDetalleServicioProveedor {
         acciones.setAlignment(
                 Pos.CENTER_RIGHT);
 
-        VBox disponibilidad
-                = crearDisponibilidad();
-
-        VBox imagenesServicio
-                = crearImagenesServicio();
-
-        VBox preguntasServicio
-                = crearPreguntasServicio();
-
         VBox formulario = new VBox(
-                18,
-                titulo,
-                estadoServicio,
-                datos,
+                22,
+                identidad,
                 acciones,
-                new Separator(),
-                disponibilidad,
-                new Separator(),
-                imagenesServicio,
-                new Separator(),
-                preguntasServicio);
+                pestanas);
 
         formulario
                 .getStyleClass()
@@ -1387,6 +1358,7 @@ public class ViewDetalleServicioProveedor {
                         seleccionado.getEstado());
 
                 controller.modificarServicio(
+                        idProveedor,
                         seleccionado.getIdServicio(),
                         datos);
 
@@ -1534,6 +1506,7 @@ public class ViewDetalleServicioProveedor {
         try {
 
             controller.publicarServicio(
+                    idProveedor,
                     servicio.getIdServicio());
 
             mostrarInformacion(
@@ -1562,6 +1535,7 @@ public class ViewDetalleServicioProveedor {
         try {
 
             controller.retirarServicio(
+                    idProveedor,
                     servicio.getIdServicio());
 
             mostrarInformacion(
@@ -1617,6 +1591,7 @@ public class ViewDetalleServicioProveedor {
         try {
 
             controller.registrarDisponibilidadServicio(
+                    idProveedor,
                     servicio.getIdServicio(),
                     Date.valueOf(
                             fecha.getValue()),
@@ -1656,8 +1631,9 @@ public class ViewDetalleServicioProveedor {
         try {
 
             controller.eliminarDisponibilidad(
-                    disponibilidad
-                            .getIdDisponibilidad());
+                    idProveedor,
+                    disponibilidad.getIdServicio(),
+                    disponibilidad.getIdDisponibilidad());
 
             Servicio servicio
                     = listaServicios

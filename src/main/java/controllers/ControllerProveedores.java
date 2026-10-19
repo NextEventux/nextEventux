@@ -25,33 +25,46 @@ public class ControllerProveedores {
     }
 
     public void modificarServicio(
+            int idProveedor,
             int idServicio,
             Servicio datos) {
 
-        serviceProveedores
-                .modificarServicio(idServicio, datos);
+        serviceProveedores.modificarServicio(
+                idProveedor,
+                idServicio,
+                datos);
     }
 
     public void registrarDisponibilidadServicio(
+            int idProveedor,
             int idServicio,
             Date fecha,
             String horario) {
 
         serviceProveedores
                 .registrarDisponibilidadServicio(
+                        idProveedor,
                         idServicio,
                         fecha,
                         horario);
     }
 
-    public void publicarServicio(int idServicio) {
-        serviceProveedores
-                .publicarServicio(idServicio);
+    public void publicarServicio(
+            int idProveedor,
+            int idServicio) {
+
+        serviceProveedores.publicarServicio(
+                idProveedor,
+                idServicio);
     }
 
-    public void retirarServicio(int idServicio) {
-        serviceProveedores
-                .retirarServicio(idServicio);
+    public void retirarServicio(
+            int idProveedor,
+            int idServicio) {
+
+        serviceProveedores.retirarServicio(
+                idProveedor,
+                idServicio);
     }
 
     public Servicio buscarServicio(int idServicio) {
@@ -81,10 +94,15 @@ public class ControllerProveedores {
     }
 
     public void eliminarDisponibilidad(
+            int idProveedor,
+            int idServicio,
             int idDisponibilidad) {
 
         serviceProveedores
-                .eliminarDisponibilidad(idDisponibilidad);
+                .eliminarDisponibilidad(
+                        idProveedor,
+                        idServicio,
+                        idDisponibilidad);
     }
 
     public void agregarImagenServicio(

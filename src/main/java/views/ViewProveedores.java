@@ -1348,6 +1348,7 @@ public class ViewProveedores {
                         seleccionado.getEstado());
 
                 controller.modificarServicio(
+                        idProveedor,
                         seleccionado.getIdServicio(),
                         datos);
 
@@ -1495,6 +1496,7 @@ public class ViewProveedores {
         try {
 
             controller.publicarServicio(
+                    idProveedor,
                     servicio.getIdServicio());
 
             mostrarInformacion(
@@ -1523,6 +1525,7 @@ public class ViewProveedores {
         try {
 
             controller.retirarServicio(
+                    idProveedor,
                     servicio.getIdServicio());
 
             mostrarInformacion(
@@ -1578,6 +1581,7 @@ public class ViewProveedores {
         try {
 
             controller.registrarDisponibilidadServicio(
+                    idProveedor,
                     servicio.getIdServicio(),
                     Date.valueOf(
                             fecha.getValue()),
@@ -1617,8 +1621,9 @@ public class ViewProveedores {
         try {
 
             controller.eliminarDisponibilidad(
-                    disponibilidad
-                            .getIdDisponibilidad());
+                    idProveedor,
+                    disponibilidad.getIdServicio(),
+                    disponibilidad.getIdDisponibilidad());
 
             Servicio servicio
                     = listaServicios

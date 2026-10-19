@@ -62,18 +62,26 @@ public class ServiceProveedores {
     }
 
     public void modificarServicio(
+            int idProveedor,
             int idServicio,
             Servicio datos) {
+
+        validarServicioDelProveedor(
+                idServicio,
+                idProveedor);
+
+        if (datos == null) {
+            throw new IllegalArgumentException(
+                    "Los datos del servicio son obligatorios.");
+        }
 
         Servicio existente
                 = repositoryServicio.buscarServicio(idServicio);
 
-        if (existente == null) {
-            throw new IllegalArgumentException(
-                    "El servicio no existe.");
-        }
-
         datos.setIdServicio(idServicio);
+
+        // Conservamos el proveedor original del servicio
+        datos.setIdProveedor(existente.getIdProveedor());
 
         if (datos.getEstado() == null
                 || datos.getEstado().isBlank()) {
@@ -84,14 +92,14 @@ public class ServiceProveedores {
     }
 
     public void registrarDisponibilidadServicio(
+            int idProveedor,
             int idServicio,
             Date fecha,
             String horario) {
 
-        if (repositoryServicio.buscarServicio(idServicio) == null) {
-            throw new IllegalArgumentException(
-                    "El servicio no existe.");
-        }
+        validarServicioDelProveedor(
+                idServicio,
+                idProveedor);
 
         if (fecha == null) {
             throw new IllegalArgumentException(
@@ -129,15 +137,16 @@ public class ServiceProveedores {
                 .guardarDisponibilidad(disponibilidad);
     }
 
-    public void publicarServicio(int idServicio) {
+    public void publicarServicio(
+            int idProveedor,
+            int idServicio) {
+
+        validarServicioDelProveedor(
+                idServicio,
+                idProveedor);
 
         Servicio servicio
                 = repositoryServicio.buscarServicio(idServicio);
-
-        if (servicio == null) {
-            throw new IllegalArgumentException(
-                    "El servicio no existe.");
-        }
 
         validarServicioParaPublicar(servicio);
 
@@ -153,15 +162,13 @@ public class ServiceProveedores {
                 "DISPONIBLE");
     }
 
-    public void retirarServicio(int idServicio) {
+    public void retirarServicio(
+            int idProveedor,
+            int idServicio) {
 
-        Servicio servicio
-                = repositoryServicio.buscarServicio(idServicio);
-
-        if (servicio == null) {
-            throw new IllegalArgumentException(
-                    "El servicio no existe.");
-        }
+        validarServicioDelProveedor(
+                idServicio,
+                idProveedor);
 
         if (repositoryServicio
                 .tieneSolicitudesPendientes(idServicio)) {
@@ -201,10 +208,18 @@ public class ServiceProveedores {
     }
 
     public void eliminarDisponibilidad(
+            int idProveedor,
+            int idServicio,
             int idDisponibilidad) {
 
+        validarServicioDelProveedor(
+                idServicio,
+                idProveedor);
+
         repositoryDisponibilidadServicio
-                .eliminarDisponibilidad(idDisponibilidad);
+                .eliminarDisponibilidad(
+                        idServicio,
+                        idDisponibilidad);
     }
 
     public void agregarImagenServicio(

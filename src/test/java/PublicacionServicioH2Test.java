@@ -1,3 +1,4 @@
+
 import config.DatabaseConnection;
 import entities.ImagenServicio;
 import entities.PreguntaServicio;
@@ -31,10 +32,9 @@ public class PublicacionServicioH2Test {
                 "nexteventux.db.url",
                 "jdbc:h2:mem:cu11publicacion;DB_CLOSE_DELAY=-1");
 
-        try (Connection connection =
-                     DatabaseConnection.getConnection();
-             Statement statement =
-                     connection.createStatement()) {
+        try (Connection connection
+                = DatabaseConnection.getConnection(); Statement statement
+                = connection.createStatement()) {
 
             statement.execute(
                     "SET REFERENTIAL_INTEGRITY FALSE");
@@ -69,10 +69,9 @@ public class PublicacionServicioH2Test {
     @AfterEach
     void limpiar() throws Exception {
 
-        try (Connection connection =
-                     DatabaseConnection.getConnection();
-             Statement statement =
-                     connection.createStatement()) {
+        try (Connection connection
+                = DatabaseConnection.getConnection(); Statement statement
+                = connection.createStatement()) {
 
             statement.execute("DROP ALL OBJECTS");
         }
@@ -106,6 +105,7 @@ public class PublicacionServicioH2Test {
                         .toInstant());
 
         service.registrarDisponibilidadServicio(
+                9001,
                 servicio.getIdServicio(),
                 fecha,
                 "09:00 - 12:00");
@@ -115,8 +115,8 @@ public class PublicacionServicioH2Test {
                 servicio.getIdServicio(),
                 "C:/imagenes/referencia.jpg");
 
-        List<ImagenServicio> imagenes =
-                service.listarImagenesServicio(
+        List<ImagenServicio> imagenes
+                = service.listarImagenesServicio(
                         servicio.getIdServicio());
 
         assertEquals(1, imagenes.size());
@@ -125,6 +125,7 @@ public class PublicacionServicioH2Test {
                 imagenes.get(0).getRuta());
 
         service.publicarServicio(
+                9001,
                 servicio.getIdServicio());
 
         service.formularPreguntaPublica(
@@ -132,8 +133,8 @@ public class PublicacionServicioH2Test {
                 9002,
                 "¿Incluye montaje?");
 
-        List<PreguntaServicio> preguntas =
-                service.listarPreguntasPublicas(
+        List<PreguntaServicio> preguntas
+                = service.listarPreguntasPublicas(
                         servicio.getIdServicio());
 
         assertEquals(1, preguntas.size());
@@ -146,8 +147,8 @@ public class PublicacionServicioH2Test {
                 preguntas.get(0).getIdPregunta(),
                 "Si, el montaje esta incluido.");
 
-        preguntas =
-                service.listarPreguntasPublicas(
+        preguntas
+                = service.listarPreguntasPublicas(
                         servicio.getIdServicio());
 
         assertEquals(

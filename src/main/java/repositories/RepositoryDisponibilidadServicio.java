@@ -1,8 +1,5 @@
 package repositories;
 
-import config.DatabaseConnection;
-import entities.DisponibilidadServicio;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,6 +8,9 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import config.DatabaseConnection;
+import entities.DisponibilidadServicio;
 
 // Se encarga de guardar y consultar disponibilidades en H2
 public class RepositoryDisponibilidadServicio {
@@ -26,10 +26,9 @@ public class RepositoryDisponibilidadServicio {
                 VALUES (?, ?, ?, ?, 'DISPONIBLE')
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     sql,
-                     java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(
+                sql,
+                java.sql.Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setInt(1, disponibilidad.getIdServicio());
             statement.setDate(
@@ -76,8 +75,7 @@ public class RepositoryDisponibilidadServicio {
                   AND hora_fin = ?
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idServicio);
             statement.setDate(
@@ -118,8 +116,7 @@ public class RepositoryDisponibilidadServicio {
                 ORDER BY fecha, hora_inicio
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idServicio);
 
@@ -149,8 +146,7 @@ public class RepositoryDisponibilidadServicio {
                   AND estado = 'DISPONIBLE'
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idServicio);
 
@@ -183,8 +179,7 @@ public class RepositoryDisponibilidadServicio {
                   AND ? > hora_inicio
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idServicio);
             statement.setDate(
@@ -230,8 +225,7 @@ public class RepositoryDisponibilidadServicio {
                   AND ? > c.hora_inicio
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idServicio);
             statement.setDate(
@@ -256,17 +250,20 @@ public class RepositoryDisponibilidadServicio {
         }
     }
 
-    public void eliminarDisponibilidad(int idDisponibilidad) {
+    public void eliminarDisponibilidad(
+            int idServicio,
+            int idDisponibilidad) {
 
         String sql = """
                 DELETE FROM Disponibilidad_Servicio
                 WHERE id_disponibilidad = ?
+                  AND id_servicio = ?
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, idDisponibilidad);
+            statement.setInt(2, idServicio);
             statement.executeUpdate();
 
         } catch (SQLException e) {
@@ -279,8 +276,8 @@ public class RepositoryDisponibilidadServicio {
     private DisponibilidadServicio construirDisponibilidad(
             ResultSet result) throws SQLException {
 
-        DisponibilidadServicio disponibilidad =
-                new DisponibilidadServicio();
+        DisponibilidadServicio disponibilidad
+                = new DisponibilidadServicio();
 
         disponibilidad.setIdDisponibilidad(
                 result.getInt("id_disponibilidad"));
@@ -289,8 +286,8 @@ public class RepositoryDisponibilidadServicio {
         disponibilidad.setFecha(
                 new Date(result.getDate("fecha").getTime()));
 
-        String horario =
-                result.getTime("hora_inicio")
+        String horario
+                = result.getTime("hora_inicio")
                         .toLocalTime()
                         .toString()
                 + " - "
@@ -325,9 +322,9 @@ public class RepositoryDisponibilidadServicio {
                     "La hora final debe ser posterior a la inicial.");
         }
 
-        return new String[] {
-                inicio.toString(),
-                fin.toString()
+        return new String[]{
+            inicio.toString(),
+            fin.toString()
         };
     }
 }
