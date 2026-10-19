@@ -206,7 +206,7 @@ public class NextEventuxApp extends Application {
                         Navegacion.Pantalla.INVITADOS,
                         () -> new ViewInvitados(
                                 new ControllerInvitados(
-                                        new ServiceInvitados()),
+                                        new ServiceInvitados(), sesionActual),
                                 this::mostrarEventos,
                                 this::mostrarInvitados,
                                 this::mostrarCatalogoServicios,

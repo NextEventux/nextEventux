@@ -32,6 +32,8 @@ import repositories.RepositoryReservaRegalo;
  * reserva o cancela regalos; cada regalo tiene a lo sumo una reserva activa (R43).
  */
 public class ServiceInvitados {
+    private static final String MENSAJE_EVENTO_AJENO =
+            "Solo puedes gestionar las invitaciones de tus propios eventos.";
     private static final String MENSAJE_MESA_AJENA =
             "Solo el invitado puede usar su mesa de regalos. Verifica tu correo y tu teléfono.";
     private static final Pattern CORREO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
@@ -70,6 +72,33 @@ public class ServiceInvitados {
     // ------------------------------------------------------------------
     public List<Evento> listarEventos() {
         return repositoryEvento.listarEventos();
+    }
+
+    /** Eventos de un organizador: cada organizador solo gestiona las invitaciones de sus eventos. */
+    public List<Evento> listarEventos(int idOrganizador) {
+        return listarEventos().stream().filter(e -> e.getIdOrganizador() == idOrganizador).toList();
+    }
+
+    /** Comprueba que el evento pertenezca al organizador antes de consultarlo o modificarlo. */
+    public void validarEventoDelOrganizador(int idOrganizador, int eventoId) {
+        if (buscarEvento(eventoId).getIdOrganizador() != idOrganizador)
+            throw new IllegalArgumentException(MENSAJE_EVENTO_AJENO);
+    }
+
+    public int eventoDeInvitacion(int idInvitacion) {
+        Invitacion invitacion = repositoryInvitacion.buscarInvitacion(idInvitacion);
+        if (invitacion == null) throw new IllegalArgumentException("La invitación no existe.");
+        return invitacion.getIdEvento();
+    }
+
+    public int eventoDeInvitado(int idInvitado) {
+        Invitado invitado = repositoryInvitado.buscarInvitado(idInvitado);
+        if (invitado == null) throw new IllegalArgumentException("El invitado no existe.");
+        return eventoDeInvitacion(invitado.getIdInvitacion());
+    }
+
+    public int eventoDeRegalo(int idRegalo) {
+        return eventoDeInvitacion(buscarRegalo(idRegalo).getIdInvitacion());
     }
 
     public List<Lugar> listarLugares() {

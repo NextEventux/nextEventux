@@ -1,6 +1,7 @@
 import controllers.ControllerInvitados;
 import entities.Invitacion;
 import entities.Invitado;
+import entities.SesionUsuario;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,44 @@ class ServiceInvitadosTest {
         invitaciones = new RepositoryInvitacion(url);
         invitados = new RepositoryInvitado(url);
         service = new ServiceInvitados(invitaciones, invitados, new RepositoryLugar(url), new RepositoryEvento(url));
+    }
+
+    // ---------------------------------------------------------------- organizador en sesión
+    @Test
+    void cadaOrganizadorSoloVeYGestionaLasInvitacionesDeSusEventos() {
+        Invitacion propia = crear(EVENTO, GRANDE);
+        service.agregarInvitado(propia.getIdInvitacion(), invitado("Ana", "ana@correo.com"));
+        int ana = invitados.listarInvitados(propia.getIdInvitacion()).get(0).getIdInvitado();
+
+        ControllerInvitados duenio = new ControllerInvitados(service, organizador(1));
+        assertEquals(4, duenio.listarEventos().size());
+        assertEquals(1, duenio.listarInvitaciones(EVENTO).size());
+
+        ControllerInvitados otro = new ControllerInvitados(service, organizador(2));
+        assertTrue(otro.listarEventos().isEmpty());
+        assertAjeno(() -> otro.listarInvitaciones(EVENTO));
+        assertAjeno(() -> otro.crearInvitacion(OTRO_EVENTO, invitacion(GRANDE, "Hola")));
+        assertAjeno(() -> otro.actualizarInvitacion(propia.getIdInvitacion(), invitacion(PEQUENO, "Cambio")));
+        assertAjeno(() -> otro.revocarInvitacion(propia.getIdInvitacion()));
+        assertAjeno(() -> otro.agregarInvitado(propia.getIdInvitacion(), invitado("Luis", "luis@correo.com")));
+        assertAjeno(() -> otro.quitarInvitado(ana));
+
+        assertTrue(invitaciones.listarInvitaciones(OTRO_EVENTO).isEmpty());
+        Invitacion guardada = invitaciones.buscarInvitacion(propia.getIdInvitacion());
+        assertEquals(Invitacion.ESTADO_ENVIADA, guardada.getEstadoRespuesta());
+        assertEquals(1, invitados.listarInvitados(propia.getIdInvitacion()).size());
+    }
+
+    private static SesionUsuario organizador(int idOrganizador) {
+        SesionUsuario sesion = new SesionUsuario();
+        sesion.setTipoUsuario("ORGANIZADOR");
+        sesion.setIdActor(idOrganizador);
+        return sesion;
+    }
+
+    private static void assertAjeno(org.junit.jupiter.api.function.Executable accion) {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, accion);
+        assertTrue(error.getMessage().contains("tus propios eventos"), error.getMessage());
     }
 
     // ---------------------------------------------------------------- crear

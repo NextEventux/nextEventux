@@ -6,6 +6,7 @@ import entities.InvitacionRecibida;
 import entities.Invitado;
 import entities.Lugar;
 import entities.Regalo;
+import entities.SesionUsuario;
 import java.util.List;
 import java.util.Map;
 import services.ServiceInvitados;
@@ -14,13 +15,22 @@ import services.ServiceInvitados;
 public class ControllerInvitados {
 
     private final ServiceInvitados serviceInvitados;
+    /** Sesión del organizador; es null en el acceso del invitado, que no tiene cuenta. */
+    private final SesionUsuario sesion;
 
     public ControllerInvitados(ServiceInvitados serviceInvitados) {
-        this.serviceInvitados = serviceInvitados;
+        this(serviceInvitados, null);
     }
 
+    public ControllerInvitados(ServiceInvitados serviceInvitados, SesionUsuario sesion) {
+        this.serviceInvitados = serviceInvitados;
+        this.sesion = sesion;
+    }
+
+    /** Con sesión de organizador solo aparecen sus eventos. */
     public List<Evento> listarEventos() {
-        return serviceInvitados.listarEventos();
+        Integer organizador = organizadorEnSesion();
+        return organizador == null ? serviceInvitados.listarEventos() : serviceInvitados.listarEventos(organizador);
     }
 
     public List<Lugar> listarLugares() {
@@ -28,38 +38,47 @@ public class ControllerInvitados {
     }
 
     public List<Invitacion> listarInvitaciones(int eventoId) {
+        validarEvento(eventoId);
         return serviceInvitados.listarInvitaciones(eventoId);
     }
 
     public List<Invitado> listarInvitados(int idInvitacion) {
+        validarInvitacion(idInvitacion);
         return serviceInvitados.listarInvitados(idInvitacion);
     }
 
     public Map<Integer, Integer> contarAsistentesPorInvitacion(int eventoId) {
+        validarEvento(eventoId);
         return serviceInvitados.contarAsistentesPorInvitacion(eventoId);
     }
 
     public int contarAsistentes(int eventoId, int idLugar) {
+        validarEvento(eventoId);
         return serviceInvitados.contarAsistentes(eventoId, idLugar);
     }
 
     public void crearInvitacion(int eventoId, Invitacion datos) {
+        validarEvento(eventoId);
         serviceInvitados.crearInvitacion(eventoId, datos);
     }
 
     public void actualizarInvitacion(int idInvitacion, Invitacion datos) {
+        validarInvitacion(idInvitacion);
         serviceInvitados.actualizarInvitacion(idInvitacion, datos);
     }
 
     public void revocarInvitacion(int idInvitacion) {
+        validarInvitacion(idInvitacion);
         serviceInvitados.revocarInvitacion(idInvitacion);
     }
 
     public void agregarInvitado(int idInvitacion, Invitado datos) {
+        validarInvitacion(idInvitacion);
         serviceInvitados.agregarInvitado(idInvitacion, datos);
     }
 
     public void quitarInvitado(int idInvitado) {
+        if (organizadorEnSesion() != null) validarEvento(serviceInvitados.eventoDeInvitado(idInvitado));
         serviceInvitados.quitarInvitado(idInvitado);
     }
 
@@ -72,14 +91,17 @@ public class ControllerInvitados {
     }
 
     public List<Regalo> listarRegalos(int idInvitacion) {
+        validarInvitacion(idInvitacion);
         return serviceInvitados.listarRegalos(idInvitacion);
     }
 
     public void agregarRegalo(int idInvitacion, Regalo datos) {
+        validarInvitacion(idInvitacion);
         serviceInvitados.agregarRegalo(idInvitacion, datos);
     }
 
     public void quitarRegalo(int idRegalo) {
+        if (organizadorEnSesion() != null) validarEvento(serviceInvitados.eventoDeRegalo(idRegalo));
         serviceInvitados.quitarRegalo(idRegalo);
     }
 
@@ -97,5 +119,22 @@ public class ControllerInvitados {
 
     public void cancelarReservaRegalo(int idInvitado, String correo, String telefono, int idRegalo) {
         serviceInvitados.cancelarReservaRegalo(idInvitado, correo, telefono, idRegalo);
+    }
+
+    // ------------------------------------------------------------------
+    // Cada organizador solo gestiona las invitaciones de sus propios eventos.
+    // ------------------------------------------------------------------
+    private Integer organizadorEnSesion() {
+        if (sesion == null || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())) return null;
+        return sesion.getIdActor();
+    }
+
+    private void validarEvento(int eventoId) {
+        Integer organizador = organizadorEnSesion();
+        if (organizador != null) serviceInvitados.validarEventoDelOrganizador(organizador, eventoId);
+    }
+
+    private void validarInvitacion(int idInvitacion) {
+        if (organizadorEnSesion() != null) validarEvento(serviceInvitados.eventoDeInvitacion(idInvitacion));
     }
 }
