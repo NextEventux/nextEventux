@@ -9,9 +9,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
 
 import java.util.function.Consumer;
 
@@ -76,17 +78,7 @@ public class ViewLogin {
 
     public Parent crearPantalla() {
 
-        Label icono =
-                new Label("🎪");
-
-        icono.getStyleClass().add(
-                "login-icon");
-
-        Label marca =
-                new Label("nextEventux");
-
-        marca.getStyleClass().add(
-                "login-brand");
+        ImageView logo = MenuCompartido.crearLogo();
 
         Label subtitulo =
                 new Label("GESTIÓN DE EVENTOS");
@@ -96,9 +88,8 @@ public class ViewLogin {
 
         VBox cabecera =
                 new VBox(
-                        5,
-                        icono,
-                        marca,
+                        10,
+                        logo,
                         subtitulo);
 
         cabecera.setAlignment(

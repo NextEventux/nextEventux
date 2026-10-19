@@ -7,8 +7,8 @@
 .menu-title { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #A0A3B0; -fx-padding: 0 15 15 15; }
 .menu-item { -fx-padding: 14 17; -fx-font-size: 14px; -fx-text-fill: #626578; -fx-background-radius: 11; }
 .menu-item.active { -fx-background-color: #FFF0F1; -fx-text-fill: #D71920; -fx-font-weight: bold; }
-.sidebar-bottom { -fx-padding: 20 12; -fx-border-color: #E8E9EF transparent transparent transparent; }
-.avatar { -fx-background-color: #FFF0F1; -fx-text-fill: #D71920; -fx-background-radius: 50; -fx-padding: 12; -fx-font-weight: bold; }
+.sidebar-bottom { -fx-padding: 20 12; -fx-border-color: #E8E9EF transparent transparent transparent; -fx-alignment: center-left; }
+.avatar { -fx-min-width: 42px; -fx-pref-width: 42px; -fx-max-width: 42px; -fx-min-height: 42px; -fx-pref-height: 42px; -fx-max-height: 42px; -fx-alignment: center; -fx-background-color: #FFF0F1; -fx-text-fill: #D71920; -fx-background-radius: 21px; -fx-padding: 0; -fx-font-weight: bold; }
 .profile-name { -fx-font-weight: bold; }
 .topbar { -fx-pref-height: 78; -fx-background-color: white; -fx-border-color: transparent transparent #E8E9EF transparent; -fx-padding: 0 42; }
 .breadcrumb { -fx-text-fill: #858899; }
