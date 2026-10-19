@@ -43,8 +43,8 @@ class MesaRegalosTest {
                 new RepositoryReservaRegalo(url));
         controller = new ControllerInvitados(service);
         invitacion = crearInvitacion(EVENTO);
-        ana = agregarInvitado(invitacion, "Ana", "ana@correo.com");
-        luis = agregarInvitado(invitacion, "Luis", "luis@correo.com");
+        ana = agregarInvitado(invitacion, "Ana", "ana@correo.com", "300 111 2222");
+        luis = agregarInvitado(invitacion, "Luis", "luis@correo.com", "310 999 8888");
     }
 
     // ---------------------------------------------------------------- organizador
@@ -87,10 +87,10 @@ class MesaRegalosTest {
     @Test
     void noSePuedeQuitarUnRegaloReservado() {
         int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
-        controller.reservarRegalo(ana, cobija);
+        reservar(ana, cobija);
         assertMensaje(() -> controller.quitarRegalo(cobija), "ya fue reservado");
 
-        controller.cancelarReservaRegalo(ana, cobija);
+        cancelar(ana, cobija);
         controller.quitarRegalo(cobija); // con la reserva cancelada sí se puede quitar
         assertTrue(controller.listarRegalos(invitacion).isEmpty());
     }
@@ -101,34 +101,34 @@ class MesaRegalosTest {
         int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
         assertTrue(controller.validarDisponibilidadRegalo(cobija));
 
-        controller.reservarRegalo(ana, cobija);
+        reservar(ana, cobija);
 
         assertFalse(controller.validarDisponibilidadRegalo(cobija));
-        Regalo paraAna = controller.consultarRegalosDisponibles(ana).get(0);
+        Regalo paraAna = mesa(ana).get(0);
         assertTrue(paraAna.estaReservadoPor(ana));
-        Regalo paraLuis = controller.consultarRegalosDisponibles(luis).get(0);
+        Regalo paraLuis = mesa(luis).get(0);
         assertTrue(paraLuis.estaReservado());
         assertFalse(paraLuis.estaReservadoPor(luis));
         assertEquals("Ana", paraLuis.getReservadoPor());
         assertEquals(Regalo.ESTADO_RESERVADO, estadoEnTabla(cobija));
 
-        assertMensaje(() -> controller.reservarRegalo(luis, cobija), "otro invitado");
-        assertMensaje(() -> controller.reservarRegalo(ana, cobija), "Ya tienes reservado");
+        assertMensaje(() -> reservar(luis, cobija), "otro invitado");
+        assertMensaje(() -> reservar(ana, cobija), "Ya tienes reservado");
         assertEquals(1, contarReservasActivas(cobija));
     }
 
     @Test
     void cancelarLiberaElRegaloParaOtroInvitado() throws Exception {
         int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
-        controller.reservarRegalo(ana, cobija);
-        assertMensaje(() -> controller.cancelarReservaRegalo(luis, cobija), "No tienes una reserva");
+        reservar(ana, cobija);
+        assertMensaje(() -> cancelar(luis, cobija), "No tienes una reserva");
 
-        controller.cancelarReservaRegalo(ana, cobija);
+        cancelar(ana, cobija);
         assertTrue(controller.validarDisponibilidadRegalo(cobija));
         assertEquals(Regalo.ESTADO_DISPONIBLE, estadoEnTabla(cobija));
 
-        controller.reservarRegalo(luis, cobija);
-        assertTrue(controller.consultarRegalosDisponibles(luis).get(0).estaReservadoPor(luis));
+        reservar(luis, cobija);
+        assertTrue(mesa(luis).get(0).estaReservadoPor(luis));
     }
 
     @Test
@@ -137,10 +137,10 @@ class MesaRegalosTest {
         int ajena = agregarRegalo(otraInvitacion, "Libro", null, "40000");
         agregarRegalo(invitacion, "Cobija", null, "60000");
 
-        List<Regalo> mesa = controller.consultarRegalosDisponibles(ana);
+        List<Regalo> mesa = mesa(ana);
         assertEquals(1, mesa.size());
         assertEquals("Cobija", mesa.get(0).getNombre());
-        assertMensaje(() -> controller.reservarRegalo(ana, ajena), "no pertenece");
+        assertMensaje(() -> reservar(ana, ajena), "no pertenece");
     }
 
     @Test
@@ -148,7 +148,7 @@ class MesaRegalosTest {
         int pasada = DatosInvitacionesPrueba.insertarInvitacion(url, DatosInvitacionesPrueba.EVENTO_PASADO, GRANDE);
         int pedro = insertarInvitado(pasada, "pedro@correo.com");
         int regalo = insertarRegalo(pasada, "Reloj");
-        assertMensaje(() -> controller.reservarRegalo(pedro, regalo), "ya comenzó");
+        assertMensaje(() -> reservar(pedro, regalo), "ya comenzó");
     }
 
     @Test
@@ -160,24 +160,67 @@ class MesaRegalosTest {
                     + "(" + EVENTO + ", " + ana + ", " + panitos + ", CURRENT_TIMESTAMP, 'RESERVADO'), "
                     + "(" + EVENTO + ", " + luis + ", " + panitos + ", CURRENT_TIMESTAMP, 'RESERVADO')");
         }
-        assertTrue(controller.consultarRegalosDisponibles(ana).get(0).estaReservadoPor(ana));
-        assertTrue(controller.consultarRegalosDisponibles(luis).get(0).estaReservadoPor(luis));
+        assertTrue(mesa(ana).get(0).estaReservadoPor(ana));
+        assertTrue(mesa(luis).get(0).estaReservadoPor(luis));
 
-        controller.cancelarReservaRegalo(ana, panitos);
+        cancelar(ana, panitos);
         assertFalse(controller.validarDisponibilidadRegalo(panitos)); // Luis todavía lo tiene
-        controller.cancelarReservaRegalo(luis, panitos);
+        cancelar(luis, panitos);
         assertTrue(controller.validarDisponibilidadRegalo(panitos));
     }
 
     @Test
     void validaQueElInvitadoYElRegaloExistan() {
         int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
-        assertMensaje(() -> controller.reservarRegalo(999, cobija), "invitado no existe");
-        assertMensaje(() -> controller.reservarRegalo(ana, 999), "regalo no existe");
-        assertMensaje(() -> controller.consultarRegalosDisponibles(999), "invitado no existe");
+        assertMensaje(() -> controller.reservarRegalo(999, "x@correo.com", "3000000000", cobija), "invitado no existe");
+        assertMensaje(() -> reservar(ana, 999), "regalo no existe");
+        assertMensaje(() -> controller.consultarRegalosDisponibles(999, "x@correo.com", "3000000000"), "invitado no existe");
+    }
+
+    // ---------------------------------------------------------------- permisos del invitado
+    @Test
+    void nadieVeNiReservaEnLaMesaDeOtroInvitado() throws Exception {
+        int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
+        String msg = "Solo el invitado";
+
+        // Luis conoce el id y el correo de Ana, pero no su teléfono.
+        assertMensaje(() -> controller.consultarRegalosDisponibles(ana, "ana@correo.com", "310 999 8888"), msg);
+        assertMensaje(() -> controller.reservarRegalo(ana, "luis@correo.com", "310 999 8888", cobija), msg);
+        assertMensaje(() -> controller.reservarRegalo(ana, "ana@correo.com", "3109998888", cobija), msg);
+        assertEquals(0, contarReservasActivas(cobija));
+
+        // Ana reserva con sus datos; Luis no puede cancelarle la reserva haciéndose pasar por ella.
+        controller.reservarRegalo(ana, "ANA@correo.com", "(300) 111-2222", cobija);
+        assertMensaje(() -> controller.cancelarReservaRegalo(ana, "ana@correo.com", "310 999 8888", cobija), msg);
+        assertEquals(1, contarReservasActivas(cobija));
+        assertTrue(controller.consultarRegalosDisponibles(ana, "ana@correo.com", "3001112222").get(0).estaReservadoPor(ana));
+    }
+
+    @Test
+    void sinTelefonoRegistradoNoSeUsaLaMesa() {
+        int sinTelefono = agregarInvitado(invitacion, "Eva", "eva@correo.com", null);
+        int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
+        assertMensaje(() -> controller.consultarRegalosDisponibles(sinTelefono, "eva@correo.com", "3001112222"), "Solo el invitado");
+        assertMensaje(() -> controller.reservarRegalo(sinTelefono, "eva@correo.com", "", cobija), "Solo el invitado");
     }
 
     // ---------------------------------------------------------------- utilidades
+    /** Acciones hechas por el propio invitado, con su correo y teléfono registrados. */
+    private List<Regalo> mesa(int idInvitado) {
+        Invitado i = new RepositoryInvitado(url).buscarInvitado(idInvitado);
+        return controller.consultarRegalosDisponibles(idInvitado, i.getCorreo(), i.getTelefono());
+    }
+
+    private void reservar(int idInvitado, int idRegalo) {
+        Invitado i = new RepositoryInvitado(url).buscarInvitado(idInvitado);
+        controller.reservarRegalo(idInvitado, i.getCorreo(), i.getTelefono(), idRegalo);
+    }
+
+    private void cancelar(int idInvitado, int idRegalo) {
+        Invitado i = new RepositoryInvitado(url).buscarInvitado(idInvitado);
+        controller.cancelarReservaRegalo(idInvitado, i.getCorreo(), i.getTelefono(), idRegalo);
+    }
+
     private int crearInvitacion(int evento) {
         Invitacion datos = new Invitacion();
         datos.setIdLugar(GRANDE);
@@ -186,8 +229,8 @@ class MesaRegalosTest {
         return datos.getIdInvitacion();
     }
 
-    private int agregarInvitado(int idInvitacion, String nombre, String correo) {
-        Invitado invitado = new Invitado(nombre, correo, null, null);
+    private int agregarInvitado(int idInvitacion, String nombre, String correo, String telefono) {
+        Invitado invitado = new Invitado(nombre, correo, telefono, null);
         service.agregarInvitado(idInvitacion, invitado);
         return invitado.getIdInvitado();
     }
@@ -199,8 +242,8 @@ class MesaRegalosTest {
     }
 
     private int insertarInvitado(int idInvitacion, String correo) throws Exception {
-        return insertar("INSERT INTO Invitado (id_invitacion, nombre, estado, correo) VALUES ("
-                + idInvitacion + ", 'Pedro', 'PENDIENTE', '" + correo + "')");
+        return insertar("INSERT INTO Invitado (id_invitacion, nombre, telefono, estado, correo) VALUES ("
+                + idInvitacion + ", 'Pedro', '3005550000', 'PENDIENTE', '" + correo + "')");
     }
 
     private int insertarRegalo(int idInvitacion, String nombre) throws Exception {

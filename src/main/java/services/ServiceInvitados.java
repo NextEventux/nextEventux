@@ -32,6 +32,8 @@ import repositories.RepositoryReservaRegalo;
  * reserva o cancela regalos; cada regalo tiene a lo sumo una reserva activa (R43).
  */
 public class ServiceInvitados {
+    private static final String MENSAJE_MESA_AJENA =
+            "Solo el invitado puede usar su mesa de regalos. Verifica tu correo y tu teléfono.";
     private static final Pattern CORREO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final RepositoryInvitacion repositoryInvitacion;
@@ -299,10 +301,12 @@ public class ServiceInvitados {
     // ------------------------------------------------------------------
     /**
      * Mesa de regalos de la invitación del invitado. Cada regalo indica si está disponible,
-     * si lo reservó otro invitado o si lo reservó él mismo.
+     * si lo reservó otro invitado o si lo reservó él mismo. Igual que en CU-16, el invitado se
+     * identifica con su correo y su teléfono: nadie ve ni reserva en la mesa de otra persona.
      */
-    public List<Regalo> consultarRegalosDisponibles(int idInvitado) {
+    public List<Regalo> consultarRegalosDisponibles(int idInvitado, String correo, String telefono) {
         Invitado invitado = buscarInvitado(idInvitado);
+        validarIdentidad(invitado, correo, telefono, MENSAJE_MESA_AJENA);
         Invitacion invitacion = buscarInvitacionActiva(invitado.getIdInvitacion());
         return repositoryRegalo.listarRegalos(invitacion.getIdInvitacion(), idInvitado);
     }
@@ -313,8 +317,9 @@ public class ServiceInvitados {
         return !regalo.estaReservado() && repositoryReservaRegalo.contarReservasActivas(idRegalo) == 0;
     }
 
-    public void reservarRegalo(int idInvitado, int idRegalo) {
+    public void reservarRegalo(int idInvitado, String correo, String telefono, int idRegalo) {
         Invitado invitado = buscarInvitado(idInvitado);
+        validarIdentidad(invitado, correo, telefono, MENSAJE_MESA_AJENA);
         Invitacion invitacion = buscarInvitacionActiva(invitado.getIdInvitacion());
         validarEventoParaRegalos(invitacion.getIdEvento(), true);
         Regalo regalo = buscarRegalo(idRegalo);
@@ -330,8 +335,9 @@ public class ServiceInvitados {
             throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por otro invitado. Elige otro regalo.");
     }
 
-    public void cancelarReservaRegalo(int idInvitado, int idRegalo) {
+    public void cancelarReservaRegalo(int idInvitado, String correo, String telefono, int idRegalo) {
         Invitado invitado = buscarInvitado(idInvitado);
+        validarIdentidad(invitado, correo, telefono, MENSAJE_MESA_AJENA);
         Invitacion invitacion = buscarInvitacionActiva(invitado.getIdInvitacion());
         validarEventoParaRegalos(invitacion.getIdEvento(), true);
         Regalo regalo = buscarRegalo(idRegalo);
@@ -371,12 +377,16 @@ public class ServiceInvitados {
 
     /** Solo el destinatario (su correo y su teléfono registrado) puede responder la invitación. */
     private void validarIdentidad(Invitado invitado, String correo, String telefono) {
+        validarIdentidad(invitado, correo, telefono, "Solo el invitado puede responder su invitación. "
+                + "Verifica tu correo y tu teléfono.");
+    }
+
+    private void validarIdentidad(Invitado invitado, String correo, String telefono, String mensaje) {
         String limpio = limpiar(correo);
         boolean mismoCorreo = limpio != null && invitado.getCorreo() != null
                 && invitado.getCorreo().trim().equalsIgnoreCase(limpio);
         if (!mismoCorreo || !mismoTelefono(invitado.getTelefono(), telefono))
-            throw new IllegalArgumentException("Solo el invitado puede responder su invitación. "
-                    + "Verifica tu correo y tu teléfono.");
+            throw new IllegalArgumentException(mensaje);
     }
 
     /** Compara solo los dígitos, para aceptar "300 555 4444" o "300-555-4444". */

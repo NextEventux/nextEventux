@@ -55,6 +55,10 @@ public final class ViewMesaRegalos {
     /** Invitación (evento) cuya mesa se está mostrando. */
     private InvitacionRecibida actual;
     private final TextField correo = new TextField();
+    private final TextField telefono = new TextField();
+    /** Datos con los que se verificó al invitado en la última consulta; se reenvían en cada acción. */
+    private String correoVerificado;
+    private String telefonoVerificado;
     private final ComboBox<InvitacionRecibida> selectorEvento = new ComboBox<>();
     private final TextField buscador = new TextField();
     private final ComboBox<String> filtro = new ComboBox<>();
@@ -77,6 +81,12 @@ public final class ViewMesaRegalos {
         correo.setPrefWidth(260);
         correo.setMinWidth(180);
         correo.setOnAction(e -> consultar());
+
+        telefono.setId("telefonoInvitado");
+        telefono.setPromptText("Tu teléfono");
+        telefono.setPrefWidth(170);
+        telefono.setMinWidth(140);
+        telefono.setOnAction(e -> consultar());
 
         selectorEvento.setId("selectorEvento");
         selectorEvento.setPromptText("Selecciona un evento");
@@ -290,8 +300,9 @@ public final class ViewMesaRegalos {
         correo.setMaxWidth(Double.MAX_VALUE);
         VBox campoCorreo = new VBox(8, etiqueta("Tu correo", "field-label"), correo);
         HBox.setHgrow(campoCorreo, Priority.ALWAYS);
+        VBox campoTelefono = new VBox(8, etiqueta("Tu teléfono", "field-label"), telefono);
         VBox campoEvento = new VBox(8, etiqueta("Evento", "field-label"), selectorEvento);
-        HBox fila = new HBox(14, campoCorreo, campoEvento, consultar);
+        HBox fila = new HBox(14, campoCorreo, campoTelefono, campoEvento, consultar);
         fila.setAlignment(Pos.BOTTOM_LEFT);
         VBox tarjeta = new VBox(20, cabecera, fila);
         tarjeta.getStyleClass().add("card");
@@ -355,13 +366,16 @@ public final class ViewMesaRegalos {
     /** R37: busca las invitaciones activas del correo; cada una tiene su mesa de regalos. */
     private void consultar() {
         String texto = correo.getText() == null ? "" : correo.getText().trim();
-        if (texto.isEmpty()) {
-            mostrarMensaje("Escribe el correo con el que recibiste la invitación.", false);
+        String tel = telefono.getText() == null ? "" : telefono.getText().trim();
+        if (texto.isEmpty() || tel.isEmpty()) {
+            mostrarMensaje("Escribe el correo con el que recibiste la invitación y tu teléfono.", false);
             return;
         }
+        correoVerificado = null;
+        telefonoVerificado = null;
         List<InvitacionRecibida> invitaciones;
         try {
-            invitaciones = controller.consultarInvitacionesPorCorreo(texto);
+            invitaciones = controller.consultarInvitacionesPorCorreo(texto, tel);
         } catch (IllegalArgumentException | IllegalStateException e) {
             selectorEvento.getItems().clear();
             mostrarEvento(null);
@@ -373,9 +387,12 @@ public final class ViewMesaRegalos {
         if (invitaciones.isEmpty()) {
             selectorEvento.setValue(null);
             mostrarEvento(null);
-            mostrarMensaje("No hay invitaciones activas asociadas a \"" + texto + "\".", false);
+            mostrarMensaje("No encontramos invitaciones activas para ese correo y teléfono. "
+                    + "Si el organizador no registró tu teléfono, pídele que lo agregue.", false);
             return;
         }
+        correoVerificado = texto;
+        telefonoVerificado = tel;
         ocultarMensaje();
         InvitacionRecibida elegida = invitaciones.stream().filter(inv -> inv.getIdInvitado() == idAnterior)
                 .findFirst().orElse(invitaciones.get(0));
@@ -387,7 +404,7 @@ public final class ViewMesaRegalos {
         actual = invitacion;
         if (invitacion == null) {
             regalos = List.of();
-            detalleEvento.setText("Escribe tu correo y presiona Consultar para ver la mesa de regalos de tus eventos.");
+            detalleEvento.setText("Escribe tu correo y tu teléfono y presiona Consultar para ver la mesa de regalos de tus eventos.");
         } else {
             detalleEvento.setText(invitacion.getInicio().format(FECHA) + " · " + invitacion.getLugar()
                     + " · Invitado: " + invitacion.getNombreInvitado());
@@ -398,7 +415,7 @@ public final class ViewMesaRegalos {
 
     private void cargarRegalos() {
         try {
-            regalos = controller.consultarRegalosDisponibles(actual.getIdInvitado());
+            regalos = controller.consultarRegalosDisponibles(actual.getIdInvitado(), correoVerificado, telefonoVerificado);
         } catch (IllegalArgumentException | IllegalStateException e) {
             regalos = List.of();
             mostrarMensaje(e.getMessage(), false);
@@ -408,7 +425,7 @@ public final class ViewMesaRegalos {
     /** VP-04: si el regalo sigue disponible queda reservado a nombre del invitado. */
     private void reservar(Regalo regalo) {
         try {
-            controller.reservarRegalo(actual.getIdInvitado(), regalo.getIdRegalo());
+            controller.reservarRegalo(actual.getIdInvitado(), correoVerificado, telefonoVerificado, regalo.getIdRegalo());
             mostrarMensaje("Reservaste \"" + regalo.getNombre() + "\". Quedó registrado a tu nombre.", true);
         } catch (IllegalArgumentException | IllegalStateException e) {
             mostrarMensaje(e.getMessage(), false);
@@ -430,7 +447,7 @@ public final class ViewMesaRegalos {
         confirmar.getDialogPane().lookupButton(volver).getStyleClass().add("btn-secondary");
         if (confirmar.showAndWait().orElse(volver) != cancelar) return;
         try {
-            controller.cancelarReservaRegalo(actual.getIdInvitado(), regalo.getIdRegalo());
+            controller.cancelarReservaRegalo(actual.getIdInvitado(), correoVerificado, telefonoVerificado, regalo.getIdRegalo());
             mostrarMensaje("Cancelaste tu reserva de \"" + regalo.getNombre() + "\".", true);
         } catch (IllegalArgumentException | IllegalStateException e) {
             mostrarMensaje(e.getMessage(), false);
@@ -469,7 +486,7 @@ public final class ViewMesaRegalos {
                 tarjetas.getChildren().add(tarjetaRegalo(regalo, estado));
         }
         if (tarjetas.getChildren().isEmpty()) {
-            String vacio = actual == null ? "Consulta tu correo para ver los regalos."
+            String vacio = actual == null ? "Consulta con tu correo y tu teléfono para ver los regalos."
                     : regalos.isEmpty() ? "El organizador todavía no ha agregado regalos a esta mesa."
                     : "Ningún regalo coincide con la búsqueda.";
             tarjetas.getChildren().add(etiqueta(vacio, "muted"));
