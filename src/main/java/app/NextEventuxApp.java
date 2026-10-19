@@ -101,11 +101,6 @@ public class NextEventuxApp extends Application {
         contenedor.setTop(null);
         stage.setTitle("NextEventux | Iniciar sesión");
 
-        if (contenedor.getScene() != null
-                && contenedor.getScene().getWindow() instanceof Stage stage) {
-            stage.setTitle("NextEventux");
-        }
-
         contenedor.setCenter(
                 new ViewLogin(
                         controllerAutenticacion,
@@ -129,7 +124,7 @@ public class NextEventuxApp extends Application {
         salir.setOnAction(
                 event -> mostrarLogin());
 
-        HBox barra = new HBox(20, usuario, salir);
+        FlowPane barra = new FlowPane(15, 8, usuario, salir);
 
         barra.setAlignment(Pos.CENTER_RIGHT);
         barra.setPadding(new Insets(12));
