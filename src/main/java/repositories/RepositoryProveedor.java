@@ -34,6 +34,16 @@ public class RepositoryProveedor {
         this.url = url;
     }
 
+    public boolean administradorActivo(int usuario) {
+        String sql="SELECT 1 FROM Usuario u JOIN Usuario_rol ur ON ur.id_usuario=u.id_usuario "
+                + "JOIN Rol r ON r.id_rol=ur.id_rol WHERE u.id_usuario=? AND UPPER(u.estado)='ACTIVO' "
+                + "AND UPPER(u.tipo_usuario)='ADMINISTRADOR' AND UPPER(r.nombre)='ADMINISTRADOR' AND UPPER(r.estado)='ACTIVO'";
+        try(Connection c=conectar(); PreparedStatement s=c.prepareStatement(sql)) {
+            s.setInt(1,usuario);
+            try(ResultSet r=s.executeQuery()) { return r.next(); }
+        } catch(SQLException e) { throw new IllegalStateException("No se pudo validar la sesión administrativa.",e); }
+    }
+
     private Connection conectar() throws SQLException {
         return url == null
                 ? DatabaseConnection.getConnection()

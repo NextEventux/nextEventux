@@ -18,6 +18,7 @@ public class ViewPublicacion {
     private final Runnable abrirCatalogo;
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private final Runnable abrirAdministracion;
     private boolean esAdministrador;
     private final Label usuario = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
@@ -47,7 +48,13 @@ public class ViewPublicacion {
             Runnable abrirCatalogo,
             Runnable abrirInvitados,
             Runnable cerrarSesion) {
+        this(controller,volver,eventoInicial,sesion,abrirEventos,abrirMisEventos,abrirCatalogo,abrirInvitados,cerrarSesion,null);
+    }
 
+    public ViewPublicacion(ControllerPublicacion controller, Runnable volver, Integer eventoInicial,
+            SesionUsuario sesion, Runnable abrirEventos, Runnable abrirMisEventos, Runnable abrirCatalogo,
+            Runnable abrirInvitados, Runnable cerrarSesion, Runnable abrirAdministracion) {
+        this.abrirAdministracion=abrirAdministracion;
         this.controller = controller;
         this.volver = volver;
         this.eventoInicial = eventoInicial;
@@ -121,8 +128,12 @@ public class ViewPublicacion {
                 ? "Inicio"
                 : eventoInicial != null ? "Mis eventos" : "Crear evento";
         BorderPane principal = new BorderPane(scroll);
-        principal.setTop(MenuCompartido.crearBarraSuperior(
-                sesion,"Publicación de eventos",textoRegreso,volver));
+        HBox barra=MenuCompartido.crearBarraSuperior(sesion,"Publicación de eventos",textoRegreso,volver);
+        if(esAdministrador && abrirAdministracion!=null) {
+            Button administrar=boton("Aprobar proveedores","abrirAdministracionSesion",abrirAdministracion,false);
+            barra.getChildren().add(administrar);
+        }
+        principal.setTop(barra);
         raiz.setCenter(principal);
         actualizar();
         return raiz;

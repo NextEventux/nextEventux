@@ -4,6 +4,8 @@ import controllers.ControllerAdministracion;
 import entities.DocumentoProveedor;
 import entities.NotificacionInterna;
 import entities.Proveedor;
+import entities.SesionUsuario;
+import views.components.MenuCompartido;
 
 import javafx.beans.property.ReadOnlyIntegerWrapper;
 import javafx.beans.property.SimpleStringProperty;
@@ -29,6 +31,8 @@ import java.util.UUID;
 public class ViewAdministracion {
 
     private final ControllerAdministracion controller;
+    private final SesionUsuario sesion;
+    private final Runnable cerrarSesion;
 
     private final TableView<Proveedor> tablaProveedores = new TableView<>();
     private final TableView<DocumentoProveedor> tablaDocumentos = new TableView<>();
@@ -62,12 +66,16 @@ public class ViewAdministracion {
     private boolean informacionValidada = false;
 
     public ViewAdministracion(ControllerAdministracion controller) {
+        this(controller,null,null);
+    }
+    public ViewAdministracion(ControllerAdministracion controller, SesionUsuario sesion, Runnable cerrarSesion) {
         if (controller == null) {
             throw new IllegalArgumentException(
                     "El controlador de administración es obligatorio.");
         }
 
         this.controller = controller;
+        this.sesion=sesion; this.cerrarSesion=cerrarSesion;
 
         configurarTablaProveedores();
         configurarTablaDocumentos();
@@ -120,8 +128,7 @@ public class ViewAdministracion {
 
         VBox marca = new VBox(
                 5,
-                etiqueta("🎪", "brand-icon"),
-                etiqueta("nextEventux", "brand"),
+                MenuCompartido.crearLogo(),
                 etiqueta("GESTIÓN DE EVENTOS", "brand-caption")
         );
         marca.setAlignment(Pos.CENTER);
@@ -130,17 +137,13 @@ public class ViewAdministracion {
         menu.getChildren().addAll(
                 marca,
                 etiqueta("MENÚ PRINCIPAL", "menu-title"),
-                itemMenu("⌂  Inicio", false),
-                itemMenu("▦  Mis eventos", false),
-                itemMenu("♧  Proveedores", false),
-                itemMenu("✓  Aprobar proveedores", true),
-                itemMenu("♙  Invitados", false)
+                itemMenu("✓  Aprobar proveedores", true)
         );
 
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
 
-        Button volver = new Button("← Volver a crear evento");
+        Button volver = new Button("← Volver a publicaciones");
         volver.getStyleClass().addAll("menu-item", "menu-action");
         volver.setMaxWidth(Double.MAX_VALUE);
         volver.setOnAction(event ->
@@ -148,10 +151,15 @@ public class ViewAdministracion {
 
         VBox perfil = new VBox(
                 4,
-                etiqueta("Administración", "profile-name"),
+                etiqueta(sesion==null ? "Administración" : sesion.getNombre(), "profile-name"),
                 etiqueta("Revisión de proveedores", "hint")
         );
 
+        if(cerrarSesion!=null) {
+            Button salir=new Button("Cerrar sesión"); salir.setId("cerrarSesionAdministracion");
+            salir.getStyleClass().add("btn-secondary"); salir.setOnAction(e->cerrarSesion.run());
+            perfil.getChildren().add(salir);
+        }
         HBox cuenta = new HBox(12, etiqueta("AD", "avatar"), perfil);
         cuenta.setAlignment(Pos.CENTER_LEFT);
         cuenta.getStyleClass().add("sidebar-bottom");
@@ -173,19 +181,7 @@ public class ViewAdministracion {
     }
 
     private HBox crearBarraSuperior() {
-        HBox barra = new HBox(
-                18,
-                etiqueta("Inicio / Administración /", "breadcrumb"),
-                etiqueta("Aprobar proveedores", "breadcrumb-current"),
-                espacioHorizontal(),
-                etiqueta("♧", "notification"),
-                etiqueta("Administrador", "user-badge")
-        );
-
-        barra.setAlignment(Pos.CENTER_LEFT);
-        barra.getStyleClass().add("topbar");
-
-        return barra;
+        return MenuCompartido.crearBarraSuperior(sesion,"Aprobar proveedores");
     }
 
     private HBox crearEncabezado() {
@@ -387,15 +383,11 @@ public class ViewAdministracion {
     private VBox crearNotaDiseno() {
         VBox nota = new VBox(
                 9,
-                etiqueta("ⓘ Consideraciones de la validación", "card-title"),
+                etiqueta("ⓘ Información importante", "card-title"),
                 etiqueta(
-                        "Los documentos se copian a una carpeta local y sus "
-                        + "metadatos se almacenan en H2. Las notificaciones "
-                        + "quedan asociadas al usuario del proveedor. Esta "
-                        + "pantalla representa la revisión administrativa; "
-                        + "la autenticación del administrador y la vista "
-                        + "propia del proveedor deben integrarse según el "
-                        + "diseño general del equipo.",
+                        "Revisa la información del proveedor y sus documentos antes de aprobar. "
+                        + "Si falta información, solicita correcciones. Las decisiones quedan "
+                        + "registradas y generan una notificación para el proveedor.",
                         "muted"
                 )
         );

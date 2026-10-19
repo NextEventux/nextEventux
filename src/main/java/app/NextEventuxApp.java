@@ -55,11 +55,13 @@ public class NextEventuxApp extends Application {
     private Integer servicioProveedorSeleccionado;
     private Integer eventoSeleccionado;
     private Stage stage;
+    private Stage ventanaAdministracion;
     private ControllerPublicacion publicaciones;
 
     @Override
     public void start(Stage stage) {
         this.stage = stage;
+        stage.setOnHidden(event -> cerrarAdministracion());
 
         controllerAutenticacion = new ControllerAutenticacion(
                 new ServiceAutenticacion(new RepositoryAutenticacion()));
@@ -98,7 +100,15 @@ public class NextEventuxApp extends Application {
         stage.centerOnScreen();
     }
 
+    private void cerrarAdministracion() {
+        if(ventanaAdministracion!=null) {
+            ventanaAdministracion.close();
+            ventanaAdministracion=null;
+        }
+    }
+
     private void mostrarLogin() {
+        cerrarAdministracion();
 
         if (sesionActual != null) sesionActual.cerrar();
         sesionActual = null;
@@ -152,24 +162,6 @@ public class NextEventuxApp extends Application {
         if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
             mostrarEventos();
         } else {
-            javafx.scene.control.Button aprobarProveedores =
-                    new javafx.scene.control.Button(
-                            "Aprobar proveedores");
-
-            aprobarProveedores.setId("abrirAdministracionSesion");
-            aprobarProveedores.setOnAction(
-                    event -> mostrarAdministracion());
-
-            javafx.scene.layout.HBox barraAdministracion =
-                    new javafx.scene.layout.HBox(
-                            aprobarProveedores);
-
-            barraAdministracion.setAlignment(Pos.CENTER_RIGHT);
-            barraAdministracion.setPadding(
-                    new javafx.geometry.Insets(12));
-
-            contenedor.setTop(barraAdministracion);
-
             mostrarPublicacion();
         }
 
@@ -296,7 +288,8 @@ public class NextEventuxApp extends Application {
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
-                                this::mostrarLogin).crearPantalla());
+                                this::mostrarLogin,
+                                this::mostrarAdministracion).crearPantalla());
     }
 
     private void mostrarMisEventos() {
@@ -324,7 +317,7 @@ public class NextEventuxApp extends Application {
             return;
         }
         eventoSeleccionado = null;
-        navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
+        navegacion.mostrarEn(contenedor,Navegacion.Pantalla.PUBLICACION_EVENTOS);
     }
 
     private void mostrarPublicacion(Evento evento) {
@@ -483,19 +476,24 @@ public class NextEventuxApp extends Application {
     ControllerAdministracion controller =
             new ControllerAdministracion(
                     new ServiceAdministracion(
-                            new RepositoryProveedor()));
+                            new RepositoryProveedor(),sesionActual));
 
-    Stage ventanaAdministracion = new Stage();
+    if(ventanaAdministracion!=null && ventanaAdministracion.isShowing()) {
+        ventanaAdministracion.toFront(); return;
+    }
+    ventanaAdministracion = new Stage();
+    ventanaAdministracion.initOwner(stage);
 
     Rectangle2D pantalla = Screen.getPrimary().getVisualBounds();
     double ancho = Math.min(1440, pantalla.getWidth());
     double alto = Math.min(900, pantalla.getHeight());
 
     Scene escena = new Scene(
-            new ViewAdministracion(controller).crearPantalla(),
+            new ViewAdministracion(controller,sesionActual,this::mostrarLogin).crearPantalla(),
             ancho,
             alto);
 
+    escena.getStylesheets().add(getClass().getResource("/styles/eventos.css").toExternalForm());
     escena.getStylesheets().add(
             getClass().getResource(
                     "/styles/administracion.css").toExternalForm());

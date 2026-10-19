@@ -3,6 +3,7 @@ package services;
 import entities.DocumentoProveedor;
 import entities.NotificacionInterna;
 import entities.Proveedor;
+import entities.SesionUsuario;
 import repositories.RepositoryProveedor;
 
 import java.time.LocalDate;
@@ -19,14 +20,20 @@ public class ServiceAdministracion {
             Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
     private final RepositoryProveedor repositoryProveedor;
+    private final SesionUsuario sesion;
 
     public ServiceAdministracion(RepositoryProveedor repositoryProveedor) {
+        this(repositoryProveedor,null);
+    }
+
+    public ServiceAdministracion(RepositoryProveedor repositoryProveedor, SesionUsuario sesion) {
         if (repositoryProveedor == null) {
             throw new IllegalArgumentException(
                     "El repositorio de proveedores es obligatorio.");
         }
 
         this.repositoryProveedor = repositoryProveedor;
+        this.sesion=sesion;
     }
 
     // ---------------------------------------------------------
@@ -34,10 +41,12 @@ public class ServiceAdministracion {
     // ---------------------------------------------------------
 
     public List<Proveedor> consultarProveedoresPendientes() {
+        validarSesionAdministrativa();
         return repositoryProveedor.listarProveedoresPendientes();
     }
 
     public Proveedor consultarProveedor(int idProveedor) {
+        validarSesionAdministrativa();
         validarIdentificador(idProveedor);
 
         return repositoryProveedor.buscarProveedor(idProveedor);
@@ -49,6 +58,7 @@ public class ServiceAdministracion {
 
     public List<DocumentoProveedor> consultarDocumentosProveedor(
             int idProveedor) {
+        validarSesionAdministrativa();
 
         exigirProveedorPendiente(idProveedor);
 
@@ -56,6 +66,7 @@ public class ServiceAdministracion {
     }
 
     public List<String> consultarServiciosProveedor(int idProveedor) {
+        validarSesionAdministrativa();
         exigirProveedorPendiente(idProveedor);
 
         return repositoryProveedor.listarServiciosProveedor(idProveedor);
@@ -66,6 +77,7 @@ public class ServiceAdministracion {
      * El repositorio conserva su identificador y sus metadatos.
      */
     public int registrarDocumento(DocumentoProveedor documento) {
+        validarSesionAdministrativa();
         if (documento == null) {
             throw new IllegalArgumentException(
                     "Debes proporcionar los datos del documento.");
@@ -86,6 +98,7 @@ public class ServiceAdministracion {
             String nombreArchivo,
             String rutaArchivo,
             LocalDate fechaVencimiento) {
+        validarSesionAdministrativa();
 
         exigirProveedorPendiente(idProveedor);
 
@@ -103,6 +116,7 @@ public class ServiceAdministracion {
      */
     public void marcarDocumentoValidado(
             int idProveedor, int idDocumento) {
+        validarSesionAdministrativa();
 
         exigirProveedorPendiente(idProveedor);
 
@@ -142,6 +156,7 @@ public class ServiceAdministracion {
             int idProveedor,
             int idDocumento,
             String observacion) {
+        validarSesionAdministrativa();
 
         exigirProveedorPendiente(idProveedor);
 
@@ -180,6 +195,7 @@ public class ServiceAdministracion {
      * y vigentes.
      */
     public boolean verificarInformacionProveedor(int idProveedor) {
+        validarSesionAdministrativa();
         Proveedor proveedor = obtenerProveedorPendiente(idProveedor);
 
         if (proveedor == null || !datosBasicosValidos(proveedor)) {
@@ -243,6 +259,7 @@ public class ServiceAdministracion {
      * dentro de una misma transacción.
      */
     public void aprobarProveedor(int idProveedor) {
+        validarSesionAdministrativa();
         Proveedor proveedor = exigirProveedorPendiente(idProveedor);
 
         if (!verificarInformacionProveedor(idProveedor)) {
@@ -266,6 +283,7 @@ public class ServiceAdministracion {
      */
     public void solicitarCorrecciones(
             int idProveedor, String observacion) {
+        validarSesionAdministrativa();
 
         exigirProveedorPendiente(idProveedor);
 
@@ -293,6 +311,7 @@ public class ServiceAdministracion {
      * El repositorio registra el motivo y la notificación.
      */
     public void rechazarProveedor(int idProveedor, String motivo) {
+        validarSesionAdministrativa();
         exigirProveedorPendiente(idProveedor);
 
         if (motivo == null || motivo.isBlank()) {
@@ -318,6 +337,7 @@ public class ServiceAdministracion {
 
     public List<NotificacionInterna> consultarNotificacionesPorUsuario(
             int idUsuario) {
+        validarSesionAdministrativa();
 
         if (idUsuario <= 0) {
             throw new IllegalArgumentException(
@@ -330,6 +350,14 @@ public class ServiceAdministracion {
     // ---------------------------------------------------------
     // UTILIDADES
     // ---------------------------------------------------------
+
+    private void validarSesionAdministrativa() {
+        if(sesion==null || sesion.getIdUsuario()<=0
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario())
+                || !repositoryProveedor.administradorActivo(sesion.getIdUsuario()))
+            throw new IllegalStateException("Inicia sesión como administrador activo para gestionar proveedores.");
+    }
 
     private Proveedor exigirProveedorPendiente(int idProveedor) {
         Proveedor proveedor = obtenerProveedorPendiente(idProveedor);
