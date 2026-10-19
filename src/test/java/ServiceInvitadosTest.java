@@ -182,7 +182,35 @@ class ServiceInvitadosTest {
         assertMensaje(() -> service.quitarInvitado(999), "no existe");
     }
 
+    @Test
+    void enUnEventoCanceladoOFinalizadoNoSeModificanInvitacionesNiInvitados() throws Exception {
+        for (String estado : new String[]{"CANCELADO", "FINALIZADO"}) {
+            Invitacion inv = crear(OTRO_EVENTO, GRANDE);
+            service.agregarInvitado(inv.getIdInvitacion(), invitado("Ana", estado.toLowerCase() + "@correo.com"));
+            int ana = invitados.listarInvitados(inv.getIdInvitacion()).get(0).getIdInvitado();
+            cambiarEstadoEvento(OTRO_EVENTO, estado);
+
+            String motivo = estado.toLowerCase() + "; ya no se pueden modificar";
+            assertMensaje(() -> service.actualizarInvitacion(inv.getIdInvitacion(), invitacion(GRANDE, "Nuevo texto")), motivo);
+            assertMensaje(() -> service.revocarInvitacion(inv.getIdInvitacion()), motivo);
+            assertMensaje(() -> service.agregarInvitado(inv.getIdInvitacion(), invitado("Luis", "luis@correo.com")), motivo);
+            assertMensaje(() -> service.quitarInvitado(ana), motivo);
+
+            assertEquals("Te invitamos", invitaciones.buscarInvitacion(inv.getIdInvitacion()).getMensaje());
+            assertTrue(invitaciones.buscarInvitacion(inv.getIdInvitacion()).estaActiva());
+            assertEquals(1, invitados.listarInvitados(inv.getIdInvitacion()).size());
+            cambiarEstadoEvento(OTRO_EVENTO, "PLANEADO");
+        }
+    }
+
     // ---------------------------------------------------------------- utilidades
+    private void cambiarEstadoEvento(int evento, String estado) throws Exception {
+        try (java.sql.Connection c = config.DatabaseConnection.getConnection(url);
+             java.sql.Statement s = c.createStatement()) {
+            s.executeUpdate("UPDATE Evento SET estado = '" + estado + "' WHERE id_evento = " + evento);
+        }
+    }
+
     private Invitacion invitacion(int lugar, String mensaje) {
         Invitacion invitacion = new Invitacion();
         invitacion.setIdLugar(lugar);
