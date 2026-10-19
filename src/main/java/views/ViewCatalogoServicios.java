@@ -1,14 +1,5 @@
 package views;
 
-import controllers.ControllerProveedores;
-import entities.Servicio;
-import entities.SesionUsuario;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,34 +7,59 @@ import java.util.Locale;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
+import controllers.ControllerProveedores;
+import entities.Servicio;
+import entities.SesionUsuario;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Control;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
+
 public class ViewCatalogoServicios {
 
     private final ControllerProveedores controller;
     private final SesionUsuario sesion;
+    private final Runnable abrirCatalogo;
     private final Runnable abrirEventos;
+    private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
     private final Consumer<Servicio> abrirDetalle;
 
-    private final TextField busqueda =
-            new TextField();
+    private final TextField busqueda
+            = new TextField();
 
-    private final ComboBox<String> categoriaFiltro =
-            new ComboBox<>();
+    private final ComboBox<String> categoriaFiltro
+            = new ComboBox<>();
 
-    private final TextField precioMinimo =
-            new TextField();
+    private final TextField precioMinimo
+            = new TextField();
 
-    private final TextField precioMaximo =
-            new TextField();
+    private final TextField precioMaximo
+            = new TextField();
 
-    private final ListView<Servicio> listaServicios =
-            new ListView<>();
+    private final ListView<Servicio> listaServicios
+            = new ListView<>();
 
-    private final List<Servicio> serviciosDisponibles =
-            new ArrayList<>();
+    private final List<Servicio> serviciosDisponibles
+            = new ArrayList<>();
 
-    private final NumberFormat formatoCOP =
-            NumberFormat.getNumberInstance(
+    private final NumberFormat formatoCOP
+            = NumberFormat.getNumberInstance(
                     Locale.forLanguageTag("es-CO"));
 
     public ViewCatalogoServicios(
@@ -53,9 +69,36 @@ public class ViewCatalogoServicios {
             Runnable cerrarSesion,
             Consumer<Servicio> abrirDetalle) {
 
+        this(controller, sesion, abrirEventos, null, null,
+                cerrarSesion, abrirDetalle);
+    }
+
+    public ViewCatalogoServicios(
+            ControllerProveedores controller,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            Consumer<Servicio> abrirDetalle) {
+
+        this(controller, sesion, abrirEventos, abrirInvitados, null,
+                cerrarSesion, abrirDetalle);
+    }
+
+    public ViewCatalogoServicios(
+            ControllerProveedores controller,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable cerrarSesion,
+            Consumer<Servicio> abrirDetalle) {
+
         this.controller = controller;
         this.sesion = sesion;
+        this.abrirCatalogo = abrirCatalogo;
         this.abrirEventos = abrirEventos;
+        this.abrirInvitados = abrirInvitados;
         this.cerrarSesion = cerrarSesion;
         this.abrirDetalle = abrirDetalle;
 
@@ -84,32 +127,32 @@ public class ViewCatalogoServicios {
 
     public Parent crearPantalla() {
 
-        BorderPane raiz =
-                new BorderPane();
+        BorderPane raiz
+                = new BorderPane();
 
         raiz.getStyleClass().add("app");
 
-        VBox sidebar =
-                crearMenu();
+        VBox sidebar
+                = crearMenu();
 
         raiz.setLeft(sidebar);
 
-        BorderPane principal =
-                new BorderPane();
+        BorderPane principal
+                = new BorderPane();
 
         principal.setTop(
                 crearBarraSuperior());
 
-        VBox contenido =
-                new VBox(30);
+        VBox contenido
+                = new VBox(30);
 
         contenido.getStyleClass().add(
                 "content");
 
         contenido.setMaxWidth(1320);
 
-        VBox titulo =
-                new VBox(
+        VBox titulo
+                = new VBox(
                         8,
                         etiqueta(
                                 "Proveedores y servicios",
@@ -118,8 +161,8 @@ public class ViewCatalogoServicios {
                                 "Explora los servicios publicados y encuentra el que mejor se adapte a tu evento.",
                                 "muted"));
 
-        HBox encabezado =
-                new HBox(
+        HBox encabezado
+                = new HBox(
                         20,
                         titulo,
                         espacioHorizontal(),
@@ -130,8 +173,8 @@ public class ViewCatalogoServicios {
         encabezado.setAlignment(
                 Pos.CENTER_LEFT);
 
-        VBox catalogo =
-                crearCatalogo();
+        VBox catalogo
+                = crearCatalogo();
 
         contenido
                 .getChildren()
@@ -139,14 +182,14 @@ public class ViewCatalogoServicios {
                         encabezado,
                         catalogo);
 
-        StackPane centrado =
-                new StackPane(contenido);
+        StackPane centrado
+                = new StackPane(contenido);
 
         centrado.setAlignment(
                 Pos.TOP_CENTER);
 
-        ScrollPane scroll =
-                new ScrollPane(centrado);
+        ScrollPane scroll
+                = new ScrollPane(centrado);
 
         scroll.setFitToWidth(true);
 
@@ -173,176 +216,30 @@ public class ViewCatalogoServicios {
     }
 
     private VBox crearMenu() {
-
-        VBox menu =
-                new VBox(7);
-
-        menu.getStyleClass().add(
-                "sidebar");
-
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-
-        VBox marca =
-                new VBox(
-                        5,
-                        etiqueta(
-                                "🎪",
-                                "brand-icon"),
-                        etiqueta(
-                                "nextEventux",
-                                "brand"),
-                        etiqueta(
-                                "GESTIÓN DE EVENTOS",
-                                "brand-caption"));
-
-        marca.setAlignment(
-                Pos.CENTER);
-
-        VBox.setMargin(
-                marca,
-                new Insets(
-                        0,
-                        0,
-                        38,
-                        0));
-
-        menu.getChildren().addAll(
-                marca,
-                etiqueta(
-                        "MENÚ PRINCIPAL",
-                        "menu-title"));
-
-        String[] opciones = {
-                "⌂  Inicio",
-                "▦  Mis eventos",
-                "＋  Crear evento",
-                "♧  Proveedores",
-                "♙  Invitados",
-                "⚙  Configuración"
-        };
-
-        for (String opcion : opciones) {
-
-            Label item =
-                    etiqueta(
-                            opcion,
-                            "menu-item");
-
-            item.setMaxWidth(
-                    Double.MAX_VALUE);
-
-            if (opcion.contains(
-                    "Proveedores")) {
-
-                item.getStyleClass().add(
-                        "active");
-            }
-
-            if (opcion.contains(
-                    "Crear evento")
-                    && abrirEventos != null) {
-
-                item.setOnMouseClicked(
-                        event ->
-                                abrirEventos.run());
-            }
-
-            menu.getChildren().add(
-                    item);
-        }
-
-        Region espacio =
-                new Region();
-
-        VBox.setVgrow(
-                espacio,
-                Priority.ALWAYS);
-
-        Label salir =
-                etiqueta(
-                        "Cerrar sesión",
-                        "logout-link");
-
-        if (cerrarSesion != null) {
-
-            salir.setOnMouseClicked(
-                    event ->
-                            cerrarSesion.run());
-        }
-
-        VBox perfil =
-                new VBox(
-                        4,
-                        etiqueta(
-                                nombreSesion(),
-                                "profile-name"),
-                        etiqueta(
-                                "Organizador",
-                                "hint"),
-                        salir);
-
-        HBox cuenta =
-                new HBox(
-                        12,
-                        etiqueta(
-                                inicialesSesion(),
-                                "avatar"),
-                        perfil);
-
-        cuenta.setAlignment(
-                Pos.CENTER_LEFT);
-
-        cuenta
-                .getStyleClass()
-                .add("sidebar-bottom");
-
-        menu.getChildren().addAll(
-                espacio,
-                cuenta);
-
-        return menu;
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.CATALOGO,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                null,
+                cerrarSesion);
     }
 
     private HBox crearBarraSuperior() {
-
-        HBox barra =
-                new HBox(
-                        18,
-                        etiqueta(
-                                "Inicio /",
-                                "breadcrumb"),
-                        etiqueta(
-                                "Proveedores",
-                                "breadcrumb-current"),
-                        espacioHorizontal(),
-                        etiqueta(
-                                "♧",
-                                "notification"),
-                        etiqueta(
-                                nombreSesion(),
-                                "user-badge"));
-
-        barra.setAlignment(
-                Pos.CENTER_LEFT);
-
-        barra
-                .getStyleClass()
-                .add("topbar");
-
-        return barra;
+        return MenuCompartido.crearBarraSuperior(sesion, "Proveedores");
     }
 
     private VBox crearCatalogo() {
 
-        VBox tarjeta =
-                new VBox(24);
+        VBox tarjeta
+                = new VBox(24);
 
         tarjeta.getStyleClass().add(
                 "card");
 
-        HBox titulo =
-                new HBox(
+        HBox titulo
+                = new HBox(
                         13,
                         etiqueta(
                                 "♧",
@@ -354,15 +251,15 @@ public class ViewCatalogoServicios {
         titulo.setAlignment(
                 Pos.CENTER_LEFT);
 
-        Label ayuda =
-                etiqueta(
+        Label ayuda
+                = etiqueta(
                         "Utiliza los filtros para encontrar rápidamente el servicio que necesitas.",
                         "muted");
 
         ayuda.setWrapText(true);
 
-        FlowPane filtros =
-                new FlowPane();
+        FlowPane filtros
+                = new FlowPane();
 
         filtros.setHgap(16);
         filtros.setVgap(14);
@@ -409,8 +306,8 @@ public class ViewCatalogoServicios {
             Control control,
             double ancho) {
 
-        Label label =
-                etiqueta(
+        Label label
+                = etiqueta(
                         titulo,
                         "field-label");
 
@@ -429,130 +326,130 @@ public class ViewCatalogoServicios {
                 .textProperty()
                 .addListener(
                         (observable,
-                         anterior,
-                         actual) ->
-                                aplicarFiltros());
+                                anterior,
+                                actual)
+                        -> aplicarFiltros());
 
         precioMinimo
                 .textProperty()
                 .addListener(
                         (observable,
-                         anterior,
-                         actual) ->
-                                aplicarFiltros());
+                                anterior,
+                                actual)
+                        -> aplicarFiltros());
 
         precioMaximo
                 .textProperty()
                 .addListener(
                         (observable,
-                         anterior,
-                         actual) ->
-                                aplicarFiltros());
+                                anterior,
+                                actual)
+                        -> aplicarFiltros());
 
         categoriaFiltro.setOnAction(
-                event ->
-                        aplicarFiltros());
+                event
+                -> aplicarFiltros());
     }
 
     private void configurarLista() {
 
         listaServicios.setCellFactory(
-                lista ->
-                        new ListCell<>() {
+                lista
+                -> new ListCell<>() {
 
-                            {
-                                getStyleClass().add(
-                                        "catalog-service-cell");
+            {
+                getStyleClass().add(
+                        "catalog-service-cell");
 
-                                setOnMouseClicked(
-                                        event -> {
+                setOnMouseClicked(
+                        event -> {
 
-                                            Servicio servicio =
-                                                    getItem();
+                            Servicio servicio
+                            = getItem();
 
-                                            if (!isEmpty()
-                                                    && servicio != null
-                                                    && abrirDetalle != null) {
+                            if (!isEmpty()
+                            && servicio != null
+                            && abrirDetalle != null) {
 
-                                                abrirDetalle.accept(
-                                                        servicio);
-                                            }
-                                        });
-                            }
-
-                            @Override
-                            protected void updateItem(
-                                    Servicio servicio,
-                                    boolean empty) {
-
-                                super.updateItem(
-                                        servicio,
-                                        empty);
-
-                                if (empty
-                                        || servicio == null) {
-
-                                    setText(null);
-                                    setGraphic(null);
-                                    return;
-                                }
-
-                                Label icono =
-                                        etiqueta(
-                                                iconoCategoria(
-                                                        servicio.getCategoria()),
-                                                "catalog-category-icon");
-
-                                Label nombre =
-                                        etiqueta(
-                                                servicio.getNombre(),
-                                                "catalog-service-name");
-
-                                Label detalle =
-                                        etiqueta(
-                                                seguro(
-                                                        servicio.getCategoria())
-                                                        + " · "
-                                                        + seguro(
-                                                                servicio.getCiudadZona()),
-                                                "muted");
-
-                                VBox informacion =
-                                        new VBox(
-                                                5,
-                                                nombre,
-                                                detalle);
-
-                                Label precio =
-                                        etiqueta(
-                                                "$"
-                                                        + formatoCOP.format(
-                                                                servicio.getPrecio())
-                                                        + " COP",
-                                                "summary-value");
-
-                                Region espacio =
-                                        new Region();
-
-                                HBox.setHgrow(
-                                        espacio,
-                                        Priority.ALWAYS);
-
-                                HBox fila =
-                                        new HBox(
-                                                15,
-                                                icono,
-                                                informacion,
-                                                espacio,
-                                                precio);
-
-                                fila.setAlignment(
-                                        Pos.CENTER_LEFT);
-
-                                setText(null);
-                                setGraphic(fila);
+                                abrirDetalle.accept(
+                                        servicio);
                             }
                         });
+            }
+
+            @Override
+            protected void updateItem(
+                    Servicio servicio,
+                    boolean empty) {
+
+                super.updateItem(
+                        servicio,
+                        empty);
+
+                if (empty
+                        || servicio == null) {
+
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+
+                Label icono
+                        = etiqueta(
+                                iconoCategoria(
+                                        servicio.getCategoria()),
+                                "catalog-category-icon");
+
+                Label nombre
+                        = etiqueta(
+                                servicio.getNombre(),
+                                "catalog-service-name");
+
+                Label detalle
+                        = etiqueta(
+                                seguro(
+                                        servicio.getCategoria())
+                                + " · "
+                                + seguro(
+                                        servicio.getCiudadZona()),
+                                "muted");
+
+                VBox informacion
+                        = new VBox(
+                                5,
+                                nombre,
+                                detalle);
+
+                Label precio
+                        = etiqueta(
+                                "$"
+                                + formatoCOP.format(
+                                        servicio.getPrecio())
+                                + " COP",
+                                "summary-value");
+
+                Region espacio
+                        = new Region();
+
+                HBox.setHgrow(
+                        espacio,
+                        Priority.ALWAYS);
+
+                HBox fila
+                        = new HBox(
+                                15,
+                                icono,
+                                informacion,
+                                espacio,
+                                precio);
+
+                fila.setAlignment(
+                        Pos.CENTER_LEFT);
+
+                setText(null);
+                setGraphic(fila);
+            }
+        });
     }
 
     private void recargarServicios() {
@@ -565,12 +462,12 @@ public class ViewCatalogoServicios {
                     controller
                             .listarServiciosDisponibles());
 
-            TreeSet<String> categorias =
-                    new TreeSet<>(
+            TreeSet<String> categorias
+                    = new TreeSet<>(
                             String.CASE_INSENSITIVE_ORDER);
 
-            for (Servicio servicio :
-                    serviciosDisponibles) {
+            for (Servicio servicio
+                    : serviciosDisponibles) {
 
                 if (servicio.getCategoria() != null
                         && !servicio
@@ -605,32 +502,32 @@ public class ViewCatalogoServicios {
 
     private void aplicarFiltros() {
 
-        String texto =
-                busqueda
+        String texto
+                = busqueda
                         .getText()
                         .trim()
                         .toLowerCase();
 
-        String categoria =
-                categoriaFiltro
+        String categoria
+                = categoriaFiltro
                         .getValue();
 
-        Double minimo =
-                leerPrecio(
+        Double minimo
+                = leerPrecio(
                         precioMinimo.getText());
 
-        Double maximo =
-                leerPrecio(
+        Double maximo
+                = leerPrecio(
                         precioMaximo.getText());
 
-        List<Servicio> resultado =
-                new ArrayList<>();
+        List<Servicio> resultado
+                = new ArrayList<>();
 
-        for (Servicio servicio :
-                serviciosDisponibles) {
+        for (Servicio servicio
+                : serviciosDisponibles) {
 
-            String contenido =
-                    (seguro(servicio.getNombre())
+            String contenido
+                    = (seguro(servicio.getNombre())
                             + " "
                             + seguro(servicio.getDescripcion())
                             + " "
@@ -641,27 +538,27 @@ public class ViewCatalogoServicios {
                             + seguro(servicio.getTipo()))
                             .toLowerCase();
 
-            boolean coincideTexto =
-                    texto.isBlank()
-                            || contenido.contains(
-                                    texto);
+            boolean coincideTexto
+                    = texto.isBlank()
+                    || contenido.contains(
+                            texto);
 
-            boolean coincideCategoria =
-                    categoria == null
-                            || "Todas".equals(
-                                    categoria)
-                            || categoria.equalsIgnoreCase(
-                                    servicio.getCategoria());
+            boolean coincideCategoria
+                    = categoria == null
+                    || "Todas".equals(
+                            categoria)
+                    || categoria.equalsIgnoreCase(
+                            servicio.getCategoria());
 
-            boolean coincideMinimo =
-                    minimo == null
-                            || servicio.getPrecio()
-                            >= minimo;
+            boolean coincideMinimo
+                    = minimo == null
+                    || servicio.getPrecio()
+                    >= minimo;
 
-            boolean coincideMaximo =
-                    maximo == null
-                            || servicio.getPrecio()
-                            <= maximo;
+            boolean coincideMaximo
+                    = maximo == null
+                    || servicio.getPrecio()
+                    <= maximo;
 
             if (coincideTexto
                     && coincideCategoria
@@ -701,8 +598,8 @@ public class ViewCatalogoServicios {
     private String iconoCategoria(
             String categoria) {
 
-        String valor =
-                seguro(categoria)
+        String valor
+                = seguro(categoria)
                         .toUpperCase();
 
         if (valor.contains("ALIMENT")
@@ -729,47 +626,6 @@ public class ViewCatalogoServicios {
         return "✦";
     }
 
-    private String nombreSesion() {
-
-        if (sesion == null
-                || sesion.getNombre() == null
-                || sesion.getNombre().isBlank()) {
-
-            return "Organizador";
-        }
-
-        return sesion.getNombre();
-    }
-
-    private String inicialesSesion() {
-
-        String[] partes =
-                nombreSesion()
-                        .trim()
-                        .split("\\s+");
-
-        StringBuilder iniciales =
-                new StringBuilder();
-
-        for (String parte : partes) {
-
-            if (!parte.isBlank()) {
-
-                iniciales.append(
-                        Character.toUpperCase(
-                                parte.charAt(0)));
-            }
-
-            if (iniciales.length() == 2) {
-                break;
-            }
-        }
-
-        return iniciales.length() == 0
-                ? "OR"
-                : iniciales.toString();
-    }
-
     private String seguro(
             String texto) {
 
@@ -782,8 +638,8 @@ public class ViewCatalogoServicios {
             String texto,
             String estilo) {
 
-        Label label =
-                new Label(texto);
+        Label label
+                = new Label(texto);
 
         label
                 .getStyleClass()
@@ -794,8 +650,8 @@ public class ViewCatalogoServicios {
 
     private Region espacioHorizontal() {
 
-        Region espacio =
-                new Region();
+        Region espacio
+                = new Region();
 
         HBox.setHgrow(
                 espacio,
@@ -807,8 +663,8 @@ public class ViewCatalogoServicios {
     private void mostrarError(
             String mensaje) {
 
-        Alert alert =
-                new Alert(
+        Alert alert
+                = new Alert(
                         Alert.AlertType.ERROR);
 
         alert.setTitle(

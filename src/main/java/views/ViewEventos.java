@@ -1,12 +1,5 @@
 package views;
 
-import controllers.ControllerEventos;
-import entities.Evento;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
@@ -15,8 +8,37 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
+import controllers.ControllerEventos;
+import entities.Evento;
+import entities.SesionUsuario;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
+
 public class ViewEventos {
+
     private final ControllerEventos controller;
+    private final SesionUsuario sesion;
+    private final Runnable abrirEventos;
+    private final Runnable abrirCatalogo;
+    private final Runnable abrirInvitados;
+    private final Runnable cerrarSesion;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final TextField organizador = campo("organizador", "Identificador del organizador");
@@ -34,8 +56,43 @@ public class ViewEventos {
     private final NumberFormat formatoCOP = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
 
     public ViewEventos(ControllerEventos controller) {
+        this(controller, null, null, null, null, null);
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirCatalogo,
+            Runnable cerrarSesion) {
+
+        this(controller, null, abrirCatalogo, null, cerrarSesion, null);
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirCatalogo,
+            Runnable cerrarSesion,
+            SesionUsuario sesion) {
+
+        this(controller, null, abrirCatalogo, null, cerrarSesion, sesion);
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            SesionUsuario sesion) {
+
         this.controller = controller;
+        this.abrirEventos = abrirEventos;
+        this.abrirCatalogo = abrirCatalogo;
+        this.abrirInvitados = abrirInvitados;
+        this.cerrarSesion = cerrarSesion;
+        this.sesion = sesion;
+
         formatoCOP.setMaximumFractionDigits(2);
+
         tipo.setId("tipo");
         tipo.setPromptText("Seleccionar tipo");
         tipo.getItems().addAll("Corporativo", "Social", "Cultural", "Otro");
@@ -117,39 +174,18 @@ public class ViewEventos {
     }
 
     private VBox crearMenu() {
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-        VBox marca = new VBox(5, etiqueta("🎪", "brand-icon"), etiqueta("nextEventux", "brand"),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
-        marca.setAlignment(Pos.CENTER);
-        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
-        menu.getChildren().addAll(marca, etiqueta("MENÚ PRINCIPAL", "menu-title"));
-        String[] opciones = {"⌂  Inicio", "▦  Mis eventos", "＋  Crear evento", "♧  Proveedores", "♙  Invitados", "⚙  Configuración"};
-        for (String opcion : opciones) {
-            Label item = etiqueta(opcion, "menu-item");
-            item.setMaxWidth(Double.MAX_VALUE);
-            if (opcion.contains("Crear evento")) item.getStyleClass().add("active");
-            menu.getChildren().add(item);
-        }
-        Region espacio = new Region();
-        VBox.setVgrow(espacio, Priority.ALWAYS);
-        VBox perfil = new VBox(4, etiqueta("Organizador", "profile-name"), etiqueta("Mi cuenta", "hint"));
-        HBox cuenta = new HBox(12, etiqueta("SC", "avatar"), perfil);
-        cuenta.setAlignment(Pos.CENTER_LEFT);
-        cuenta.getStyleClass().add("sidebar-bottom");
-        menu.getChildren().addAll(espacio, cuenta);
-        return menu;
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.CREAR_EVENTO,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                null,
+                cerrarSesion);
     }
 
     private HBox crearBarraSuperior() {
-        HBox barra = new HBox(18, etiqueta("Inicio / Mis eventos /", "breadcrumb"),
-                etiqueta("Crear evento", "breadcrumb-current"), espacioHorizontal(),
-                etiqueta("♧", "notification"), etiqueta("Organizador", "user-badge"));
-        barra.setAlignment(Pos.CENTER_LEFT);
-        barra.getStyleClass().add("topbar");
-        return barra;
+        return MenuCompartido.crearBarraSuperior(sesion, "Crear evento");
     }
 
     private VBox crearFormulario() {
