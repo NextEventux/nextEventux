@@ -461,16 +461,18 @@ revisión y la integración del PR.
 
 ## CU04 — Cancelar evento
 
-Esta primera iteración reutiliza `ControllerEventos`, `ServiceEventos` y el CSS
-actual. Añade únicamente el repositorio de cancelación, una pantalla JavaFX y una
-migración. La rama `CU04-cancelar-evento` parte de CU03 porque reutiliza su tabla de
-notificaciones; esa dependencia debe conservarse al integrar las ramas.
+CU04 reutiliza `ControllerEventos`, `ServiceEventos` y los estilos CSS actuales.
+La rama `CU04-cancelar-evento` incorpora la base autenticada de CU02 y CU03;
+esa dependencia debe conservarse al preparar su PR. La primera iteración añadió
+el repositorio, la pantalla y la migración de cancelación; esta integración con
+la sesión no agrega tablas ni dependencias.
 
 ### Uso
 
-Desde Crear evento, elegir **Cancelar evento** en el menú lateral o en el menú
-**Eventos** de la barra superior, disponible también en ventanas pequeñas.
-Seleccionar organizador y evento por nombre y marcar la confirmación explícita.
+Iniciar sesión como organizador y elegir **Cancelar evento** en la barra de
+sesión, el menú lateral o el menú **Eventos**. El formulario muestra el nombre del
+organizador autenticado, sin selector de identidad. Seleccionar uno de sus eventos
+por nombre y marcar la confirmación explícita.
 El botón permanece deshabilitado hasta confirmar. Cambiar de evento borra esa
 confirmación para evitar cancelar otra selección por accidente.
 
@@ -513,21 +515,35 @@ buscar cuentas por nombre o correo. La pantalla muestra el resumen de avisos del
 evento; integrar su lectura en la bandeja del módulo de Invitados sigue pendiente.
 Los avisos de proveedores pueden consultarse por `id_usuario` en la misma tabla.
 
-La selección de organizador sigue siendo de demostración mientras se corrige e
-integra el login. No equivale a autenticación. CU04 no debe declararse completo
-hasta integrar esa sesión y coordinar las reservas y bandejas con los otros módulos.
+El controlador recibe la sesión del login. El servicio comprueba que el usuario
+y el organizador sigan activos y vinculados en H2 antes de listar, cancelar o
+consultar avisos. Las consultas filtran por el identificador de organizador de la
+sesión, que puede diferir del identificador de usuario. Administradores,
+proveedores y sesiones cerradas no tienen acceso a CU04. La cancelación vuelve a
+comprobar la propiedad y el estado del evento dentro de la transacción.
+
+Queda pendiente coordinar los vínculos de reservas y la lectura de avisos con los
+módulos responsables. El cierre institucional requiere esa integración y la
+revisión del equipo.
 
 ### Pruebas
 
-41 pruebas JUnit correctas en total, incluidas 11 de CU04: confirmación, propiedad,
+80 pruebas JUnit correctas en total, incluidas las 11 de cancelación adaptadas
+al login real y 8 nuevas de integración con la sesión. Se comprueban confirmación, propiedad,
 estados, reservas válidas, liberación sin afectar otros eventos, reserva compartida,
 revocación, destinatarios, persistencia y rollback si falla un servicio o un aviso.
 La prueba de liberación compartida comprueba que el último evento cancelado deja
-el recurso disponible. Las pruebas utilizan exclusivamente bases temporales.
+el recurso disponible. Las nuevas pruebas cubren aislamiento de eventos y avisos,
+identificadores distintos de usuario y organizador, cierre de sesión, roles no
+autorizados, desactivación después del login, cambio de estado y confirmación
+obligatoria. Las pruebas utilizan exclusivamente bases temporales.
 
-La ventana JavaFX también se comprobó con una base temporal: selección por nombre,
-confirmación obligatoria, fallo simulado, conservación del formulario, reintento,
-estado actualizado y cuatro avisos registrados para los afectados de los ejemplos.
+La ventana JavaFX también se comprobó con una base temporal: login, selección de
+eventos propios, confirmación obligatoria, cambio de selección que borra la
+confirmación, fallo simulado, conservación del formulario, reintento, estado
+actualizado y seis avisos registrados para los afectados de los ejemplos. Se
+verificaron además el cambio de cuenta y la ausencia de acceso para el
+administrador. La barra de sesión permite ajustar sus botones en varias filas.
 Se inspeccionaron capturas de la pantalla antes y después de cancelar.
 
 Con Maven instalado:
@@ -539,7 +555,7 @@ mvn javafx:run
 
 Como Maven no está instalado en este equipo, se verificó compilando con
 `javac --release 17` y ejecutando JUnit Platform Console 1.10.2 con H2 2.3.232.
-Las pruebas no ejecutan el login de la rama externa ni tocan la base de la aplicación.
+Las pruebas utilizan el login integrado y no tocan la base de la aplicación.
 
 ## CU02 — Editar evento
 
@@ -583,7 +599,7 @@ sesión y vuelve al login. La aplicación no permite elegir otra identidad.
 
 Desde la sesión de organizador están disponibles Crear y Editar evento. Crear
 conserva el organizador de la sesión. CU03 también está disponible mediante Publicaciones, con permisos por sesión.
-El acceso a CU04 permanece deshabilitado hasta integrar su flujo con la sesión.
+CU04 está disponible para el organizador desde Cancelar evento, con permisos por sesión.
 La cuenta de administrador abre CU03; el módulo de proveedor sigue pendiente.
 
 ### Pruebas de CU02
