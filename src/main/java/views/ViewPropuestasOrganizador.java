@@ -5,6 +5,7 @@ import java.util.List;
 import controllers.ControllerSolicitudes;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
+import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -15,14 +16,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
 
 public class ViewPropuestasOrganizador {
 
@@ -30,6 +29,13 @@ public class ViewPropuestasOrganizador {
     private final int idOrganizador;
     private final int idUsuario;
     private final Runnable volverEventos;
+    private final SesionUsuario sesion;
+    private final Runnable abrirEventos;
+    private final Runnable abrirInvitados;
+    private final Runnable abrirCatalogo;
+    private final Runnable abrirMisEventos;
+    private final Runnable abrirPropuestas;
+    private final Runnable cerrarSesion;
 
     private final ListView<PropuestaServicio> lista
             = new ListView<>();
@@ -40,10 +46,34 @@ public class ViewPropuestasOrganizador {
             int idUsuario,
             Runnable volverEventos) {
 
+        this(controller, idOrganizador, idUsuario, volverEventos, null,
+                volverEventos, null, null, null, null, null);
+    }
+
+    public ViewPropuestasOrganizador(
+            ControllerSolicitudes controller,
+            int idOrganizador,
+            int idUsuario,
+            Runnable volverEventos,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirMisEventos,
+            Runnable abrirPropuestas,
+            Runnable cerrarSesion) {
+
         this.controller = controller;
         this.idOrganizador = idOrganizador;
         this.idUsuario = idUsuario;
         this.volverEventos = volverEventos;
+        this.sesion = sesion;
+        this.abrirEventos = abrirEventos;
+        this.abrirInvitados = abrirInvitados;
+        this.abrirCatalogo = abrirCatalogo;
+        this.abrirMisEventos = abrirMisEventos;
+        this.abrirPropuestas = abrirPropuestas;
+        this.cerrarSesion = cerrarSesion;
     }
 
     public Parent crearPantalla() {
@@ -233,90 +263,23 @@ public class ViewPropuestasOrganizador {
     }
 
     private VBox crearMenu() {
-
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-
-        ImageView logo = new ImageView(
-                new Image(
-                        getClass()
-                                .getResource("/images/logo-nexteventux.png")
-                                .toExternalForm()));
-
-        logo.setFitWidth(190);
-        logo.setPreserveRatio(true);
-        logo.setSmooth(true);
-
-        Label subtitulo = new Label("GESTIÓN DE EVENTOS");
-        subtitulo.getStyleClass().add("brand-caption");
-
-        VBox identidad = new VBox(10, logo, subtitulo);
-
-        identidad.setAlignment(Pos.CENTER);
-
-        VBox.setMargin(
-                identidad,
-                new Insets(0, 0, 38, 0));
-
-        Label tituloMenu = new Label("MENÚ PRINCIPAL");
-        tituloMenu.getStyleClass().add("menu-title");
-
-        Label eventos = new Label("▦  Mis eventos");
-        eventos.getStyleClass().add("menu-item");
-        eventos.setMaxWidth(Double.MAX_VALUE);
-
-        eventos.setOnMouseClicked(
-                event -> volverEventos.run());
-
-        Label propuestas = new Label("✉  Propuestas recibidas");
-        propuestas.getStyleClass().addAll(
-                "menu-item", "active");
-
-        propuestas.setMaxWidth(Double.MAX_VALUE);
-
-        Region espacio = new Region();
-        VBox.setVgrow(espacio, Priority.ALWAYS);
-
-        Label perfil = new Label("Organizador");
-        perfil.getStyleClass().add("profile-name");
-
-        VBox cuenta = new VBox(perfil);
-        cuenta.getStyleClass().add("sidebar-bottom");
-
-        menu.getChildren().addAll(
-                identidad,
-                tituloMenu,
-                eventos,
-                propuestas,
-                espacio,
-                cuenta);
-
-        return menu;
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.PROPUESTAS_ORGANIZADOR,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                null,
+                cerrarSesion,
+                abrirMisEventos,
+                null,
+                abrirPropuestas);
     }
 
     private HBox crearBarraSuperior() {
-
-        Label ruta = new Label("Inicio / Mis eventos /");
-        ruta.getStyleClass().add("breadcrumb");
-
-        Label actual = new Label("Propuestas recibidas");
-        actual.getStyleClass().add("breadcrumb-current");
-
-        Region espacio = new Region();
-        HBox.setHgrow(espacio, Priority.ALWAYS);
-
-        Label usuario = new Label("Organizador");
-        usuario.getStyleClass().add("user-badge");
-
-        HBox barra = new HBox(
-                18, ruta, actual, espacio, usuario);
-
-        barra.setAlignment(Pos.CENTER_LEFT);
-        barra.getStyleClass().add("topbar");
-
-        return barra;
+        return MenuCompartido.crearBarraSuperior(
+                sesion,
+                "Propuestas recibidas");
     }
 
     private void seleccionarPropuesta() {

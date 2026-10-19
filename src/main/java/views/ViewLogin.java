@@ -9,9 +9,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import views.components.MenuCompartido;
 
 import java.util.function.Consumer;
 
@@ -41,8 +43,10 @@ public class ViewLogin {
         this.controller = controller;
         this.alIngresar = alIngresar;
 
+        usuario.setId("usuarioLogin");
         usuario.setPromptText("Usuario");
 
+        contrasena.setId("contrasenaLogin");
         contrasena.setPromptText("Contraseña");
         contrasenaVisible.setPromptText("Contraseña");
 
@@ -69,6 +73,7 @@ public class ViewLogin {
         mensaje.getStyleClass().add(
                 "login-error");
 
+        mensaje.setId("mensajeLogin");
         mensaje.setWrapText(true);
         mensaje.setVisible(false);
         mensaje.setManaged(false);
@@ -76,17 +81,7 @@ public class ViewLogin {
 
     public Parent crearPantalla() {
 
-        Label icono =
-                new Label("🎪");
-
-        icono.getStyleClass().add(
-                "login-icon");
-
-        Label marca =
-                new Label("nextEventux");
-
-        marca.getStyleClass().add(
-                "login-brand");
+        ImageView logo = MenuCompartido.crearLogo();
 
         Label subtitulo =
                 new Label("GESTIÓN DE EVENTOS");
@@ -96,9 +91,8 @@ public class ViewLogin {
 
         VBox cabecera =
                 new VBox(
-                        5,
-                        icono,
-                        marca,
+                        10,
+                        logo,
                         subtitulo);
 
         cabecera.setAlignment(
@@ -119,6 +113,7 @@ public class ViewLogin {
 
         Button ingresar =
                 new Button("Ingresar");
+        ingresar.setId("ingresarLogin");
 
         ingresar.getStyleClass().add(
                 "login-button");
@@ -249,18 +244,30 @@ public class ViewLogin {
     private void iniciarSesion() {
 
         try {
+            System.out.println("[LOGIN] iniciando autenticacion");
 
             SesionUsuario sesion =
                     controller.iniciarSesion(
                             usuario.getText(),
                             contrasena.getText());
+            System.out.printf(
+                    "[LOGIN] autenticacion aceptada rol=%s actorId=%d%n",
+                    sesion.getTipoUsuario(),
+                    sesion.getIdActor());
 
             mensaje.setVisible(false);
             mensaje.setManaged(false);
 
+            System.out.println("[LOGIN] invocando callback de sesion");
             alIngresar.accept(sesion);
 
         } catch (Exception e) {
+            System.err.printf(
+                    "[LOGIN] fallo tipo=%s%n",
+                    e.getClass().getName());
+            for (StackTraceElement frame : e.getStackTrace()) {
+                System.err.println("[LOGIN]   at " + frame);
+            }
 
             mensaje.setText(
                     e.getMessage() == null

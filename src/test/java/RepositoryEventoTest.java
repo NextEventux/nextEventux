@@ -90,6 +90,34 @@ class RepositoryEventoTest {
         assertNull(evento.getIdEvento());
     }
 
+    @Test
+    void listaNombresDeOrganizadoresConSuIdentificadorInterno() throws Exception {
+        String url = "jdbc:h2:" + directorio.resolve("organizadores");
+        BaseDatosPrueba.preparar(url);
+        try (Connection connection = DatabaseConnection.getConnection(url);
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("INSERT INTO Usuario (id_usuario,nombre,usuario,contraseña,estado,fecha_registro,acepta_marketing,tipo_usuario) "
+                    + "VALUES (2,'Ana Pérez','ana','prueba','ACTIVO',CURRENT_TIMESTAMP,FALSE,'ORGANIZADOR')");
+            statement.executeUpdate("INSERT INTO Organizador (id_organizador,id_usuario,estado) VALUES (7,2,'ACTIVO')");
+        }
+        var organizadores = new controllers.ControllerEventos(new ServiceEventos(new RepositoryEvento(url)))
+                .listarOrganizadores();
+        assertEquals(2, organizadores.size());
+        assertEquals("Ana Pérez", organizadores.get(0).nombre());
+        assertEquals("Ana Pérez", organizadores.get(0).toString());
+        assertEquals(7, organizadores.get(0).id());
+        var seleccionado = organizadores.get(0);
+        Evento evento = evento(seleccionado.id());
+        new ServiceEventos(new RepositoryEvento(url)).crearEvento(evento);
+        assertEquals(7, new RepositoryEvento(url).listarEventos().get(0).getIdOrganizador());
+    }
+
+    @Test
+    void listaVaciaCuandoNoHayOrganizadores() throws Exception {
+        String url = "jdbc:h2:" + directorio.resolve("vacia");
+        assertTrue(new RepositoryEvento(url).listarOrganizadores().isEmpty());
+    }
+
     private Evento evento(int organizador) {
         return new Evento(organizador, "Festival", "Corporativo", "Descripción",
                 LocalDateTime.of(2026,10,20,9,0), LocalDateTime.of(2026,10,20,18,0),

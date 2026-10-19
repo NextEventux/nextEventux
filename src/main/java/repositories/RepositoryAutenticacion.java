@@ -9,6 +9,11 @@ import config.DatabaseConnection;
 import entities.SesionUsuario;
 
 public class RepositoryAutenticacion {
+    private final String url;
+
+    public RepositoryAutenticacion() { this(null); }
+    public RepositoryAutenticacion(String url) { this.url = url; }
+
 
     public SesionUsuario autenticar(
             String usuario,
@@ -42,7 +47,7 @@ public class RepositoryAutenticacion {
                 """;
 
         try (Connection connection
-                = DatabaseConnection.getConnection(); PreparedStatement statement
+                = (url == null ? DatabaseConnection.getConnection() : DatabaseConnection.getConnection(url)); PreparedStatement statement
                 = connection.prepareStatement(sql)) {
 
             statement.setString(1, usuario);

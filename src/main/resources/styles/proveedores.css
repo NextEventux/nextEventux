@@ -143,6 +143,10 @@
     -fx-text-fill: #858899;
 }
 
+.provider-gallery-error {
+    -fx-text-fill: #BA2424;
+}
+
 .provider-gallery-tools {
     -fx-padding: 0 0 13px 0;
     -fx-border-color: transparent transparent #E6E8EF transparent;
