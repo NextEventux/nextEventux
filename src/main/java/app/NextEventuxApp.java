@@ -43,11 +43,9 @@ import views.ViewSolicitudesProveedor;
 import views.ViewMisEventos;
 import views.ViewCancelacion;
 import views.ViewFinalizacion;
-import views.ViewRespuestaInvitacion;
 import views.ViewAvisosProveedor;
 import services.ServiceAvisosProveedor;
 import repositories.RepositoryAvisosProveedor;
-import javafx.scene.control.Button;
 
 public class NextEventuxApp extends Application {
 
@@ -123,8 +121,22 @@ public class NextEventuxApp extends Application {
         contenedor.setCenter(
                 new ViewLogin(
                         controllerAutenticacion,
-                        this::procesarSesion, this::mostrarConsultaInvitado)
+                        this::procesarSesion,
+                        this::mostrarInvitado)
                         .crearPantalla());
+    }
+
+    // ------------------------------------------------------------------
+    // Acceso del invitado (CU-16 y CU-20), sin cuenta: se identifica con
+    // su correo y su teléfono en cada pantalla.
+    // ------------------------------------------------------------------
+    private void mostrarInvitado() {
+
+        sesionActual = null;
+        contenedor.setTop(null);
+        navegacion = null;
+        new AccesoInvitado(new ControllerInvitados(new ServiceInvitados()), this::mostrarLogin)
+                .mostrarEn(contenedor, Navegacion.Pantalla.MIS_INVITACIONES);
     }
 
     private void procesarSesion(SesionUsuario sesion) {
@@ -225,7 +237,7 @@ public class NextEventuxApp extends Application {
                         Navegacion.Pantalla.INVITADOS,
                         () -> new ViewInvitados(
                                 new ControllerInvitados(
-                                        new ServiceInvitados()),
+                                        new ServiceInvitados(), sesionActual),
                                 this::mostrarEventos,
                                 this::mostrarInvitados,
                                 this::mostrarCatalogoServicios,
@@ -306,16 +318,6 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin).crearPantalla());
-    }
-
-    private void mostrarConsultaInvitado() {
-        Button volver=new Button("← Iniciar sesión");
-        volver.getStyleClass().add("btn-secondary"); volver.setOnAction(e->mostrarLogin());
-        // La pantalla pública no utiliza las rutas de una sesión autenticada.
-        BorderPane invitaciones=new BorderPane(new ViewRespuestaInvitacion(
-                new ControllerInvitados(new ServiceInvitados())).crearPantalla());
-        invitaciones.setTop(volver); contenedor.setCenter(invitaciones);
-        stage.setTitle("NextEventux | Mis invitaciones y avisos");
     }
 
     private void mostrarFinalizacion(Evento evento) {

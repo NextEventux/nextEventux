@@ -94,3 +94,10 @@
 .option-card:selected .option-title { -fx-text-fill: #D71920; }
 .progress-bar.cupos > .bar { -fx-background-color: #D71920; -fx-background-radius: 6; -fx-background-insets: 0; }
 .progress-bar.cupos > .track { -fx-background-color: #F1F2F6; -fx-background-radius: 6; }
+
+/* ---------- CU20: mesa de regalos ---------- */
+.gift-card { -fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #E8E9EF; -fx-border-radius: 14; -fx-padding: 16; }
+.gift-card:hover { -fx-border-color: #F3B4B8; }
+.gift-card.mine { -fx-background-color: #FFF8F8; -fx-border-color: #FBE1E3; }
+.gift-thumb { -fx-background-color: #FFF0F1; -fx-background-radius: 10; -fx-text-fill: #D71920; -fx-font-size: 30px; -fx-font-weight: bold; -fx-alignment: center; -fx-pref-height: 104; -fx-padding: 18 0 0 0; }
+.gift-price { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #252638; }

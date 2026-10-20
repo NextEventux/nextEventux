@@ -25,6 +25,8 @@ public class Navegacion {
         CANCELACION_EVENTO("NextEventux | Cancelar evento"),
         FINALIZACION_EVENTO("NextEventux | Finalizar evento"),
         PUBLICACION_EVENTOS("NextEventux | Publicación de eventos"),
+        MIS_INVITACIONES("NextEventux | Mis invitaciones"),
+        MESA_REGALOS("NextEventux | Mesa de regalos"),
         SOLICITUDES_PROVEEDOR("NextEventux | Solicitudes recibidas"),
         PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas");
 
