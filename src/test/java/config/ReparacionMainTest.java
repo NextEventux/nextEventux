@@ -17,7 +17,7 @@ class ReparacionMainTest {
         String anterior=System.getProperty("nexteventux.home");
         try {
             System.setProperty("nexteventux.home",carpeta.toString());
-            assertEquals("jdbc:h2:"+carpeta.resolve("nexteventux").toString().replace('\\','/')+";DB_CLOSE_DELAY=-1",DatabaseConnection.urlPorDefecto());
+            assertEquals("jdbc:h2:"+carpeta.resolve("nexteventux")+";DB_CLOSE_DELAY=-1",DatabaseConnection.urlPorDefecto());
         } finally {
             if(anterior==null)System.clearProperty("nexteventux.home");else System.setProperty("nexteventux.home",anterior);
         }
