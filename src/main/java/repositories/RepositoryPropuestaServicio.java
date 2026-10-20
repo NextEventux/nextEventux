@@ -29,6 +29,8 @@ public class RepositoryPropuestaServicio {
                        p.descripcion,
                        p.condiciones,
                                               CASE
+                           WHEN p.estado IN ('CONTRATADA', 'NO_SELECCIONADA')
+                           THEN p.estado
                            WHEN n.id_propuesta_seleccionada = p.id_propuesta
                            THEN 'SELECCIONADA'
                            ELSE p.estado
@@ -113,6 +115,8 @@ public class RepositoryPropuestaServicio {
                        p.descripcion,
                        p.condiciones,
                        CASE
+                           WHEN p.estado IN ('CONTRATADA', 'NO_SELECCIONADA')
+                           THEN p.estado
                            WHEN n.id_propuesta_seleccionada = p.id_propuesta
                            THEN 'SELECCIONADA'
                            ELSE p.estado
@@ -128,7 +132,7 @@ public class RepositoryPropuestaServicio {
                   ON n.id_necesidad_servicio = s.id_necesidad_servicio
                 WHERE e.id_organizador = ?
                   AND p.vigente = TRUE
-                  AND s.estado = 'EN_NEGOCIACION'
+                  AND s.estado IN ('EN_NEGOCIACION', 'CONTRATADA', 'NO_SELECCIONADA')
                 ORDER BY p.fecha_envio DESC, p.id_propuesta DESC
                 """;
 
