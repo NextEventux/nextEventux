@@ -287,13 +287,16 @@ public class ServiceInvitados {
     // ------------------------------------------------------------------
     // CU-20: mesa de regalos (organizador)
     // ------------------------------------------------------------------
-    public List<Regalo> listarRegalos(int idInvitacion) {
+    /** Mesa de regalos de una invitación; solo la consulta el organizador dueño del evento. */
+    public List<Regalo> listarRegalos(int idOrganizador, int idInvitacion) {
+        validarEventoDelOrganizador(idOrganizador, eventoDeInvitacion(idInvitacion));
         return repositoryRegalo.listarRegalos(idInvitacion);
     }
 
-    public void agregarRegalo(int idInvitacion, Regalo datos) {
+    public void agregarRegalo(int idOrganizador, int idInvitacion, Regalo datos) {
         if (datos == null) throw new IllegalArgumentException("Completa los datos del regalo.");
         Invitacion invitacion = buscarInvitacionActiva(idInvitacion);
+        validarEventoDelOrganizador(idOrganizador, invitacion.getIdEvento());
         validarEventoParaRegalos(invitacion.getIdEvento(), false);
         String nombre = limpiar(datos.getNombre());
         String descripcion = limpiar(datos.getDescripcion());
@@ -304,7 +307,10 @@ public class ServiceInvitados {
         BigDecimal precio = datos.getPrecioEstimado();
         if (precio == null || precio.signum() <= 0)
             throw new IllegalArgumentException("Ingresa un precio estimado mayor que cero.");
-        precio = precio.setScale(2, RoundingMode.HALF_UP);
+        // Se valida antes de redondear: 0.001 no puede guardarse como 0.00.
+        if (precio.stripTrailingZeros().scale() > 2)
+            throw new IllegalArgumentException("El precio estimado admite máximo dos decimales.");
+        precio = precio.setScale(2, RoundingMode.UNNECESSARY);
         if (precio.precision() > 12)
             throw new IllegalArgumentException("El precio estimado es demasiado alto.");
         datos.setIdInvitacion(idInvitacion);
@@ -316,9 +322,10 @@ public class ServiceInvitados {
     }
 
     /** Un regalo reservado no se puede quitar: el invitado ya lo eligió. */
-    public void quitarRegalo(int idRegalo) {
+    public void quitarRegalo(int idOrganizador, int idRegalo) {
         Regalo regalo = buscarRegalo(idRegalo);
         Invitacion invitacion = buscarInvitacionActiva(regalo.getIdInvitacion());
+        validarEventoDelOrganizador(idOrganizador, invitacion.getIdEvento());
         validarEventoParaRegalos(invitacion.getIdEvento(), false);
         if (regalo.estaReservado() || repositoryReservaRegalo.contarReservasActivas(idRegalo) > 0)
             throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por un invitado; no se puede quitar.");

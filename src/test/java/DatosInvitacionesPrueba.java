@@ -6,6 +6,8 @@ import java.sql.Statement;
 class DatosInvitacionesPrueba {
     static final int LUGAR_GRANDE = 1;   // aforo 100
     static final int LUGAR_PEQUENO = 2;  // aforo 2
+    /** Organizador dueño de todos los eventos de prueba. */
+    static final int ORGANIZADOR = 1;
     static final int EVENTO = 1;
     static final int OTRO_EVENTO = 2;
     static final int EVENTO_CANCELADO = 3;

@@ -2,7 +2,9 @@ import config.DatabaseConnection;
 import controllers.ControllerInvitados;
 import entities.Invitacion;
 import entities.Invitado;
+import entities.Evento;
 import entities.Regalo;
+import entities.SesionUsuario;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -41,7 +43,7 @@ class MesaRegalosTest {
         service = new ServiceInvitados(new RepositoryInvitacion(url), new RepositoryInvitado(url),
                 new RepositoryLugar(url), new RepositoryEvento(url), new RepositoryRegalo(url),
                 new RepositoryReservaRegalo(url));
-        controller = new ControllerInvitados(service);
+        controller = new ControllerInvitados(service, organizador(DatosInvitacionesPrueba.ORGANIZADOR));
         invitacion = crearInvitacion(EVENTO);
         ana = agregarInvitado(invitacion, "Ana", "ana@correo.com", "300 111 2222");
         luis = agregarInvitado(invitacion, "Luis", "luis@correo.com", "310 999 8888");
@@ -65,10 +67,46 @@ class MesaRegalosTest {
     void validaLosDatosDelRegalo() {
         assertMensaje(() -> agregarRegalo(invitacion, "  ", null, "1000"), "nombre");
         assertMensaje(() -> agregarRegalo(invitacion, "Cobija", null, "0"), "mayor que cero");
-        assertMensaje(() -> service.agregarRegalo(invitacion, new Regalo("Cobija", null, null)), "mayor que cero");
+        assertMensaje(() -> service.agregarRegalo(DatosInvitacionesPrueba.ORGANIZADOR, invitacion, new Regalo("Cobija", null, null)), "mayor que cero");
         assertMensaje(() -> agregarRegalo(invitacion, "Cobija", "x".repeat(256), "1000"), "255");
         assertMensaje(() -> agregarRegalo(invitacion, "Cobija", null, "100000000000"), "demasiado alto");
         assertTrue(controller.listarRegalos(invitacion).isEmpty());
+    }
+
+    @Test
+    void unPrecioQueSeRedondeariaACeroNoSeGuarda() {
+        assertMensaje(() -> agregarRegalo(invitacion, "Cobija", null, "0.001"), "dos decimales");
+        assertMensaje(() -> agregarRegalo(invitacion, "Cobija", null, "0.004"), "dos decimales");
+        assertMensaje(() -> agregarRegalo(invitacion, "Cobija", null, "1000.555"), "dos decimales");
+        assertTrue(controller.listarRegalos(invitacion).isEmpty());
+
+        agregarRegalo(invitacion, "Cobija", null, "0.01");
+        agregarRegalo(invitacion, "Libro", null, "45000.50");
+        List<Regalo> mesa = controller.listarRegalos(invitacion);
+        assertEquals(0, new BigDecimal("0.01").compareTo(mesa.get(0).getPrecioEstimado()));
+        assertEquals(0, new BigDecimal("45000.50").compareTo(mesa.get(1).getPrecioEstimado()));
+    }
+
+    @Test
+    void soloElOrganizadorDelEventoConSesionGestionaLaMesa() {
+        int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
+
+        ControllerInvitados sinSesion = new ControllerInvitados(service);
+        assertMensaje(() -> sinSesion.listarRegalos(invitacion), "Inicia sesión como organizador");
+        assertMensaje(() -> sinSesion.agregarRegalo(invitacion, new Regalo("Libro", null, new BigDecimal("1000"))),
+                "Inicia sesión como organizador");
+        assertMensaje(() -> sinSesion.quitarRegalo(cobija), "Inicia sesión como organizador");
+
+        ControllerInvitados otroOrganizador = new ControllerInvitados(service, organizador(99));
+        assertMensaje(() -> otroOrganizador.listarRegalos(invitacion), "tus propios eventos");
+        assertMensaje(() -> otroOrganizador.agregarRegalo(invitacion, new Regalo("Libro", null, new BigDecimal("1000"))),
+                "tus propios eventos");
+        assertMensaje(() -> otroOrganizador.quitarRegalo(cobija), "tus propios eventos");
+        assertMensaje(() -> service.quitarRegalo(99, cobija), "tus propios eventos");
+
+        List<Regalo> mesa = controller.listarRegalos(invitacion);
+        assertEquals(1, mesa.size());
+        assertEquals("Cobija", mesa.get(0).getNombre());
     }
 
     @Test
@@ -197,6 +235,40 @@ class MesaRegalosTest {
     }
 
     @Test
+    void siElEventoSeCancelaAntesDeEscribirLaReservaNoQuedaActiva() throws Exception {
+        int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
+        // El servicio valida con una foto del evento tomada antes de la cancelación...
+        List<Evento> antesDeCancelar = new RepositoryEvento(url).listarEventos();
+        RepositoryEvento eventoDesactualizado = new RepositoryEvento(url) {
+            @Override
+            public List<Evento> listarEventos() {
+                return antesDeCancelar;
+            }
+        };
+        ServiceInvitados conCarrera = new ServiceInvitados(new RepositoryInvitacion(url), new RepositoryInvitado(url),
+                new RepositoryLugar(url), eventoDesactualizado, new RepositoryRegalo(url), new RepositoryReservaRegalo(url));
+        // ...y el evento se cancela entre esa validación y la escritura.
+        ejecutar("UPDATE Evento SET estado = 'CANCELADO' WHERE id_evento = " + EVENTO);
+
+        Invitado a = new RepositoryInvitado(url).buscarInvitado(ana);
+        assertMensaje(() -> conCarrera.reservarRegalo(ana, a.getCorreo(), a.getTelefono(), cobija), "cancelado");
+        assertEquals(0, contarReservasActivas(cobija));
+        assertEquals(Regalo.ESTADO_DISPONIBLE, estadoEnTabla(cobija));
+    }
+
+    @Test
+    void siLaInvitacionSeRevocaAntesDeEscribirLaReservaNoQuedaActiva() throws Exception {
+        int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
+        Invitado a = new RepositoryInvitado(url).buscarInvitado(ana);
+        // La invitación se revoca directamente en la BD, después de lo que el servicio ya validó.
+        RepositoryReservaRegalo reservas = new RepositoryReservaRegalo(url);
+        ejecutar("UPDATE Invitacion SET estado_respuesta = 'REVOCADA' WHERE id_invitacion = " + invitacion);
+        assertMensaje(() -> reservas.registrarReserva(new entities.ReservaRegalo(0, EVENTO, ana, cobija,
+                java.time.LocalDateTime.now(), entities.ReservaRegalo.ESTADO_RESERVADO)), "revocada");
+        assertEquals(0, contarReservasActivas(cobija));
+    }
+
+    @Test
     void sinTelefonoRegistradoNoSeUsaLaMesa() {
         int sinTelefono = agregarInvitado(invitacion, "Eva", "eva@correo.com", null);
         int cobija = agregarRegalo(invitacion, "Cobija", null, "60000");
@@ -219,6 +291,13 @@ class MesaRegalosTest {
     private void cancelar(int idInvitado, int idRegalo) {
         Invitado i = new RepositoryInvitado(url).buscarInvitado(idInvitado);
         controller.cancelarReservaRegalo(idInvitado, i.getCorreo(), i.getTelefono(), idRegalo);
+    }
+
+    private static SesionUsuario organizador(int idOrganizador) {
+        SesionUsuario sesion = new SesionUsuario();
+        sesion.setTipoUsuario("ORGANIZADOR");
+        sesion.setIdActor(idOrganizador);
+        return sesion;
     }
 
     private int crearInvitacion(int evento) {
@@ -249,6 +328,12 @@ class MesaRegalosTest {
     private int insertarRegalo(int idInvitacion, String nombre) throws Exception {
         return insertar("INSERT INTO Regalo (id_invitacion, nombre, estado, precio_estimado) VALUES ("
                 + idInvitacion + ", '" + nombre + "', 'DISPONIBLE', 10000)");
+    }
+
+    private void ejecutar(String sql) throws Exception {
+        try (Connection c = DatabaseConnection.getConnection(url); Statement s = c.createStatement()) {
+            s.executeUpdate(sql);
+        }
     }
 
     private int insertar(String sql) throws Exception {

@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 /**
  * Acceso a la tabla Reserva_regalo (CU-20).
@@ -33,15 +34,18 @@ public class RepositoryReservaRegalo {
     }
 
     /**
-     * Registra la reserva solo si el regalo sigue libre (R43). El regalo se bloquea durante la
-     * transacción para que dos invitados no lo reserven al mismo tiempo.
+     * Registra la reserva solo si el regalo sigue libre (R43). En la misma transacción se bloquean
+     * el evento, la invitación y el regalo: si el evento se cancela o la invitación se revoca al
+     * mismo tiempo, la reserva no queda activa, y dos invitados no reservan el mismo regalo.
      *
      * @return false si otro invitado lo reservó primero.
+     * @throws IllegalArgumentException si el evento o la invitación ya no permiten reservar.
      */
     public boolean registrarReserva(ReservaRegalo reserva) {
         try (Connection connection = conectar()) {
             connection.setAutoCommit(false);
             try {
+                validarEventoEInvitacion(connection, reserva);
                 try (PreparedStatement bloqueo = connection.prepareStatement(
                         "SELECT id_regalo FROM Regalo WHERE id_regalo = ? FOR UPDATE")) {
                     bloqueo.setInt(1, reserva.getIdRegalo());
@@ -67,7 +71,7 @@ public class RepositoryReservaRegalo {
                 actualizarEstadoRegalo(connection, reserva.getIdRegalo(), Regalo.ESTADO_RESERVADO);
                 connection.commit();
                 return true;
-            } catch (SQLException e) {
+            } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw e;
             }
@@ -106,6 +110,7 @@ public class RepositoryReservaRegalo {
         try (Connection connection = conectar()) {
             connection.setAutoCommit(false);
             try {
+                validarEventoEInvitacion(connection, reserva);
                 try (PreparedStatement statement = connection.prepareStatement(
                         "UPDATE Reserva_regalo SET estado = ? WHERE id_reserva = ?")) {
                     statement.setString(1, ReservaRegalo.ESTADO_CANCELADO);
@@ -116,12 +121,44 @@ public class RepositoryReservaRegalo {
                     actualizarEstadoRegalo(connection, reserva.getIdRegalo(), Regalo.ESTADO_DISPONIBLE);
                 }
                 connection.commit();
-            } catch (SQLException e) {
+            } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw e;
             }
         } catch (SQLException e) {
             throw new IllegalStateException("No se pudo cancelar la reserva. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    /**
+     * Revalida con el evento y la invitación bloqueados (SELECT ... FOR UPDATE), dentro de la
+     * transacción que escribe la reserva. Así una cancelación simultánea espera a esta transacción
+     * o esta ve el evento ya cancelado; nunca queda una reserva activa en un evento cerrado.
+     */
+    private void validarEventoEInvitacion(Connection connection, ReservaRegalo reserva) throws SQLException {
+        try (PreparedStatement evento = connection.prepareStatement(
+                "SELECT estado, fecha_inicio FROM Evento WHERE id_evento = ? FOR UPDATE")) {
+            evento.setInt(1, reserva.getIdEvento());
+            try (ResultSet r = evento.executeQuery()) {
+                if (!r.next()) throw new IllegalArgumentException("El evento no está registrado.");
+                String estado = r.getString("estado") == null ? "" : r.getString("estado").trim().toUpperCase();
+                if (estado.equals("CANCELADO") || estado.equals("FINALIZADO"))
+                    throw new IllegalArgumentException("El evento está " + estado.toLowerCase()
+                            + "; su mesa de regalos ya no se puede modificar.");
+                Timestamp inicio = r.getTimestamp("fecha_inicio");
+                if (inicio != null && !inicio.toLocalDateTime().isAfter(LocalDateTime.now()))
+                    throw new IllegalArgumentException("El evento ya comenzó; la mesa de regalos está cerrada.");
+            }
+        }
+        try (PreparedStatement invitacion = connection.prepareStatement(
+                "SELECT estado_respuesta FROM Invitacion WHERE id_invitacion = "
+                        + "(SELECT id_invitacion FROM Invitado WHERE id_invitado = ?) FOR UPDATE")) {
+            invitacion.setInt(1, reserva.getIdInvitado());
+            try (ResultSet r = invitacion.executeQuery()) {
+                if (!r.next()) throw new IllegalArgumentException("La invitación no existe.");
+                if ("REVOCADA".equalsIgnoreCase(r.getString("estado_respuesta")))
+                    throw new IllegalArgumentException("La invitación fue revocada; ya no puedes usar la mesa de regalos.");
+            }
         }
     }
 
