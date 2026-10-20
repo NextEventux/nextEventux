@@ -241,9 +241,9 @@ VALUES
 INSERT INTO Regalo
 (id_regalo, id_invitacion, nombre, descripcion, estado, precio_estimado)
 VALUES
-(1, 3, 'Pañitos para bebé', 'Paquete de pañitos húmedos', 'DISPONIBLE', 25000.00),
-(2, 3, 'Kit de biberones', 'Kit de biberones para recién nacido', 'DISPONIBLE', 80000.00),
-(3, 3, 'Cobija para bebé', 'Cobija suave para recién nacido', 'DISPONIBLE', 60000.00),
+(1, 3, 'Pañitos para bebé', 'Paquete de pañitos húmedos', 'RESERVADO', 25000.00),
+(2, 3, 'Kit de biberones', 'Kit de biberones para recién nacido', 'RESERVADO', 80000.00),
+(3, 3, 'Cobija para bebé', 'Cobija suave para recién nacido', 'RESERVADO', 60000.00),
 (4, 3, 'Ropa de bebé', 'Conjunto de ropa para recién nacido', 'DISPONIBLE', 50000.00);
 
 
@@ -255,7 +255,7 @@ INSERT INTO Reserva_regalo
 (id_reserva, id_evento, id_invitado, id_regalo, fecha_reserva, estado)
 VALUES
 (1, 2, 3, 1, TIMESTAMP '2026-11-10 12:00:00', 'RESERVADO'),
-(2, 2, 4, 1, TIMESTAMP '2026-11-11 15:30:00', 'RESERVADO'),
+(2, 2, 4, 3, TIMESTAMP '2026-11-11 15:30:00', 'RESERVADO'),
 (3, 2, 3, 2, TIMESTAMP '2026-11-12 09:00:00', 'RESERVADO');
 
 
