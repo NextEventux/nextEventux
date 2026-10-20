@@ -42,6 +42,9 @@ El producto se especifica mediante 30 casos de uso distribuidos de forma consecu
 
 La especificación detallada de cada comportamiento pertenece al SRS y a los anexos de casos de uso. El código no debe introducir reglas que contradigan esos documentos sin registrar y aprobar previamente una solicitud de cambio.
 
+Consulta la [entrega de Gestión de Eventos CU01–CU05](docs/cu01-solicitudes-presupuesto.md)
+para ver el flujo de solicitudes, presupuesto, pruebas y dependencias pendientes.
+
 ## Tecnologías
 
 | Área | Tecnología | Uso |
@@ -461,16 +464,18 @@ revisión y la integración del PR.
 
 ## CU04 — Cancelar evento
 
-Esta primera iteración reutiliza `ControllerEventos`, `ServiceEventos` y el CSS
-actual. Añade únicamente el repositorio de cancelación, una pantalla JavaFX y una
-migración. La rama `CU04-cancelar-evento` parte de CU03 porque reutiliza su tabla de
-notificaciones; esa dependencia debe conservarse al integrar las ramas.
+CU04 reutiliza `ControllerEventos`, `ServiceEventos` y los estilos CSS actuales.
+La rama `CU04-cancelar-evento` incorpora la base autenticada de CU02 y CU03;
+esa dependencia debe conservarse al preparar su PR. La primera iteración añadió
+el repositorio, la pantalla y la migración de cancelación; esta integración con
+la sesión no agrega tablas ni dependencias.
 
 ### Uso
 
-Desde Crear evento, elegir **Cancelar evento** en el menú lateral o en el menú
-**Eventos** de la barra superior, disponible también en ventanas pequeñas.
-Seleccionar organizador y evento por nombre y marcar la confirmación explícita.
+Iniciar sesión como organizador y elegir **Cancelar evento** en la barra de
+sesión, el menú lateral o el menú **Eventos**. El formulario muestra el nombre del
+organizador autenticado, sin selector de identidad. Seleccionar uno de sus eventos
+por nombre y marcar la confirmación explícita.
 El botón permanece deshabilitado hasta confirmar. Cambiar de evento borra esa
 confirmación para evitar cancelar otra selección por accidente.
 
@@ -498,36 +503,62 @@ La migración `003_cancelacion_eventos.sql` agrega:
 
 El módulo de contratación debe guardar `id_disponibilidad`; la reserva de lugar
 debe guardar `id_lugar`. No se infieren esos vínculos de los textos ni se rellenan
-identificadores arbitrarios en datos existentes. Si una contratación activa carece
+identificadores arbitrarios en datos existentes. Cuando falta el vínculo directo,
+CU04 admite la coincidencia exacta del servicio, fecha y horas que utiliza CU11;
+el vínculo se guarda dentro de la misma transacción de cancelación. Se contemplan
+contrataciones ACTIVA y CONFIRMADA. Si una contratación activa carece
 de una reserva válida o una invitación apunta a un lugar reservado sin vínculo
 coherente con el evento, se bloquea la cancelación sin modificar datos.
 
 Una reserva compartida no se libera mientras otro evento mantenga un compromiso
-activo. El estado global de Lugar permanece reservado si otro evento activo lo
+activo, aunque ese contrato solo identifique el servicio, la fecha y las horas.
+El estado global de Lugar permanece reservado si otro evento activo lo
 utiliza; el modelo actual no contiene un calendario independiente de reservas de
 lugares. Ese comportamiento debe coordinarse con el módulo responsable.
 
 Los avisos para proveedores se dirigen a su Usuario. Invitado no tiene una cuenta
 Usuario en el esquema actual: su aviso se guarda mediante `id_invitado`, sin
 buscar cuentas por nombre o correo. La pantalla muestra el resumen de avisos del
-evento; integrar su lectura en la bandeja del módulo de Invitados sigue pendiente.
-Los avisos de proveedores pueden consultarse por `id_usuario` en la misma tabla.
+evento. El proveedor los consulta en **Mis avisos** después de iniciar sesión.
+El invitado entra por **Consultar mis invitaciones** en el login: CU16 consulta
+los avisos por correo aunque la invitación haya sido revocada. Esa consulta por
+correo es el mecanismo existente de CU16 y no autentica al invitado.
 
-La selección de organizador sigue siendo de demostración mientras se corrige e
-integra el login. No equivale a autenticación. CU04 no debe declararse completo
-hasta integrar esa sesión y coordinar las reservas y bandejas con los otros módulos.
+El controlador recibe la sesión del login. El servicio comprueba que el usuario
+y el organizador sigan activos y vinculados en H2 antes de listar, cancelar o
+consultar avisos. Las consultas filtran por el identificador de organizador de la
+sesión, que puede diferir del identificador de usuario. Administradores,
+proveedores y sesiones cerradas no tienen acceso a CU04. La cancelación vuelve a
+comprobar la propiedad y el estado del evento dentro de la transacción.
+
+Se incorporaron las ramas de CU11 y CU16 y se conectó la consulta de avisos.
+Falta identificar la implementación de CU12/CU13 de Proveedores y el flujo de
+reserva del lugar para verificar sus escrituras reales. La revisión de los
+módulos y la definición del
+acceso de invitados siguen pendientes. Detalles y contrato de datos en
+[Integración de CU04](docs/integracion-cu04.md).
 
 ### Pruebas
 
-41 pruebas JUnit correctas en total, incluidas 11 de CU04: confirmación, propiedad,
+La integración de proveedores e invitados amplía la suite a 117 pruebas JUnit,
+incluidas 10 que cruzan los módulos. Las tres últimas verifican las reservas
+compartidas sin vínculo directo y que una contratación de otra fecha no retenga
+la disponibilidad cancelada. Se mantienen las 11 de cancelación adaptadas
+al login real y 8 nuevas de integración con la sesión. Se comprueban confirmación, propiedad,
 estados, reservas válidas, liberación sin afectar otros eventos, reserva compartida,
 revocación, destinatarios, persistencia y rollback si falla un servicio o un aviso.
 La prueba de liberación compartida comprueba que el último evento cancelado deja
-el recurso disponible. Las pruebas utilizan exclusivamente bases temporales.
+el recurso disponible. Las nuevas pruebas cubren aislamiento de eventos y avisos,
+identificadores distintos de usuario y organizador, cierre de sesión, roles no
+autorizados, desactivación después del login, cambio de estado y confirmación
+obligatoria. Las pruebas utilizan exclusivamente bases temporales.
 
-La ventana JavaFX también se comprobó con una base temporal: selección por nombre,
-confirmación obligatoria, fallo simulado, conservación del formulario, reintento,
-estado actualizado y cuatro avisos registrados para los afectados de los ejemplos.
+La ventana JavaFX también se comprobó con una base temporal: login, selección de
+eventos propios, confirmación obligatoria, cambio de selección que borra la
+confirmación, fallo simulado, conservación del formulario, reintento, estado
+actualizado y seis avisos registrados para los afectados de los ejemplos. Se
+verificaron además el cambio de cuenta y la ausencia de acceso para el
+administrador. La barra de sesión permite ajustar sus botones en varias filas.
 Se inspeccionaron capturas de la pantalla antes y después de cancelar.
 
 Con Maven instalado:
@@ -539,7 +570,7 @@ mvn javafx:run
 
 Como Maven no está instalado en este equipo, se verificó compilando con
 `javac --release 17` y ejecutando JUnit Platform Console 1.10.2 con H2 2.3.232.
-Las pruebas no ejecutan el login de la rama externa ni tocan la base de la aplicación.
+Las pruebas utilizan el login integrado y no tocan la base de la aplicación.
 
 ## CU02 — Editar evento
 
@@ -583,8 +614,8 @@ sesión y vuelve al login. La aplicación no permite elegir otra identidad.
 
 Desde la sesión de organizador están disponibles Crear y Editar evento. Crear
 conserva el organizador de la sesión. CU03 también está disponible mediante Publicaciones, con permisos por sesión.
-El acceso a CU04 permanece deshabilitado hasta integrar su flujo con la sesión.
-La cuenta de administrador abre CU03; el módulo de proveedor sigue pendiente.
+CU04 está disponible para el organizador desde Cancelar evento, con permisos por sesión.
+La cuenta de administrador abre CU03; el proveedor accede a sus servicios y avisos.
 
 ### Pruebas de CU02
 
@@ -613,3 +644,26 @@ cierre de sesión y entrada con una segunda cuenta sin mezclar sus eventos.
 La conciliación de CU03 con CU02 y main conserva el catálogo de proveedores, la
 pantalla de gestión de servicios y la navegación a Invitados. Se mantienen las
 migraciones de los módulos y el manejo de errores de autenticación de main.
+
+### CU05 — finalizar evento
+
+Se agregó la finalización de eventos propios confirmados que ya terminaron, con
+fotografías guardadas en H2, liberación de reservas y entrega de la galería a los
+invitados confirmados. Si falla la entrega interna se puede reintentar sin cargar
+las fotos de nuevo ni duplicar avisos. Mis invitaciones permite consultar las fotos
+con el correo y teléfono registrados.
+
+Se accede desde **Mis eventos**, seleccionando un evento confirmado que ya terminó
+y pulsando **Finalizar evento**. Si quedó una entrega pendiente, aparece
+**Reintentar envío de galería**. La pantalla conserva el menú compartido, el evento
+seleccionado y el cierre de sesión. El formulario de reseñas depende de CU14 y no
+se implementa en esta rama. Las decisiones, dependencias y evidencias están en
+[la documentación de CU05](docs/cu05-finalizar-evento.md).
+
+### Ruta estable de H2
+
+La base por defecto se guarda en `~/.nexteventux/nexteventux.mv.db`.
+Puede cambiarse la carpeta con `-Dnexteventux.home=/ruta/absoluta` o la URL completa
+con `-Dnexteventux.db.url=...`. Las bases existentes en `data/` no se copian,
+modifican ni eliminan automáticamente. Para usarlas, indique su carpeta mediante
+`nexteventux.home` o su URL mediante `nexteventux.db.url`.

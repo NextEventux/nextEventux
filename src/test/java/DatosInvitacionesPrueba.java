@@ -6,6 +6,8 @@ import java.sql.Statement;
 class DatosInvitacionesPrueba {
     static final int LUGAR_GRANDE = 1;   // aforo 100
     static final int LUGAR_PEQUENO = 2;  // aforo 2
+    /** Organizador dueño de todos los eventos de prueba. */
+    static final int ORGANIZADOR = 1;
     static final int EVENTO = 1;
     static final int OTRO_EVENTO = 2;
     static final int EVENTO_CANCELADO = 3;
@@ -32,6 +34,17 @@ class DatosInvitacionesPrueba {
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("INSERT INTO Acompanante (id_invitado, nombre, tipo) VALUES ("
                     + idInvitado + ", 'Acompañante', 'PAREJA')");
+        }
+    }
+
+    static void agregarOtroOrganizador(String url) throws Exception {
+        try (Connection connection = DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("INSERT INTO Usuario (id_usuario, nombre, usuario, contraseña, estado, "
+                    + "fecha_registro, acepta_marketing, tipo_usuario) VALUES "
+                    + "(2, 'Otro organizador', 'otro', 'solo-prueba', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR')");
+            statement.executeUpdate("INSERT INTO Organizador (id_organizador, id_usuario, estado) "
+                    + "VALUES (2, 2, 'ACTIVO')");
         }
     }
 

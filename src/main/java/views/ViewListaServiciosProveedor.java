@@ -1,5 +1,13 @@
 package views;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
+
 import controllers.ControllerProveedores;
 import entities.ImagenServicio;
 import entities.PreguntaServicio;
@@ -26,14 +34,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import views.components.MenuCompartido;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.function.Consumer;
-
 public class ViewListaServiciosProveedor {
 
     private final ControllerProveedores controller;
@@ -43,33 +43,35 @@ public class ViewListaServiciosProveedor {
     private final Runnable abrirServicios;
     private final Consumer<Integer> abrirDetalle;
     private final Runnable nuevoServicio;
+    private final Runnable abrirSolicitudes;
+    private Runnable abrirAvisos;
 
-    private final List<ServicioVista> servicios =
-            new ArrayList<>();
+    private final List<ServicioVista> servicios
+            = new ArrayList<>();
 
-    private final TextField busqueda =
-            new TextField();
+    private final TextField busqueda
+            = new TextField();
 
-    private final ToggleGroup grupoFiltros =
-            new ToggleGroup();
+    private final ToggleGroup grupoFiltros
+            = new ToggleGroup();
 
-    private final ToggleButton filtroTodos =
-            crearFiltro("Todos", "TODOS");
+    private final ToggleButton filtroTodos
+            = crearFiltro("Todos", "TODOS");
 
-    private final ToggleButton filtroDisponibles =
-            crearFiltro("Disponibles", "DISPONIBLES");
+    private final ToggleButton filtroDisponibles
+            = crearFiltro("Disponibles", "DISPONIBLES");
 
-    private final ToggleButton filtroPreguntas =
-            crearFiltro("Con preguntas", "PREGUNTAS");
+    private final ToggleButton filtroPreguntas
+            = crearFiltro("Con preguntas", "PREGUNTAS");
 
-    private final ToggleButton filtroSinFotos =
-            crearFiltro("Sin fotos", "SIN_FOTOS");
+    private final ToggleButton filtroSinFotos
+            = crearFiltro("Sin fotos", "SIN_FOTOS");
 
-    private final TilePane galeria =
-            new TilePane(18, 18);
+    private final TilePane galeria
+            = new TilePane(18, 18);
 
-    private final Label resumen =
-            new Label();
+    private final Label resumen
+            = new Label();
 
     public ViewListaServiciosProveedor(
             ControllerProveedores controller,
@@ -79,14 +81,8 @@ public class ViewListaServiciosProveedor {
             Consumer<Integer> abrirDetalle,
             Runnable nuevoServicio) {
 
-        this(
-                controller,
-                idProveedor,
-                sesion,
-                cerrarSesion,
-                abrirDetalle,
-                nuevoServicio,
-                null);
+        this(controller, idProveedor, sesion, cerrarSesion,
+                abrirDetalle, nuevoServicio, null, null);
     }
 
     public ViewListaServiciosProveedor(
@@ -96,8 +92,25 @@ public class ViewListaServiciosProveedor {
             Runnable cerrarSesion,
             Consumer<Integer> abrirDetalle,
             Runnable nuevoServicio,
-            Runnable abrirServicios) {
+            Runnable abrirSolicitudes) {
+        this(controller, idProveedor, sesion, cerrarSesion,
+                abrirDetalle, nuevoServicio, null, abrirSolicitudes);
+    }
 
+    public ViewListaServiciosProveedor(
+            ControllerProveedores controller,
+            int idProveedor,
+            SesionUsuario sesion,
+            Runnable cerrarSesion,
+            Consumer<Integer> abrirDetalle,
+            Runnable nuevoServicio,
+            Runnable abrirServicios,
+            Runnable abrirSolicitudes) {
+
+        System.out.printf(
+                "[MIS_SERVICIOS] constructor actorId=%d rol=%s%n",
+                idProveedor,
+                sesion == null ? null : sesion.getTipoUsuario());
         this.controller = controller;
         this.idProveedor = idProveedor;
         this.sesion = sesion;
@@ -105,30 +118,40 @@ public class ViewListaServiciosProveedor {
         this.abrirServicios = abrirServicios;
         this.abrirDetalle = abrirDetalle;
         this.nuevoServicio = nuevoServicio;
+        this.abrirSolicitudes = abrirSolicitudes;
+    }
+
+    public ViewListaServiciosProveedor(ControllerProveedores controller, int idProveedor,
+            SesionUsuario sesion, Runnable cerrarSesion, Consumer<Integer> abrirDetalle,
+            Runnable nuevoServicio, Runnable abrirServicios, Runnable abrirSolicitudes, Runnable abrirAvisos) {
+        this(controller, idProveedor, sesion, cerrarSesion, abrirDetalle, nuevoServicio, abrirServicios, abrirSolicitudes);
+        this.abrirAvisos = abrirAvisos;
     }
 
     public Parent crearPantalla() {
+        System.out.println("[MIS_SERVICIOS] creando pantalla");
 
-        BorderPane raiz =
-                new BorderPane();
+        BorderPane raiz
+                = new BorderPane();
 
         raiz
                 .getStyleClass()
                 .add("app");
 
-        VBox sidebar =
-                crearMenu();
+        VBox sidebar
+                = crearMenu();
+        System.out.println("[MIS_SERVICIOS] menu compartido creado");
 
         raiz.setLeft(sidebar);
 
-        BorderPane principal =
-                new BorderPane();
+        BorderPane principal
+                = new BorderPane();
 
         principal.setTop(
                 crearBarraSuperior());
 
-        VBox contenido =
-                new VBox(
+        VBox contenido
+                = new VBox(
                         24,
                         crearEncabezado(),
                         crearHerramientas(),
@@ -150,14 +173,14 @@ public class ViewListaServiciosProveedor {
         galeria.setPrefTileHeight(285);
         galeria.setTileAlignment(Pos.TOP_LEFT);
 
-        StackPane centrado =
-                new StackPane(contenido);
+        StackPane centrado
+                = new StackPane(contenido);
 
         centrado.setAlignment(
                 Pos.TOP_CENTER);
 
-        ScrollPane scroll =
-                new ScrollPane(centrado);
+        ScrollPane scroll
+                = new ScrollPane(centrado);
 
         scroll.setFitToWidth(true);
 
@@ -185,7 +208,9 @@ public class ViewListaServiciosProveedor {
                         });
 
         configurarFiltros();
+        System.out.println("[MIS_SERVICIOS] consultando servicios");
         recargarServicios();
+        System.out.println("[MIS_SERVICIOS] pantalla creada");
 
         return raiz;
     }
@@ -196,16 +221,16 @@ public class ViewListaServiciosProveedor {
                 .getStyleClass()
                 .add("provider-gallery-summary");
 
-        VBox titulo =
-                new VBox(
+        VBox titulo
+                = new VBox(
                         7,
                         etiqueta(
                                 "Mis servicios",
                                 "page-title"),
                         resumen);
 
-        Button nuevo =
-                new Button(
+        Button nuevo
+                = new Button(
                         "+ Nuevo servicio");
 
         nuevo
@@ -220,8 +245,8 @@ public class ViewListaServiciosProveedor {
                     }
                 });
 
-        HBox encabezado =
-                new HBox(
+        HBox encabezado
+                = new HBox(
                         20,
                         titulo,
                         espacioHorizontal(),
@@ -244,8 +269,8 @@ public class ViewListaServiciosProveedor {
 
         busqueda.setPrefWidth(310);
 
-        HBox filtros =
-                new HBox(
+        HBox filtros
+                = new HBox(
                         22,
                         filtroTodos,
                         filtroDisponibles,
@@ -255,8 +280,8 @@ public class ViewListaServiciosProveedor {
         filtros.setAlignment(
                 Pos.CENTER_LEFT);
 
-        HBox barra =
-                new HBox(
+        HBox barra
+                = new HBox(
                         24,
                         busqueda,
                         filtros);
@@ -279,8 +304,8 @@ public class ViewListaServiciosProveedor {
             String texto,
             String valor) {
 
-        ToggleButton filtro =
-                new ToggleButton(texto);
+        ToggleButton filtro
+                = new ToggleButton(texto);
 
         filtro.setUserData(valor);
 
@@ -314,7 +339,7 @@ public class ViewListaServiciosProveedor {
                         (observable, anterior, actual) -> {
 
                             if (actual == null
-                                    && anterior != null) {
+                            && anterior != null) {
 
                                 anterior.setSelected(true);
                                 return;
@@ -333,13 +358,20 @@ public class ViewListaServiciosProveedor {
     private void recargarServicios() {
 
         servicios.clear();
+        boolean errorCarga = false;
 
         try {
 
-            List<Servicio> encontrados =
-                    controller
+            System.out.printf(
+                    "[MIS_SERVICIOS] consultando actorId=%d%n",
+                    idProveedor);
+            List<Servicio> encontrados
+                    = controller
                             .listarServiciosProveedor(
                                     idProveedor);
+            System.out.printf(
+                    "[MIS_SERVICIOS] consulta completada cantidad=%d%n",
+                    encontrados.size());
 
             for (Servicio servicio
                     : encontrados) {
@@ -349,33 +381,44 @@ public class ViewListaServiciosProveedor {
                                 servicio));
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
 
+            registrarExcepcion("consulta de servicios", e);
             servicios.clear();
+            errorCarga = true;
         }
 
         actualizarContadores();
         aplicarFiltros();
+
+        if (errorCarga) {
+            resumen.setText(
+                    "No se pudieron cargar los servicios. "
+                    + "Vuelve a intentarlo más tarde.");
+            resumen.getStyleClass().add("provider-gallery-error");
+        } else {
+            resumen.getStyleClass().remove("provider-gallery-error");
+        }
     }
 
     private ServicioVista crearVista(
             Servicio servicio) {
 
-        String portada =
-                null;
+        String portada
+                = null;
 
-        int preguntasPendientes =
-                0;
+        int preguntasPendientes
+                = 0;
 
         try {
 
-            List<ImagenServicio> imagenes =
-                    controller
+            List<ImagenServicio> imagenes
+                    = controller
                             .listarImagenesServicio(
                                     servicio.getIdServicio());
 
-            portada =
-                    imagenes
+            portada
+                    = imagenes
                             .stream()
                             .min(
                                     Comparator.comparingInt(
@@ -386,13 +429,14 @@ public class ViewListaServiciosProveedor {
 
         } catch (Exception e) {
 
+            registrarExcepcion("carga de imagenes", e);
             portada = null;
         }
 
         try {
 
-            List<PreguntaServicio> preguntas =
-                    controller
+            List<PreguntaServicio> preguntas
+                    = controller
                             .listarPreguntasPublicas(
                                     servicio.getIdServicio());
 
@@ -409,6 +453,7 @@ public class ViewListaServiciosProveedor {
 
         } catch (Exception e) {
 
+            registrarExcepcion("consulta de preguntas", e);
             preguntasPendientes = 0;
         }
 
@@ -420,14 +465,14 @@ public class ViewListaServiciosProveedor {
 
     private void actualizarContadores() {
 
-        int disponibles =
-                0;
+        int disponibles
+                = 0;
 
-        int conPreguntas =
-                0;
+        int conPreguntas
+                = 0;
 
-        int sinFotos =
-                0;
+        int sinFotos
+                = 0;
 
         for (ServicioVista vista
                 : servicios) {
@@ -462,9 +507,9 @@ public class ViewListaServiciosProveedor {
 
         resumen.setText(
                 servicios.size() == 1
-                        ? "1 servicio publicado o en preparación"
-                        : servicios.size()
-                        + " servicios publicados o en preparación");
+                ? "1 servicio publicado o en preparación"
+                : servicios.size()
+                + " servicios publicados o en preparación");
     }
 
     private void aplicarFiltros() {
@@ -473,20 +518,20 @@ public class ViewListaServiciosProveedor {
                 .getChildren()
                 .clear();
 
-        String texto =
-                busqueda
+        String texto
+                = busqueda
                         .getText()
                         .trim()
                         .toLowerCase();
 
-        String filtro =
-                "TODOS";
+        String filtro
+                = "TODOS";
 
         if (grupoFiltros.getSelectedToggle()
                 != null) {
 
-            filtro =
-                    String.valueOf(
+            filtro
+                    = String.valueOf(
                             grupoFiltros
                                     .getSelectedToggle()
                                     .getUserData());
@@ -495,8 +540,8 @@ public class ViewListaServiciosProveedor {
         for (ServicioVista vista
                 : servicios) {
 
-            Servicio servicio =
-                    vista.servicio;
+            Servicio servicio
+                    = vista.servicio;
 
             if (!coincideBusqueda(
                     servicio,
@@ -533,18 +578,18 @@ public class ViewListaServiciosProveedor {
             return true;
         }
 
-        String nombre =
-                seguro(
+        String nombre
+                = seguro(
                         servicio.getNombre())
                         .toLowerCase();
 
-        String categoria =
-                seguro(
+        String categoria
+                = seguro(
                         servicio.getCategoria())
                         .toLowerCase();
 
-        String ciudad =
-                seguro(
+        String ciudad
+                = seguro(
                         servicio.getCiudadZona())
                         .toLowerCase();
 
@@ -582,38 +627,38 @@ public class ViewListaServiciosProveedor {
     private VBox crearTarjeta(
             ServicioVista vista) {
 
-        Servicio servicio =
-                vista.servicio;
+        Servicio servicio
+                = vista.servicio;
 
-        StackPane portada =
-                crearPortada(
+        StackPane portada
+                = crearPortada(
                         vista);
 
-        Label nombre =
-                etiqueta(
+        Label nombre
+                = etiqueta(
                         servicio.getNombre(),
                         "provider-tile-name");
 
         nombre.setWrapText(true);
 
-        Label meta =
-                etiqueta(
+        Label meta
+                = etiqueta(
                         textoCategoria(
                                 servicio),
                         "provider-tile-meta");
 
-        Label precio =
-                etiqueta(
+        Label precio
+                = etiqueta(
                         formatearPrecio(
                                 servicio.getPrecio()),
                         "provider-tile-price");
 
-        Label estado =
-                crearEstado(
+        Label estado
+                = crearEstado(
                         servicio.getEstado());
 
-        HBox pie =
-                new HBox(
+        HBox pie
+                = new HBox(
                         10,
                         precio,
                         espacioHorizontal(),
@@ -622,8 +667,8 @@ public class ViewListaServiciosProveedor {
         pie.setAlignment(
                 Pos.CENTER_LEFT);
 
-        VBox tarjeta =
-                new VBox(
+        VBox tarjeta
+                = new VBox(
                         portada,
                         nombre,
                         meta,
@@ -662,15 +707,15 @@ public class ViewListaServiciosProveedor {
 
         if (vista.preguntasPendientes > 0) {
 
-            String texto =
-                    vista.preguntasPendientes == 1
+            String texto
+                    = vista.preguntasPendientes == 1
                             ? "● 1 pregunta sin responder"
                             : "● "
                             + vista.preguntasPendientes
                             + " preguntas sin responder";
 
-            Label aviso =
-                    etiqueta(
+            Label aviso
+                    = etiqueta(
                             texto,
                             "provider-tile-pending");
 
@@ -703,8 +748,8 @@ public class ViewListaServiciosProveedor {
     private StackPane crearPortada(
             ServicioVista vista) {
 
-        StackPane portada =
-                new StackPane();
+        StackPane portada
+                = new StackPane();
 
         portada.setPrefHeight(170);
         portada.setMinHeight(170);
@@ -719,8 +764,8 @@ public class ViewListaServiciosProveedor {
 
             try {
 
-                ImageView imagen =
-                        new ImageView(
+                ImageView imagen
+                        = new ImageView(
                                 new Image(
                                         vista.portada,
                                         true));
@@ -740,8 +785,8 @@ public class ViewListaServiciosProveedor {
                                 portada
                                         .heightProperty());
 
-                Rectangle recorte =
-                        new Rectangle();
+                Rectangle recorte
+                        = new Rectangle();
 
                 recorte
                         .widthProperty()
@@ -765,8 +810,8 @@ public class ViewListaServiciosProveedor {
                         .getChildren()
                         .add(imagen);
 
-                Label foto =
-                        etiqueta(
+                Label foto
+                        = etiqueta(
                                 "FOTO DEL SERVICIO",
                                 "provider-cover-label");
 
@@ -790,7 +835,7 @@ public class ViewListaServiciosProveedor {
 
             } catch (Exception e) {
 
-                // Si la imagen no carga se muestra el icono
+                registrarExcepcion("renderizado de portada", e);
             }
         }
 
@@ -798,14 +843,14 @@ public class ViewListaServiciosProveedor {
                 .getStyleClass()
                 .add("provider-cover-empty");
 
-        Label icono =
-                etiqueta(
+        Label icono
+                = etiqueta(
                         iconoCategoria(
                                 vista.servicio.getCategoria()),
                         "provider-cover-icon");
 
-        Label ayuda =
-                etiqueta(
+        Label ayuda
+                = etiqueta(
                         "Sin foto todavía",
                         "provider-cover-help");
 
@@ -832,8 +877,8 @@ public class ViewListaServiciosProveedor {
 
     private StackPane crearTarjetaNueva() {
 
-        VBox contenido =
-                new VBox(
+        VBox contenido
+                = new VBox(
                         6,
                         etiqueta(
                                 "+",
@@ -845,8 +890,8 @@ public class ViewListaServiciosProveedor {
         contenido.setAlignment(
                 Pos.CENTER);
 
-        StackPane nuevo =
-                new StackPane(
+        StackPane nuevo
+                = new StackPane(
                         contenido);
 
         nuevo.setPrefWidth(270);
@@ -873,8 +918,8 @@ public class ViewListaServiciosProveedor {
     private Label crearEstado(
             String estado) {
 
-        Label etiqueta =
-                new Label();
+        Label etiqueta
+                = new Label();
 
         etiqueta
                 .getStyleClass()
@@ -922,12 +967,12 @@ public class ViewListaServiciosProveedor {
     private String textoCategoria(
             Servicio servicio) {
 
-        String categoria =
-                formatearCategoria(
+        String categoria
+                = formatearCategoria(
                         servicio.getCategoria());
 
-        String ciudad =
-                seguro(
+        String ciudad
+                = seguro(
                         servicio.getCiudadZona());
 
         if (ciudad.isBlank()) {
@@ -948,8 +993,8 @@ public class ViewListaServiciosProveedor {
             return "Sin categoría";
         }
 
-        String texto =
-                categoria
+        String texto
+                = categoria
                         .toLowerCase()
                         .replace(
                                 '_',
@@ -963,8 +1008,8 @@ public class ViewListaServiciosProveedor {
     private String formatearPrecio(
             double precio) {
 
-        DecimalFormatSymbols simbolos =
-                new DecimalFormatSymbols(
+        DecimalFormatSymbols simbolos
+                = new DecimalFormatSymbols(
                         new Locale(
                                 "es",
                                 "CO"));
@@ -1018,13 +1063,32 @@ public class ViewListaServiciosProveedor {
                 null,
                 null,
                 abrirServicios,
-                cerrarSesion);
+                cerrarSesion,
+                null,
+                abrirSolicitudes,
+                null);
     }
 
     private HBox crearBarraSuperior() {
-        return MenuCompartido.crearBarraSuperior(
-                sesion,
-                "Mis servicios");
+        HBox barra = MenuCompartido.crearBarraSuperior(sesion, "Mis servicios");
+        if (abrirAvisos != null) {
+            Button avisos = new Button("Mis avisos");
+            avisos.setId("abrirAvisosProveedorSesion");
+            avisos.getStyleClass().add("btn-secondary");
+            avisos.setOnAction(e -> abrirAvisos.run());
+            barra.getChildren().add(avisos);
+        }
+        return barra;
+    }
+
+    private void registrarExcepcion(String paso, Exception e) {
+        System.err.printf(
+                "[MIS_SERVICIOS] paso=%s excepcion=%s%n",
+                paso,
+                e.getClass().getName());
+        for (StackTraceElement frame : e.getStackTrace()) {
+            System.err.println("[MIS_SERVICIOS]   at " + frame);
+        }
     }
 
     private String seguro(
@@ -1039,8 +1103,8 @@ public class ViewListaServiciosProveedor {
             String texto,
             String clase) {
 
-        Label label =
-                new Label(texto);
+        Label label
+                = new Label(texto);
 
         label
                 .getStyleClass()
@@ -1051,8 +1115,8 @@ public class ViewListaServiciosProveedor {
 
     private Region espacioHorizontal() {
 
-        Region espacio =
-                new Region();
+        Region espacio
+                = new Region();
 
         HBox.setHgrow(
                 espacio,
@@ -1072,14 +1136,14 @@ public class ViewListaServiciosProveedor {
                 String portada,
                 int preguntasPendientes) {
 
-            this.servicio =
-                    servicio;
+            this.servicio
+                    = servicio;
 
-            this.portada =
-                    portada;
+            this.portada
+                    = portada;
 
-            this.preguntasPendientes =
-                    preguntasPendientes;
+            this.preguntasPendientes
+                    = preguntasPendientes;
         }
     }
 }

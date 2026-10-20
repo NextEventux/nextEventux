@@ -1,6 +1,11 @@
 package views;
 
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+
 import controllers.ControllerProveedores;
+import controllers.ControllerSolicitudes;
 import entities.ImagenServicio;
 import entities.PreguntaServicio;
 import entities.Servicio;
@@ -8,19 +13,33 @@ import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import views.components.MenuCompartido;
 
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
 
 public class ViewDetalleServicio {
 
     private final ControllerProveedores controller;
+    private final ControllerSolicitudes controllerSolicitudes;
     private final Servicio servicio;
     private final int idOrganizador;
     private final SesionUsuario sesion;
@@ -30,18 +49,32 @@ public class ViewDetalleServicio {
     private final Runnable cerrarSesion;
     private final Runnable abrirMisEventos;
 
-    private final FlowPane imagenes =
-            new FlowPane();
+    private final FlowPane imagenes
+            = new FlowPane();
 
-    private final VBox preguntas =
-            new VBox(10);
+    private final VBox preguntas
+            = new VBox(10);
 
-    private final TextArea nuevaPregunta =
-            new TextArea();
+    private final TextArea nuevaPregunta
+            = new TextArea();
 
-    private final NumberFormat formatoCOP =
-            NumberFormat.getNumberInstance(
+    private final NumberFormat formatoCOP
+            = NumberFormat.getNumberInstance(
                     Locale.forLanguageTag("es-CO"));
+
+    public ViewDetalleServicio(
+            ControllerProveedores controller,
+            ControllerSolicitudes controllerSolicitudes,
+            Servicio servicio,
+            int idOrganizador,
+            SesionUsuario sesion,
+            Runnable volverCatalogo,
+            Runnable abrirEventos,
+            Runnable cerrarSesion) {
+
+        this(controller, controllerSolicitudes, servicio, idOrganizador, sesion,
+                volverCatalogo, abrirEventos, null, cerrarSesion, null);
+    }
 
     public ViewDetalleServicio(
             ControllerProveedores controller,
@@ -52,16 +85,8 @@ public class ViewDetalleServicio {
             Runnable abrirEventos,
             Runnable cerrarSesion) {
 
-        this(
-                controller,
-                servicio,
-                idOrganizador,
-                sesion,
-                volverCatalogo,
-                abrirEventos,
-                null,
-                cerrarSesion,
-                null);
+        this(controller, null, servicio, idOrganizador, sesion,
+                volverCatalogo, abrirEventos, null, cerrarSesion, null);
     }
 
     public ViewDetalleServicio(
@@ -89,7 +114,25 @@ public class ViewDetalleServicio {
             Runnable cerrarSesion,
             Runnable abrirMisEventos) {
 
+        this(controller, null, servicio, idOrganizador, sesion,
+                volverCatalogo, abrirEventos, abrirInvitados, cerrarSesion,
+                abrirMisEventos);
+    }
+
+    public ViewDetalleServicio(
+            ControllerProveedores controller,
+            ControllerSolicitudes controllerSolicitudes,
+            Servicio servicio,
+            int idOrganizador,
+            SesionUsuario sesion,
+            Runnable volverCatalogo,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos) {
+
         this.controller = controller;
+        this.controllerSolicitudes = controllerSolicitudes;
         this.servicio = servicio;
         this.idOrganizador = idOrganizador;
         this.sesion = sesion;
@@ -113,32 +156,32 @@ public class ViewDetalleServicio {
 
     public Parent crearPantalla() {
 
-        BorderPane raiz =
-                new BorderPane();
+        BorderPane raiz
+                = new BorderPane();
 
         raiz.getStyleClass().add("app");
 
-        VBox sidebar =
-                crearMenu();
+        VBox sidebar
+                = crearMenu();
 
         raiz.setLeft(sidebar);
 
-        BorderPane principal =
-                new BorderPane();
+        BorderPane principal
+                = new BorderPane();
 
         principal.setTop(
                 crearBarraSuperior());
 
-        VBox contenido =
-                new VBox(30);
+        VBox contenido
+                = new VBox(30);
 
         contenido.getStyleClass().add(
                 "content");
 
         contenido.setMaxWidth(1320);
 
-        VBox titulo =
-                new VBox(
+        VBox titulo
+                = new VBox(
                         8,
                         etiqueta(
                                 servicio.getNombre(),
@@ -146,13 +189,13 @@ public class ViewDetalleServicio {
                         etiqueta(
                                 seguro(
                                         servicio.getCategoria())
-                                        + " · "
-                                        + seguro(
-                                                servicio.getCiudadZona()),
+                                + " · "
+                                + seguro(
+                                        servicio.getCiudadZona()),
                                 "muted"));
 
-        HBox encabezado =
-                new HBox(
+        HBox encabezado
+                = new HBox(
                         20,
                         titulo,
                         espacioHorizontal(),
@@ -163,20 +206,20 @@ public class ViewDetalleServicio {
         encabezado.setAlignment(
                 Pos.CENTER_LEFT);
 
-        GridPane columnas =
-                new GridPane();
+        GridPane columnas
+                = new GridPane();
 
         columnas.setHgap(25);
         columnas.setVgap(25);
 
-        ColumnConstraints izquierda =
-                new ColumnConstraints();
+        ColumnConstraints izquierda
+                = new ColumnConstraints();
 
         izquierda.setHgrow(
                 Priority.ALWAYS);
 
-        ColumnConstraints derecha =
-                new ColumnConstraints(330);
+        ColumnConstraints derecha
+                = new ColumnConstraints(330);
 
         columnas
                 .getColumnConstraints()
@@ -184,11 +227,11 @@ public class ViewDetalleServicio {
                         izquierda,
                         derecha);
 
-        VBox informacion =
-                crearInformacionServicio();
+        VBox informacion
+                = crearInformacionServicio();
 
-        VBox panelPreguntas =
-                crearPanelPreguntas();
+        VBox panelPreguntas
+                = crearPanelPreguntas();
 
         columnas.add(
                 informacion,
@@ -210,14 +253,24 @@ public class ViewDetalleServicio {
                         encabezado,
                         columnas);
 
-        StackPane centrado =
-                new StackPane(contenido);
+        Button solicitarServicio
+                = new Button("Solicitar este servicio");
+
+        solicitarServicio.getStyleClass().add("btn-primary");
+
+        solicitarServicio.setOnAction(
+                event -> solicitarServicio());
+
+        contenido.getChildren().add(solicitarServicio);
+
+        StackPane centrado
+                = new StackPane(contenido);
 
         centrado.setAlignment(
                 Pos.TOP_CENTER);
 
-        ScrollPane scroll =
-                new ScrollPane(centrado);
+        ScrollPane scroll
+                = new ScrollPane(centrado);
 
         scroll.setFitToWidth(true);
 
@@ -231,8 +284,8 @@ public class ViewDetalleServicio {
         raiz.widthProperty().addListener(
                 (observable, anterior, actual) -> {
 
-                    boolean ancho =
-                            actual.doubleValue() >= 1150;
+                    boolean ancho
+                    = actual.doubleValue() >= 1150;
 
                     columnas
                             .getChildren()
@@ -298,14 +351,14 @@ public class ViewDetalleServicio {
 
     private VBox crearInformacionServicio() {
 
-        VBox tarjeta =
-                new VBox(24);
+        VBox tarjeta
+                = new VBox(24);
 
         tarjeta.getStyleClass().add(
                 "card");
 
-        HBox titulo =
-                new HBox(
+        HBox titulo
+                = new HBox(
                         13,
                         etiqueta(
                                 iconoCategoria(
@@ -318,19 +371,19 @@ public class ViewDetalleServicio {
         titulo.setAlignment(
                 Pos.CENTER_LEFT);
 
-        GridPane resumen =
-                new GridPane();
+        GridPane resumen
+                = new GridPane();
 
         resumen.setHgap(18);
         resumen.setVgap(16);
 
-        ColumnConstraints izquierda =
-                new ColumnConstraints();
+        ColumnConstraints izquierda
+                = new ColumnConstraints();
 
         izquierda.setPercentWidth(50);
 
-        ColumnConstraints derecha =
-                new ColumnConstraints();
+        ColumnConstraints derecha
+                = new ColumnConstraints();
 
         derecha.setPercentWidth(50);
 
@@ -352,9 +405,9 @@ public class ViewDetalleServicio {
                 dato(
                         "Precio",
                         "$"
-                                + formatoCOP.format(
-                                        servicio.getPrecio())
-                                + " COP"),
+                        + formatoCOP.format(
+                                servicio.getPrecio())
+                        + " COP"),
                 1,
                 0);
 
@@ -378,15 +431,15 @@ public class ViewDetalleServicio {
                 dato(
                         "Anticipación mínima",
                         servicio.getAnticipacionMinima()
-                                + " días"),
+                        + " días"),
                 0,
                 2);
 
-        String capacidad =
-                servicio.getCantidadMaximaPersonas() == null
-                        ? "No especificada"
-                        : servicio.getCantidadMaximaPersonas()
-                        + " personas";
+        String capacidad
+                = servicio.getCantidadMaximaPersonas() == null
+                ? "No especificada"
+                : servicio.getCantidadMaximaPersonas()
+                + " personas";
 
         resumen.add(
                 dato(
@@ -395,24 +448,24 @@ public class ViewDetalleServicio {
                 1,
                 2);
 
-        Label descripcion =
-                etiqueta(
+        Label descripcion
+                = etiqueta(
                         seguro(
                                 servicio.getDescripcion()),
                         "muted");
 
         descripcion.setWrapText(true);
 
-        VBox descripcionCaja =
-                new VBox(
+        VBox descripcionCaja
+                = new VBox(
                         9,
                         etiqueta(
                                 "Descripción",
                                 "section-title"),
                         descripcion);
 
-        VBox imagenesCaja =
-                new VBox(
+        VBox imagenesCaja
+                = new VBox(
                         12,
                         etiqueta(
                                 "Imágenes del servicio",
@@ -436,20 +489,20 @@ public class ViewDetalleServicio {
             String titulo,
             String valor) {
 
-        Label nombre =
-                etiqueta(
+        Label nombre
+                = etiqueta(
                         titulo,
                         "muted");
 
-        Label contenido =
-                etiqueta(
+        Label contenido
+                = etiqueta(
                         valor,
                         "summary-value");
 
         contenido.setWrapText(true);
 
-        VBox caja =
-                new VBox(
+        VBox caja
+                = new VBox(
                         5,
                         nombre,
                         contenido);
@@ -461,22 +514,173 @@ public class ViewDetalleServicio {
         return caja;
     }
 
+    private void solicitarServicio() {
+
+        TextInputDialog dialogoEvento = new TextInputDialog();
+
+        dialogoEvento.setTitle("Solicitar servicio");
+        dialogoEvento.setHeaderText(
+                "Solicitar: " + servicio.getNombre());
+        dialogoEvento.setContentText(
+                "ID del evento para el que necesitas el servicio:");
+
+        var eventoIngresado = dialogoEvento.showAndWait();
+
+        if (eventoIngresado.isEmpty()) {
+            return;
+        }
+
+        int idEvento;
+
+        try {
+            idEvento = Integer.parseInt(
+                    eventoIngresado.get().trim());
+
+        } catch (NumberFormatException e) {
+            mostrarMensajeSolicitud(
+                    Alert.AlertType.ERROR,
+                    "El ID del evento debe ser un numero entero.");
+            return;
+        }
+
+        List<String> necesidades;
+
+        try {
+            necesidades
+                    = controllerSolicitudes.listarNecesidadesOrganizador(
+                            idOrganizador);
+
+        } catch (RuntimeException e) {
+            mostrarMensajeSolicitud(
+                    Alert.AlertType.ERROR,
+                    e.getMessage());
+            return;
+        }
+
+        String opcionNueva = "Crear necesidad nueva";
+
+        necesidades.add(0, opcionNueva);
+
+        ChoiceDialog<String> selector
+                = new ChoiceDialog<>(opcionNueva, necesidades);
+
+        selector.setTitle("Necesidad del evento");
+        selector.setHeaderText(
+                "Selecciona una necesidad existente "
+                + "o crea una nueva.");
+        selector.setContentText("Necesidad:");
+
+        var opcionSeleccionada = selector.showAndWait();
+
+        if (opcionSeleccionada.isEmpty()) {
+            return;
+        }
+
+        int idNecesidadExistente = 0;
+        String descripcionNecesidad = null;
+
+        if (opcionNueva.equals(opcionSeleccionada.get())) {
+
+            TextInputDialog dialogoNecesidad
+                    = new TextInputDialog();
+
+            dialogoNecesidad.setTitle("Nueva necesidad");
+            dialogoNecesidad.setHeaderText(
+                    "Describe lo que necesitas para tu evento");
+            dialogoNecesidad.setContentText(
+                    "Descripcion de la necesidad:");
+
+            var descripcionIngresada
+                    = dialogoNecesidad.showAndWait();
+
+            if (descripcionIngresada.isEmpty()) {
+                return;
+            }
+
+            descripcionNecesidad = descripcionIngresada.get();
+
+        } else {
+
+            String identificador = opcionSeleccionada.get()
+                    .split("\\|")[0]
+                    .trim();
+
+            idNecesidadExistente
+                    = Integer.parseInt(identificador);
+        }
+
+        Alert confirmacion = new Alert(
+                Alert.AlertType.CONFIRMATION,
+                "¿Confirmas que deseas solicitar este servicio?",
+                ButtonType.YES,
+                ButtonType.NO);
+
+        if (confirmacion.showAndWait().orElse(
+                ButtonType.NO) != ButtonType.YES) {
+            return;
+        }
+
+        try {
+            int idSolicitud;
+
+            if (idNecesidadExistente > 0) {
+
+                idSolicitud
+                        = controllerSolicitudes.crearSolicitudParaNecesidad(
+                                idOrganizador,
+                                idEvento,
+                                servicio.getIdServicio(),
+                                idNecesidadExistente);
+
+            } else {
+
+                idSolicitud = controllerSolicitudes.crearSolicitud(
+                        idOrganizador,
+                        idEvento,
+                        servicio.getIdServicio(),
+                        descripcionNecesidad);
+            }
+
+            mostrarMensajeSolicitud(
+                    Alert.AlertType.INFORMATION,
+                    "Solicitud #" + idSolicitud
+                    + " registrada correctamente.");
+
+        } catch (RuntimeException e) {
+            mostrarMensajeSolicitud(
+                    Alert.AlertType.ERROR,
+                    e.getMessage());
+        }
+    }
+
+    private void mostrarMensajeSolicitud(
+            Alert.AlertType tipo,
+            String mensaje) {
+
+        Alert alerta = new Alert(
+                tipo,
+                mensaje,
+                ButtonType.OK);
+
+        alerta.showAndWait();
+    }
+
     private VBox crearPanelPreguntas() {
 
-        VBox preguntasTarjeta =
-                new VBox(17);
+        VBox preguntasTarjeta
+                = new VBox(17);
 
         preguntasTarjeta
                 .getStyleClass()
                 .add("card");
 
-        Label titulo =
-                etiqueta(
+        Label titulo
+                = etiqueta(
                         "Preguntas públicas",
                         "card-title");
 
-        Label ayuda =
-                etiqueta(
+        Label ayuda
+                = etiqueta(
                         "Consulta las dudas de otros organizadores o realiza una nueva pregunta.",
                         "muted");
 
@@ -494,8 +698,8 @@ public class ViewDetalleServicio {
                                 "section-title"),
                         nuevaPregunta);
 
-        Button enviar =
-                new Button(
+        Button enviar
+                = new Button(
                         "Enviar pregunta");
 
         enviar
@@ -506,22 +710,22 @@ public class ViewDetalleServicio {
                 Double.MAX_VALUE);
 
         enviar.setOnAction(
-                event ->
-                        enviarPregunta());
+                event
+                -> enviarPregunta());
 
         preguntasTarjeta
                 .getChildren()
                 .add(enviar);
 
-        Label info =
-                etiqueta(
+        Label info
+                = etiqueta(
                         "Las preguntas son públicas para que otros organizadores también puedan consultar la respuesta.",
                         "muted");
 
         info.setWrapText(true);
 
-        VBox informacion =
-                new VBox(
+        VBox informacion
+                = new VBox(
                         12,
                         etiqueta(
                                 "ⓘ Información importante",
@@ -546,8 +750,8 @@ public class ViewDetalleServicio {
 
         try {
 
-            List<ImagenServicio> lista =
-                    controller
+            List<ImagenServicio> lista
+                    = controller
                             .listarImagenesServicio(
                                     servicio.getIdServicio());
 
@@ -563,13 +767,13 @@ public class ViewDetalleServicio {
                 return;
             }
 
-            for (ImagenServicio imagen :
-                    lista) {
+            for (ImagenServicio imagen
+                    : lista) {
 
                 try {
 
-                    ImageView vista =
-                            new ImageView(
+                    ImageView vista
+                            = new ImageView(
                                     new Image(
                                             imagen.getRuta(),
                                             true));
@@ -613,8 +817,8 @@ public class ViewDetalleServicio {
 
         try {
 
-            List<PreguntaServicio> lista =
-                    controller
+            List<PreguntaServicio> lista
+                    = controller
                             .listarPreguntasPublicas(
                                     servicio.getIdServicio());
 
@@ -630,34 +834,34 @@ public class ViewDetalleServicio {
                 return;
             }
 
-            for (PreguntaServicio pregunta :
-                    lista) {
+            for (PreguntaServicio pregunta
+                    : lista) {
 
-                Label preguntaLabel =
-                        etiqueta(
+                Label preguntaLabel
+                        = etiqueta(
                                 pregunta.getPregunta(),
                                 "profile-name");
 
                 preguntaLabel.setWrapText(
                         true);
 
-                String respuesta =
-                        pregunta.getRespuesta();
+                String respuesta
+                        = pregunta.getRespuesta();
 
-                Label respuestaLabel =
-                        etiqueta(
+                Label respuestaLabel
+                        = etiqueta(
                                 respuesta == null
-                                        || respuesta.isBlank()
-                                        ? "Pendiente de respuesta"
-                                        : "Respuesta: "
-                                        + respuesta,
+                                || respuesta.isBlank()
+                                ? "Pendiente de respuesta"
+                                : "Respuesta: "
+                                + respuesta,
                                 "muted");
 
                 respuestaLabel.setWrapText(
                         true);
 
-                VBox caja =
-                        new VBox(
+                VBox caja
+                        = new VBox(
                                 6,
                                 preguntaLabel,
                                 respuestaLabel);
@@ -702,8 +906,8 @@ public class ViewDetalleServicio {
     private String iconoCategoria(
             String categoria) {
 
-        String valor =
-                seguro(categoria)
+        String valor
+                = seguro(categoria)
                         .toUpperCase();
 
         if (valor.contains("ALIMENT")
@@ -742,8 +946,8 @@ public class ViewDetalleServicio {
             String texto,
             String estilo) {
 
-        Label label =
-                new Label(texto);
+        Label label
+                = new Label(texto);
 
         label
                 .getStyleClass()
@@ -754,8 +958,8 @@ public class ViewDetalleServicio {
 
     private Region espacioHorizontal() {
 
-        Region espacio =
-                new Region();
+        Region espacio
+                = new Region();
 
         HBox.setHgrow(
                 espacio,
@@ -767,8 +971,8 @@ public class ViewDetalleServicio {
     private void mostrarError(
             String mensaje) {
 
-        Alert alert =
-                new Alert(
+        Alert alert
+                = new Alert(
                         Alert.AlertType.ERROR);
 
         alert.setTitle(
