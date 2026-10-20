@@ -1,4 +1,4 @@
--- CU20: Segmentar clientes automáticamente.
+-- CU-21: Segmentar clientes automáticamente.
 
 -- Datos del cliente usados para agrupar (país, ciudad y edad).
 ALTER TABLE Usuario ADD COLUMN IF NOT EXISTS pais VARCHAR(80);
