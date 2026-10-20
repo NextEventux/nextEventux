@@ -1,3 +1,4 @@
+
 -- CU-026: Perfil y contratacion de organizadores.
 
 -- Datos necesarios para buscar y comparar organizadores.
@@ -86,7 +87,8 @@ SET ciudad = 'Bogota',
 WHERE id_organizador = 1
   AND ciudad IS NULL
   AND EXISTS (
-      SELECT 1 FROM Usuario u
+      SELECT 1
+      FROM Usuario u
       WHERE u.id_usuario = Organizador.id_usuario
         AND u.usuario = 'laura.gomez'
   );
@@ -100,7 +102,8 @@ SET ciudad = 'Bogota',
 WHERE id_organizador = 2
   AND ciudad IS NULL
   AND EXISTS (
-      SELECT 1 FROM Usuario u
+      SELECT 1
+      FROM Usuario u
       WHERE u.id_usuario = Organizador.id_usuario
         AND u.usuario = 'carlos.rodriguez'
   );
@@ -114,7 +117,8 @@ SET ciudad = 'Bogota',
 WHERE id_organizador = 3
   AND ciudad IS NULL
   AND EXISTS (
-      SELECT 1 FROM Usuario u
+      SELECT 1
+      FROM Usuario u
       WHERE u.id_usuario = Organizador.id_usuario
         AND u.usuario = 'valentina'
   );
@@ -128,7 +132,8 @@ SET ciudad = 'Medellin',
 WHERE id_organizador = 4
   AND ciudad IS NULL
   AND EXISTS (
-      SELECT 1 FROM Usuario u
+      SELECT 1
+      FROM Usuario u
       WHERE u.id_usuario = Organizador.id_usuario
         AND u.usuario = 'santiago'
   );
@@ -142,44 +147,64 @@ SET ciudad = 'Bogota',
 WHERE id_organizador = 5
   AND ciudad IS NULL
   AND EXISTS (
-      SELECT 1 FROM Usuario u
+      SELECT 1
+      FROM Usuario u
       WHERE u.id_usuario = Organizador.id_usuario
         AND u.usuario = 'juliana'
   );
 
 
 -- Resenas de demostracion para los perfiles existentes.
--- Se insertan una sola vez y no se duplican en siguientes ejecuciones.
+-- Solo se insertan si existen el organizador y el cliente.
+-- Se evita duplicar la resena en ejecuciones posteriores.
+
 INSERT INTO Resena_Organizador
     (id_organizador, id_cliente, calificacion, comentario, fecha)
 SELECT
-    1, 5, 5,
+    o.id_organizador,
+    u_cliente.id_usuario,
+    5,
     'Buena organizacion y comunicacion durante el evento.',
     TIMESTAMP '2026-10-10 10:00:00'
-WHERE EXISTS (
-    SELECT 1 FROM Usuario WHERE id_usuario = 5
-)
-AND NOT EXISTS (
-    SELECT 1 FROM Resena_Organizador
-    WHERE id_organizador = 1 AND id_cliente = 5
-);
+FROM Organizador o
+JOIN Usuario u_organizador
+    ON u_organizador.id_usuario = o.id_usuario
+JOIN Usuario u_cliente
+    ON u_cliente.id_usuario = 5
+WHERE o.id_organizador = 1
+  AND u_organizador.usuario = 'laura.gomez'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM Resena_Organizador r
+      WHERE r.id_organizador = o.id_organizador
+        AND r.id_cliente = u_cliente.id_usuario
+  );
 
 INSERT INTO Resena_Organizador
     (id_organizador, id_cliente, calificacion, comentario, fecha)
 SELECT
-    2, 6, 4,
+    o.id_organizador,
+    u_cliente.id_usuario,
+    4,
     'La celebracion estuvo bien organizada.',
     TIMESTAMP '2026-10-11 11:00:00'
-WHERE EXISTS (
-    SELECT 1 FROM Usuario WHERE id_usuario = 6
-)
-AND NOT EXISTS (
-    SELECT 1 FROM Resena_Organizador
-    WHERE id_organizador = 2 AND id_cliente = 6
-);
+FROM Organizador o
+JOIN Usuario u_organizador
+    ON u_organizador.id_usuario = o.id_usuario
+JOIN Usuario u_cliente
+    ON u_cliente.id_usuario = 6
+WHERE o.id_organizador = 2
+  AND u_organizador.usuario = 'carlos.rodriguez'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM Resena_Organizador r
+      WHERE r.id_organizador = o.id_organizador
+        AND r.id_cliente = u_cliente.id_usuario
+  );
+
 
 -- CU-026: permitir notificaciones dirigidas a organizadores.
--- Una notificación de organizador no necesita un proveedor asociado.
+-- Una notificacion de organizador no necesita un proveedor asociado.
 
 ALTER TABLE Notificacion_interna
     ADD COLUMN IF NOT EXISTS id_usuario_destinatario INT
