@@ -290,7 +290,7 @@ conservan los campos y se muestra una confirmación, siguiendo el mockup.
 La aplicación guarda los datos de forma persistente en `~/.nexteventux/nexteventux.mv.db`
 (carpeta del usuario del sistema, no la del proyecto; se puede cambiar con
 `-Dnexteventux.home=...`). Al abrir la aplicación con la base vacía se cargan solos
-los datos de ejemplo de `seed.sql` (por ejemplo `laura.gomez` / `clave123`); si la
+los datos de ejemplo de `seed.sql` (las cuentas de prueba están definidas ahí); si la
 base ya tiene datos, no se modifica. Cerrar sesión o la aplicación no borra nada.
 Para empezar de cero, cierra la aplicación y elimina esa carpeta.
 No elimines ese archivo si necesitas conservar los registros. El organizador debe
@@ -431,9 +431,9 @@ En Windows, sustituir `:` por `;` en el classpath. No ejecutar previamente
 El comando no borra datos existentes; rechaza la carga si alguna tabla contiene
 registros. Los ejemplos no se cargan al abrir la aplicación.
 
-Iniciar sesión con la cuenta de prueba `laura.gomez` / `clave123`, abrir
+Iniciar sesión con la cuenta de organizador de prueba (definida en `seed.sql`), abrir
 Publicaciones y elegir «Evento finalizado de demostración». Enviar la solicitud,
-cerrar sesión e ingresar como `admin.demo` / `solo-demostracion` para revisarla.
+cerrar sesión e ingresar con la cuenta de administración de demostración para revisarla.
 Probar rechazo con motivo o aprobación; volver a la cuenta del organizador para
 consultar Mis solicitudes, Notificaciones y Plantillas.
 El evento finalizado es una fixture de demostración; este comando no implementa
