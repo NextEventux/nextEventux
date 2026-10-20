@@ -287,7 +287,12 @@ en el formulario y conservan lo ingresado. «Cancelar» limpia los campos, el
 resumen y el mensaje, sin eliminar eventos ya creados. Después de crear se
 conservan los campos y se muestra una confirmación, siguiendo el mockup.
 
-La aplicación guarda eventos de forma persistente en `data/nexteventux.mv.db`.
+La aplicación guarda los datos de forma persistente en `~/.nexteventux/nexteventux.mv.db`
+(carpeta del usuario del sistema, no la del proyecto; se puede cambiar con
+`-Dnexteventux.home=...`). Al abrir la aplicación con la base vacía se cargan solos
+los datos de ejemplo de `seed.sql` (por ejemplo `laura.gomez` / `clave123`); si la
+base ya tiene datos, no se modifica. Cerrar sesión o la aplicación no borra nada.
+Para empezar de cero, cierra la aplicación y elimina esa carpeta.
 No elimines ese archivo si necesitas conservar los registros. El organizador debe
 estar previamente registrado. Los errores de validación o base de datos aparecen
 en el formulario, sin mostrar confirmación de éxito ni borrar los campos.
