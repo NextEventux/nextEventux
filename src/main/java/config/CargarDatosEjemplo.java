@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import org.h2.tools.RunScript;
 
-/** Carga explícita de ejemplos; nunca se ejecuta al abrir la aplicación. */
+/** Carga de ejemplos: explícita con main, o al abrir la aplicación solo si la base está vacía. */
 public class CargarDatosEjemplo {
     public static void main(String[] args) throws Exception {
         try (Connection connection = DatabaseConnection.getConnection()) {
