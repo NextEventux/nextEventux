@@ -3,6 +3,8 @@ import entities.Invitacion;
 import entities.Invitado;
 import entities.SesionUsuario;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.Statement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -29,6 +31,7 @@ class ServiceInvitadosTest {
     void prepararBase() throws Exception {
         url = "jdbc:h2:" + directorio.resolve("invitados");
         DatosInvitacionesPrueba.preparar(url);
+        DatosInvitacionesPrueba.agregarOtroOrganizador(url);
         invitaciones = new RepositoryInvitacion(url);
         invitados = new RepositoryInvitado(url);
         service = new ServiceInvitados(invitaciones, invitados, new RepositoryLugar(url), new RepositoryEvento(url));
@@ -60,10 +63,36 @@ class ServiceInvitadosTest {
         assertEquals(1, invitados.listarInvitados(propia.getIdInvitacion()).size());
     }
 
+    @Test
+    void elControladorExigeUnaSesionActivaYNoAceptaUnActorForjado() throws Exception {
+        ControllerInvitados sinSesion = new ControllerInvitados(service);
+        assertThrows(IllegalStateException.class, sinSesion::listarEventos);
+
+        SesionUsuario cerrada = organizador(1);
+        cerrada.cerrar();
+        assertThrows(IllegalStateException.class,
+                () -> new ControllerInvitados(service, cerrada).listarEventos());
+
+        SesionUsuario forjada = organizador(2);
+        forjada.setIdUsuario(1);
+        assertThrows(IllegalStateException.class,
+                () -> new ControllerInvitados(service, forjada).listarEventos());
+
+        try (Connection connection = config.DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("UPDATE Usuario SET estado = 'INACTIVO' WHERE id_usuario = 1");
+        }
+        assertThrows(IllegalStateException.class,
+                () -> new ControllerInvitados(service, organizador(1)).listarEventos());
+    }
+
     private static SesionUsuario organizador(int idOrganizador) {
         SesionUsuario sesion = new SesionUsuario();
+        sesion.setIdUsuario(idOrganizador);
         sesion.setTipoUsuario("ORGANIZADOR");
         sesion.setIdActor(idOrganizador);
+        sesion.setEstadoUsuario("ACTIVO");
+        sesion.setEstadoActor("ACTIVO");
         return sesion;
     }
 
@@ -76,7 +105,7 @@ class ServiceInvitadosTest {
     @Test
     void controladorCreaInvitacionEnviadaConFechaDeEnvio() {
         Invitacion invitacion = invitacion(GRANDE, "  Te esperamos  ");
-        new ControllerInvitados(service).crearInvitacion(EVENTO, invitacion);
+        new ControllerInvitados(service, organizador(1)).crearInvitacion(EVENTO, invitacion);
         Invitacion guardada = invitaciones.buscarInvitacion(invitacion.getIdInvitacion());
         assertEquals(EVENTO, guardada.getIdEvento());
         assertEquals("Te esperamos", guardada.getMensaje());

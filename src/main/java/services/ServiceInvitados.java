@@ -36,6 +36,16 @@ public class ServiceInvitados {
             "Solo puedes gestionar las invitaciones de tus propios eventos.";
     private static final String MENSAJE_MESA_AJENA =
             "Solo el invitado puede usar su mesa de regalos. Verifica tu correo y tu teléfono.";
+
+    public List<entities.Fotografia> consultarGaleria(String correo, String telefono) {
+        String limpio=limpiar(correo);
+        if(limpio==null || limpio.length()>150 || !CORREO.matcher(limpio).matches())
+            throw new IllegalArgumentException("Ingresa un correo válido para consultar tu galería.");
+        if(soloDigitos(telefono).isEmpty())
+            throw new IllegalArgumentException("Ingresa el teléfono que registraste en la invitación.");
+        return repositoryInvitado.listarGaleria(limpio,soloDigitos(telefono));
+    }
+
     private static final Pattern CORREO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final RepositoryInvitacion repositoryInvitacion;
@@ -72,6 +82,19 @@ public class ServiceInvitados {
     // ------------------------------------------------------------------
     public List<Evento> listarEventos() {
         return repositoryEvento.listarEventos();
+    }
+
+    /** Verifica contra la base que la sesión sigue perteneciendo a un organizador activo. */
+    public int validarSesionOrganizador(entities.SesionUsuario sesion) {
+        if (sesion == null || sesion.getIdUsuario() <= 0 || sesion.getIdActor() <= 0
+                || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoActor())
+                || !repositoryEvento.organizadorActivo(sesion.getIdUsuario(), sesion.getIdActor())) {
+            throw new IllegalStateException(
+                    "Inicia sesión como organizador activo para gestionar invitaciones y regalos.");
+        }
+        return sesion.getIdActor();
     }
 
     /** Eventos de un organizador: cada organizador solo gestiona las invitaciones de sus eventos. */
@@ -233,6 +256,13 @@ public class ServiceInvitados {
             invitaciones.add(inv);
         }
         return invitaciones;
+    }
+
+    public List<String> consultarAvisosPorCorreo(String correo) {
+        String limpio = limpiar(correo);
+        if (limpio == null || limpio.length() > 150 || !CORREO.matcher(limpio).matches())
+            throw new IllegalArgumentException("Ingresa un correo válido para consultar tus avisos.");
+        return repositoryInvitado.listarAvisosPorCorreo(limpio);
     }
 
     /**

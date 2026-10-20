@@ -16,6 +16,22 @@ import java.util.Map;
 
 /** Acceso a la tabla Invitado y consultas de cupo para el CU-17. */
 public class RepositoryInvitado {
+    public List<entities.Fotografia> listarGaleria(String correo, String telefono) {
+        List<entities.Fotografia> fotos=new ArrayList<>();
+        String sql="SELECT e.nombre AS evento,f.nombre,f.contenido FROM Fotografia_evento f "
+                + "JOIN Evento e ON e.id_evento=f.id_evento JOIN Finalizacion_evento fin ON fin.id_evento=e.id_evento "
+                + "WHERE fin.enviada=TRUE AND EXISTS (SELECT 1 FROM Entrega_galeria d JOIN Invitado g ON g.id_invitado=d.id_invitado "
+                + "WHERE d.id_evento=e.id_evento AND LOWER(TRIM(g.correo))=LOWER(TRIM(?)) "
+                + "AND REGEXP_REPLACE(COALESCE(g.telefono,''),'[^0-9]','')=?) ORDER BY e.id_evento,f.id_fotografia";
+        try(Connection c=conectar(); PreparedStatement s=c.prepareStatement(sql)) {
+            s.setString(1,correo); s.setString(2,telefono);
+            try(ResultSet r=s.executeQuery()) {
+                while(r.next()) fotos.add(new entities.Fotografia(r.getString("evento")+" · "+r.getString("nombre"),r.getBytes("contenido")));
+            }
+            return fotos;
+        } catch(SQLException e) { throw new IllegalStateException("No se pudo consultar la galería. Vuelve a intentarlo.",e); }
+    }
+
     private static final String COLUMNAS =
             "id_invitado, id_invitacion, nombre, telefono, direccion, estado, correo";
     private static final String INVITACION_ACTIVA =
@@ -228,6 +244,18 @@ public class RepositoryInvitado {
         } catch (SQLException e) {
             throw new IllegalStateException("No se pudieron consultar tus invitaciones. Revisa la conexión con la base de datos.", e);
         }
+    }
+
+    /** Los avisos se conservan aunque la cancelación haya revocado la invitación. */
+    public List<String> listarAvisosPorCorreo(String correo) {
+        List<String> avisos = new ArrayList<>();
+        try (Connection c = conectar(); PreparedStatement consulta = c.prepareStatement(
+                "SELECT n.mensaje FROM Notificacion_interna n JOIN Invitado v ON v.id_invitado=n.id_invitado "
+                + "WHERE LOWER(TRIM(v.correo))=LOWER(TRIM(?)) ORDER BY n.id_notificacion DESC")) {
+            consulta.setString(1, correo);
+            try (ResultSet r = consulta.executeQuery()) { while (r.next()) avisos.add(r.getString(1)); }
+            return avisos;
+        } catch (SQLException e) { throw new IllegalStateException("No se pudieron consultar los avisos. Vuelve a intentarlo.", e); }
     }
 
     private Invitado convertir(ResultSet result) throws SQLException {
