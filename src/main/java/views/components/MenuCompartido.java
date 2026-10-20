@@ -26,7 +26,9 @@ public final class MenuCompartido {
         CATALOGO,
         MIS_SERVICIOS,
         MIS_INVITACIONES,
-        MESA_REGALOS
+        MESA_REGALOS,
+        SOLICITUDES_PROVEEDOR,
+        PROPUESTAS_ORGANIZADOR
     }
 
     private MenuCompartido() {
@@ -61,6 +63,30 @@ public final class MenuCompartido {
             Runnable abrirServicios,
             Runnable cerrarSesion,
             Runnable abrirMisEventos) {
+        return crear(
+                sesion,
+                paginaActiva,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                abrirServicios,
+                cerrarSesion,
+                abrirMisEventos,
+                null,
+                null);
+    }
+
+    public static VBox crear(
+            SesionUsuario sesion,
+            Pagina paginaActiva,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirServicios,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos,
+            Runnable abrirSolicitudes,
+            Runnable abrirPropuestas) {
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
@@ -85,6 +111,9 @@ public final class MenuCompartido {
             agregarOpcion(menu, "♧  Mis servicios",
                     paginaActiva == Pagina.MIS_SERVICIOS,
                     abrirServicios);
+            agregarOpcion(menu, "✉  Solicitudes recibidas",
+                    paginaActiva == Pagina.SOLICITUDES_PROVEEDOR,
+                    abrirSolicitudes);
         } else {
             if (abrirMisEventos != null) {
                 agregarOpcion(menu, "▦  Mis eventos",
@@ -103,6 +132,9 @@ public final class MenuCompartido {
             agregarOpcion(menu, "♙  Invitados",
                     paginaActiva == Pagina.INVITADOS,
                     abrirInvitados);
+            agregarOpcion(menu, "✉  Propuestas recibidas",
+                    paginaActiva == Pagina.PROPUESTAS_ORGANIZADOR,
+                    abrirPropuestas);
         }
 
         Region espacio = new Region();
