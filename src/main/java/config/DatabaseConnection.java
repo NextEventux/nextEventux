@@ -96,6 +96,7 @@ public class DatabaseConnection {
         // La restricción de unicidad se valida y registra sin modificar datos repetidos.
         ejecutarUnaVez(connection, "010_organizador_usuario_unico.sql",
                 c -> verificarSinDuplicados(c, "Organizador", "id_usuario"));
+        ejecutarUnaVez(connection, "011_cu26_contratar_organizador.sql", null);
         actualizarContadorEventos(connection);
     }
 

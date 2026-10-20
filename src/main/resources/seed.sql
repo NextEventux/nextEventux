@@ -105,14 +105,46 @@ VALUES
 -- ---------------------------------------------------------
 
 INSERT INTO Organizador
-(id_organizador, id_usuario, empresa, telefono, estado)
+(id_organizador, id_usuario, empresa, telefono, estado,
+ ciudad, especialidad, portafolio, tarifa_base, estado_verificacion)
 VALUES
-(1, 1, 'Eventos Laura', '3001234567', 'ACTIVO'),
-(2, 2, 'Celebraciones CR', '3017654321', 'ACTIVO'),
-(3, 8, 'Momentos Valentina', '3005550101', 'ACTIVO'),
-(4, 9, 'Eventos Rivera', '3005550102', 'ACTIVO'),
-(5, 10, 'Sueños de Juliana', '3005550103', 'ACTIVO');
+(1, 1, 'Eventos Laura', '3001234567', 'ACTIVO',
+ 'Bogota', 'Bodas y eventos sociales',
+ 'Organizacion de bodas y celebraciones sociales',
+ 1500000.00, 'VERIFICADO'),
 
+(2, 2, 'Celebraciones CR', '3017654321', 'ACTIVO',
+ 'Bogota', 'Celebraciones familiares',
+ 'Organizacion de reuniones y celebraciones familiares',
+ 1000000.00, 'VERIFICADO'),
+
+(3, 8, 'Momentos Valentina', '3005550101', 'ACTIVO',
+ 'Bogota', 'Eventos sociales',
+ 'Organizacion de eventos sociales y familiares',
+ 900000.00, 'VERIFICADO'),
+
+(4, 9, 'Eventos Rivera', '3005550102', 'ACTIVO',
+ 'Medellin', 'Eventos empresariales',
+ 'Organizacion de encuentros y eventos empresariales',
+ 1200000.00, 'VERIFICADO'),
+
+(5, 10, 'Sueños de Juliana', '3005550103', 'ACTIVO',
+ 'Bogota', 'Eventos personalizados',
+ 'Organizacion de celebraciones personalizadas',
+ 1100000.00, 'VERIFICADO');
+
+-- ---------------------------------------------------------
+-- RESENAS DE ORGANIZADORES PARA CU-026
+-- ---------------------------------------------------------
+
+INSERT INTO Resena_Organizador
+(id_organizador, id_cliente, calificacion, comentario)
+VALUES
+(1, 5, 5, 'Buena organizacion y comunicacion durante el evento.'),
+(2, 6, 4, 'La celebracion estuvo bien organizada.'),
+(3, 5, 5, 'Excelente atencion y organizacion.'),
+(4, 6, 4, 'Buen servicio para eventos empresariales.'),
+(5, 5, 5, 'Una celebracion muy bien organizada.');
 
 -- ---------------------------------------------------------
 -- PROVEEDORES

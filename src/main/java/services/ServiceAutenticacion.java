@@ -70,7 +70,12 @@ public class ServiceAutenticacion {
 
             return sesion;
         }
+        if ("CLIENTE".equalsIgnoreCase(
+        sesion.getTipoUsuario())) {
 
+        return sesion;
+        }
+        
         if ("ADMINISTRADOR".equalsIgnoreCase(
                 sesion.getTipoUsuario())) {
 
