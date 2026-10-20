@@ -84,7 +84,9 @@ CREATE TABLE IF NOT EXISTS Evento (
     ubicacion VARCHAR(255),
     estado VARCHAR(30) NOT NULL,
     fecha_creacion TIMESTAMP NOT NULL,
-    FOREIGN KEY (id_organizador) REFERENCES Organizador(id_organizador)
+    id_cliente INT,
+    FOREIGN KEY (id_organizador) REFERENCES Organizador(id_organizador),
+    FOREIGN KEY (id_cliente) REFERENCES Usuario(id_usuario)
 );
 
 CREATE TABLE IF NOT EXISTS Planificacion (
