@@ -289,18 +289,30 @@ public class ViewLogin {
     private void iniciarSesion() {
 
         try {
+            System.out.println("[LOGIN] iniciando autenticacion");
 
             SesionUsuario sesion =
                     controller.iniciarSesion(
                             usuario.getText(),
                             contrasena.getText());
+            System.out.printf(
+                    "[LOGIN] autenticacion aceptada rol=%s actorId=%d%n",
+                    sesion.getTipoUsuario(),
+                    sesion.getIdActor());
 
             mensaje.setVisible(false);
             mensaje.setManaged(false);
 
+            System.out.println("[LOGIN] invocando callback de sesion");
             alIngresar.accept(sesion);
 
         } catch (Exception e) {
+            System.err.printf(
+                    "[LOGIN] fallo tipo=%s%n",
+                    e.getClass().getName());
+            for (StackTraceElement frame : e.getStackTrace()) {
+                System.err.println("[LOGIN]   at " + frame);
+            }
 
             mensaje.setText(
                     e.getMessage() == null
