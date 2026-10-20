@@ -3,6 +3,7 @@ package config;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -11,19 +12,34 @@ import org.h2.tools.RunScript;
 
 public class DatabaseConnection {
 
-    private static final String URL = "jdbc:h2:./data/nexteventux";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 
+    /**
+     * Ruta de la base cuando no se indica nexteventux.db.url. Es absoluta para que
+     * no dependa del directorio desde el que se lance la aplicación: una ruta
+     * relativa creaba otra base vacía al ejecutar desde otra carpeta.
+     * La carpeta se puede cambiar con -Dnexteventux.home=...
+     */
+    static String urlPorDefecto() {
+        String carpeta = System.getProperty("nexteventux.home");
+        Path base = carpeta == null || carpeta.isBlank()
+                ? Path.of(System.getProperty("user.home"), ".nexteventux")
+                : Path.of(carpeta);
+        String archivo = base.toAbsolutePath().resolve("nexteventux").toString().replace('\\', '/');
+        // La base permanece abierta durante la ejecución para evitar reabrir el archivo.
+        return "jdbc:h2:" + archivo + ";DB_CLOSE_DELAY=-1";
+    }
+
     public static Connection getConnection() throws SQLException {
         return getConnection(
-                System.getProperty("nexteventux.db.url", URL));
+                System.getProperty("nexteventux.db.url", urlPorDefecto()));
     }
 
     public static Connection getConnection(String url) throws SQLException {
         Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
         try {
-            inicializarEsquema(connection);
+            inicializarSiHaceFalta(url, connection);
             return connection;
         } catch (SQLException | RuntimeException e) {
             try {
@@ -35,15 +51,126 @@ public class DatabaseConnection {
         }
     }
 
-    public static void inicializarEsquema(Connection connection) throws SQLException {
+    // Se evita repetir el esquema en cada consulta a una base ya inicializada.
+    private static final java.util.Set<String> INICIALIZADAS =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * Olvida qué bases ya se inicializaron, como ocurre al reiniciar la aplicación.
+     * Lo usan las pruebas que verifican migraciones sobre bases existentes.
+     */
+    public static void reiniciarInicializacion() {
+        INICIALIZADAS.clear();
+    }
+
+    private static synchronized void inicializarSiHaceFalta(String url, Connection connection)
+            throws SQLException {
+        // La tabla centinela detecta bases recreadas con la misma URL (por ejemplo, en memoria).
+        if (INICIALIZADAS.contains(url) && existeTabla(connection, "ESQUEMA_INICIALIZADO")) {
+            actualizarContadorEventos(connection);
+            return;
+        }
+        inicializarEsquema(connection);
+        try (java.sql.Statement statement = connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS Esquema_inicializado (id INT PRIMARY KEY)");
+        }
+        INICIALIZADAS.add(url);
+    }
+
+    public static synchronized void inicializarEsquema(Connection connection) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
+        try (java.sql.Statement statement = connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS Esquema_version ("
+                    + "nombre VARCHAR(150) PRIMARY KEY, "
+                    + "aplicada TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)");
+        }
+        // Solo se ejecutan las migraciones presentes en esta versión del proyecto.
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
         ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
         ejecutarScript(connection, "/migrations/003_proveedores_cu11_publicacion.sql");
         ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
         ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
         ejecutarScript(connection, "/migrations/004_proveedores_cu12.sql");
+        ejecutarScript(connection, "/migrations/008_finalizacion_eventos.sql");
+        ejecutarScript(connection, "/migrations/009_solicitudes_evento.sql");
+        // La restricción de unicidad se valida y registra sin modificar datos repetidos.
+        ejecutarUnaVez(connection, "010_organizador_usuario_unico.sql",
+                c -> verificarSinDuplicados(c, "Organizador", "id_usuario"));
+        ejecutarUnaVez(connection, "011_cu26_contratar_organizador.sql", null);
         actualizarContadorEventos(connection);
+    }
+
+    @FunctionalInterface
+    private interface Verificacion {
+        void ejecutar(Connection connection) throws SQLException;
+    }
+
+    /**
+     * Ejecuta una migración nueva solo si no está registrada. La verificación previa
+     * se corre antes del script, de modo que un dato inválido detiene la apertura
+     * con un mensaje claro sin modificar nada y sin registrar la migración.
+     */
+    private static void ejecutarUnaVez(Connection connection, String archivo, Verificacion previa)
+            throws SQLException {
+        if (migracionAplicada(connection, archivo)) {
+            return;
+        }
+        if (previa != null) {
+            previa.ejecutar(connection);
+        }
+        ejecutarScript(connection, "/migrations/" + archivo);
+        try (java.sql.PreparedStatement statement = connection.prepareStatement(
+                "INSERT INTO Esquema_version (nombre) VALUES (?)")) {
+            statement.setString(1, archivo);
+            statement.executeUpdate();
+        }
+    }
+
+    private static boolean migracionAplicada(Connection connection, String archivo) throws SQLException {
+        try (java.sql.PreparedStatement statement = connection.prepareStatement(
+                "SELECT 1 FROM Esquema_version WHERE nombre = ?")) {
+            statement.setString(1, archivo);
+            try (java.sql.ResultSet result = statement.executeQuery()) {
+                return result.next();
+            }
+        }
+    }
+
+    /**
+     * Falla si la columna tiene valores repetidos, para poder exigir unicidad
+     * sin borrar ni reasignar datos. Los nombres de tabla y columna son constantes
+     * del código, nunca entradas del usuario.
+     */
+    static void verificarSinDuplicados(Connection connection, String tabla, String columna)
+            throws SQLException {
+        String sql = "SELECT " + columna + ", COUNT(*) FROM " + tabla
+                + " WHERE " + columna + " IS NOT NULL GROUP BY " + columna
+                + " HAVING COUNT(*) > 1 ORDER BY " + columna + " LIMIT 5";
+        StringBuilder repetidos = new StringBuilder();
+        try (java.sql.Statement statement = connection.createStatement();
+                java.sql.ResultSet result = statement.executeQuery(sql)) {
+            while (result.next()) {
+                if (repetidos.length() > 0) {
+                    repetidos.append(", ");
+                }
+                repetidos.append(result.getString(1)).append(" (").append(result.getInt(2)).append(" veces)");
+            }
+        }
+        if (repetidos.length() > 0) {
+            throw new SQLException("No se puede exigir un valor único en " + tabla + "." + columna
+                    + " porque hay valores repetidos: " + repetidos
+                    + ". Corrija esos registros y vuelva a abrir la aplicación.");
+        }
+    }
+
+    private static boolean existeTabla(Connection connection, String tabla) throws SQLException {
+        try (java.sql.PreparedStatement statement = connection.prepareStatement(
+                "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?")) {
+            statement.setString(1, tabla);
+            try (java.sql.ResultSet result = statement.executeQuery()) {
+                return result.next();
+            }
+        }
     }
 
     // Los ejemplos antiguos usaban IDs explícitos sin avanzar la secuencia H2.

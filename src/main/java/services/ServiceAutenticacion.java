@@ -47,8 +47,8 @@ public class ServiceAutenticacion {
                 sesion.getTipoUsuario())) {
 
             if (sesion.getIdActor() == 0
-                    || !"APROBADO".equalsIgnoreCase(
-                            sesion.getEstadoActor())) {
+                    || !("APROBADO".equalsIgnoreCase(sesion.getEstadoActor())
+                         || "VERIFICADO".equalsIgnoreCase(sesion.getEstadoActor()))) {
 
                 throw new IllegalStateException(
                         "El proveedor aun no esta aprobado.");
@@ -70,7 +70,12 @@ public class ServiceAutenticacion {
 
             return sesion;
         }
+        if ("CLIENTE".equalsIgnoreCase(
+        sesion.getTipoUsuario())) {
 
+        return sesion;
+        }
+        
         if ("ADMINISTRADOR".equalsIgnoreCase(
                 sesion.getTipoUsuario())) {
 

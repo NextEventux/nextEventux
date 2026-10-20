@@ -40,17 +40,19 @@ public class RepositorySolicitudEjecucion {
 
             try {
                 int idProveedor;
+                java.math.BigDecimal costo;
+                java.math.BigDecimal presupuesto;
 
                 // Verificamos que el servicio este publicado
                 // y que pertenezca a un proveedor aprobado
                 String consultarServicio = """
-                        SELECT s.id_proveedor
+                        SELECT s.id_proveedor, s.precio
                         FROM Servicio s
                         JOIN Proveedor p
                           ON p.id_proveedor = s.id_proveedor
                         WHERE s.id_servicio = ?
                           AND UPPER(s.estado) = 'DISPONIBLE'
-                          AND UPPER(p.estado) = 'APROBADO'
+                          AND UPPER(p.estado) IN ('APROBADO','VERIFICADO')
                         """;
 
                 try (PreparedStatement statement
@@ -67,17 +69,19 @@ public class RepositorySolicitudEjecucion {
                         }
 
                         idProveedor = result.getInt("id_proveedor");
+                        costo = result.getBigDecimal("precio");
                     }
                 }
 
                 // El organizador solo puede usar sus propios eventos
                 String consultarEvento = """
-                        SELECT id_evento
+                        SELECT id_evento, presupuesto
                         FROM Evento
                         WHERE id_evento = ?
                           AND id_organizador = ?
                           AND UPPER(estado) NOT IN
                               ('CANCELADO', 'FINALIZADO')
+                        FOR UPDATE
                         """;
 
                 try (PreparedStatement statement
@@ -93,7 +97,14 @@ public class RepositorySolicitudEjecucion {
                                     "El evento no pertenece al organizador "
                                     + "o ya esta cerrado.");
                         }
+                        presupuesto = result.getBigDecimal("presupuesto");
                     }
+                }
+
+                // Los eventos de CU01 tienen presupuesto: aplicar la misma regla del formulario.
+                // Las solicitudes históricas sin presupuesto conservan el flujo anterior de CU12.
+                if (presupuesto != null) {
+                    new RepositorySolicitudServicio().validarCompromiso(connection, idEvento, presupuesto, costo);
                 }
 
                 // Cada solicitud nueva comienza asociada a una necesidad
@@ -194,8 +205,8 @@ public class RepositorySolicitudEjecucion {
                 String insertarSolicitud = """
                         INSERT INTO Solicitud_Ejecucion
                         (id_proveedor, id_evento, id_servicio,
-                         id_necesidad_servicio, fecha_solicitud, estado)
-                        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'PENDIENTE')
+                         id_necesidad_servicio, fecha_solicitud, estado, costo_comprometido)
+                        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'PENDIENTE', ?)
                         """;
 
                 int idSolicitud;
@@ -209,6 +220,7 @@ public class RepositorySolicitudEjecucion {
                     statement.setInt(2, idEvento);
                     statement.setInt(3, idServicio);
                     statement.setInt(4, idNecesidad);
+                    statement.setBigDecimal(5, costo);
 
                     statement.executeUpdate();
 

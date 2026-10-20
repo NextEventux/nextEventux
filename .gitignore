@@ -70,3 +70,6 @@ Desktop.ini
 *.zip
 *.tar
 *.tar.gz
+
+# Documentos locales generados durante las pruebas
+/data/documentos-proveedores/

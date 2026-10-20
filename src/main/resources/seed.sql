@@ -105,14 +105,46 @@ VALUES
 -- ---------------------------------------------------------
 
 INSERT INTO Organizador
-(id_organizador, id_usuario, empresa, telefono, estado)
+(id_organizador, id_usuario, empresa, telefono, estado,
+ ciudad, especialidad, portafolio, tarifa_base, estado_verificacion)
 VALUES
-(1, 1, 'Eventos Laura', '3001234567', 'ACTIVO'),
-(2, 2, 'Celebraciones CR', '3017654321', 'ACTIVO'),
-(3, 8, 'Momentos Valentina', '3005550101', 'ACTIVO'),
-(4, 9, 'Eventos Rivera', '3005550102', 'ACTIVO'),
-(5, 10, 'Sueños de Juliana', '3005550103', 'ACTIVO');
+(1, 1, 'Eventos Laura', '3001234567', 'ACTIVO',
+ 'Bogota', 'Bodas y eventos sociales',
+ 'Organizacion de bodas y celebraciones sociales',
+ 1500000.00, 'VERIFICADO'),
 
+(2, 2, 'Celebraciones CR', '3017654321', 'ACTIVO',
+ 'Bogota', 'Celebraciones familiares',
+ 'Organizacion de reuniones y celebraciones familiares',
+ 1000000.00, 'VERIFICADO'),
+
+(3, 8, 'Momentos Valentina', '3005550101', 'ACTIVO',
+ 'Bogota', 'Eventos sociales',
+ 'Organizacion de eventos sociales y familiares',
+ 900000.00, 'VERIFICADO'),
+
+(4, 9, 'Eventos Rivera', '3005550102', 'ACTIVO',
+ 'Medellin', 'Eventos empresariales',
+ 'Organizacion de encuentros y eventos empresariales',
+ 1200000.00, 'VERIFICADO'),
+
+(5, 10, 'Sueños de Juliana', '3005550103', 'ACTIVO',
+ 'Bogota', 'Eventos personalizados',
+ 'Organizacion de celebraciones personalizadas',
+ 1100000.00, 'VERIFICADO');
+
+-- ---------------------------------------------------------
+-- RESENAS DE ORGANIZADORES PARA CU-026
+-- ---------------------------------------------------------
+
+INSERT INTO Resena_Organizador
+(id_organizador, id_cliente, calificacion, comentario)
+VALUES
+(1, 5, 5, 'Buena organizacion y comunicacion durante el evento.'),
+(2, 6, 4, 'La celebracion estuvo bien organizada.'),
+(3, 5, 5, 'Excelente atencion y organizacion.'),
+(4, 6, 4, 'Buen servicio para eventos empresariales.'),
+(5, 5, 5, 'Una celebracion muy bien organizada.');
 
 -- ---------------------------------------------------------
 -- PROVEEDORES
@@ -209,9 +241,9 @@ VALUES
 INSERT INTO Regalo
 (id_regalo, id_invitacion, nombre, descripcion, estado, precio_estimado)
 VALUES
-(1, 3, 'Pañitos para bebé', 'Paquete de pañitos húmedos', 'DISPONIBLE', 25000.00),
-(2, 3, 'Kit de biberones', 'Kit de biberones para recién nacido', 'DISPONIBLE', 80000.00),
-(3, 3, 'Cobija para bebé', 'Cobija suave para recién nacido', 'DISPONIBLE', 60000.00),
+(1, 3, 'Pañitos para bebé', 'Paquete de pañitos húmedos', 'RESERVADO', 25000.00),
+(2, 3, 'Kit de biberones', 'Kit de biberones para recién nacido', 'RESERVADO', 80000.00),
+(3, 3, 'Cobija para bebé', 'Cobija suave para recién nacido', 'RESERVADO', 60000.00),
 (4, 3, 'Ropa de bebé', 'Conjunto de ropa para recién nacido', 'DISPONIBLE', 50000.00);
 
 
@@ -223,7 +255,7 @@ INSERT INTO Reserva_regalo
 (id_reserva, id_evento, id_invitado, id_regalo, fecha_reserva, estado)
 VALUES
 (1, 2, 3, 1, TIMESTAMP '2026-11-10 12:00:00', 'RESERVADO'),
-(2, 2, 4, 1, TIMESTAMP '2026-11-11 15:30:00', 'RESERVADO'),
+(2, 2, 4, 3, TIMESTAMP '2026-11-11 15:30:00', 'RESERVADO'),
 (3, 2, 3, 2, TIMESTAMP '2026-11-12 09:00:00', 'RESERVADO');
 
 
@@ -256,11 +288,11 @@ VALUES
 -- ---------------------------------------------------------
 
 INSERT INTO Solicitud_Ejecucion
-(id_solicitud, id_proveedor, id_evento, fecha_solicitud, estado)
+(id_solicitud, id_proveedor, id_evento, fecha_solicitud, estado, id_servicio)
 VALUES
-(1, 1, 1, TIMESTAMP '2026-10-08 10:00:00', 'RESPONDIDA'),
-(2, 2, 1, TIMESTAMP '2026-10-08 11:30:00', 'RESPONDIDA'),
-(3, 1, 2, TIMESTAMP '2026-10-09 09:00:00', 'PENDIENTE');
+(1, 1, 1, TIMESTAMP '2026-10-08 10:00:00', 'RESPONDIDA', 1),
+(2, 2, 1, TIMESTAMP '2026-10-08 11:30:00', 'RESPONDIDA', 3),
+(3, 1, 2, TIMESTAMP '2026-10-09 09:00:00', 'PENDIENTE', 2);
 
 
 -- ---------------------------------------------------------
@@ -293,10 +325,10 @@ VALUES
 INSERT INTO Movimiento_financiero
 (id_movimiento, id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado)
 VALUES
-(1, 1, 1, 1, 900000.00, TIMESTAMP '2026-10-11 09:00:00', 'Anticipo de decoración', 'INGRESO', 'REGISTRADO'),
-(2, 1, 1, 1, 900000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de decoración', 'INGRESO', 'PENDIENTE'),
-(3, 2, 1, 2, 1100000.00, TIMESTAMP '2026-10-12 10:00:00', 'Anticipo de catering', 'INGRESO', 'REGISTRADO'),
-(4, 2, 1, 2, 1100000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de catering', 'INGRESO', 'PENDIENTE');
+(1, 1, 1, 1, 900000.00, TIMESTAMP '2026-10-11 09:00:00', 'Anticipo de decoración', 'EGRESO', 'REGISTRADO'),
+(2, 1, 1, 1, 900000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de decoración', 'EGRESO', 'PENDIENTE'),
+(3, 2, 1, 2, 1100000.00, TIMESTAMP '2026-10-12 10:00:00', 'Anticipo de catering', 'EGRESO', 'REGISTRADO'),
+(4, 2, 1, 2, 1100000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de catering', 'EGRESO', 'PENDIENTE');
 
 
 -- ---------------------------------------------------------

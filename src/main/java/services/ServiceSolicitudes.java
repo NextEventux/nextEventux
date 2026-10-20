@@ -61,7 +61,7 @@ public class ServiceSolicitudes {
         String tipo = sesion.getTipoUsuario();
         boolean actorActivo
                 = "PROVEEDOR".equalsIgnoreCase(tipo)
-                ? "APROBADO".equalsIgnoreCase(sesion.getEstadoActor())
+                ? ("APROBADO".equalsIgnoreCase(sesion.getEstadoActor()) || "VERIFICADO".equalsIgnoreCase(sesion.getEstadoActor()))
                 : "ORGANIZADOR".equalsIgnoreCase(tipo)
                 && "ACTIVO".equalsIgnoreCase(sesion.getEstadoActor());
 
