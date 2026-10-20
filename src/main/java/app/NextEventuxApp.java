@@ -1,6 +1,7 @@
 package app;
 
 import controllers.ControllerAutenticacion;
+import controllers.ControllerAdministracion;
 import controllers.ControllerEventos;
 import controllers.ControllerFinanciera;
 import controllers.ControllerPublicacion;
@@ -20,12 +21,15 @@ import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
+import repositories.RepositoryContratacion;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.RepositoryPlanificacion;
 import repositories.RepositoryPublicacion;
 import repositories.RepositoryPropuestaServicio;
 import repositories.RepositoryServicio;
 import repositories.RepositorySolicitudEjecucion;
+import repositories.RepositoryOrganizador;
+import services.ServiceAdministracion;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
 import services.ServiceFinanciera;
@@ -49,6 +53,7 @@ import views.ViewMisEventos;
 import views.ViewCancelacion;
 import views.ViewFinalizacion;
 import views.ViewAvisosProveedor;
+import views.ViewAdministracion;
 import services.ServiceAvisosProveedor;
 import repositories.RepositoryAvisosProveedor;
 
@@ -162,7 +167,8 @@ public class NextEventuxApp extends Application {
 
         if (!"ORGANIZADOR".equalsIgnoreCase(tipo)
                 && !"PROVEEDOR".equalsIgnoreCase(tipo)
-                && !"ADMINISTRADOR".equalsIgnoreCase(tipo)) {
+                && !"ADMINISTRADOR".equalsIgnoreCase(tipo)
+                && !"CLIENTE".equalsIgnoreCase(tipo)) {
 
             System.err.printf(
                     "[SESION] rol no soportado rol=%s actorId=%d%n",
@@ -196,6 +202,8 @@ public class NextEventuxApp extends Application {
             System.out.println(
                     "[SESION] rutas de proveedor registradas");
             mostrarProveedores();
+        } else if ("CLIENTE".equalsIgnoreCase(tipo)) {
+            mostrarContratarOrganizador();
         }
     }
 
@@ -348,7 +356,6 @@ public class NextEventuxApp extends Application {
                                 this::mostrarInvitados,
                                 this::mostrarLogin)
                                 .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0));
-                            
     }
 
     private void mostrarFinalizacion(Evento evento) {
@@ -586,6 +593,19 @@ public class NextEventuxApp extends Application {
                 servicioProveedorSeleccionado,
                 this::mostrarProveedores)
                 .crearPantalla();
+    }
+
+    /** CU-026: un cliente solicita contratar un organizador desde su propia sesión. */
+    private void mostrarContratarOrganizador() {
+        if (sesionActual == null || !"CLIENTE".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        ControllerAdministracion controlador = new ControllerAdministracion(
+                new ServiceAdministracion(new RepositoryContratacion(), new RepositoryOrganizador()),
+                sesionActual);
+        contenedor.setCenter(new ViewAdministracion(controlador, sesionActual).crearPantalla());
+        stage.setTitle("NextEventux | Contratar organizador");
     }
 
     private void mostrarSolicitudesProveedor() {
