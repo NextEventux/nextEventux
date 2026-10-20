@@ -48,6 +48,7 @@ public class ViewSancionesProveedor {
     private final Label mensaje = new Label();
 
     private ResumenProveedor proveedor;
+    private boolean refrescandoLista;
 
     public ViewSancionesProveedor(ControllerSancionesProveedor controller, Runnable volver) {
         this.controller = controller;
@@ -88,7 +89,11 @@ public class ViewSancionesProveedor {
         Button botonBuscar = new Button("Buscar");
         botonBuscar.setOnAction(e -> buscar());
         listaProveedores.getSelectionModel().selectedItemProperty()
-                .addListener((obs, anterior, nuevo) -> seleccionarProveedor(nuevo));
+                .addListener((obs, anterior, nuevo) -> {
+                    if (!refrescandoLista) {
+                        seleccionarProveedor(nuevo);
+                    }
+                });
 
         evento.valueProperty().addListener((obs, anterior, nuevo) -> cargarContratos());
         tipoSancion.valueProperty().addListener((obs, anterior, nuevo) -> actualizarCamposMulta());
@@ -220,11 +225,31 @@ public class ViewSancionesProveedor {
             new Alert(Alert.AlertType.INFORMATION, resultado.mensaje()).showAndWait();
             justificacion.clear();
             porcentaje.clear();
+            actualizarProveedorTrasSancion(resultado.estadoProveedor());
             cargarContratos();
         } catch (RuntimeException ex) {
             mostrarError(ex);
         } finally {
             aplicar.setDisable(false);
+        }
+    }
+
+    private void actualizarProveedorTrasSancion(String nuevoEstado) {
+        if (proveedor == null || nuevoEstado == null) {
+            return;
+        }
+        proveedor = new ResumenProveedor(
+                proveedor.idProveedor(), proveedor.nombre(), proveedor.empresa(), nuevoEstado);
+        proveedorElegido.setText(proveedor.nombre() + " (#" + proveedor.idProveedor() + ") · " + nuevoEstado);
+
+        int indice = listaProveedores.getSelectionModel().getSelectedIndex();
+        if (indice >= 0) {
+            refrescandoLista = true;
+            try {
+                listaProveedores.getItems().set(indice, proveedor);
+            } finally {
+                refrescandoLista = false;
+            }
         }
     }
 
