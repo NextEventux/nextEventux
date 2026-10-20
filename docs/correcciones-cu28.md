@@ -21,12 +21,43 @@ revisión documental, aprobación/rechazo y notificaciones.
   No se añade una barra global duplicada. La ventana administrativa muestra el
   logo compartido, el nombre de sesión y un botón real de cierre de sesión.
 
-No se modifica el esquema H2 ni se cambian estados de proveedores existentes.
-CU26 no forma parte de esta corrección.
+La corrección inicial de sesión no modificó el esquema H2 ni los estados de
+proveedores existentes. CU26 no forma parte de esta corrección.
+
+## Ajustes solicitados en revisión
+
+Se integró main (402c8c9, incluye el PR #21 de CU12) conservando sus solicitudes,
+propuestas y navegación, junto al acceso administrativo y cierre de sesión de
+CU28. DatabaseConnection conserva el formato de main: solo agrega tres llamadas.
+
+Las migraciones de CU28 se ejecutan después de 004_proveedores_cu12.sql:
+
+- 005_proveedor_cu28.sql: motivo de rechazo.
+- 006_cu28_documentos_notificaciones.sql: documentos y avisos de proveedores.
+- 007_destinatario_notificacion_cu28.sql: restablece la restricción de destinatario.
+
+003_cancelacion_eventos.sql vuelve a ser idéntica a main. La nueva migración 007
+también corrige las bases que recibieron la restricción permisiva de CU28: exige
+exactamente un destinatario (usuario o invitado). Primero valida la restricción
+nueva, luego retira la anterior y renombra la nueva. Así no deja la tabla sin su
+restricción anterior si existen avisos inválidos. No elimina ni asigna
+destinatarios automáticamente: si encuentra avisos sin destinatario, la apertura
+se detiene y hay que identificar su destinatario real antes de reintentar.
+
+Las migraciones se pueden repetir y no se vuelven a cargar datos de ejemplo.
+Las cuatro pruebas de MigracionesCU28Test comprueban base nueva, reapertura,
+actualización desde la restricción anterior y conservación de un aviso inválido
+con recuperación después de corregir su destinatario.
 
 ## Pruebas
 
-Se ejecutaron las 125 pruebas JUnit, todas correctas. Las 11 nuevas comprueban:
+La revisión inicial de sesión ejecutó 125 pruebas JUnit correctas. Después de
+integrar main con CU12 y corregir las migraciones, se ejecutaron **159 pruebas
+JUnit, todas correctas**, incluidas las cuatro nuevas de migración. También se
+verificó en JavaFX que Solicitudes recibidas de CU12 sigue abriendo después del
+login de un proveedor verificado.
+
+Las 11 pruebas agregadas en la corrección inicial de sesión comprueban:
 
 - aprobación con administrador real y posterior login del proveedor VERIFICADO;
 - compatibilidad APROBADO y rechazo de estados/cuentas no habilitados;
