@@ -43,8 +43,9 @@ public class DatabaseConnection {
         ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
         ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
         ejecutarScript(connection, "/migrations/004_proveedores_cu12.sql");
-        ejecutarScript(connection, "/migrations/004_proveedor_cu28.sql");
-        ejecutarScript(connection, "/migrations/005_cu28_documentos_notificaciones.sql");
+        ejecutarScript(connection, "/migrations/005_proveedor_cu28.sql");
+        ejecutarScript(connection, "/migrations/006_cu28_documentos_notificaciones.sql");
+        ejecutarScript(connection, "/migrations/007_destinatario_notificacion_cu28.sql");
         actualizarContadorEventos(connection);
     }
 

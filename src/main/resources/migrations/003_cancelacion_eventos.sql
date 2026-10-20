@@ -15,7 +15,5 @@ ALTER TABLE Evento ADD COLUMN IF NOT EXISTS id_lugar INT REFERENCES Lugar(id_lug
 ALTER TABLE Notificacion_interna ALTER COLUMN id_usuario DROP NOT NULL;
 ALTER TABLE Notificacion_interna ADD COLUMN IF NOT EXISTS id_invitado INT REFERENCES Invitado(id_invitado);
 ALTER TABLE Notificacion_interna ADD COLUMN IF NOT EXISTS id_evento INT REFERENCES Evento(id_evento);
--- Permite conservar notificaciones historicas sin destinatario.
--- Impide asignar simultaneamente un usuario y un invitado.
 ALTER TABLE Notificacion_interna ADD CONSTRAINT IF NOT EXISTS destinatario_notificacion
-CHECK (id_usuario IS NULL OR id_invitado IS NULL);
+CHECK ((id_usuario IS NOT NULL AND id_invitado IS NULL) OR (id_usuario IS NULL AND id_invitado IS NOT NULL));
