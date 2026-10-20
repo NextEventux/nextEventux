@@ -18,6 +18,7 @@ public class ViewPublicacion {
     private final Runnable abrirCatalogo;
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private final Runnable abrirMarketing;
     private final Runnable abrirSanciones;
     private boolean esAdministrador;
     private final Label usuario = new Label();
@@ -47,7 +48,37 @@ public class ViewPublicacion {
             Runnable abrirMisEventos,
             Runnable abrirCatalogo,
             Runnable abrirInvitados,
+            Runnable cerrarSesion) {
+        this(controller, volver, eventoInicial, sesion, abrirEventos, abrirMisEventos,
+                abrirCatalogo, abrirInvitados, cerrarSesion, null, null);
+    }
+
+    public ViewPublicacion(
+            ControllerPublicacion controller,
+            Runnable volver,
+            Integer eventoInicial,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirMisEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
             Runnable cerrarSesion,
+            Runnable abrirMarketing) {
+        this(controller, volver, eventoInicial, sesion, abrirEventos, abrirMisEventos,
+                abrirCatalogo, abrirInvitados, cerrarSesion, abrirMarketing, null);
+    }
+
+    public ViewPublicacion(
+            ControllerPublicacion controller,
+            Runnable volver,
+            Integer eventoInicial,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirMisEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            Runnable abrirMarketing,
             Runnable abrirSanciones) {
 
         this.controller = controller;
@@ -59,6 +90,7 @@ public class ViewPublicacion {
         this.abrirCatalogo = abrirCatalogo;
         this.abrirInvitados = abrirInvitados;
         this.cerrarSesion = cerrarSesion;
+        this.abrirMarketing = abrirMarketing;
         this.abrirSanciones = abrirSanciones;
         usuario.setId("usuarioPublicacion");
         configurarCombo(evento, "eventoPublicacion", "Seleccionar evento", e -> e.getNombre() + " — " + estado(e.getEstado()));
@@ -88,6 +120,13 @@ public class ViewPublicacion {
         raiz.getStyleClass().addAll("app", "publicacion");
         boolean organizadorActivo = sesion != null
                 && "ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario());
+        try {
+            esAdministrador = controller.esAdministrador();
+            usuario.setText(controller.nombreUsuario());
+        } catch (IllegalStateException e) {
+            mostrar(e.getMessage(), false);
+            return new VBox(20, mensaje);
+        }
         raiz.setLeft(MenuCompartido.crear(
                 sesion,
                 MenuCompartido.Pagina.MIS_EVENTOS,
@@ -99,19 +138,12 @@ public class ViewPublicacion {
                 organizadorActivo ? abrirMisEventos : null,
                 null,
                 null,
-                abrirSanciones));
+                esAdministrador ? abrirSanciones : null));
         Button actualizar = boton("Actualizar", "actualizarPublicacion", this::actualizar, false);
         VBox contenido = new VBox(22);
         contenido.getStyleClass().add("content");
         Label explicacion = etiqueta("Comparte un evento finalizado como plantilla. La publicación requiere aprobación del administrador.","muted");
         explicacion.setWrapText(true);
-        try {
-            esAdministrador = controller.esAdministrador();
-            usuario.setText(controller.nombreUsuario());
-        } catch (IllegalStateException e) {
-            mostrar(e.getMessage(), false);
-            return new VBox(20, mensaje);
-        }
         Tab organizacion = new Tab("Solicitar publicación", panelOrganizador());
         organizacion.setId("tabOrganizador");
         Tab revision = new Tab("Revisión del administrador", panelAdministrador());
@@ -127,8 +159,16 @@ public class ViewPublicacion {
                 ? "Inicio"
                 : eventoInicial != null ? "Mis eventos" : "Crear evento";
         BorderPane principal = new BorderPane(scroll);
-        principal.setTop(MenuCompartido.crearBarraSuperior(
-                sesion,"Publicación de eventos",textoRegreso,volver));
+        HBox barra = MenuCompartido.crearBarraSuperior(
+                sesion, "Publicación de eventos", textoRegreso, volver);
+        if (esAdministrador && abrirMarketing != null) {
+            Button marketing = new Button("Marketing");
+            marketing.setId("abrirMarketing");
+            marketing.getStyleClass().add("btn-secondary");
+            marketing.setOnAction(event -> abrirMarketing.run());
+            barra.getChildren().add(marketing);
+        }
+        principal.setTop(barra);
         raiz.setCenter(principal);
         actualizar();
         return raiz;

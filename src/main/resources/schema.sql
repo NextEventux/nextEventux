@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS Usuario (
     estado VARCHAR(30) NOT NULL,
     fecha_registro TIMESTAMP NOT NULL,
     acepta_marketing BOOLEAN NOT NULL,
-    tipo_usuario VARCHAR(50) NOT NULL
+    tipo_usuario VARCHAR(50) NOT NULL,
+    pais VARCHAR(100),
+    ciudad VARCHAR(100),
+    fecha_nacimiento DATE
 );
 
 CREATE TABLE IF NOT EXISTS Rol_permiso (
@@ -81,7 +84,9 @@ CREATE TABLE IF NOT EXISTS Evento (
     ubicacion VARCHAR(255),
     estado VARCHAR(30) NOT NULL,
     fecha_creacion TIMESTAMP NOT NULL,
-    FOREIGN KEY (id_organizador) REFERENCES Organizador(id_organizador)
+    id_cliente INT,
+    FOREIGN KEY (id_organizador) REFERENCES Organizador(id_organizador),
+    FOREIGN KEY (id_cliente) REFERENCES Usuario(id_usuario)
 );
 
 CREATE TABLE IF NOT EXISTS Planificacion (
