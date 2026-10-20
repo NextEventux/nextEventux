@@ -57,7 +57,7 @@ public class ViewSancionesProveedor {
 
     public Parent crearPantalla() {
         tipoFalta.getItems().setAll(
-                "INASISTENCIA", "RETRASO", "INCUMPLIMIENTO_CONDICIONES", "CANCELACION_TARDIA");
+                ServiceSancionesProveedor.TIPOS_FALTA.stream().sorted().toList());
         tipoSancion.getItems().setAll(ServiceSancionesProveedor.SUSPENSION, ServiceSancionesProveedor.MULTA);
 
         evento.setConverter(new StringConverter<>() {
@@ -121,16 +121,16 @@ public class ViewSancionesProveedor {
         GridPane formulario = new GridPane();
         formulario.setHgap(12);
         formulario.setVgap(10);
-        int fila_ = 0;
-        formulario.addRow(fila_++, new Label("Proveedor"), proveedorElegido);
-        formulario.addRow(fila_++, new Label("Evento"), evento);
-        formulario.addRow(fila_++, new Label("Tipo de falta"), tipoFalta);
-        formulario.addRow(fila_++, new Label("Tipo de sanción"), tipoSancion);
-        formulario.addRow(fila_++, new Label("Contrato (multa)"), contrato);
-        formulario.addRow(fila_++, new Label("Porcentaje (multa)"), porcentaje);
-        formulario.addRow(fila_++, new Label("Justificación"), justificacion);
-        formulario.addRow(fila_++, new Label(""), aplicar);
-        formulario.addRow(fila_, new Label(""), mensaje);
+        int siguiente = 0;
+        formulario.addRow(siguiente++, new Label("Proveedor"), proveedorElegido);
+        formulario.addRow(siguiente++, new Label("Evento"), evento);
+        formulario.addRow(siguiente++, new Label("Tipo de falta"), tipoFalta);
+        formulario.addRow(siguiente++, new Label("Tipo de sanción"), tipoSancion);
+        formulario.addRow(siguiente++, new Label("Contrato (multa)"), contrato);
+        formulario.addRow(siguiente++, new Label("Porcentaje (multa)"), porcentaje);
+        formulario.addRow(siguiente++, new Label("Justificación"), justificacion);
+        formulario.addRow(siguiente++, new Label(""), aplicar);
+        formulario.addRow(siguiente, new Label(""), mensaje);
 
         HBox cuerpo = new HBox(24, izquierda, formulario);
         cuerpo.setPadding(new Insets(16));
