@@ -69,6 +69,12 @@ public class DatosDemostracionH2Test {
             try (Connection connection
                     = DatabaseConnection.getConnection(TEST_URL)) {
 
+                comprobarReservasDeRegalos(connection);
+            }
+
+            try (Connection connection
+                    = DatabaseConnection.getConnection(TEST_URL)) {
+
                 comprobarContador(connection, "USUARIO", "ID_USUARIO", 17);
                 comprobarContador(connection, "USUARIO_ROL", "ID_USUARIO_ROL", 17);
                 comprobarContador(connection, "ORGANIZADOR", "ID_ORGANIZADOR", 6);
@@ -103,6 +109,47 @@ public class DatosDemostracionH2Test {
 
         } finally {
             System.clearProperty("nexteventux.db.url");
+        }
+    }
+
+    /** CU-20 / R43: cada regalo tiene a lo sumo una reserva activa y su estado lo refleja. */
+    private void comprobarReservasDeRegalos(Connection connection) throws Exception {
+
+        String duplicadas = """
+                SELECT COUNT(*)
+                FROM (SELECT id_regalo
+                      FROM Reserva_regalo
+                      WHERE UPPER(estado) = 'RESERVADO'
+                      GROUP BY id_regalo
+                      HAVING COUNT(*) > 1) repetidas
+                """;
+
+        try (Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(duplicadas)) {
+
+            assertTrue(result.next());
+            assertEquals(0, result.getInt(1),
+                    "Ningún regalo puede tener más de una reserva activa");
+        }
+
+        String incoherentes = """
+                SELECT COUNT(*)
+                FROM Regalo g
+                WHERE CASE WHEN COALESCE(UPPER(g.estado), '') = 'RESERVADO'
+                           THEN 1 ELSE 0 END
+                   <> CASE WHEN EXISTS (SELECT 1
+                                        FROM Reserva_regalo r
+                                        WHERE r.id_regalo = g.id_regalo
+                                          AND UPPER(r.estado) = 'RESERVADO')
+                           THEN 1 ELSE 0 END
+                """;
+
+        try (Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(incoherentes)) {
+
+            assertTrue(result.next());
+            assertEquals(0, result.getInt(1),
+                    "El estado RESERVADO de cada regalo debe coincidir con una reserva activa");
         }
     }
 
