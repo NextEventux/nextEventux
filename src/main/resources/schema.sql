@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS Usuario (
     estado VARCHAR(30) NOT NULL,
     fecha_registro TIMESTAMP NOT NULL,
     acepta_marketing BOOLEAN NOT NULL,
-    tipo_usuario VARCHAR(50) NOT NULL
+    tipo_usuario VARCHAR(50) NOT NULL,
+    pais VARCHAR(100),
+    ciudad VARCHAR(100),
+    fecha_nacimiento DATE
 );
 
 CREATE TABLE IF NOT EXISTS Rol_permiso (
