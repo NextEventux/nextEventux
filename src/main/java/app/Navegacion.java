@@ -22,7 +22,8 @@ public class Navegacion {
         MIS_EVENTOS("NextEventux | Mis eventos"),
         EDICION_EVENTO("NextEventux | Editar evento"),
         CANCELACION_EVENTO("NextEventux | Cancelar evento"),
-        PUBLICACION_EVENTOS("NextEventux | Publicación de eventos");
+        PUBLICACION_EVENTOS("NextEventux | Publicación de eventos"),
+        ESTADO_FINANCIERO("NextEventux | Estado financiero");
 
         private final String titulo;
 

@@ -260,31 +260,52 @@ public class RepositoryServicio {
         return servicio;
     }
 
+    /**
+     * Servicios contratados para un evento (CU06).
+     * Recorre Contratacion -> Propuesta -> Solicitud_Ejecucion -> Servicio, así solo
+     * aparece lo que realmente se contrató para ESTE evento. El precio que se devuelve
+     * es el valor acordado en la contratación, que es lo que pesa en el presupuesto.
+     */
     public List<Servicio> listarServiciosPorEvento(int idEvento) {
         List<Servicio> servicios = new ArrayList<>();
-        String sql = "SELECT * FROM Servicio WHERE id_evento = ?";
 
-        try (Connection connection = DatabaseConnection.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql)) {
+        String sql = """
+                SELECT s.id_servicio,
+                       se.id_proveedor,
+                       COALESCE(s.nombre, pr.descripcion) AS nombre,
+                       COALESCE(s.descripcion, pr.descripcion) AS descripcion,
+                       COALESCE(c.valor_acordado, pr.valor, s.precio, 0) AS precio,
+                       COALESCE(s.categoria, 'Otros') AS categoria,
+                       c.estado
+                FROM Contratacion c
+                JOIN Propuesta pr ON pr.id_propuesta = c.id_propuesta
+                JOIN Solicitud_Ejecucion se ON se.id_solicitud = pr.id_solicitud
+                LEFT JOIN Servicio s ON s.id_servicio = se.id_servicio
+                WHERE c.id_evento = ?
+                  AND UPPER(c.estado) = 'ACTIVA'
+                ORDER BY c.id_contratacion
+                """;
 
-            statement.setInt(1, idEvento);
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
+            pstmt.setInt(1, idEvento);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
                     Servicio servicio = new Servicio();
-                    servicio.setIdServicio(resultSet.getInt("id_servicio"));
-                    servicio.setIdProveedor(resultSet.getInt("id_proveedor"));
-                    servicio.setNombre(resultSet.getString("nombre"));
-                    servicio.setDescripcion(resultSet.getString("descripcion"));
-                    servicio.setPrecio(resultSet.getDouble("precio"));
-                    servicio.setCategoria(resultSet.getString("categoria"));
-                    servicio.setEstado(resultSet.getString("estado"));
-                    
+                    servicio.setIdServicio(rs.getInt("id_servicio"));
+                    servicio.setIdProveedor(rs.getInt("id_proveedor"));
+                    servicio.setNombre(rs.getString("nombre"));
+                    servicio.setDescripcion(rs.getString("descripcion"));
+                    servicio.setPrecio(rs.getDouble("precio"));
+                    servicio.setCategoria(rs.getString("categoria"));
+                    servicio.setEstado(rs.getString("estado"));
                     servicios.add(servicio);
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("No se pudieron consultar los servicios del evento.", e);
         }
 
         return servicios;

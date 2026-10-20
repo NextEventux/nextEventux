@@ -1,15 +1,16 @@
 package entities;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class MovimientoFinanciero {
-    
-    // Atributos basados en la tabla Movimiento_financiero del diagrama
+
+    // Atributos basados en la tabla Movimiento_financiero
     private int idMovimiento;
+    private int idPropuesta;
     private int idEvento;
     private int idContratacion;
     private double valor;
-    private LocalDate fecha;
+    private LocalDateTime fecha;
     private String descripcion;
     private String tipo;
     private String estado;
@@ -19,9 +20,11 @@ public class MovimientoFinanciero {
     }
 
     // Constructor con todos los atributos
-    public MovimientoFinanciero(int idMovimiento, int idEvento, int idContratacion, double valor, 
-                                LocalDate fecha, String descripcion, String tipo, String estado) {
+    public MovimientoFinanciero(int idMovimiento, int idPropuesta, int idEvento, int idContratacion,
+                                double valor, LocalDateTime fecha, String descripcion,
+                                String tipo, String estado) {
         this.idMovimiento = idMovimiento;
+        this.idPropuesta = idPropuesta;
         this.idEvento = idEvento;
         this.idContratacion = idContratacion;
         this.valor = valor;
@@ -38,6 +41,14 @@ public class MovimientoFinanciero {
 
     public void setIdMovimiento(int idMovimiento) {
         this.idMovimiento = idMovimiento;
+    }
+
+    public int getIdPropuesta() {
+        return idPropuesta;
+    }
+
+    public void setIdPropuesta(int idPropuesta) {
+        this.idPropuesta = idPropuesta;
     }
 
     public int getIdEvento() {
@@ -64,11 +75,11 @@ public class MovimientoFinanciero {
         this.valor = valor;
     }
 
-    public LocalDate getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(LocalDate fecha) {
+    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 

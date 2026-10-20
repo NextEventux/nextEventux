@@ -2,6 +2,7 @@ package app;
 
 import controllers.ControllerAutenticacion;
 import controllers.ControllerEventos;
+import controllers.ControllerFinanciera;
 import controllers.ControllerPublicacion;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
@@ -19,10 +20,13 @@ import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
+import repositories.RepositoryMovimientoFinanciero;
+import repositories.RepositoryPlanificacion;
 import repositories.RepositoryPublicacion;
 import repositories.RepositoryServicio;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
+import services.ServiceFinanciera;
 import services.ServicePublicacion;
 import services.ServiceInvitados;
 import services.ServiceProveedores;
@@ -30,6 +34,7 @@ import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
 import views.ViewEventos;
+import views.ViewFinanciera;
 import views.ViewPublicacion;
 import views.ViewEdicion;
 import views.ViewInvitados;
@@ -52,6 +57,7 @@ public class NextEventuxApp extends Application {
     private Integer eventoSeleccionado;
     private Stage stage;
     private ControllerPublicacion publicaciones;
+    private ControllerFinanciera controllerFinanciera;
 
     @Override
     public void start(Stage stage) {
@@ -120,6 +126,8 @@ public class NextEventuxApp extends Application {
         publicaciones = new ControllerPublicacion(new ServicePublicacion(
                 new RepositoryPublicacion(), new RepositoryEvento()), sesion);
         controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
+        controllerFinanciera = new ControllerFinanciera(new ServiceFinanciera(new RepositoryMovimientoFinanciero(),
+            new RepositoryPlanificacion(), new RepositoryServicio()));
 
         String tipo = sesion.getTipoUsuario();
 
@@ -176,6 +184,15 @@ public class NextEventuxApp extends Application {
         navegacion.ir(Navegacion.Pantalla.INVITADOS);
     }
 
+    private void mostrarEstadoFinanciero(Evento evento) {
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+        eventoSeleccionado = evento.getIdEvento();
+        navegacion.ir(Navegacion.Pantalla.ESTADO_FINANCIERO);
+     }
+
     private void registrarRutasOrganizador() {
         navegacion
                 .registrar(
@@ -225,7 +242,8 @@ public class NextEventuxApp extends Application {
                                 this::mostrarLogin,
                                 this::mostrarEdicion,
                                 this::mostrarPublicacion,
-                                this::mostrarCancelacion)
+                                this::mostrarCancelacion,
+                                this::mostrarEstadoFinanciero)
                                 .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.EDICION_EVENTO,
@@ -263,7 +281,19 @@ public class NextEventuxApp extends Application {
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
-                                this::mostrarLogin).crearPantalla());
+                                this::mostrarLogin).crearPantalla())
+                .registrarDinamica(
+                        Navegacion.Pantalla.ESTADO_FINANCIERO,
+                        () -> new ViewFinanciera(
+                                controllerFinanciera,
+                                sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarMisEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin)
+                                .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0));
+                            
     }
 
     private void mostrarMisEventos() {
