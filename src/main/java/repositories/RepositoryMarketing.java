@@ -34,8 +34,14 @@ public class RepositoryMarketing {
     }
 
     public List<ClienteMarketing> listarClientesActivos() {
-        String sql = "SELECT id_usuario, nombre, pais, ciudad, fecha_nacimiento, acepta_marketing "
-                + "FROM Usuario WHERE tipo_usuario = ? AND estado = ? ORDER BY id_usuario";
+        String sql = "SELECT u.id_usuario, u.nombre, "
+                + "COALESCE(NULLIF(u.pais, ''), 'No especificado') AS pais, "
+                + "COALESCE(NULLIF(u.ciudad, ''), ("
+                + "SELECT s.ciudad FROM Solicitud_Contratacion_Organizador s "
+                + "WHERE s.id_cliente = u.id_usuario "
+                + "ORDER BY s.fecha_solicitud DESC, s.id_solicitud DESC LIMIT 1"
+                + ")) AS ciudad, u.fecha_nacimiento, u.acepta_marketing "
+                + "FROM Usuario u WHERE u.tipo_usuario = ? AND u.estado = ? ORDER BY u.id_usuario";
         List<ClienteMarketing> clientes = new ArrayList<>();
         try (Connection connection = conectar();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -64,6 +70,10 @@ public class RepositoryMarketing {
                 + "UNION ALL "
                 + "SELECT id_cliente AS id_usuario, tipo FROM Evento "
                 + "WHERE id_cliente IS NOT NULL AND tipo IS NOT NULL"
+                + " UNION ALL "
+                + "SELECT id_cliente AS id_usuario, tipo_evento AS tipo "
+                + "FROM Solicitud_Contratacion_Organizador "
+                + "WHERE tipo_evento IS NOT NULL"
                 + ") AS solicitudes GROUP BY id_usuario, tipo ORDER BY id_usuario, tipo";
         List<SolicitudEvento> solicitudes = new ArrayList<>();
         try (Connection connection = conectar();

@@ -26,7 +26,7 @@ public class DatabaseConnection {
         Path base = carpeta == null || carpeta.isBlank()
                 ? Path.of(System.getProperty("user.home"), ".nexteventux")
                 : Path.of(carpeta);
-        String archivo = base.toAbsolutePath().resolve("nexteventux").toString().replace('\\', '/');
+        String archivo = base.toAbsolutePath().resolve("nexteventux").toString();
         // La base permanece abierta durante la ejecución para evitar reabrir el archivo.
         return "jdbc:h2:" + archivo + ";DB_CLOSE_DELAY=-1";
     }

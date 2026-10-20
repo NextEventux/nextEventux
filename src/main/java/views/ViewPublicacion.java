@@ -18,6 +18,7 @@ public class ViewPublicacion {
     private final Runnable abrirCatalogo;
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private final Runnable abrirMarketing;
     private boolean esAdministrador;
     private final Label usuario = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
@@ -47,6 +48,21 @@ public class ViewPublicacion {
             Runnable abrirCatalogo,
             Runnable abrirInvitados,
             Runnable cerrarSesion) {
+        this(controller, volver, eventoInicial, sesion, abrirEventos, abrirMisEventos,
+                abrirCatalogo, abrirInvitados, cerrarSesion, null);
+    }
+
+    public ViewPublicacion(
+            ControllerPublicacion controller,
+            Runnable volver,
+            Integer eventoInicial,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirMisEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            Runnable abrirMarketing) {
 
         this.controller = controller;
         this.volver = volver;
@@ -57,6 +73,7 @@ public class ViewPublicacion {
         this.abrirCatalogo = abrirCatalogo;
         this.abrirInvitados = abrirInvitados;
         this.cerrarSesion = cerrarSesion;
+        this.abrirMarketing = abrirMarketing;
         usuario.setId("usuarioPublicacion");
         configurarCombo(evento, "eventoPublicacion", "Seleccionar evento", e -> e.getNombre() + " — " + estado(e.getEstado()));
         pendientes.setId("solicitudesPendientes");
@@ -121,8 +138,16 @@ public class ViewPublicacion {
                 ? "Inicio"
                 : eventoInicial != null ? "Mis eventos" : "Crear evento";
         BorderPane principal = new BorderPane(scroll);
-        principal.setTop(MenuCompartido.crearBarraSuperior(
-                sesion,"Publicación de eventos",textoRegreso,volver));
+        HBox barra = MenuCompartido.crearBarraSuperior(
+                sesion, "Publicación de eventos", textoRegreso, volver);
+        if (esAdministrador && abrirMarketing != null) {
+            Button marketing = new Button("Marketing");
+            marketing.setId("abrirMarketing");
+            marketing.getStyleClass().add("btn-secondary");
+            marketing.setOnAction(event -> abrirMarketing.run());
+            barra.getChildren().add(marketing);
+        }
+        principal.setTop(barra);
         raiz.setCenter(principal);
         actualizar();
         return raiz;

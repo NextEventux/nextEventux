@@ -2,6 +2,7 @@ package views;
 
 import controllers.ControllerMarketing;
 import entities.Segmentacion;
+import entities.SesionUsuario;
 import java.util.List;
 import java.util.function.Function;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -28,14 +29,29 @@ import services.ServiceMarketing;
 public class ViewMarketing {
     private final ControllerMarketing controller;
     private final int idAdministrador;
+    private final SesionUsuario sesion;
+    private final Runnable volver;
+    private final Runnable cerrarSesion;
     private final TableView<Segmentacion> tabla = new TableView<>();
     private final Label resumenSegmentos = new Label("0");
     private final Label resumenClientes = new Label("0");
     private final Label mensaje = new Label();
     
     public ViewMarketing(ControllerMarketing controller, int idAdministrador) {
+        this(controller, idAdministrador, null, null, null);
+    }
+
+    public ViewMarketing(
+            ControllerMarketing controller,
+            int idAdministrador,
+            SesionUsuario sesion,
+            Runnable volver,
+            Runnable cerrarSesion) {
     this.controller = controller;
     this.idAdministrador = idAdministrador;
+    this.sesion = sesion;
+    this.volver = volver;
+    this.cerrarSesion = cerrarSesion;
     mensaje.setId("mensaje");
     mensaje.setWrapText(true);
     mensaje.setVisible(false);
@@ -48,7 +64,7 @@ public class ViewMarketing {
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().add("app");
-        raiz.setLeft(crearMenu());
+        raiz.setLeft(sesion == null ? crearMenu() : crearMenuIntegrado());
 
         BorderPane principal = new BorderPane();
         principal.setTop(crearBarraSuperior());
@@ -145,7 +161,9 @@ public class ViewMarketing {
                 filaResumen("Mínimo por segmento", new Label(String.valueOf(ServiceMarketing.MINIMO_CLIENTES_POR_SEGMENTO))));
         resumen.getStyleClass().add("info-card");
         panel.getChildren().addAll(inicio, resumen, informacion("ⓘ Información importante",
-        "Al generar de nuevo, los segmentos automáticos anteriores pasan a inactivos. " + "Los clientes sin ciudad o fecha de nacimiento no se incluyen."));
+        "La ciudad se toma del perfil o de la solicitud más reciente para contratar un organizador. "
+                + "Los clientes sin fecha de nacimiento o ciudad no se incluyen. "
+                + "Al generar de nuevo, los segmentos automáticos anteriores pasan a inactivos."));
     return panel;
     }
 
@@ -215,12 +233,51 @@ public class ViewMarketing {
     }
 
     private HBox crearBarraSuperior() {
-        HBox barra = new HBox(18, etiqueta("Inicio / Marketing /", "breadcrumb"),
+        HBox barra = new HBox(18);
+        if (volver != null) {
+            Button regresar = new Button("← Publicaciones");
+            regresar.getStyleClass().add("btn-secondary");
+            regresar.setOnAction(event -> volver.run());
+            barra.getChildren().add(regresar);
+        }
+        barra.getChildren().addAll(etiqueta("Inicio / Marketing /", "breadcrumb"),
                 etiqueta("Segmentos", "breadcrumb-current"), espacioHorizontal(),
-                etiqueta("♧", "notification"), etiqueta("Administrador", "user-badge"));
+                etiqueta("♧", "notification"),
+                etiqueta(sesion == null ? "Administrador" : sesion.getNombre(), "user-badge"));
         barra.setAlignment(Pos.CENTER_LEFT);
         barra.getStyleClass().add("topbar");
         return barra;
+    }
+
+    private VBox crearMenuIntegrado() {
+        VBox menu = new VBox(7);
+        menu.getStyleClass().add("sidebar");
+        menu.setPrefWidth(250);
+        menu.setMinWidth(250);
+        VBox marca = new VBox(5, etiqueta("🎪", "brand-icon"),
+                etiqueta("nextEventux", "brand"),
+                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        marca.setAlignment(Pos.CENTER);
+        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
+        Label segmento = etiqueta("♙  Segmentos", "menu-item");
+        segmento.getStyleClass().add("active");
+        menu.getChildren().addAll(marca, etiqueta("MARKETING", "menu-title"), segmento);
+        Region espacio = new Region();
+        VBox.setVgrow(espacio, Priority.ALWAYS);
+        VBox datosPerfil = new VBox(4,
+                etiqueta(sesion.getNombre(), "profile-name"),
+                etiqueta("Administrador", "hint"));
+        if (cerrarSesion != null) {
+            Label salir = etiqueta("Cerrar sesión", "logout-link");
+            salir.setOnMouseClicked(event -> cerrarSesion.run());
+            salir.setStyle("-fx-cursor: hand;");
+            datosPerfil.getChildren().add(salir);
+        }
+        HBox cuenta = new HBox(12, etiqueta("AD", "avatar"), datosPerfil);
+        cuenta.setAlignment(Pos.CENTER_LEFT);
+        cuenta.getStyleClass().add("sidebar-bottom");
+        menu.getChildren().addAll(espacio, cuenta);
+        return menu;
     }
 
     private Label etiqueta(String texto, String estilo) {

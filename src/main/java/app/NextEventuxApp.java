@@ -31,6 +31,7 @@ import repositories.RepositoryPropuestaServicio;
 import repositories.RepositoryServicio;
 import repositories.RepositorySolicitudEjecucion;
 import repositories.RepositoryOrganizador;
+import repositories.RepositoryMarketing;
 import services.ServiceAdministracion;
 import services.ServiceAutenticacion;
 import services.ServiceContratacionServicio;
@@ -40,6 +41,7 @@ import services.ServicePublicacion;
 import services.ServiceInvitados;
 import services.ServiceProveedores;
 import services.ServiceSolicitudes;
+import services.ServiceMarketing;
 import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
@@ -57,6 +59,7 @@ import views.ViewCancelacion;
 import views.ViewFinalizacion;
 import views.ViewAvisosProveedor;
 import views.ViewAdministracion;
+import views.ViewMarketing;
 import services.ServiceAvisosProveedor;
 import repositories.RepositoryAvisosProveedor;
 
@@ -117,6 +120,9 @@ public class NextEventuxApp extends Application {
 
         scene.getStylesheets().add(
                 getClass().getResource("/styles/login.css").toExternalForm());
+
+        scene.getStylesheets().add(
+                getClass().getResource("/styles/marketing.css").toExternalForm());
 
         mostrarLogin();
 
@@ -364,7 +370,8 @@ public class NextEventuxApp extends Application {
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
-                                this::mostrarLogin).crearPantalla())
+                                this::mostrarLogin,
+                                this::mostrarMarketing).crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
                         () -> new ViewFinanciera(
@@ -376,6 +383,29 @@ public class NextEventuxApp extends Application {
                                 this::mostrarInvitados,
                                 this::mostrarLogin)
                                 .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0));
+
+        if (sesionActual != null
+                && "ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            navegacion.registrarDinamica(
+                    Navegacion.Pantalla.MARKETING,
+                    () -> new ViewMarketing(
+                            new controllers.ControllerMarketing(
+                                    new ServiceMarketing(new RepositoryMarketing())),
+                            sesionActual.getIdUsuario(),
+                            sesionActual,
+                            this::mostrarPublicacion,
+                            this::mostrarLogin)
+                            .crearPantalla());
+        }
+    }
+
+    private void mostrarMarketing() {
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.ir(Navegacion.Pantalla.MARKETING);
     }
 
     private void mostrarFinalizacion(Evento evento) {
