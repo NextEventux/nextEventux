@@ -35,7 +35,7 @@ public class DatabaseConnection {
         }
     }
 
-    public static void inicializarEsquema(Connection connection) throws SQLException {
+    public static synchronized void inicializarEsquema(Connection connection) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
         ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
@@ -43,6 +43,8 @@ public class DatabaseConnection {
         ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
         ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
         ejecutarScript(connection, "/migrations/004_proveedores_cu12.sql");
+        ejecutarScript(connection, "/migrations/008_finalizacion_eventos.sql");
+        ejecutarScript(connection, "/migrations/009_solicitudes_evento.sql");
         actualizarContadorEventos(connection);
     }
 
