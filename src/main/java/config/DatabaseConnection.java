@@ -87,6 +87,7 @@ public class DatabaseConnection {
         // Solo se ejecutan las migraciones presentes en esta versión del proyecto.
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
         ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
+        ejecutarScript(connection, "/migrations/002_marketing_cu21.sql");
         ejecutarScript(connection, "/migrations/003_proveedores_cu11_publicacion.sql");
         ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
         ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
