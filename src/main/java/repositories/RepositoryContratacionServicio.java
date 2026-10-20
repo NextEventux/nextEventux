@@ -595,7 +595,11 @@ public class RepositoryContratacionServicio {
             Connection connection,
             Datos d) throws SQLException {
 
-        // Misma regla de CU-01 y CU-06; se excluye la necesidad que se va a cubrir
+        // Regla de CU-01 (invariante: costo comprometido <= presupuesto): suma las
+        // contrataciones vigentes y el costo de las solicitudes abiertas sin contrato.
+        // CU-06 solo muestra las contrataciones no canceladas, por lo que su
+        // "disponible" puede ser mayor. Se excluye la necesidad que se va a cubrir
+        // porque el precio final reemplaza el costo estimado de sus solicitudes.
         BigDecimal comprometido
                 = repositoryPresupuesto.comprometidoSinNecesidad(
                         connection, d.idEvento(), d.idNecesidad());

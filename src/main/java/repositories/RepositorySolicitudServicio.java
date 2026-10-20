@@ -153,7 +153,8 @@ public class RepositorySolicitudServicio {
      * CU-13 lo usa para comprobar si una propuesta cabe en el presupuesto: al
      * contratar, el costo estimado de las solicitudes de esa necesidad se sustituye
      * por el valor acordado y las demás propuestas quedan "No seleccionada".
-     * Con idNecesidad = 0 no se excluye nada (regla de CU-01/CU-06).
+     * Con idNecesidad = 0 no se excluye nada (regla de CU-01; CU-06 solo cuenta
+     * las contrataciones no canceladas).
      */
     BigDecimal comprometidoSinNecesidad(Connection c, int evento, int idNecesidad) throws SQLException {
         BigDecimal total=BigDecimal.ZERO;
