@@ -40,6 +40,7 @@ class MesaRegalosTest {
     void prepararBase() throws Exception {
         url = "jdbc:h2:" + directorio.resolve("regalos");
         DatosInvitacionesPrueba.preparar(url);
+        DatosInvitacionesPrueba.agregarOtroOrganizador(url);
         service = new ServiceInvitados(new RepositoryInvitacion(url), new RepositoryInvitado(url),
                 new RepositoryLugar(url), new RepositoryEvento(url), new RepositoryRegalo(url),
                 new RepositoryReservaRegalo(url));
@@ -97,7 +98,7 @@ class MesaRegalosTest {
                 "Inicia sesión como organizador");
         assertMensaje(() -> sinSesion.quitarRegalo(cobija), "Inicia sesión como organizador");
 
-        ControllerInvitados otroOrganizador = new ControllerInvitados(service, organizador(99));
+        ControllerInvitados otroOrganizador = new ControllerInvitados(service, organizador(2));
         assertMensaje(() -> otroOrganizador.listarRegalos(invitacion), "tus propios eventos");
         assertMensaje(() -> otroOrganizador.agregarRegalo(invitacion, new Regalo("Libro", null, new BigDecimal("1000"))),
                 "tus propios eventos");
@@ -295,8 +296,11 @@ class MesaRegalosTest {
 
     private static SesionUsuario organizador(int idOrganizador) {
         SesionUsuario sesion = new SesionUsuario();
+        sesion.setIdUsuario(idOrganizador);
         sesion.setTipoUsuario("ORGANIZADOR");
         sesion.setIdActor(idOrganizador);
+        sesion.setEstadoUsuario("ACTIVO");
+        sesion.setEstadoActor("ACTIVO");
         return sesion;
     }
 
@@ -363,7 +367,7 @@ class MesaRegalosTest {
     }
 
     private void assertMensaje(org.junit.jupiter.api.function.Executable accion, String motivo) {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, accion);
+        RuntimeException error = assertThrows(RuntimeException.class, accion);
         assertTrue(error.getMessage().contains(motivo), error.getMessage());
     }
 }

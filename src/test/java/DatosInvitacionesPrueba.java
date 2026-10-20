@@ -37,6 +37,17 @@ class DatosInvitacionesPrueba {
         }
     }
 
+    static void agregarOtroOrganizador(String url) throws Exception {
+        try (Connection connection = DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("INSERT INTO Usuario (id_usuario, nombre, usuario, contraseña, estado, "
+                    + "fecha_registro, acepta_marketing, tipo_usuario) VALUES "
+                    + "(2, 'Otro organizador', 'otro', 'solo-prueba', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR')");
+            statement.executeUpdate("INSERT INTO Organizador (id_organizador, id_usuario, estado) "
+                    + "VALUES (2, 2, 'ACTIVO')");
+        }
+    }
+
     /** Inserta directamente una invitación (por ejemplo, para un evento que ya pasó). */
     static int insertarInvitacion(String url, int evento, int lugar) throws Exception {
         try (Connection connection = DatabaseConnection.getConnection(url);

@@ -44,6 +44,7 @@ public class ViewListaServiciosProveedor {
     private final Consumer<Integer> abrirDetalle;
     private final Runnable nuevoServicio;
     private final Runnable abrirSolicitudes;
+    private Runnable abrirAvisos;
 
     private final List<ServicioVista> servicios
             = new ArrayList<>();
@@ -118,6 +119,13 @@ public class ViewListaServiciosProveedor {
         this.abrirDetalle = abrirDetalle;
         this.nuevoServicio = nuevoServicio;
         this.abrirSolicitudes = abrirSolicitudes;
+    }
+
+    public ViewListaServiciosProveedor(ControllerProveedores controller, int idProveedor,
+            SesionUsuario sesion, Runnable cerrarSesion, Consumer<Integer> abrirDetalle,
+            Runnable nuevoServicio, Runnable abrirServicios, Runnable abrirSolicitudes, Runnable abrirAvisos) {
+        this(controller, idProveedor, sesion, cerrarSesion, abrirDetalle, nuevoServicio, abrirServicios, abrirSolicitudes);
+        this.abrirAvisos = abrirAvisos;
     }
 
     public Parent crearPantalla() {
@@ -1062,9 +1070,15 @@ public class ViewListaServiciosProveedor {
     }
 
     private HBox crearBarraSuperior() {
-        return MenuCompartido.crearBarraSuperior(
-                sesion,
-                "Mis servicios");
+        HBox barra = MenuCompartido.crearBarraSuperior(sesion, "Mis servicios");
+        if (abrirAvisos != null) {
+            Button avisos = new Button("Mis avisos");
+            avisos.setId("abrirAvisosProveedorSesion");
+            avisos.getStyleClass().add("btn-secondary");
+            avisos.setOnAction(e -> abrirAvisos.run());
+            barra.getChildren().add(avisos);
+        }
+        return barra;
     }
 
     private void registrarExcepcion(String paso, Exception e) {
