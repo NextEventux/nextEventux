@@ -90,19 +90,17 @@ public class ControllerInvitados {
         serviceInvitados.gestionarRespuestaInvitacion(idInvitado, correo, telefono, respuesta);
     }
 
+    // La mesa de regalos solo la arma el organizador con sesión, y solo en sus eventos.
     public List<Regalo> listarRegalos(int idInvitacion) {
-        validarInvitacion(idInvitacion);
-        return serviceInvitados.listarRegalos(idInvitacion);
+        return serviceInvitados.listarRegalos(organizadorRequerido(), idInvitacion);
     }
 
     public void agregarRegalo(int idInvitacion, Regalo datos) {
-        validarInvitacion(idInvitacion);
-        serviceInvitados.agregarRegalo(idInvitacion, datos);
+        serviceInvitados.agregarRegalo(organizadorRequerido(), idInvitacion, datos);
     }
 
     public void quitarRegalo(int idRegalo) {
-        if (organizadorEnSesion() != null) validarEvento(serviceInvitados.eventoDeRegalo(idRegalo));
-        serviceInvitados.quitarRegalo(idRegalo);
+        serviceInvitados.quitarRegalo(organizadorRequerido(), idRegalo);
     }
 
     public List<Regalo> consultarRegalosDisponibles(int idInvitado, String correo, String telefono) {
@@ -127,6 +125,13 @@ public class ControllerInvitados {
     private Integer organizadorEnSesion() {
         if (sesion == null || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())) return null;
         return sesion.getIdActor();
+    }
+
+    private int organizadorRequerido() {
+        Integer organizador = organizadorEnSesion();
+        if (organizador == null)
+            throw new IllegalArgumentException("Inicia sesión como organizador para gestionar la mesa de regalos.");
+        return organizador;
     }
 
     private void validarEvento(int eventoId) {
