@@ -28,7 +28,8 @@ public class Navegacion {
         MIS_INVITACIONES("NextEventux | Mis invitaciones"),
         MESA_REGALOS("NextEventux | Mesa de regalos"),
         SOLICITUDES_PROVEEDOR("NextEventux | Solicitudes recibidas"),
-        PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas");
+        PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas"),
+        ESTADO_FINANCIERO("NextEventux | Estado financiero");
 
         private final String titulo;
 

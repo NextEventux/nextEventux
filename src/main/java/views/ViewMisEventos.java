@@ -35,6 +35,7 @@ public class ViewMisEventos {
     private final Consumer<Evento> editar;
     private final Consumer<Evento> publicar;
     private final Consumer<Evento> cancelar;
+    private final Consumer<Evento> verFinanzas;
     private final Consumer<Evento> finalizar;
     private final ListView<Evento> eventos = new ListView<>();
     private final Label detalle = new Label("Selecciona un evento para ver las acciones disponibles.");
@@ -42,13 +43,20 @@ public class ViewMisEventos {
     private final Button botonEditar = boton("Editar", "editarEvento");
     private final Button botonPublicar = boton("Subir al repositorio", "publicarEvento");
     private final Button botonCancelar = boton("Cancelar", "cancelarEvento");
+    private final Button botonFinanzas = boton("Ver finanzas", "verFinanzasEvento");
     private final Button botonFinalizar = boton("Finalizar evento", "abrirFinalizacion");
 
     private Consumer<Evento> abrirSolicitudes;
     private final Button botonServicios = boton("Servicios y presupuesto", "serviciosPresupuestoEvento");
+    private Consumer<Evento> abrirFinanzas;
 
     public ViewMisEventos conSolicitudes(Consumer<Evento> accion) {
         abrirSolicitudes = accion;
+        return this;
+    }
+
+    public ViewMisEventos conFinanzas(Consumer<Evento> accion) {
+        abrirFinanzas = accion;
         return this;
     }
 
@@ -76,6 +84,7 @@ public class ViewMisEventos {
         this.publicar = publicar;
         this.cancelar = cancelar;
         this.finalizar = finalizar;
+        this.verFinanzas = null;
     }
 
     public Parent crearPantalla() {
@@ -139,8 +148,10 @@ public class ViewMisEventos {
         botonPublicar.setOnAction(evento -> ejecutarSeleccionado(publicar));
         botonCancelar.setOnAction(evento -> ejecutarSeleccionado(cancelar));
         botonFinalizar.setOnAction(evento -> ejecutarSeleccionado(finalizar));
+        botonFinanzas.setOnAction(evento -> ejecutarSeleccionado(abrirFinanzas));
 
-        HBox acciones = new HBox(10, botonEditar, botonPublicar, botonCancelar, botonFinalizar, botonServicios);
+        HBox acciones = new HBox(10, botonEditar, botonPublicar, botonCancelar, botonFinalizar,
+                botonServicios, botonFinanzas);
         acciones.setAlignment(Pos.CENTER_LEFT);
         VBox tarjeta = new VBox(14, eventos, detalle, acciones, mensaje);
         tarjeta.getStyleClass().add("card");
@@ -181,6 +192,7 @@ public class ViewMisEventos {
         mostrar(botonCancelar, cancelable);
         boolean confirmado=seleccionado!=null && "CONFIRMADO".equalsIgnoreCase(seleccionado.getEstado());
         mostrar(botonFinalizar, confirmado && seleccionado.getFechaFin().isBefore(LocalDateTime.now()));
+        mostrar(botonFinanzas, seleccionado != null && abrirFinanzas != null);
         mensaje.setText("");
         mensaje.setVisible(false);
         mensaje.setManaged(false);
