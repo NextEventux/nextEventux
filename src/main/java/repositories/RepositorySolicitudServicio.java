@@ -145,15 +145,31 @@ public class RepositorySolicitudServicio {
     }
 
     private BigDecimal comprometido(Connection c, int evento) throws SQLException {
+        return comprometidoSinNecesidad(c, evento, 0);
+    }
+
+    /**
+     * Mismo cálculo de presupuesto comprometido, sin contar la necesidad indicada.
+     * CU-13 lo usa para comprobar si una propuesta cabe en el presupuesto: al
+     * contratar, el costo estimado de las solicitudes de esa necesidad se sustituye
+     * por el valor acordado y las demás propuestas quedan "No seleccionada".
+     * Con idNecesidad = 0 no se excluye nada (regla de CU-01/CU-06).
+     */
+    BigDecimal comprometidoSinNecesidad(Connection c, int evento, int idNecesidad) throws SQLException {
         BigDecimal total=BigDecimal.ZERO;
         // Una contratación sustituye el compromiso de su solicitud: nunca se cuentan ambos.
-        String sql="SELECT c.valor_acordado FROM Contratacion c WHERE c.id_evento=? AND "+CONTRATO_ACTIVO
+        String sql="SELECT c.valor_acordado FROM Contratacion c "
+                + "LEFT JOIN Propuesta cp ON cp.id_propuesta=c.id_propuesta "
+                + "LEFT JOIN Solicitud_Ejecucion cs ON cs.id_solicitud=cp.id_solicitud "
+                + "WHERE c.id_evento=? AND "+CONTRATO_ACTIVO
+                + " AND (cs.id_necesidad_servicio IS NULL OR cs.id_necesidad_servicio<>?)"
                 + " UNION ALL SELECT s.costo_comprometido FROM Solicitud_Ejecucion s WHERE s.id_evento=? "
-                + "AND UPPER(s.estado) NOT IN ('RECHAZADA','CANCELADA','RETIRADA') AND NOT EXISTS "
+                + "AND UPPER(s.estado) NOT IN ('RECHAZADA','CANCELADA','RETIRADA','NO_SELECCIONADA') "
+                + "AND (s.id_necesidad_servicio IS NULL OR s.id_necesidad_servicio<>?) AND NOT EXISTS "
                 + "(SELECT 1 FROM Contratacion c JOIN Propuesta p ON p.id_propuesta=c.id_propuesta "
                 + "WHERE p.id_solicitud=s.id_solicitud AND c.id_evento=s.id_evento AND "+CONTRATO_ACTIVO+")";
         try(PreparedStatement s=c.prepareStatement(sql)) {
-            s.setInt(1,evento); s.setInt(2,evento);
+            s.setInt(1,evento); s.setInt(2,idNecesidad); s.setInt(3,evento); s.setInt(4,idNecesidad);
             try(ResultSet r=s.executeQuery()) {
                 while(r.next()) {
                     BigDecimal valor=r.getBigDecimal(1);
