@@ -38,6 +38,25 @@ class ReparacionMainTest {
         }
     }
 
+    @Test void cargaEjemplosAlAbrirSoloSiLaBaseEstaVaciaYConservaLosDatos() throws Exception {
+        String url=url();
+        try(Connection c=DatabaseConnection.getConnection(url)) {
+            assertTrue(CargarDatosEjemplo.cargarSiEstaVacia(c));
+            assertEquals(16,contar(c,"Usuario"));
+            try(Statement s=c.createStatement()) {
+                s.executeUpdate("UPDATE Usuario SET nombre='Cambiado' WHERE id_usuario=1");
+            }
+            assertFalse(CargarDatosEjemplo.cargarSiEstaVacia(c));
+        }
+        DatabaseConnection.reiniciarInicializacion();
+        try(Connection c=DatabaseConnection.getConnection(url);Statement s=c.createStatement();
+            ResultSet r=s.executeQuery("SELECT nombre FROM Usuario WHERE id_usuario=1")) {
+            assertFalse(CargarDatosEjemplo.cargarSiEstaVacia(c));
+            assertEquals(16,contar(c,"Usuario"));
+            assertTrue(r.next());assertEquals("Cambiado",r.getString(1));
+        }
+    }
+
     @Test void reconstruyeUnaBaseBorradaConLaMismaUrl() throws Exception {
         String url=url();
         try(Connection c=DatabaseConnection.getConnection(url);Statement s=c.createStatement()) {s.execute("DROP ALL OBJECTS");}
