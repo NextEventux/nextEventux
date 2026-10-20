@@ -41,6 +41,7 @@ public class ViewEventos {
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
     private final Runnable abrirMisEventos;
+    private final Runnable abrirPropuestas;
     private final TextField nombre = campo("nombre", "Ej. Festival NextEventux");
     private final ComboBox<String> tipo = new ComboBox<>();
     private final ComboBox<Organizador> organizador = new ComboBox<>();
@@ -57,8 +58,25 @@ public class ViewEventos {
     private final Label mensaje = new Label();
     private final NumberFormat formatoCOP = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
 
+    private java.util.function.Consumer<Evento> abrirSolicitudes;
+    private final Button solicitar = new Button("Servicios y presupuesto");
+    private Evento eventoCreado;
+
+    public ViewEventos conSolicitudes(java.util.function.Consumer<Evento> accion) {
+        abrirSolicitudes = accion;
+        return this;
+    }
+
     public ViewEventos(ControllerEventos controller) {
-        this(controller, null, null, null, null, null);
+        this(controller, null, null, null, null, null, null, null);
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirCatalogo,
+            Runnable cerrarSesion) {
+
+        this(controller, null, abrirCatalogo, null, cerrarSesion, null, null, null);
     }
 
     public ViewEventos(
@@ -69,7 +87,7 @@ public class ViewEventos {
             Runnable cerrarSesion,
             SesionUsuario sesion) {
 
-        this(controller, abrirEventos, abrirCatalogo, abrirInvitados, cerrarSesion, sesion, null);
+        this(controller, abrirEventos, abrirCatalogo, abrirInvitados, cerrarSesion, sesion, null, null);
     }
 
     public ViewEventos(
@@ -81,6 +99,20 @@ public class ViewEventos {
             SesionUsuario sesion,
             Runnable abrirMisEventos) {
 
+        this(controller, abrirEventos, abrirCatalogo, abrirInvitados,
+                cerrarSesion, sesion, abrirMisEventos, null);
+    }
+
+    public ViewEventos(
+            ControllerEventos controller,
+            Runnable abrirEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            SesionUsuario sesion,
+            Runnable abrirMisEventos,
+            Runnable abrirPropuestas) {
+
         this.controller = controller;
         this.abrirEventos = abrirEventos;
         this.abrirCatalogo = abrirCatalogo;
@@ -88,6 +120,7 @@ public class ViewEventos {
         this.cerrarSesion = cerrarSesion;
         this.sesion = sesion;
         this.abrirMisEventos = abrirMisEventos;
+        this.abrirPropuestas = abrirPropuestas;
 
         formatoCOP.setMaximumFractionDigits(2);
         organizador.setId("organizador");
@@ -168,7 +201,9 @@ public class ViewEventos {
             if (ancho != (GridPane.getColumnIndex(panel) == 1)) {
                 columnas.getChildren().clear();
                 columnas.getColumnConstraints().setAll(izquierda);
-                if (ancho) columnas.getColumnConstraints().add(derecha);
+                if (ancho) {
+                    columnas.getColumnConstraints().add(derecha);
+                }
                 columnas.add(formulario, 0, 0);
                 columnas.add(panel, ancho ? 1 : 0, ancho ? 0 : 1);
                 panel.setMaxWidth(Double.MAX_VALUE);
@@ -207,7 +242,9 @@ public class ViewEventos {
                 abrirCatalogo,
                 null,
                 cerrarSesion,
-                abrirMisEventos);
+                abrirMisEventos,
+                null,
+                abrirPropuestas);
     }
 
     private HBox crearBarraSuperior() {
@@ -247,6 +284,11 @@ public class ViewEventos {
         acciones.setAlignment(Pos.CENTER_RIGHT);
         tarjeta.getChildren().addAll(titulo, ayuda, datos, new Separator(),
                 etiqueta("Presupuesto y asistentes", "section-title"), recursos, mensaje, acciones);
+        solicitar.setId("serviciosEventoCreado");
+        solicitar.getStyleClass().add("btn-secondary");
+        solicitar.setDisable(eventoCreado == null || abrirSolicitudes == null);
+        solicitar.setOnAction(e -> abrirSolicitudes.accept(eventoCreado));
+        tarjeta.getChildren().add(solicitar);
         return tarjeta;
     }
 
@@ -268,10 +310,12 @@ public class ViewEventos {
 
     private void crearDesdeFormulario() {
         try {
-            if (organizador.getValue() == null)
+            if (organizador.getValue() == null) {
                 throw new IllegalArgumentException("Selecciona un organizador.");
-            if (fechaInicio.getValue() == null || fechaFin.getValue() == null)
+            }
+            if (fechaInicio.getValue() == null || fechaFin.getValue() == null) {
                 throw new IllegalArgumentException("Selecciona las fechas de inicio y fin.");
+            }
             LocalTime inicio = leerHora(horaInicio.getText(), "inicio");
             LocalTime fin = leerHora(horaFin.getText(), "fin");
             BigDecimal valor;
@@ -285,6 +329,8 @@ public class ViewEventos {
                     LocalDateTime.of(fechaFin.getValue(), fin), lugar.getText().trim(), valor,
                     leerEntero(invitados.getText(), "invitados iniciales"));
             controller.crearEvento(datos);
+            eventoCreado = datos;
+            solicitar.setDisable(abrirSolicitudes == null);
             mostrarMensaje("Evento creado correctamente. Número de evento: " + datos.getIdEvento() + ".", true);
         } catch (IllegalArgumentException | IllegalStateException e) {
             mostrarMensaje(e.getMessage(), false);
@@ -324,7 +370,11 @@ public class ViewEventos {
     }
 
     private void limpiarFormulario() {
-        for (TextField campo : new TextField[]{nombre, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) campo.clear();
+        eventoCreado = null;
+        solicitar.setDisable(true);
+        for (TextField campo : new TextField[]{nombre, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) {
+            campo.clear();
+        }
         if (sesion == null) organizador.getSelectionModel().clearSelection();
         tipo.getSelectionModel().clearSelection();
         fechaInicio.setValue(null);
@@ -375,7 +425,9 @@ public class ViewEventos {
 
     private VBox grupo(String titulo, javafx.scene.Node control, String ayuda) {
         VBox grupo = new VBox(9, etiqueta(titulo, "field-label"), control);
-        if (ayuda != null) grupo.getChildren().add(etiqueta(ayuda, "hint"));
+        if (ayuda != null) {
+            grupo.getChildren().add(etiqueta(ayuda, "hint"));
+        }
         return grupo;
     }
 

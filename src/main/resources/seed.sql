@@ -256,11 +256,11 @@ VALUES
 -- ---------------------------------------------------------
 
 INSERT INTO Solicitud_Ejecucion
-(id_solicitud, id_proveedor, id_evento, fecha_solicitud, estado)
+(id_solicitud, id_proveedor, id_evento, fecha_solicitud, estado, id_servicio)
 VALUES
-(1, 1, 1, TIMESTAMP '2026-10-08 10:00:00', 'RESPONDIDA'),
-(2, 2, 1, TIMESTAMP '2026-10-08 11:30:00', 'RESPONDIDA'),
-(3, 1, 2, TIMESTAMP '2026-10-09 09:00:00', 'PENDIENTE');
+(1, 1, 1, TIMESTAMP '2026-10-08 10:00:00', 'RESPONDIDA', 1),
+(2, 2, 1, TIMESTAMP '2026-10-08 11:30:00', 'RESPONDIDA', 3),
+(3, 1, 2, TIMESTAMP '2026-10-09 09:00:00', 'PENDIENTE', 2);
 
 
 -- ---------------------------------------------------------

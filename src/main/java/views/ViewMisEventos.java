@@ -36,6 +36,7 @@ public class ViewMisEventos {
     private final Consumer<Evento> publicar;
     private final Consumer<Evento> cancelar;
     private final Consumer<Evento> verFinanzas;
+    private final Consumer<Evento> finalizar;
     private final ListView<Evento> eventos = new ListView<>();
     private final Label detalle = new Label("Selecciona un evento para ver las acciones disponibles.");
     private final Label mensaje = new Label();
@@ -43,25 +44,22 @@ public class ViewMisEventos {
     private final Button botonPublicar = boton("Subir al repositorio", "publicarEvento");
     private final Button botonCancelar = boton("Cancelar", "cancelarEvento");
     private final Button botonFinanzas = boton("Ver finanzas", "verFinanzasEvento");
+    private final Button botonFinalizar = boton("Finalizar evento", "abrirFinalizacion");
 
-    public ViewMisEventos(
-            ControllerEventos controller,
-            SesionUsuario sesion,
-            Runnable abrirEventos,
-            Runnable abrirMisEventos,
-            Runnable abrirCatalogo,
-            Runnable abrirInvitados,
-            Runnable cerrarSesion,
-            Consumer<Evento> editar,
-            Consumer<Evento> publicar,
-            Consumer<Evento> cancelar) {
+    private Consumer<Evento> abrirSolicitudes;
+    private final Button botonServicios = boton("Servicios y presupuesto", "serviciosPresupuestoEvento");
+    private Consumer<Evento> abrirFinanzas;
 
-        // Delega en el constructor completo; sin la acción de finanzas el botón no se muestra.
-        this(controller, sesion, abrirEventos, abrirMisEventos, abrirCatalogo, abrirInvitados,
-                cerrarSesion, editar, publicar, cancelar, null);
+    public ViewMisEventos conSolicitudes(Consumer<Evento> accion) {
+        abrirSolicitudes = accion;
+        return this;
     }
 
-    // CU06: agrega la acción "Ver finanzas" para el evento seleccionado.
+    public ViewMisEventos conFinanzas(Consumer<Evento> accion) {
+        abrirFinanzas = accion;
+        return this;
+    }
+
     public ViewMisEventos(
             ControllerEventos controller,
             SesionUsuario sesion,
@@ -73,9 +71,8 @@ public class ViewMisEventos {
             Consumer<Evento> editar,
             Consumer<Evento> publicar,
             Consumer<Evento> cancelar,
-            Consumer<Evento> verFinanzas) {
+            Consumer<Evento> finalizar) {
 
-        this.verFinanzas = verFinanzas;
         this.controller = controller;
         this.sesion = sesion;
         this.abrirEventos = abrirEventos;
@@ -86,8 +83,9 @@ public class ViewMisEventos {
         this.editar = editar;
         this.publicar = publicar;
         this.cancelar = cancelar;
-    }    
-
+        this.finalizar = finalizar;
+        this.verFinanzas = null;
+    }
 
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
@@ -145,12 +143,15 @@ public class ViewMisEventos {
 
         detalle.setWrapText(true);
         mensaje.setWrapText(true);
+        botonServicios.setOnAction(e -> ejecutarSeleccionado(abrirSolicitudes));
         botonEditar.setOnAction(evento -> ejecutarSeleccionado(editar));
         botonPublicar.setOnAction(evento -> ejecutarSeleccionado(publicar));
         botonCancelar.setOnAction(evento -> ejecutarSeleccionado(cancelar));
-        botonFinanzas.setOnAction(evento -> ejecutarSeleccionado(verFinanzas));
+        botonFinalizar.setOnAction(evento -> ejecutarSeleccionado(finalizar));
+        botonFinanzas.setOnAction(evento -> ejecutarSeleccionado(abrirFinanzas));
 
-        HBox acciones = new HBox(10, botonEditar, botonPublicar, botonCancelar, botonFinanzas);
+        HBox acciones = new HBox(10, botonEditar, botonPublicar, botonCancelar, botonFinalizar,
+                botonServicios, botonFinanzas);
         acciones.setAlignment(Pos.CENTER_LEFT);
         VBox tarjeta = new VBox(14, eventos, detalle, acciones, mensaje);
         tarjeta.getStyleClass().add("card");
@@ -169,7 +170,7 @@ public class ViewMisEventos {
         raiz.setCenter(principal);
 
         try {
-            eventos.getItems().setAll(controller.listarEventos(sesion.getIdActor()));
+            eventos.getItems().setAll(controller.listarMisEventos());
         } catch (IllegalStateException e) {
             mostrarMensaje(e.getMessage());
         }
@@ -185,10 +186,13 @@ public class ViewMisEventos {
                 && !"CANCELADO".equalsIgnoreCase(seleccionado.getEstado())
                 && !finalizado;
 
+        mostrar(botonServicios, seleccionado != null && abrirSolicitudes != null);
         mostrar(botonEditar, planeado);
         mostrar(botonPublicar, finalizado);
         mostrar(botonCancelar, cancelable);
-        mostrar(botonFinanzas, seleccionado != null && verFinanzas != null);
+        boolean confirmado=seleccionado!=null && "CONFIRMADO".equalsIgnoreCase(seleccionado.getEstado());
+        mostrar(botonFinalizar, confirmado && seleccionado.getFechaFin().isBefore(LocalDateTime.now()));
+        mostrar(botonFinanzas, seleccionado != null && abrirFinanzas != null);
         mensaje.setText("");
         mensaje.setVisible(false);
         mensaje.setManaged(false);
@@ -200,11 +204,21 @@ public class ViewMisEventos {
 
         detalle.setText(seleccionado.getNombre() + "\n"
                 + "Estado: " + mostrarEstado(seleccionado.getEstado()) + "\n"
-                + "Fecha de fin: " + seleccionado.getFechaFin());
+                + "Fecha de fin: " + seleccionado.getFechaFin().format(FECHA));
 
-        if ("CONFIRMADO".equalsIgnoreCase(seleccionado.getEstado())
-                && !seleccionado.getFechaFin().isAfter(LocalDateTime.now())) {
-            mostrarAviso("Este evento cumple la condición indicada para finalizarlo, pero esa operación aún no está implementada.");
+        if(confirmado) {
+            try {
+                boolean pendiente=controller.galeriaPendiente(seleccionado.getIdEvento());
+                botonFinalizar.setText(pendiente ? "Reintentar envío de galería" : "Finalizar evento");
+                if(pendiente) {
+                    mostrar(botonCancelar,false);
+                    mostrarAviso("Las reservas ya están liberadas y las fotos guardadas. Reintenta el envío de la galería.");
+                } else if(!seleccionado.getFechaFin().isBefore(LocalDateTime.now())) {
+                    mostrarAviso("Podrás finalizar el evento después del "+seleccionado.getFechaFin().format(FECHA)+".");
+                }
+            } catch(IllegalStateException e) {
+                mostrar(botonFinalizar,false); mostrar(botonCancelar,false); mostrarMensaje(e.getMessage());
+            }
         }
     }
 
