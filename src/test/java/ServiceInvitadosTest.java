@@ -237,6 +237,21 @@ class ServiceInvitadosTest {
     }
 
     @Test
+    void losRechazosLiberanElConteoPorInvitacionYPermitenMoverAUnLugarMenor() throws Exception {
+        int id = crear(EVENTO, GRANDE).getIdInvitacion();
+        service.agregarInvitado(id, new Invitado("Ana", "ana@correo.com", "300 123 4567", null));
+        int idAna = invitados.listarInvitados(id).get(0).getIdInvitado();
+        DatosInvitacionesPrueba.agregarAcompanante(url, idAna);
+        assertEquals(2, service.contarAsistentesPorInvitacion(EVENTO).getOrDefault(id, 0));
+
+        service.gestionarRespuestaInvitacion(idAna, "ana@correo.com", "300 123 4567", Invitado.ESTADO_RECHAZADO);
+        assertEquals(0, service.contarAsistentesPorInvitacion(EVENTO).getOrDefault(id, 0));
+
+        service.actualizarInvitacion(id, invitacion(PEQUENO, "Te invitamos"));
+        assertEquals(PEQUENO, invitaciones.buscarInvitacion(id).getIdLugar());
+    }
+
+    @Test
     void quitaInvitadoSoloSiNoTieneRegistrosAsociados() throws Exception {
         int id = crear(EVENTO, GRANDE).getIdInvitacion();
         service.agregarInvitado(id, invitado("Ana", "ana@correo.com"));

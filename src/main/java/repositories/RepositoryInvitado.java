@@ -168,13 +168,13 @@ public class RepositoryInvitado {
         }
     }
 
-    /** Asistentes (invitados + acompañantes) de cada invitación de un evento. */
+    /** Asistentes (invitados + acompañantes) de cada invitación activa, sin contar a quienes rechazaron. */
     public Map<Integer, Integer> contarAsistentesPorInvitacion(int idEvento) {
-        String invitados = "SELECT v.id_invitacion, COUNT(*) FROM Invitado v "
-                + "JOIN Invitacion i ON i.id_invitacion = v.id_invitacion WHERE i.id_evento = ? GROUP BY v.id_invitacion";
+        String filtro = "JOIN Invitacion i ON i.id_invitacion = v.id_invitacion "
+                + "WHERE i.id_evento = ? AND " + INVITACION_ACTIVA + " AND " + INVITADO_ASISTE + " GROUP BY v.id_invitacion";
+        String invitados = "SELECT v.id_invitacion, COUNT(*) FROM Invitado v " + filtro;
         String acompanantes = "SELECT v.id_invitacion, COUNT(*) FROM Acompanante a "
-                + "JOIN Invitado v ON v.id_invitado = a.id_invitado "
-                + "JOIN Invitacion i ON i.id_invitacion = v.id_invitacion WHERE i.id_evento = ? GROUP BY v.id_invitacion";
+                + "JOIN Invitado v ON v.id_invitado = a.id_invitado " + filtro;
         Map<Integer, Integer> conteo = new HashMap<>();
         try (Connection connection = conectar()) {
             for (String sql : new String[]{invitados, acompanantes}) {
