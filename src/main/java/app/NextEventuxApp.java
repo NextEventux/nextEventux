@@ -42,6 +42,12 @@ import views.ViewPropuestasOrganizador;
 import views.ViewSolicitudesProveedor;
 import views.ViewMisEventos;
 import views.ViewCancelacion;
+import views.ViewFinalizacion;
+import views.ViewRespuestaInvitacion;
+import views.ViewAvisosProveedor;
+import services.ServiceAvisosProveedor;
+import repositories.RepositoryAvisosProveedor;
+import javafx.scene.control.Button;
 
 public class NextEventuxApp extends Application {
 
@@ -117,7 +123,7 @@ public class NextEventuxApp extends Application {
         contenedor.setCenter(
                 new ViewLogin(
                         controllerAutenticacion,
-                        this::procesarSesion)
+                        this::procesarSesion, this::mostrarConsultaInvitado)
                         .crearPantalla());
     }
 
@@ -214,7 +220,7 @@ public class NextEventuxApp extends Application {
                                 this::mostrarLogin,
                                 sesionActual,
                                 this::mostrarMisEventos,
-                                this::mostrarPropuestasOrganizador).crearPantalla())
+                                this::mostrarPropuestasOrganizador).conSolicitudes(this::mostrarSolicitudesEvento).crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.INVITADOS,
                         () -> new ViewInvitados(
@@ -255,8 +261,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarLogin,
                                 this::mostrarEdicion,
                                 this::mostrarPublicacion,
-                                this::mostrarCancelacion)
-                                .crearPantalla())
+                                this::mostrarCancelacion,
+                                this::mostrarFinalizacion)
+                                .conSolicitudes(this::mostrarSolicitudesEvento).crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.EDICION_EVENTO,
                         () -> new ViewEdicion(
@@ -274,7 +281,6 @@ public class NextEventuxApp extends Application {
                         () -> new ViewCancelacion(
                                 controllerEventos,
                                 this::mostrarMisEventos,
-                                sesionActual.getIdActor(),
                                 eventoSeleccionado,
                                 sesionActual,
                                 this::mostrarEventos,
@@ -282,6 +288,12 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin).crearPantalla())
+                .registrarDinamica(
+                        Navegacion.Pantalla.FINALIZACION_EVENTO,
+                        () -> new ViewFinalizacion(controllerEventos, this::mostrarMisEventos,
+                                null, eventoSeleccionado, sesionActual, this::mostrarEventos,
+                                this::mostrarMisEventos, this::mostrarCatalogoServicios,
+                                this::mostrarInvitados, this::mostrarLogin).crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.PUBLICACION_EVENTOS,
                         () -> new ViewPublicacion(
@@ -294,6 +306,27 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin).crearPantalla());
+    }
+
+    private void mostrarConsultaInvitado() {
+        Button volver=new Button("← Iniciar sesión");
+        volver.getStyleClass().add("btn-secondary"); volver.setOnAction(e->mostrarLogin());
+        // La pantalla pública no utiliza las rutas de una sesión autenticada.
+        BorderPane invitaciones=new BorderPane(new ViewRespuestaInvitacion(
+                new ControllerInvitados(new ServiceInvitados())).crearPantalla());
+        invitaciones.setTop(volver); contenedor.setCenter(invitaciones);
+        stage.setTitle("NextEventux | Mis invitaciones y avisos");
+    }
+
+    private void mostrarFinalizacion(Evento evento) {
+        if(!esOrganizador()) { mostrarLogin(); return; }
+        eventoSeleccionado=evento.getIdEvento();
+        navegacion.ir(Navegacion.Pantalla.FINALIZACION_EVENTO);
+    }
+
+    private void mostrarSolicitudesEvento(Evento evento) {
+        if (!esOrganizador()) { mostrarLogin(); return; }
+        new views.ViewSolicitudesEvento(controllerEventos, evento).mostrar(stage);
     }
 
     private void mostrarMisEventos() {
@@ -321,7 +354,7 @@ public class NextEventuxApp extends Application {
             return;
         }
         eventoSeleccionado = null;
-        navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
+        navegacion.mostrarEn(contenedor, Navegacion.Pantalla.PUBLICACION_EVENTOS);
     }
 
     private void mostrarPublicacion(Evento evento) {
@@ -464,8 +497,13 @@ public class NextEventuxApp extends Application {
                                 this::mostrarDetalleServicioProveedor,
                                 () -> mostrarDetalleServicioProveedor(null),
                                 this::mostrarProveedores,
-                                this::mostrarSolicitudesProveedor)
+                                this::mostrarSolicitudesProveedor,
+                                this::mostrarAvisosProveedor)
                                 .crearPantalla())
+                .registrarDinamica(
+                        Navegacion.Pantalla.AVISOS_PROVEEDOR,
+                        () -> new ViewAvisosProveedor(new ServiceAvisosProveedor(new RepositoryAvisosProveedor()),
+                                sesionActual,this::mostrarProveedores,this::mostrarLogin).crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.DETALLE_SERVICIO_PROVEEDOR,
                         this::crearVistaDetalleServicioProveedor)
@@ -494,6 +532,13 @@ public class NextEventuxApp extends Application {
         servicioProveedorSeleccionado = idServicio;
         navegacion.ir(
                 Navegacion.Pantalla.DETALLE_SERVICIO_PROVEEDOR);
+    }
+
+    private void mostrarAvisosProveedor() {
+        if(sesionActual==null || !"PROVEEDOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin(); return;
+        }
+        navegacion.ir(Navegacion.Pantalla.AVISOS_PROVEEDOR);
     }
 
     private javafx.scene.Parent crearVistaDetalleServicioProveedor() {

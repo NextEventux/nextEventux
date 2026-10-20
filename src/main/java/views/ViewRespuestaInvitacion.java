@@ -13,6 +13,8 @@ import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import views.components.MenuCompartido;
@@ -64,6 +66,8 @@ public final class ViewRespuestaInvitacion {
     private final ProgressBar barraCupos = new ProgressBar(0);
 
     private InvitacionRecibida seleccionada;
+    private final ListView<String> avisos = new ListView<>();
+    private final FlowPane galeria = new FlowPane(16,16);
 
     public ViewRespuestaInvitacion(ControllerInvitados controller) {
         this.controller = controller;
@@ -138,7 +142,12 @@ public final class ViewRespuestaInvitacion {
         ColumnConstraints derecha = new ColumnConstraints(ANCHO_PANEL);
         GridPane.setValignment(detalle, VPos.TOP);
 
-        contenido.getChildren().addAll(titulo, mensaje, crearTarjetaBusqueda(), columnas);
+        avisos.setId("avisosInvitado"); avisos.setPrefHeight(150);
+        avisos.setPlaceholder(new Label("No hay avisos para el correo consultado."));
+        galeria.setId("galeriaInvitado");
+        contenido.getChildren().addAll(titulo, mensaje, crearTarjetaBusqueda(),
+                etiqueta("Avisos de tus eventos", "section-title"), avisos,
+                etiqueta("Fotografías compartidas contigo", "section-title"), galeria, columnas);
 
         StackPane centrado = new StackPane(contenido);
         centrado.setAlignment(Pos.TOP_CENTER);
@@ -361,6 +370,8 @@ public final class ViewRespuestaInvitacion {
     }
 
     private void consultar(int idInvitadoSeleccionar) {
+        avisos.getItems().clear();
+        galeria.getChildren().clear();
         String texto = correo.getText() == null ? "" : correo.getText().trim();
         String tel = telefono.getText() == null ? "" : telefono.getText().trim();
         if (texto.isEmpty() || tel.isEmpty()) {
@@ -370,6 +381,21 @@ public final class ViewRespuestaInvitacion {
         correoVerificado = null;
         telefonoVerificado = null;
         try {
+            for (entities.Fotografia foto:controller.consultarGaleria(texto,tel)) {
+                Image imagen=new Image(new java.io.ByteArrayInputStream(foto.contenido()));
+                ImageView miniatura=new ImageView(imagen); miniatura.setFitWidth(180); miniatura.setFitHeight(120); miniatura.setPreserveRatio(true);
+                Button abrir=new Button("Ver fotografía",miniatura); abrir.setContentDisplay(ContentDisplay.TOP);
+                abrir.setOnAction(e-> {
+                    ImageView completa=new ImageView(imagen); completa.setFitWidth(720); completa.setFitHeight(480); completa.setPreserveRatio(true);
+                    Dialog<Void> dialogo=new Dialog<>(); dialogo.initOwner(correo.getScene().getWindow());
+                    dialogo.setTitle(foto.nombre()); dialogo.getDialogPane().setContent(completa);
+                    dialogo.getDialogPane().getButtonTypes().add(ButtonType.CLOSE); dialogo.show();
+                });
+                Label nombre=new Label(foto.nombre()); nombre.setMaxWidth(200); nombre.setWrapText(true);
+                galeria.getChildren().add(new VBox(8,abrir,nombre));
+            }
+            if(galeria.getChildren().isEmpty()) galeria.getChildren().add(new Label("Todavía no tienes fotografías compartidas."));
+            avisos.getItems().setAll(controller.consultarAvisosPorCorreo(texto));
             encontradas = controller.consultarInvitacionesPorCorreo(texto, tel);
         } catch (IllegalArgumentException | IllegalStateException e) {
             encontradas = List.of();
