@@ -58,6 +58,15 @@ public class ViewEventos {
     private final Label mensaje = new Label();
     private final NumberFormat formatoCOP = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
 
+    private java.util.function.Consumer<Evento> abrirSolicitudes;
+    private final Button solicitar = new Button("Servicios y presupuesto");
+    private Evento eventoCreado;
+
+    public ViewEventos conSolicitudes(java.util.function.Consumer<Evento> accion) {
+        abrirSolicitudes = accion;
+        return this;
+    }
+
     public ViewEventos(ControllerEventos controller) {
         this(controller, null, null, null, null, null, null, null);
     }
@@ -275,6 +284,11 @@ public class ViewEventos {
         acciones.setAlignment(Pos.CENTER_RIGHT);
         tarjeta.getChildren().addAll(titulo, ayuda, datos, new Separator(),
                 etiqueta("Presupuesto y asistentes", "section-title"), recursos, mensaje, acciones);
+        solicitar.setId("serviciosEventoCreado");
+        solicitar.getStyleClass().add("btn-secondary");
+        solicitar.setDisable(eventoCreado == null || abrirSolicitudes == null);
+        solicitar.setOnAction(e -> abrirSolicitudes.accept(eventoCreado));
+        tarjeta.getChildren().add(solicitar);
         return tarjeta;
     }
 
@@ -315,6 +329,8 @@ public class ViewEventos {
                     LocalDateTime.of(fechaFin.getValue(), fin), lugar.getText().trim(), valor,
                     leerEntero(invitados.getText(), "invitados iniciales"));
             controller.crearEvento(datos);
+            eventoCreado = datos;
+            solicitar.setDisable(abrirSolicitudes == null);
             mostrarMensaje("Evento creado correctamente. Número de evento: " + datos.getIdEvento() + ".", true);
         } catch (IllegalArgumentException | IllegalStateException e) {
             mostrarMensaje(e.getMessage(), false);
@@ -354,6 +370,8 @@ public class ViewEventos {
     }
 
     private void limpiarFormulario() {
+        eventoCreado = null;
+        solicitar.setDisable(true);
         for (TextField campo : new TextField[]{nombre, horaInicio, horaFin, lugar, descripcion, presupuesto, invitados}) {
             campo.clear();
         }
