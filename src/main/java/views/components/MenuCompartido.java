@@ -28,7 +28,8 @@ public final class MenuCompartido {
         MIS_INVITACIONES,
         MESA_REGALOS,
         SOLICITUDES_PROVEEDOR,
-        PROPUESTAS_ORGANIZADOR
+        PROPUESTAS_ORGANIZADOR,
+        SANCIONES_PROVEEDOR
     }
 
     private MenuCompartido() {
@@ -87,6 +88,23 @@ public final class MenuCompartido {
             Runnable abrirMisEventos,
             Runnable abrirSolicitudes,
             Runnable abrirPropuestas) {
+        return crear(sesion, paginaActiva, abrirEventos, abrirInvitados, abrirCatalogo,
+                abrirServicios, cerrarSesion, abrirMisEventos, abrirSolicitudes, abrirPropuestas, null);
+    }
+
+    /** Igual que el anterior; agrega la opción de sanciones (solo administrador). */
+    public static VBox crear(
+            SesionUsuario sesion,
+            Pagina paginaActiva,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirServicios,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos,
+            Runnable abrirSolicitudes,
+            Runnable abrirPropuestas,
+            Runnable abrirSanciones) {
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
@@ -135,6 +153,12 @@ public final class MenuCompartido {
             agregarOpcion(menu, "✉  Propuestas recibidas",
                     paginaActiva == Pagina.PROPUESTAS_ORGANIZADOR,
                     abrirPropuestas);
+        }
+
+        if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
+            agregarOpcion(menu, "⚖  Sanciones a proveedores",
+                    paginaActiva == Pagina.SANCIONES_PROVEEDOR,
+                    abrirSanciones);
         }
 
         Region espacio = new Region();
