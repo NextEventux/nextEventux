@@ -293,10 +293,10 @@ VALUES
 INSERT INTO Movimiento_financiero
 (id_movimiento, id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado)
 VALUES
-(1, 1, 1, 1, 900000.00, TIMESTAMP '2026-10-11 09:00:00', 'Anticipo de decoración', 'INGRESO', 'REGISTRADO'),
-(2, 1, 1, 1, 900000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de decoración', 'INGRESO', 'PENDIENTE'),
-(3, 2, 1, 2, 1100000.00, TIMESTAMP '2026-10-12 10:00:00', 'Anticipo de catering', 'INGRESO', 'REGISTRADO'),
-(4, 2, 1, 2, 1100000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de catering', 'INGRESO', 'PENDIENTE');
+(1, 1, 1, 1, 900000.00, TIMESTAMP '2026-10-11 09:00:00', 'Anticipo de decoración', 'EGRESO', 'REGISTRADO'),
+(2, 1, 1, 1, 900000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de decoración', 'EGRESO', 'PENDIENTE'),
+(3, 2, 1, 2, 1100000.00, TIMESTAMP '2026-10-12 10:00:00', 'Anticipo de catering', 'EGRESO', 'REGISTRADO'),
+(4, 2, 1, 2, 1100000.00, TIMESTAMP '2026-11-15 23:30:00', 'Pago final de catering', 'EGRESO', 'PENDIENTE');
 
 
 -- ---------------------------------------------------------
