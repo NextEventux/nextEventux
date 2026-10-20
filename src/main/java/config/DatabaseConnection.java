@@ -3,10 +3,7 @@ package config;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-<<<<<<< HEAD
-=======
 import java.nio.file.Path;
->>>>>>> 03f5d12 (fix(database): ruta absoluta de BD)
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -15,15 +12,6 @@ import org.h2.tools.RunScript;
 
 public class DatabaseConnection {
 
-<<<<<<< HEAD
-    private static final String URL = "jdbc:h2:./data/nexteventux";
-    private static final String USER = "sa";
-    private static final String PASSWORD = "";
-
-    public static Connection getConnection() throws SQLException {
-        return getConnection(
-                System.getProperty("nexteventux.db.url", URL));
-=======
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 
@@ -39,25 +27,19 @@ public class DatabaseConnection {
                 ? Path.of(System.getProperty("user.home"), ".nexteventux")
                 : Path.of(carpeta);
         String archivo = base.toAbsolutePath().resolve("nexteventux").toString().replace('\\', '/');
-        // DB_CLOSE_DELAY=-1 mantiene la base abierta mientras la aplicación se ejecuta:
-        // abrir el archivo H2 en cada consulta costaba ~185 ms (RNF-07 y RNF-08).
+        // La base permanece abierta durante la ejecución para evitar reabrir el archivo.
         return "jdbc:h2:" + archivo + ";DB_CLOSE_DELAY=-1";
     }
 
     public static Connection getConnection() throws SQLException {
         return getConnection(
                 System.getProperty("nexteventux.db.url", urlPorDefecto()));
->>>>>>> 03f5d12 (fix(database): ruta absoluta de BD)
     }
 
     public static Connection getConnection(String url) throws SQLException {
         Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
         try {
-<<<<<<< HEAD
-            inicializarEsquema(connection);
-=======
             inicializarSiHaceFalta(url, connection);
->>>>>>> 03f5d12 (fix(database): ruta absoluta de BD)
             return connection;
         } catch (SQLException | RuntimeException e) {
             try {
@@ -69,12 +51,7 @@ public class DatabaseConnection {
         }
     }
 
-<<<<<<< HEAD
-    public static void inicializarEsquema(Connection connection) throws SQLException {
-        ejecutarScript(connection, "/schema.sql");
-=======
-    // Bases ya inicializadas durante esta ejecución. Volver a correr todos los
-    // scripts en cada conexión costaba ~200 ms por consulta (RNF-07 y RNF-08).
+    // Se evita repetir el esquema en cada consulta a una base ya inicializada.
     private static final java.util.Set<String> INICIALIZADAS =
             java.util.concurrent.ConcurrentHashMap.newKeySet();
 
@@ -90,6 +67,7 @@ public class DatabaseConnection {
             throws SQLException {
         // La tabla centinela detecta bases recreadas con la misma URL (por ejemplo, en memoria).
         if (INICIALIZADAS.contains(url) && existeTabla(connection, "ESQUEMA_INICIALIZADO")) {
+            actualizarContadorEventos(connection);
             return;
         }
         inicializarEsquema(connection);
@@ -106,33 +84,14 @@ public class DatabaseConnection {
                     + "nombre VARCHAR(150) PRIMARY KEY, "
                     + "aplicada TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)");
         }
-        // Migraciones 001 a 009: repetibles, se ejecutan en cada inicialización.
->>>>>>> 03f5d12 (fix(database): ruta absoluta de BD)
+        // Solo se ejecutan las migraciones presentes en esta versión del proyecto.
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
         ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
         ejecutarScript(connection, "/migrations/003_proveedores_cu11_publicacion.sql");
         ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
         ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
         ejecutarScript(connection, "/migrations/004_proveedores_cu12.sql");
-<<<<<<< HEAD
-        actualizarContadorEventos(connection);
-    }
-
-=======
-        ejecutarScript(connection, "/migrations/005_proveedor_cu28.sql");
-        ejecutarScript(connection, "/migrations/006_cu28_documentos_notificaciones.sql");
-        ejecutarScript(connection, "/migrations/007_destinatario_notificacion_cu28.sql");
-        ejecutarScript(connection, "/migrations/008_finalizacion_eventos.sql");
-        ejecutarScript(connection, "/migrations/009_solicitudes_evento.sql");
-        ejecutarScript(connection, "/migrations/002_marketing_cu21.sql");
-        ejecutarScript(connection, "/migrations/004_cu26_contratar_organizador.sql");
-        // CU-030: su migración inserta la configuración de evaluación; se ejecuta
-        // solo mientras el esquema del caso de uso no esté completo.
-        if (!esquemaCu30Instalado(connection)) {
-            ejecutarScript(connection, "/migrations/004_cu30_verificar_categorizar_organizador.sql");
-        }
-        // Migraciones 010 en adelante: se ejecutan una sola vez y quedan en Esquema_version.
-        // Cada una usa el número reservado en docs/hoja-de-ruta-correcciones.md.
+        // La restricción de unicidad se valida y registra sin modificar datos repetidos.
         ejecutarUnaVez(connection, "010_organizador_usuario_unico.sql",
                 c -> verificarSinDuplicados(c, "Organizador", "id_usuario"));
         actualizarContadorEventos(connection);
@@ -201,17 +160,6 @@ public class DatabaseConnection {
         }
     }
 
-    private static boolean esquemaCu30Instalado(Connection connection) throws SQLException {
-        return existeTabla(connection, "CONFIGURACION_EVALUACION_ORGANIZADOR")
-                && existeTabla(connection, "DOCUMENTO_ORGANIZADOR")
-                && existeTabla(connection, "EVALUACION_ORGANIZADOR")
-                && existeTabla(connection, "MENSAJE_ORGANIZADOR")
-                && existeTabla(connection, "BITACORA_ORGANIZADOR")
-                && existeColumna(connection, "ORGANIZADOR", "ESTADO_VERIFICACION")
-                && existeColumna(connection, "ORGANIZADOR", "VERSION_DATOS")
-                && existeColumna(connection, "USUARIO", "DOCUMENTO_IDENTIDAD");
-    }
-
     private static boolean existeTabla(Connection connection, String tabla) throws SQLException {
         try (java.sql.PreparedStatement statement = connection.prepareStatement(
                 "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?")) {
@@ -222,19 +170,6 @@ public class DatabaseConnection {
         }
     }
 
-    private static boolean existeColumna(Connection connection, String tabla, String columna) throws SQLException {
-        try (java.sql.PreparedStatement statement = connection.prepareStatement(
-                "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' "
-                + "AND TABLE_NAME = ? AND COLUMN_NAME = ?")) {
-            statement.setString(1, tabla);
-            statement.setString(2, columna);
-            try (java.sql.ResultSet result = statement.executeQuery()) {
-                return result.next();
-            }
-        }
-    }
-
->>>>>>> 03f5d12 (fix(database): ruta absoluta de BD)
     // Los ejemplos antiguos usaban IDs explícitos sin avanzar la secuencia H2.
     private static void actualizarContadorEventos(Connection connection) throws SQLException {
         try (java.sql.Statement statement = connection.createStatement(); java.sql.ResultSet result = statement.executeQuery(
