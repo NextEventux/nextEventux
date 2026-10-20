@@ -1,22 +1,23 @@
 package config;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 import org.h2.tools.RunScript;
 
-public class DatabaseConnection
-{
+public class DatabaseConnection {
+
     private static final String URL = "jdbc:h2:./data/nexteventux";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 
-    public static Connection getConnection() throws SQLException
-    {
-        return getConnection(URL);
+    public static Connection getConnection() throws SQLException {
+        return getConnection(
+                System.getProperty("nexteventux.db.url", URL));
     }
 
     public static Connection getConnection(String url) throws SQLException {
@@ -37,17 +38,20 @@ public class DatabaseConnection
     public static void inicializarEsquema(Connection connection) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
         ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
-        ejecutarScript(connection, "/migrations/002_marketing_cu21.sql");
+        ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
+        ejecutarScript(connection, "/migrations/003_proveedores_cu11_publicacion.sql");
+        ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
+        ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
+        ejecutarScript(connection, "/migrations/004_proveedores_cu12.sql");
         actualizarContadorEventos(connection);
     }
 
     // Los ejemplos antiguos usaban IDs explícitos sin avanzar la secuencia H2.
     private static void actualizarContadorEventos(Connection connection) throws SQLException {
-        try (java.sql.Statement statement = connection.createStatement();
-             java.sql.ResultSet result = statement.executeQuery(
-                     "SELECT IDENTITY_BASE, (SELECT COALESCE(MAX(id_evento), 0) FROM Evento) "
-                     + "FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' "
-                     + "AND TABLE_NAME = 'EVENTO' AND COLUMN_NAME = 'ID_EVENTO'")) {
+        try (java.sql.Statement statement = connection.createStatement(); java.sql.ResultSet result = statement.executeQuery(
+                "SELECT IDENTITY_BASE, (SELECT COALESCE(MAX(id_evento), 0) FROM Evento) "
+                + "FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' "
+                + "AND TABLE_NAME = 'EVENTO' AND COLUMN_NAME = 'ID_EVENTO'")) {
             if (result.next()) {
                 long siguiente = result.getLong(1);
                 long maximo = result.getLong(2);
