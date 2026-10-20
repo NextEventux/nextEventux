@@ -18,6 +18,7 @@ public class ViewPublicacion {
     private final Runnable abrirCatalogo;
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private final Runnable abrirSanciones;
     private boolean esAdministrador;
     private final Label usuario = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
@@ -34,7 +35,7 @@ public class ViewPublicacion {
     }
 
     public ViewPublicacion(ControllerPublicacion controller, Runnable volver, Integer eventoInicial) {
-        this(controller, volver, eventoInicial, null, null, null, null, null, null);
+        this(controller, volver, eventoInicial, null, null, null, null, null, null, null);
     }
 
     public ViewPublicacion(
@@ -46,7 +47,8 @@ public class ViewPublicacion {
             Runnable abrirMisEventos,
             Runnable abrirCatalogo,
             Runnable abrirInvitados,
-            Runnable cerrarSesion) {
+            Runnable cerrarSesion,
+            Runnable abrirSanciones) {
 
         this.controller = controller;
         this.volver = volver;
@@ -57,6 +59,7 @@ public class ViewPublicacion {
         this.abrirCatalogo = abrirCatalogo;
         this.abrirInvitados = abrirInvitados;
         this.cerrarSesion = cerrarSesion;
+        this.abrirSanciones = abrirSanciones;
         usuario.setId("usuarioPublicacion");
         configurarCombo(evento, "eventoPublicacion", "Seleccionar evento", e -> e.getNombre() + " — " + estado(e.getEstado()));
         pendientes.setId("solicitudesPendientes");
@@ -93,7 +96,10 @@ public class ViewPublicacion {
                 organizadorActivo ? abrirCatalogo : null,
                 null,
                 cerrarSesion,
-                organizadorActivo ? abrirMisEventos : null));
+                organizadorActivo ? abrirMisEventos : null,
+                null,
+                null,
+                abrirSanciones));
         Button actualizar = boton("Actualizar", "actualizarPublicacion", this::actualizar, false);
         VBox contenido = new VBox(22);
         contenido.getStyleClass().add("content");
