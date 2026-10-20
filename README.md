@@ -659,3 +659,11 @@ y pulsando **Finalizar evento**. Si quedó una entrega pendiente, aparece
 seleccionado y el cierre de sesión. El formulario de reseñas depende de CU14 y no
 se implementa en esta rama. Las decisiones, dependencias y evidencias están en
 [la documentación de CU05](docs/cu05-finalizar-evento.md).
+
+### Ruta estable de H2
+
+La base por defecto se guarda en `~/.nexteventux/nexteventux.mv.db`.
+Puede cambiarse la carpeta con `-Dnexteventux.home=/ruta/absoluta` o la URL completa
+con `-Dnexteventux.db.url=...`. Las bases existentes en `data/` no se copian,
+modifican ni eliminan automáticamente. Para usarlas, indique su carpeta mediante
+`nexteventux.home` o su URL mediante `nexteventux.db.url`.
