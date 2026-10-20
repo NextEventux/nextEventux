@@ -36,7 +36,7 @@ public class ViewMarketing {
     private final Label resumenSegmentos = new Label("0");
     private final Label resumenClientes = new Label("0");
     private final Label mensaje = new Label();
-    
+
     public ViewMarketing(ControllerMarketing controller, int idAdministrador) {
         this(controller, idAdministrador, null, null, null);
     }
@@ -128,7 +128,7 @@ public class ViewMarketing {
         }
         return columna;
     }
-    
+
     private VBox crearTarjetaSegmentos() {
         VBox tarjeta = new VBox(22);
         tarjeta.getStyleClass().add("card");
@@ -307,5 +307,3 @@ public class ViewMarketing {
         return fila;
     }
 }
-
-    

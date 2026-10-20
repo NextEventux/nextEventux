@@ -32,7 +32,7 @@ public class ServiceMarketing {
     public List<Segmentacion> listarSegmentosActivos() {
         return repositorio.listarSegmentosActivos();
     }
-    
+
     public List<Segmentacion> segmentarClientes(int idAdministrador) {
         return segmentarClientes(idAdministrador, LocalDate.now());
     }

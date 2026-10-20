@@ -5,7 +5,7 @@ import entities.ClienteMarketing;
 import entities.SolicitudEvento;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;  
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import entities.Segmentacion;
 import java.sql.Statement;

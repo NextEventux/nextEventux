@@ -16,7 +16,7 @@ import repositories.RepositoryMarketing;
 import services.ServiceMarketing;
 import views.ViewMarketing;
 
-// Demostración de la pantalla de segmentos con una base propia y datos de ejemplo. 
+// Demostración de la pantalla de segmentos con una base propia y datos de ejemplo.
 public class MarketingDemoApp extends Application {
     private static final String URL_BASE_DEMO = "jdbc:h2:./data/marketing-demo";
     // El seed crea al administrador con este identificador.
@@ -31,7 +31,7 @@ public class MarketingDemoApp extends Application {
         prepararBaseDemo();
         ControllerMarketing controller = new ControllerMarketing(
                 new ServiceMarketing(new RepositoryMarketing(URL_BASE_DEMO)));
-        
+
         Rectangle2D areaVisible = Screen.getPrimary().getVisualBounds();
         double ancho = Math.min(ANCHO_VENTANA, areaVisible.getWidth() * PROPORCION_PANTALLA);
         double alto = Math.min(ALTO_VENTANA, areaVisible.getHeight() * PROPORCION_PANTALLA);
