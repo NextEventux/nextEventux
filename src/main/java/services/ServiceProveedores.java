@@ -53,6 +53,10 @@ public class ServiceProveedores {
                     "Los datos del servicio son obligatorios.");
         }
 
+        // El precio y las condiciones se reutilizan al contratar (CU-13),
+        // por eso se exigen validos desde el primer guardado.
+        validarDatosServicio(datos);
+
         if (datos.getEstado() == null
                 || datos.getEstado().isBlank()) {
             datos.setEstado("BORRADOR");
@@ -74,6 +78,9 @@ public class ServiceProveedores {
             throw new IllegalArgumentException(
                     "Los datos del servicio son obligatorios.");
         }
+
+        // Un servicio ya publicado tambien debe conservar datos validos
+        validarDatosServicio(datos);
 
         Servicio existente
                 = repositoryServicio.buscarServicio(idServicio);
@@ -175,6 +182,15 @@ public class ServiceProveedores {
 
             throw new IllegalStateException(
                     "No se puede retirar el servicio porque tiene solicitudes pendientes.");
+        }
+
+        // CU-13 reserva el horario del proveedor: un servicio con
+        // contrataciones vigentes no puede desaparecer del catalogo.
+        if (repositoryServicio
+                .tieneContratacionesActivas(idServicio)) {
+
+            throw new IllegalStateException(
+                    "No se puede retirar el servicio porque tiene contrataciones vigentes.");
         }
 
         repositoryServicio.actualizarEstado(
@@ -377,6 +393,87 @@ public class ServiceProveedores {
 
             throw new IllegalStateException(
                     "El servicio no pertenece al proveedor.");
+        }
+    }
+
+    private static final java.math.BigDecimal PRECIO_MAXIMO
+            = new java.math.BigDecimal("9999999999.99");
+
+    // Reglas que se aplican siempre que se guarda un servicio,
+    // sea borrador o este publicado
+    private void validarDatosServicio(Servicio servicio) {
+
+        if (servicio.getIdProveedor() <= 0) {
+            throw new IllegalArgumentException(
+                    "El proveedor es obligatorio.");
+        }
+
+        validarTexto(servicio.getNombre(),
+                "El nombre", false, 150);
+        validarTexto(servicio.getTipo(),
+                "El tipo", false, 100);
+        validarTexto(servicio.getCategoria(),
+                "La categoria", true, 100);
+        validarTexto(servicio.getDescripcion(),
+                "La descripcion", true, 255);
+        validarTexto(servicio.getCiudadZona(),
+                "La ciudad o zona", true, 150);
+
+        double precio = servicio.getPrecio();
+
+        if (Double.isNaN(precio) || Double.isInfinite(precio)) {
+            throw new IllegalArgumentException(
+                    "El precio debe ser un numero valido.");
+        }
+
+        java.math.BigDecimal valor
+                = java.math.BigDecimal.valueOf(precio);
+
+        if (valor.signum() <= 0) {
+            throw new IllegalArgumentException(
+                    "El precio debe ser mayor que cero.");
+        }
+
+        if (valor.stripTrailingZeros().scale() > 2) {
+            throw new IllegalArgumentException(
+                    "El precio no puede tener mas de dos decimales.");
+        }
+
+        if (valor.compareTo(PRECIO_MAXIMO) > 0) {
+            throw new IllegalArgumentException(
+                    "El precio supera el valor permitido.");
+        }
+
+        if (servicio.getAnticipacionMinima() < 0) {
+            throw new IllegalArgumentException(
+                    "La anticipacion minima no puede ser negativa.");
+        }
+
+        if (servicio.getCantidadMaximaPersonas() != null
+                && servicio.getCantidadMaximaPersonas() <= 0) {
+
+            throw new IllegalArgumentException(
+                    "La cantidad maxima debe ser mayor que cero.");
+        }
+    }
+
+    private void validarTexto(
+            String valor,
+            String campo,
+            boolean femenino,
+            int maximo) {
+
+        if (valor == null || valor.isBlank()) {
+            throw new IllegalArgumentException(
+                    campo + (femenino
+                            ? " es obligatoria."
+                            : " es obligatorio."));
+        }
+
+        if (valor.trim().length() > maximo) {
+            throw new IllegalArgumentException(
+                    campo + " no puede superar los "
+                    + maximo + " caracteres.");
         }
     }
 
