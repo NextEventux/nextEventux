@@ -18,6 +18,14 @@ public class ControllerInvitados {
         this.serviceInvitados = serviceInvitados;
     }
 
+    public List<String> consultarAvisosPorCorreo(String correo) {
+        return serviceInvitados.consultarAvisosPorCorreo(correo);
+    }
+
+    public List<entities.Fotografia> consultarGaleria(String correo, String telefono) {
+        return serviceInvitados.consultarGaleria(correo,telefono);
+    }
+
     public List<Evento> listarEventos() {
         return serviceInvitados.listarEventos();
     }

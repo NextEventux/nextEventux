@@ -24,6 +24,15 @@ import repositories.RepositoryLugar;
  * asistencia (R38); al rechazar libera su cupo (R39).
  */
 public class ServiceInvitados {
+    public List<entities.Fotografia> consultarGaleria(String correo, String telefono) {
+        String limpio=limpiar(correo);
+        if(limpio==null || limpio.length()>150 || !CORREO.matcher(limpio).matches())
+            throw new IllegalArgumentException("Ingresa un correo válido para consultar tu galería.");
+        if(soloDigitos(telefono).isEmpty())
+            throw new IllegalArgumentException("Ingresa el teléfono que registraste en la invitación.");
+        return repositoryInvitado.listarGaleria(limpio,soloDigitos(telefono));
+    }
+
     private static final Pattern CORREO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final RepositoryInvitacion repositoryInvitacion;
@@ -182,6 +191,13 @@ public class ServiceInvitados {
             invitaciones.add(inv);
         }
         return invitaciones;
+    }
+
+    public List<String> consultarAvisosPorCorreo(String correo) {
+        String limpio = limpiar(correo);
+        if (limpio == null || limpio.length() > 150 || !CORREO.matcher(limpio).matches())
+            throw new IllegalArgumentException("Ingresa un correo válido para consultar tus avisos.");
+        return repositoryInvitado.listarAvisosPorCorreo(limpio);
     }
 
     /**

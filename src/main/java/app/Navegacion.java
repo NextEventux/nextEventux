@@ -18,10 +18,12 @@ public class Navegacion {
         CATALOGO_SERVICIOS("NextEventux | Proveedores"),
         DETALLE_SERVICIO("NextEventux | Detalle del servicio"),
         MIS_SERVICIOS("NextEventux | Mis servicios"),
+        AVISOS_PROVEEDOR("NextEventux | Mis avisos"),
         DETALLE_SERVICIO_PROVEEDOR("NextEventux | Administración del servicio"),
         MIS_EVENTOS("NextEventux | Mis eventos"),
         EDICION_EVENTO("NextEventux | Editar evento"),
         CANCELACION_EVENTO("NextEventux | Cancelar evento"),
+        FINALIZACION_EVENTO("NextEventux | Finalizar evento"),
         PUBLICACION_EVENTOS("NextEventux | Publicación de eventos"),
         SOLICITUDES_PROVEEDOR("NextEventux | Solicitudes recibidas"),
         PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas");

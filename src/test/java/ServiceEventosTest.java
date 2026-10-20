@@ -25,9 +25,9 @@ class ServiceEventosTest {
     private final LocalDateTime inicio = LocalDateTime.of(2026, 10, 20, 9, 0);
 
     @Test
-    void controladorGuardaLosDatosDelFormulario() {
+    void guardaLosDatosValidadosDelFormulario() {
         Evento evento = evento("Festival", "Corporativo", "Bogotá", new BigDecimal("15000000.25"), 100);
-        new ControllerEventos(service).crearEvento(evento);
+        service.crearEvento(evento);
         assertEquals(1, repository.listarEventos().size());
         assertEquals(evento.getIdEvento(), repository.listarEventos().get(0).getIdEvento());
         assertEquals("PLANEADO", evento.getEstado());
