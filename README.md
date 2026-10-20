@@ -198,9 +198,10 @@ se conservan los registros existentes. Después aplica la migración repetible
 `migrations/001_evento_cu01.sql` para añadir los campos de CU01 a bases existentes.
 Los futuros cambios de estructura también necesitan una migración explícita.
 
-Los datos de ejemplo están separados en `src/main/resources/seed.sql`. Su carga es
-opcional y debe realizarse una sola vez sobre una base recién inicializada; no se
-cargan al abrir la aplicación ni deben ejecutarse nuevamente sobre datos existentes.
+Los datos de ejemplo están separados en `src/main/resources/seed.sql`. Se cargan
+una sola vez, al abrir la aplicación con una base recién inicializada y vacía, o de
+forma explícita con `config.CargarDatosEjemplo`. Nunca se ejecutan sobre una base
+que ya tiene datos.
 
 Con JDK 17 o superior y Maven instalado, ejecutar desde la raíz del repositorio:
 
@@ -312,9 +313,9 @@ mvn javafx:run
 
 En Windows usa `;` como separador del classpath. La carga es explícita y se rechaza
 si hay registros en cualquier tabla, para proteger los datos existentes. El desplegable muestra los nombres de los
-organizadores de ejemplo. La aplicación no carga
-estos ejemplos automáticamente. Si ya existen datos reales, usa un organizador
-registrado y omite la carga de ejemplos.
+organizadores de ejemplo. Si la base está vacía, la aplicación los carga sola al
+abrirse. Si ya existen datos reales, usa un organizador registrado y omite la carga
+de ejemplos.
 
 ### Comprobación del formulario
 
@@ -429,7 +430,7 @@ mvn javafx:run
 En Windows, sustituir `:` por `;` en el classpath. No ejecutar previamente
 `CargarDatosEjemplo`: la demostración CU03 ya lo llama y exige una base vacía.
 El comando no borra datos existentes; rechaza la carga si alguna tabla contiene
-registros. Los ejemplos no se cargan al abrir la aplicación.
+registros. Al abrir la aplicación solo se cargan los ejemplos si la base está vacía.
 
 Iniciar sesión con la cuenta de organizador de prueba (definida en `seed.sql`), abrir
 Publicaciones y elegir «Evento finalizado de demostración». Enviar la solicitud,
