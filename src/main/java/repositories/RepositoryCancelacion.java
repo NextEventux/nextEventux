@@ -39,7 +39,7 @@ public class RepositoryCancelacion {
                 actualizar(connection, "INSERT INTO Notificacion_interna (id_usuario,id_evento,mensaje) "
                         + "SELECT DISTINCT p.id_usuario,?, 'Se canceló un evento asociado a tus solicitudes o contrataciones. Consulta tus avisos.' "
                         + "FROM Proveedor p JOIN Solicitud_Ejecucion s ON s.id_proveedor=p.id_proveedor "
-                        + "WHERE s.id_evento=? AND (UPPER(s.estado) NOT IN ('RECHAZADA','CANCELADA','RETIRADA') OR EXISTS "
+                        + "WHERE s.id_evento=? AND (UPPER(s.estado) NOT IN ('RECHAZADA','CANCELADA','RETIRADA','NO_SELECCIONADA') OR EXISTS "
                         + "(SELECT 1 FROM Contratacion c JOIN Propuesta pr ON pr.id_propuesta=c.id_propuesta "
                         + "WHERE pr.id_solicitud=s.id_solicitud AND c.id_evento=s.id_evento AND UPPER(c.estado) IN ('ACTIVA','CONFIRMADA')))", evento, evento);
                 actualizar(connection, "INSERT INTO Notificacion_interna (id_invitado,id_evento,mensaje) "
@@ -50,7 +50,7 @@ public class RepositoryCancelacion {
                 actualizar(connection, "UPDATE Invitacion SET estado_respuesta='REVOCADA' WHERE id_evento=? "
                         + "AND (estado_respuesta IS NULL OR estado_respuesta NOT IN ('BORRADOR','REVOCADA'))", evento);
                 actualizar(connection, "UPDATE Solicitud_Ejecucion SET estado='CANCELADA' WHERE id_evento=? "
-                        + "AND UPPER(estado) NOT IN ('RECHAZADA','CANCELADA','RETIRADA')", evento);
+                        + "AND UPPER(estado) NOT IN ('RECHAZADA','CANCELADA','RETIRADA','NO_SELECCIONADA')", evento);
                 actualizar(connection, "UPDATE Necesidad_Servicio_Evento SET estado='CANCELADA' WHERE id_evento=?", evento);
                 actualizar(connection, "UPDATE Evento SET estado='CANCELADO' WHERE id_evento=?", evento);
                 connection.commit();

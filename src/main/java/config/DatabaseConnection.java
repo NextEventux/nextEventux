@@ -98,6 +98,9 @@ public class DatabaseConnection {
         ejecutarUnaVez(connection, "010_organizador_usuario_unico.sql",
                 c -> verificarSinDuplicados(c, "Organizador", "id_usuario"));
         ejecutarUnaVez(connection, "011_cu26_contratar_organizador.sql", null);
+        // CU-13: una propuesta solo puede contratarse una vez
+        ejecutarUnaVez(connection, "012_cu13_contratar_servicio.sql",
+                c -> verificarSinDuplicados(c, "Contratacion", "id_propuesta"));
         actualizarContadorEventos(connection);
     }
 

@@ -2,6 +2,7 @@ package views;
 
 import java.util.List;
 
+import controllers.ControllerContratacionServicio;
 import controllers.ControllerSolicitudes;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
@@ -39,6 +40,16 @@ public class ViewPropuestasOrganizador {
 
     private final ListView<PropuestaServicio> lista
             = new ListView<>();
+
+    // CU-13: se habilita desde la aplicacion para poder contratar
+    private ControllerContratacionServicio controllerContratacion;
+
+    public ViewPropuestasOrganizador conContratacion(
+            ControllerContratacionServicio controllerContratacion) {
+
+        this.controllerContratacion = controllerContratacion;
+        return this;
+    }
 
     public ViewPropuestasOrganizador(
             ControllerSolicitudes controller,
@@ -145,6 +156,12 @@ public class ViewPropuestasOrganizador {
         seleccionar.setOnAction(
                 event -> seleccionarPropuesta());
 
+        Button contratar = new Button("Contratar servicio");
+        contratar.getStyleClass().add("btn-primary");
+
+        contratar.setOnAction(
+                event -> contratarPropuestaSeleccionada());
+
         HBox encabezado = new HBox(
                 20,
                 titulo,
@@ -182,9 +199,11 @@ public class ViewPropuestasOrganizador {
 
                 estado.getStyleClass().add("cu12-state");
 
-                if ("SELECCIONADA".equalsIgnoreCase(
-                        propuesta.getEstado())) {
+                if ("SELECCIONADA".equalsIgnoreCase(propuesta.getEstado())
+                        || "CONTRATADA".equalsIgnoreCase(propuesta.getEstado())) {
                     estado.getStyleClass().add("cu12-selected");
+                } else if ("NO_SELECCIONADA".equalsIgnoreCase(propuesta.getEstado())) {
+                    estado.getStyleClass().add("cu12-neutral");
                 } else {
                     estado.getStyleClass().add("cu12-negotiating");
                 }
@@ -231,6 +250,7 @@ public class ViewPropuestasOrganizador {
                 12,
                 actualizar,
                 seleccionar,
+                contratar,
                 solicitarAjuste,
                 rechazarPropuesta,
                 enviarMensaje,
@@ -298,6 +318,11 @@ public class ViewPropuestasOrganizador {
             return;
         }
 
+        if (estaCerrada(seleccionada)) {
+            mostrarError(mensajeCerrada(seleccionada));
+            return;
+        }
+
         Alert confirmacion = new Alert(
                 Alert.AlertType.CONFIRMATION,
                 "¿Deseas seleccionar la propuesta #"
@@ -344,6 +369,56 @@ public class ViewPropuestasOrganizador {
         }
     }
 
+    // CU-13: una propuesta contratada o no seleccionada ya no admite cambios
+    private boolean estaCerrada(PropuestaServicio propuesta) {
+        return "CONTRATADA".equalsIgnoreCase(propuesta.getEstado())
+                || "NO_SELECCIONADA".equalsIgnoreCase(propuesta.getEstado());
+    }
+
+    private String mensajeCerrada(PropuestaServicio propuesta) {
+        return "CONTRATADA".equalsIgnoreCase(propuesta.getEstado())
+                ? "Esta propuesta ya fue contratada y no admite cambios."
+                : "Otra propuesta cubrió esta necesidad; esta quedó como "
+                + "no seleccionada y no admite cambios.";
+    }
+
+    private void contratarPropuestaSeleccionada() {
+
+        PropuestaServicio propuesta
+                = lista.getSelectionModel().getSelectedItem();
+
+        if (propuesta == null) {
+            mostrarError("Selecciona una propuesta.");
+            return;
+        }
+
+        if (estaCerrada(propuesta)) {
+            mostrarError(mensajeCerrada(propuesta));
+            return;
+        }
+
+        if (!"SELECCIONADA".equalsIgnoreCase(propuesta.getEstado())) {
+            mostrarError(
+                    "Primero selecciona la propuesta para contratación "
+                    + "y luego contrátala.");
+            return;
+        }
+
+        if (controllerContratacion == null) {
+            mostrarError("La contratación de servicios no está habilitada.");
+            return;
+        }
+
+        new ViewContratarServicio(
+                controllerContratacion,
+                idOrganizador,
+                propuesta,
+                this::recargarPropuestas)
+                .mostrar(lista.getScene() == null
+                        ? null
+                        : lista.getScene().getWindow());
+    }
+
     private void rechazarPropuestaSeleccionada() {
 
         PropuestaServicio propuesta
@@ -351,6 +426,11 @@ public class ViewPropuestasOrganizador {
 
         if (propuesta == null) {
             mostrarError("Selecciona una propuesta.");
+            return;
+        }
+
+        if (estaCerrada(propuesta)) {
+            mostrarError(mensajeCerrada(propuesta));
             return;
         }
 
@@ -396,6 +476,11 @@ public class ViewPropuestasOrganizador {
 
         if (propuesta == null) {
             mostrarError("Selecciona una propuesta.");
+            return;
+        }
+
+        if (estaCerrada(propuesta)) {
+            mostrarError(mensajeCerrada(propuesta));
             return;
         }
 

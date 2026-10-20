@@ -8,8 +8,8 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReparacionMainTest {
-    /** Migraciones que DatabaseConnection registra en Esquema_version mediante ejecutarUnaVez (010 y 011). */
-    private static final int MIGRACIONES_REGISTRADAS = 2;
+    /** Migraciones que DatabaseConnection registra en Esquema_version mediante ejecutarUnaVez (010, 011 y 012). */
+    private static final int MIGRACIONES_REGISTRADAS = 3;
 
     @TempDir Path carpeta;
 
@@ -62,7 +62,7 @@ class ReparacionMainTest {
         assertTrue(error.getMessage().contains("repetidos"));
         try(Connection c=DriverManager.getConnection(url,"sa","");Statement s=c.createStatement();ResultSet r=s.executeQuery("SELECT COUNT(*) FROM Organizador WHERE id_usuario=1")) {
             assertTrue(r.next());assertEquals(2,r.getInt(1));
-            // La migración 010 queda sin registrar; la posterior (011) se conserva.
+            // La migración 010 queda sin registrar; las posteriores (011 y 012) se conservan.
             assertEquals(MIGRACIONES_REGISTRADAS-1,contar(c,"Esquema_version"));
         }
     }

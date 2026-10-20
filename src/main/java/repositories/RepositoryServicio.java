@@ -200,6 +200,36 @@ public class RepositoryServicio {
         }
     }
 
+    // CU-13 deja contrataciones ACTIVA o CONFIRMADA asociadas al servicio
+    public boolean tieneContratacionesActivas(int idServicio) {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM Contratacion c
+                JOIN Propuesta p
+                  ON p.id_propuesta = c.id_propuesta
+                JOIN Solicitud_Ejecucion s
+                  ON s.id_solicitud = p.id_solicitud
+                WHERE s.id_servicio = ?
+                  AND UPPER(c.estado) IN ('ACTIVA', 'CONFIRMADA')
+                """;
+
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idServicio);
+
+            try (ResultSet result = statement.executeQuery()) {
+                result.next();
+                return result.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "No se pudieron consultar las contrataciones del servicio.",
+                    e);
+        }
+    }
+
     public List<Servicio> listarServiciosDisponibles() {
 
         List<Servicio> servicios
