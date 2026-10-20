@@ -8,6 +8,10 @@ import controllers.ControllerPublicacion;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
 import controllers.ControllerContratacionServicio;
+import controllers.ControllerSancionesProveedor;
+import repositories.RepositorySancionesProveedor;
+import services.ServiceSancionesProveedor;
+import views.ViewSancionesProveedor;
 import controllers.ControllerSolicitudes;
 import entities.Evento;
 import entities.Servicio;
@@ -71,6 +75,7 @@ public class NextEventuxApp extends Application {
     private ControllerProveedores controllerProveedores;
     private ControllerSolicitudes controllerSolicitudes;
     private ControllerContratacionServicio controllerContratacion;
+    private ControllerSancionesProveedor controllerSanciones;
 
     private SesionUsuario sesionActual;
     private Navegacion navegacion;
@@ -210,8 +215,28 @@ public class NextEventuxApp extends Application {
                         new RepositoryContratacionServicio(),
                         sesionActual));
 
+        // CU-09: aplicar sanciones a proveedores (solo administrador)
+        controllerSanciones = new ControllerSancionesProveedor(
+                new ServiceSancionesProveedor(new RepositorySancionesProveedor()),
+                sesionActual);
+
         contenedor.setTop(null);
         navegacion = new Navegacion();
+        navegacion.registrarDinamica(
+                Navegacion.Pantalla.SANCIONES_PROVEEDOR,
+                () -> {
+                    BorderPane marco = new BorderPane();
+                    marco.getStyleClass().addAll("app", "publicacion");
+                    marco.setLeft(views.components.MenuCompartido.crear(
+                            sesionActual,
+                            views.components.MenuCompartido.Pagina.SANCIONES_PROVEEDOR,
+                            null, null, null, null,
+                            this::mostrarLogin,
+                            null, null, null,
+                            this::mostrarSancionesProveedor));
+                    marco.setCenter(new ViewSancionesProveedor(controllerSanciones, this::mostrarPublicacion).crearPantalla());
+                    return marco;
+                });
 
         if ("ORGANIZADOR".equalsIgnoreCase(tipo) || "ADMINISTRADOR".equalsIgnoreCase(tipo)) {
             registrarRutasOrganizador();
@@ -371,7 +396,8 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin,
-                                this::mostrarMarketing).crearPantalla())
+                                this::mostrarMarketing,
+                                this::mostrarSancionesProveedor).crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
                         () -> new ViewFinanciera(
@@ -454,6 +480,16 @@ public class NextEventuxApp extends Application {
         }
         eventoSeleccionado = evento.getIdEvento();
         navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
+    }
+
+    /** CU-09: solo el administrador puede aplicar sanciones. */
+    private void mostrarSancionesProveedor() {
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.mostrarEn(contenedor, Navegacion.Pantalla.SANCIONES_PROVEEDOR);
     }
 
     private void mostrarCancelacion(Evento evento) {

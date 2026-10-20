@@ -19,6 +19,7 @@ public class ViewPublicacion {
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
     private final Runnable abrirMarketing;
+    private final Runnable abrirSanciones;
     private boolean esAdministrador;
     private final Label usuario = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
@@ -35,7 +36,7 @@ public class ViewPublicacion {
     }
 
     public ViewPublicacion(ControllerPublicacion controller, Runnable volver, Integer eventoInicial) {
-        this(controller, volver, eventoInicial, null, null, null, null, null, null);
+        this(controller, volver, eventoInicial, null, null, null, null, null, null, null);
     }
 
     public ViewPublicacion(
@@ -49,7 +50,7 @@ public class ViewPublicacion {
             Runnable abrirInvitados,
             Runnable cerrarSesion) {
         this(controller, volver, eventoInicial, sesion, abrirEventos, abrirMisEventos,
-                abrirCatalogo, abrirInvitados, cerrarSesion, null);
+                abrirCatalogo, abrirInvitados, cerrarSesion, null, null);
     }
 
     public ViewPublicacion(
@@ -63,6 +64,22 @@ public class ViewPublicacion {
             Runnable abrirInvitados,
             Runnable cerrarSesion,
             Runnable abrirMarketing) {
+        this(controller, volver, eventoInicial, sesion, abrirEventos, abrirMisEventos,
+                abrirCatalogo, abrirInvitados, cerrarSesion, abrirMarketing, null);
+    }
+
+    public ViewPublicacion(
+            ControllerPublicacion controller,
+            Runnable volver,
+            Integer eventoInicial,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirMisEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion,
+            Runnable abrirMarketing,
+            Runnable abrirSanciones) {
 
         this.controller = controller;
         this.volver = volver;
@@ -74,6 +91,7 @@ public class ViewPublicacion {
         this.abrirInvitados = abrirInvitados;
         this.cerrarSesion = cerrarSesion;
         this.abrirMarketing = abrirMarketing;
+        this.abrirSanciones = abrirSanciones;
         usuario.setId("usuarioPublicacion");
         configurarCombo(evento, "eventoPublicacion", "Seleccionar evento", e -> e.getNombre() + " — " + estado(e.getEstado()));
         pendientes.setId("solicitudesPendientes");
@@ -102,6 +120,13 @@ public class ViewPublicacion {
         raiz.getStyleClass().addAll("app", "publicacion");
         boolean organizadorActivo = sesion != null
                 && "ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario());
+        try {
+            esAdministrador = controller.esAdministrador();
+            usuario.setText(controller.nombreUsuario());
+        } catch (IllegalStateException e) {
+            mostrar(e.getMessage(), false);
+            return new VBox(20, mensaje);
+        }
         raiz.setLeft(MenuCompartido.crear(
                 sesion,
                 MenuCompartido.Pagina.MIS_EVENTOS,
@@ -110,19 +135,15 @@ public class ViewPublicacion {
                 organizadorActivo ? abrirCatalogo : null,
                 null,
                 cerrarSesion,
-                organizadorActivo ? abrirMisEventos : null));
+                organizadorActivo ? abrirMisEventos : null,
+                null,
+                null,
+                esAdministrador ? abrirSanciones : null));
         Button actualizar = boton("Actualizar", "actualizarPublicacion", this::actualizar, false);
         VBox contenido = new VBox(22);
         contenido.getStyleClass().add("content");
         Label explicacion = etiqueta("Comparte un evento finalizado como plantilla. La publicación requiere aprobación del administrador.","muted");
         explicacion.setWrapText(true);
-        try {
-            esAdministrador = controller.esAdministrador();
-            usuario.setText(controller.nombreUsuario());
-        } catch (IllegalStateException e) {
-            mostrar(e.getMessage(), false);
-            return new VBox(20, mensaje);
-        }
         Tab organizacion = new Tab("Solicitar publicación", panelOrganizador());
         organizacion.setId("tabOrganizador");
         Tab revision = new Tab("Revisión del administrador", panelAdministrador());
