@@ -5,11 +5,11 @@ import controllers.ControllerEventos;
 import controllers.ControllerPublicacion;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
+import controllers.ControllerSolicitudes;
 import entities.Evento;
 import entities.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -20,12 +20,15 @@ import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
 import repositories.RepositoryPublicacion;
+import repositories.RepositoryPropuestaServicio;
 import repositories.RepositoryServicio;
+import repositories.RepositorySolicitudEjecucion;
 import services.ServiceAutenticacion;
 import services.ServiceEventos;
 import services.ServicePublicacion;
 import services.ServiceInvitados;
 import services.ServiceProveedores;
+import services.ServiceSolicitudes;
 import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
@@ -35,6 +38,8 @@ import views.ViewEdicion;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
+import views.ViewPropuestasOrganizador;
+import views.ViewSolicitudesProveedor;
 import views.ViewMisEventos;
 import views.ViewCancelacion;
 
@@ -44,6 +49,7 @@ public class NextEventuxApp extends Application {
     private ControllerEventos controllerEventos;
     private ControllerAutenticacion controllerAutenticacion;
     private ControllerProveedores controllerProveedores;
+    private ControllerSolicitudes controllerSolicitudes;
 
     private SesionUsuario sesionActual;
     private Navegacion navegacion;
@@ -103,6 +109,7 @@ public class NextEventuxApp extends Application {
         servicioProveedorSeleccionado = null;
         eventoSeleccionado = null;
         controllerEventos = null;
+        controllerSolicitudes = null;
         publicaciones = null;
         contenedor.setTop(null);
         stage.setTitle("NextEventux | Iniciar sesión");
@@ -116,6 +123,10 @@ public class NextEventuxApp extends Application {
 
     private void procesarSesion(SesionUsuario sesion) {
 
+        System.out.printf(
+                "[SESION] recibida rol=%s actorId=%d%n",
+                sesion.getTipoUsuario(),
+                sesion.getIdActor());
         sesionActual = sesion;
         publicaciones = new ControllerPublicacion(new ServicePublicacion(
                 new RepositoryPublicacion(), new RepositoryEvento()), sesion);
@@ -127,9 +138,19 @@ public class NextEventuxApp extends Application {
                 && !"PROVEEDOR".equalsIgnoreCase(tipo)
                 && !"ADMINISTRADOR".equalsIgnoreCase(tipo)) {
 
+            System.err.printf(
+                    "[SESION] rol no soportado rol=%s actorId=%d%n",
+                    tipo,
+                    sesion.getIdActor());
             mostrarLogin();
             return;
         }
+
+        controllerSolicitudes = new ControllerSolicitudes(
+                new ServiceSolicitudes(
+                        new RepositorySolicitudEjecucion(),
+                        new RepositoryPropuestaServicio(),
+                        sesionActual));
 
         contenedor.setTop(null);
         navegacion = new Navegacion();
@@ -142,7 +163,12 @@ public class NextEventuxApp extends Application {
                 mostrarPublicacion();
             }
         } else if ("PROVEEDOR".equalsIgnoreCase(tipo)) {
+            System.out.printf(
+                    "[SESION] rama PROVEEDOR actorId=%d%n",
+                    sesion.getIdActor());
             registrarRutasProveedor();
+            System.out.println(
+                    "[SESION] rutas de proveedor registradas");
             mostrarProveedores();
         }
     }
@@ -187,7 +213,8 @@ public class NextEventuxApp extends Application {
                                 this::mostrarInvitados,
                                 this::mostrarLogin,
                                 sesionActual,
-                                this::mostrarMisEventos).crearPantalla())
+                                this::mostrarMisEventos,
+                                this::mostrarPropuestasOrganizador).crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.INVITADOS,
                         () -> new ViewInvitados(
@@ -213,6 +240,9 @@ public class NextEventuxApp extends Application {
                 .registrar(
                         Navegacion.Pantalla.DETALLE_SERVICIO,
                         this::crearVistaDetalleServicio)
+                .registrarDinamica(
+                        Navegacion.Pantalla.PROPUESTAS_ORGANIZADOR,
+                        this::crearVistaPropuestasOrganizador)
                 .registrarDinamica(
                         Navegacion.Pantalla.MIS_EVENTOS,
                         () -> new ViewMisEventos(
@@ -361,6 +391,7 @@ public class NextEventuxApp extends Application {
         }
         return new ViewDetalleServicio(
                 controllerProveedores,
+                controllerSolicitudes,
                 servicioSeleccionado,
                 sesionActual.getIdActor(),
                 sesionActual,
@@ -372,7 +403,37 @@ public class NextEventuxApp extends Application {
                 .crearPantalla();
     }
 
+    private void mostrarPropuestasOrganizador() {
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        navegacion.ir(Navegacion.Pantalla.PROPUESTAS_ORGANIZADOR);
+    }
+
+    private javafx.scene.Parent crearVistaPropuestasOrganizador() {
+        return new ViewPropuestasOrganizador(
+                controllerSolicitudes,
+                sesionActual.getIdActor(),
+                sesionActual.getIdUsuario(),
+                this::mostrarEventos,
+                sesionActual,
+                this::mostrarEventos,
+                this::mostrarInvitados,
+                this::mostrarCatalogoServicios,
+                this::mostrarMisEventos,
+                this::mostrarPropuestasOrganizador,
+                this::mostrarLogin)
+                .crearPantalla();
+    }
+
     private void mostrarProveedores() {
+        System.out.printf(
+                "[NAVEGACION] acceso a MIS_SERVICIOS rol=%s actorId=%d%n",
+                sesionActual == null ? null : sesionActual.getTipoUsuario(),
+                sesionActual == null ? 0 : sesionActual.getIdActor());
 
         if (sesionActual == null
                 || !"PROVEEDOR".equalsIgnoreCase(
@@ -389,6 +450,9 @@ public class NextEventuxApp extends Application {
     }
 
     private void registrarRutasProveedor() {
+        System.out.println(
+                "[NAVEGACION] registrando rutas MIS_SERVICIOS, "
+                + "DETALLE_SERVICIO_PROVEEDOR y SOLICITUDES_PROVEEDOR");
         navegacion
                 .registrar(
                         Navegacion.Pantalla.MIS_SERVICIOS,
@@ -399,11 +463,15 @@ public class NextEventuxApp extends Application {
                                 this::mostrarLogin,
                                 this::mostrarDetalleServicioProveedor,
                                 () -> mostrarDetalleServicioProveedor(null),
-                                this::mostrarProveedores)
+                                this::mostrarProveedores,
+                                this::mostrarSolicitudesProveedor)
                                 .crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.DETALLE_SERVICIO_PROVEEDOR,
-                        this::crearVistaDetalleServicioProveedor);
+                        this::crearVistaDetalleServicioProveedor)
+                .registrarDinamica(
+                        Navegacion.Pantalla.SOLICITUDES_PROVEEDOR,
+                        this::crearVistaSolicitudesProveedor);
     }
 
     private void mostrarDetalleServicioProveedor(
@@ -429,6 +497,9 @@ public class NextEventuxApp extends Application {
     }
 
     private javafx.scene.Parent crearVistaDetalleServicioProveedor() {
+        System.out.printf(
+                "[NAVEGACION] construyendo DETALLE_SERVICIO_PROVEEDOR actorId=%d%n",
+                sesionActual.getIdActor());
         return new ViewDetalleServicioProveedor(
                 controllerProveedores,
                 sesionActual.getIdActor(),
@@ -438,4 +509,34 @@ public class NextEventuxApp extends Application {
                 this::mostrarProveedores)
                 .crearPantalla();
     }
+
+    private void mostrarSolicitudesProveedor() {
+
+        if (sesionActual == null
+                || !"PROVEEDOR".equalsIgnoreCase(
+                        sesionActual.getTipoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        navegacion.ir(Navegacion.Pantalla.SOLICITUDES_PROVEEDOR);
+    }
+
+    private javafx.scene.Parent crearVistaSolicitudesProveedor() {
+        System.out.printf(
+                "[NAVEGACION] construyendo SOLICITUDES_PROVEEDOR actorId=%d%n",
+                sesionActual.getIdActor());
+        return new ViewSolicitudesProveedor(
+                controllerSolicitudes,
+                sesionActual.getIdActor(),
+                sesionActual.getIdUsuario(),
+                this::mostrarProveedores,
+                sesionActual,
+                this::mostrarProveedores,
+                this::mostrarSolicitudesProveedor,
+                this::mostrarLogin)
+                .crearPantalla();
+    }
+
 }

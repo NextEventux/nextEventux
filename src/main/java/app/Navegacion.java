@@ -22,7 +22,9 @@ public class Navegacion {
         MIS_EVENTOS("NextEventux | Mis eventos"),
         EDICION_EVENTO("NextEventux | Editar evento"),
         CANCELACION_EVENTO("NextEventux | Cancelar evento"),
-        PUBLICACION_EVENTOS("NextEventux | Publicación de eventos");
+        PUBLICACION_EVENTOS("NextEventux | Publicación de eventos"),
+        SOLICITUDES_PROVEEDOR("NextEventux | Solicitudes recibidas"),
+        PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas");
 
         private final String titulo;
 
@@ -77,6 +79,10 @@ public class Navegacion {
     }
 
     public void ir(Pantalla pantalla) {
+        System.out.printf(
+                "[NAVEGACION] solicitada=%s registrada=%s%n",
+                pantalla,
+                fabricas.containsKey(pantalla));
         if (!fabricas.containsKey(pantalla)) {
             throw new IllegalArgumentException(
                     "No se registró la pantalla " + pantalla);
@@ -84,9 +90,15 @@ public class Navegacion {
         Scene actual;
         if (contenedor != null) {
             contenedor.setCenter(obtener(pantalla));
+            System.out.printf(
+                    "[NAVEGACION] mostrada=%s%n",
+                    pantalla);
             actual = contenedor.getScene();
         } else if (scene != null) {
             scene.setRoot(obtener(pantalla));
+            System.out.printf(
+                    "[NAVEGACION] mostrada=%s%n",
+                    pantalla);
             actual = scene;
         } else {
             return;
@@ -106,8 +118,15 @@ public class Navegacion {
     }
 
     private Parent crear(Pantalla pantalla) {
-        return Objects.requireNonNull(
+        System.out.printf(
+                "[NAVEGACION] ejecutando fabrica=%s%n",
+                pantalla);
+        Parent vista = Objects.requireNonNull(
                 fabricas.get(pantalla).get(),
                 "La fábrica de " + pantalla + " devolvió una pantalla nula");
+        System.out.printf(
+                "[NAVEGACION] fabrica completada=%s%n",
+                pantalla);
+        return vista;
     }
 }
