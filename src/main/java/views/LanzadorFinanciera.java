@@ -3,13 +3,14 @@ package views;
 import config.CargarDatosEjemplo;
 import config.DatabaseConnection;
 import controllers.ControllerFinanciera;
+import entities.SesionUsuario;
 import java.sql.Connection;
 import java.sql.Statement;
 import javafx.application.Application;
 import javafx.stage.Stage;
+import repositories.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.RepositoryPlanificacion;
-import repositories.RepositoryServicio;
 import services.ServiceFinanciera;
 
 /**
@@ -41,10 +42,18 @@ public class LanzadorFinanciera extends Application {
     public void start(Stage stage) {
         RepositoryMovimientoFinanciero repoMov = new RepositoryMovimientoFinanciero();
         RepositoryPlanificacion repoPlan = new RepositoryPlanificacion();
-        RepositoryServicio repoServ = new RepositoryServicio();
 
-        ServiceFinanciera service = new ServiceFinanciera(repoMov, repoPlan, repoServ);
-        ControllerFinanciera controller = new ControllerFinanciera(service);
+        // Sesión de laura.gomez (usuario 1, organizador 1), dueña del evento 1 en seed.sql.
+        SesionUsuario sesion = new SesionUsuario();
+        sesion.setIdUsuario(1);
+        sesion.setIdActor(1);
+        sesion.setNombre("Laura Gómez");
+        sesion.setTipoUsuario("ORGANIZADOR");
+        sesion.setEstadoUsuario("ACTIVO");
+        sesion.setEstadoActor("ACTIVO");
+
+        ServiceFinanciera service = new ServiceFinanciera(repoMov, repoPlan, new RepositoryEvento());
+        ControllerFinanciera controller = new ControllerFinanciera(service, sesion);
 
         ViewFinanciera vista = new ViewFinanciera(controller);
 
@@ -55,4 +64,4 @@ public class LanzadorFinanciera extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-}
+}

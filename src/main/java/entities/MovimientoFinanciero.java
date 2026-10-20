@@ -1,5 +1,6 @@
 package entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class MovimientoFinanciero {
@@ -9,7 +10,8 @@ public class MovimientoFinanciero {
     private int idPropuesta;
     private int idEvento;
     private int idContratacion;
-    private double valor;
+    // Importe monetario: BigDecimal, igual que la columna DECIMAL(12,2).
+    private BigDecimal valor;
     private LocalDateTime fecha;
     private String descripcion;
     private String tipo;
@@ -21,7 +23,7 @@ public class MovimientoFinanciero {
 
     // Constructor con todos los atributos
     public MovimientoFinanciero(int idMovimiento, int idPropuesta, int idEvento, int idContratacion,
-                                double valor, LocalDateTime fecha, String descripcion,
+                                BigDecimal valor, LocalDateTime fecha, String descripcion,
                                 String tipo, String estado) {
         this.idMovimiento = idMovimiento;
         this.idPropuesta = idPropuesta;
@@ -67,11 +69,11 @@ public class MovimientoFinanciero {
         this.idContratacion = idContratacion;
     }
 
-    public double getValor() {
+    public BigDecimal getValor() {
         return valor;
     }
 
-    public void setValor(double valor) {
+    public void setValor(BigDecimal valor) {
         this.valor = valor;
     }
 
@@ -106,4 +108,4 @@ public class MovimientoFinanciero {
     public void setEstado(String estado) {
         this.estado = estado;
     }
-}
+}

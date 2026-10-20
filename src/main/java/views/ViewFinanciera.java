@@ -2,7 +2,7 @@ package views;
 
 import controllers.ControllerFinanciera;
 import entities.MovimientoFinanciero;
-import entities.Servicio;
+import entities.CompromisoFinanciero;
 import entities.SesionUsuario;
 import views.components.MenuCompartido;
 import javafx.geometry.Insets;
@@ -10,6 +10,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -23,6 +24,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.text.NumberFormat;
@@ -32,6 +34,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Pantalla de Gestión Financiera.
@@ -41,8 +45,9 @@ import java.util.Map;
 public class ViewFinanciera {
 
     // Hoja de estilos compartida que ya existe en src/main/resources/styles.
-    // (src/main/java/styles/styles.css no se copia al classpath con Maven.)
     private static final String RUTA_CSS = "/styles/eventos.css";
+
+    private static final Logger LOG = Logger.getLogger(ViewFinanciera.class.getName());
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -90,7 +95,7 @@ public class ViewFinanciera {
         if (css != null) {
             scene.getStylesheets().add(css.toExternalForm());
         } else {
-            System.out.println("No se encontró el CSS en " + RUTA_CSS + ". Revisa la constante RUTA_CSS.");
+            LOG.warning("No se encontró el CSS en " + RUTA_CSS);
         }
         Stage stage = new Stage();
         stage.setTitle("NextEventux");
@@ -147,12 +152,21 @@ public class ViewFinanciera {
         try {
             estado = controller.consultarEstadoFinanciero(idEvento);
         } catch (RuntimeException e) {
-            // Antes los repositorios ocultaban el error y la pantalla salía vacía sin explicación.
-            e.printStackTrace();
-            String causa = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            // El servicio entrega mensajes pensados para el usuario (IllegalArgument/IllegalState);
+            // cualquier otro error se registra en el log y se muestra un mensaje genérico.
+            String texto;
+            if (e instanceof IllegalArgumentException || e instanceof IllegalStateException) {
+                texto = e.getMessage();
+                if (e.getCause() != null) {
+                    LOG.log(Level.WARNING, "Error al consultar el estado financiero", e.getCause());
+                }
+            } else {
+                LOG.log(Level.WARNING, "Error inesperado al consultar el estado financiero", e);
+                texto = "Ocurrió un error inesperado. Vuelve a intentarlo.";
+            }
             VBox error = new VBox(12);
             error.getStyleClass().add("card");
-            Label detalle = etiqueta(e.getMessage() + "\n" + causa, "muted");
+            Label detalle = etiqueta(texto, "muted");
             detalle.setWrapText(true);
             error.getChildren().addAll(etiqueta("No se pudo cargar el estado financiero", "card-title"), detalle);
             contenido.getChildren().add(error);
@@ -173,9 +187,11 @@ public class ViewFinanciera {
         String egresos = dinero(estado.get("Egresos"));
         String balance = dinero(estado.get("Balance"));
 
-        List<Servicio> servicios = estado.containsKey("Servicios")
-                ? (List<Servicio>) estado.get("Servicios")
+        List<CompromisoFinanciero> compromisos = estado.containsKey("Compromisos")
+                ? (List<CompromisoFinanciero>) estado.get("Compromisos")
                 : new ArrayList<>();
+        int sinValor = estado.get("Contrataciones_Sin_Valor") instanceof Number
+                ? ((Number) estado.get("Contrataciones_Sin_Valor")).intValue() : 0;
         List<MovimientoFinanciero> movimientos = estado.containsKey("Movimientos")
                 ? (List<MovimientoFinanciero>) estado.get("Movimientos")
                 : new ArrayList<>();
@@ -199,9 +215,10 @@ public class ViewFinanciera {
 
         // ---------- Presupuesto del evento ----------
         boolean hayPresupuesto = Boolean.TRUE.equals(estado.get("Presupuesto_Registrado"));
-        double presupuesto = numero(estado.get("Presupuesto"));
-        double comprometido = numero(estado.get("Comprometido"));
-        double disponible = numero(estado.get("Disponible"));
+        // Los importes llegan como BigDecimal; los double solo se usan para dibujar las barras.
+        Object presupuesto = estado.get("Presupuesto");
+        Object comprometido = estado.get("Comprometido");
+        Object disponible = estado.get("Disponible");
         double porcentajeUsado = numero(estado.get("Porcentaje_Usado"));
         boolean excede = Boolean.TRUE.equals(estado.get("Excede_Presupuesto"));
 
@@ -222,11 +239,21 @@ public class ViewFinanciera {
 
             if (excede) {
                 Label alerta = etiqueta("⚠ Las contrataciones superan el presupuesto en "
-                        + dinero(-disponible) + ".", "field-label");
+                        + dinero(((BigDecimal) disponible).negate()) + ".", "field-label");
                 alerta.setStyle("-fx-text-fill: #BA2424;");
                 alerta.setWrapText(true);
                 tarjeta.getChildren().add(alerta);
             }
+        }
+
+        if (sinValor > 0) {
+            Label aviso = etiqueta("⚠ " + sinValor + (sinValor == 1
+                    ? " contratación no tiene valor acordado y no se descontó del presupuesto."
+                    : " contrataciones no tienen valor acordado y no se descontaron del presupuesto."),
+                    "field-label");
+            aviso.setStyle("-fx-text-fill: #A96A00;");
+            aviso.setWrapText(true);
+            tarjeta.getChildren().add(aviso);
         }
 
         // ---------- Movimientos: ingresos, egresos y balance ----------
@@ -240,21 +267,24 @@ public class ViewFinanciera {
                 datos, new Separator(), etiqueta("Presupuesto por categoría", "section-title"));
 
         // ---------- Categorías ----------
-        if (servicios.isEmpty()) {
+        if (compromisos.isEmpty()) {
             tarjeta.getChildren().add(etiqueta("No hay servicios contratados para este evento.", "hint"));
         } else {
-            Map<String, Double> costosPorCategoria = new LinkedHashMap<>();
-            for (Servicio s : servicios) {
-                String cat = s.getCategoria() != null ? s.getCategoria() : "Otros";
-                costosPorCategoria.put(cat, costosPorCategoria.getOrDefault(cat, 0.0) + s.getPrecio());
+            Map<String, BigDecimal> costosPorCategoria = new LinkedHashMap<>();
+            for (CompromisoFinanciero c : compromisos) {
+                if (!c.tieneValor()) {
+                    continue;
+                }
+                String cat = c.getCategoria() != null ? c.getCategoria() : "Otros";
+                costosPorCategoria.merge(cat, c.getValor(), BigDecimal::add);
             }
             // Cada categoría se mide contra el presupuesto del evento; sin presupuesto, contra lo comprometido.
-            double base = hayPresupuesto && presupuesto > 0 ? presupuesto : comprometido;
+            double base = hayPresupuesto && numero(presupuesto) > 0 ? numero(presupuesto) : numero(comprometido);
             String[] colores = {"#D71920", "#2563EB", "#059669", "#D97706", "#7C3AED"};
             int idx = 0;
             VBox barras = new VBox(16);
-            for (Map.Entry<String, Double> entry : costosPorCategoria.entrySet()) {
-                double fraccion = base > 0 ? entry.getValue() / base : 0;
+            for (Map.Entry<String, BigDecimal> entry : costosPorCategoria.entrySet()) {
+                double fraccion = base > 0 ? entry.getValue().doubleValue() / base : 0;
                 barras.getChildren().add(crearBarra(entry.getKey(),
                         dinero(entry.getValue()) + " · " + Math.round(fraccion * 100) + "%",
                         Math.min(fraccion, 1.0), colores[idx % colores.length]));
@@ -442,7 +472,10 @@ public class ViewFinanciera {
 
     /** Formato de pesos colombianos: $ 1.800.000 (evita valores como 1.5E7). */
     private String dinero(Object valor) {
-        double numero = valor instanceof Number ? ((Number) valor).doubleValue() : 0.0;
+        // BigDecimal se formatea tal cual, sin pasar por double.
+        BigDecimal numero = valor instanceof BigDecimal ? (BigDecimal) valor
+                : valor instanceof Number ? BigDecimal.valueOf(((Number) valor).doubleValue())
+                : BigDecimal.ZERO;
         NumberFormat formato = NumberFormat.getNumberInstance(new Locale("es", "CO"));
         formato.setMaximumFractionDigits(0);
         return "$ " + formato.format(numero);
@@ -472,35 +505,66 @@ public class ViewFinanciera {
 
         File file = fileChooser.showSaveDialog(owner);
 
-        if (file != null) {
-            try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
-                writer.write('\ufeff');
+        if (file == null) {
+            return; // El usuario cancel\u00f3 el di\u00e1logo.
+        }
 
-                writer.println("REPORTE FINANCIERO;" + estado.getOrDefault("Planificacion_Descripcion", ""));
-                writer.println("Estado del evento;" + estado.getOrDefault("Planificacion_Estado", ""));
-                writer.println("Presupuesto Total;" + dinero(estado.get("Presupuesto")));
-                writer.println("Comprometido;" + dinero(estado.get("Comprometido")));
-                writer.println("Disponible;" + dinero(estado.get("Disponible")));
-                writer.println("Ingresos Totales;$" + estado.getOrDefault("Ingresos", "0.0"));
-                writer.println("Egresos Totales;$" + estado.getOrDefault("Egresos", "0.0"));
-                writer.println("Balance Final;$" + estado.getOrDefault("Balance", "0.0"));
-                writer.println();
+        try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
+            writer.write('\ufeff');
 
-                writer.println("--- DETALLE DE MOVIMIENTOS ---");
-                writer.println("Fecha;Descripcion;Monto;Estado");
+            writer.println("REPORTE FINANCIERO;" + textoCsv(estado.get("Planificacion_Descripcion")));
+            writer.println("Estado del plan;" + textoCsv(estado.get("Planificacion_Estado")));
+            writer.println("Presupuesto total;" + dinero(estado.get("Presupuesto")));
+            writer.println("Comprometido;" + dinero(estado.get("Comprometido")));
+            writer.println("Disponible;" + dinero(estado.get("Disponible")));
+            writer.println("Ingresos totales;" + dinero(estado.get("Ingresos")));
+            writer.println("Egresos totales;" + dinero(estado.get("Egresos")));
+            writer.println("Balance final;" + dinero(estado.get("Balance")));
+            writer.println();
 
-                List<MovimientoFinanciero> movimientos = (List<MovimientoFinanciero>) estado.get("Movimientos");
-                if (movimientos != null) {
-                    for (MovimientoFinanciero mov : movimientos) {
-                        writer.println(mov.getFecha() + ";" + mov.getDescripcion() + ";$" + mov.getValor() + ";" + mov.getEstado());
-                    }
+            writer.println("--- DETALLE DE MOVIMIENTOS ---");
+            writer.println("Fecha;Descripcion;Tipo;Monto;Estado");
+
+            List<MovimientoFinanciero> movimientos = (List<MovimientoFinanciero>) estado.get("Movimientos");
+            if (movimientos != null) {
+                for (MovimientoFinanciero mov : movimientos) {
+                    String fecha = mov.getFecha() != null ? mov.getFecha().format(FORMATO_FECHA) : "";
+                    writer.println(fecha + ";" + textoCsv(mov.getDescripcion()) + ";" + textoCsv(mov.getTipo())
+                            + ";" + dinero(mov.getValor()) + ";" + textoCsv(mov.getEstado()));
                 }
-
-                System.out.println("Archivo CSV exportado exitosamente en: " + file.getAbsolutePath());
-
-            } catch (Exception ex) {
-                System.out.println("Error al exportar el archivo CSV: " + ex.getMessage());
             }
+
+            // PrintWriter no lanza excepciones al escribir; hay que preguntarle si fall\u00f3.
+            if (writer.checkError()) {
+                throw new java.io.IOException("No se pudo escribir el archivo.");
+            }
+            mostrarAlerta(Alert.AlertType.INFORMATION, owner, "Reporte exportado",
+                    "El reporte se guard\u00f3 en:\n" + file.getAbsolutePath());
+
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "Error al exportar el reporte financiero", ex);
+            mostrarAlerta(Alert.AlertType.ERROR, owner, "No se pudo exportar el reporte",
+                    "Revisa que el archivo no est\u00e9 abierto en otro programa y que tengas permiso "
+                            + "para guardar en esa carpeta.");
         }
     }
-}
+
+    /** Evita que un ';' o un salto de l\u00ednea en el texto descuadre las columnas del CSV. */
+    private String textoCsv(Object valor) {
+        if (valor == null) {
+            return "";
+        }
+        return valor.toString().replace(';', ',').replace('\n', ' ').replace('\r', ' ');
+    }
+
+    private void mostrarAlerta(Alert.AlertType tipo, Window owner, String titulo, String mensaje) {
+        Alert alerta = new Alert(tipo);
+        if (owner != null) {
+            alerta.initOwner(owner);
+        }
+        alerta.setTitle(titulo);
+        alerta.setHeaderText(titulo);
+        alerta.setContentText(mensaje);
+        alerta.showAndWait();
+    }
+}

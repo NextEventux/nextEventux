@@ -127,7 +127,7 @@ public class NextEventuxApp extends Application {
                 new RepositoryPublicacion(), new RepositoryEvento()), sesion);
         controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
         controllerFinanciera = new ControllerFinanciera(new ServiceFinanciera(new RepositoryMovimientoFinanciero(),
-            new RepositoryPlanificacion(), new RepositoryServicio()));
+            new RepositoryPlanificacion(), new RepositoryEvento()), sesion);
 
         String tipo = sesion.getTipoUsuario();
 
