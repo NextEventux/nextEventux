@@ -18,11 +18,18 @@ public class Navegacion {
         CATALOGO_SERVICIOS("NextEventux | Proveedores"),
         DETALLE_SERVICIO("NextEventux | Detalle del servicio"),
         MIS_SERVICIOS("NextEventux | Mis servicios"),
+        AVISOS_PROVEEDOR("NextEventux | Mis avisos"),
         DETALLE_SERVICIO_PROVEEDOR("NextEventux | Administración del servicio"),
         MIS_EVENTOS("NextEventux | Mis eventos"),
         EDICION_EVENTO("NextEventux | Editar evento"),
         CANCELACION_EVENTO("NextEventux | Cancelar evento"),
-        PUBLICACION_EVENTOS("NextEventux | Publicación de eventos");
+        FINALIZACION_EVENTO("NextEventux | Finalizar evento"),
+        PUBLICACION_EVENTOS("NextEventux | Publicación de eventos"),
+        MIS_INVITACIONES("NextEventux | Mis invitaciones"),
+        MESA_REGALOS("NextEventux | Mesa de regalos"),
+        SOLICITUDES_PROVEEDOR("NextEventux | Solicitudes recibidas"),
+        PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas"),
+        ESTADO_FINANCIERO("NextEventux | Estado financiero");
 
         private final String titulo;
 
@@ -77,6 +84,10 @@ public class Navegacion {
     }
 
     public void ir(Pantalla pantalla) {
+        System.out.printf(
+                "[NAVEGACION] solicitada=%s registrada=%s%n",
+                pantalla,
+                fabricas.containsKey(pantalla));
         if (!fabricas.containsKey(pantalla)) {
             throw new IllegalArgumentException(
                     "No se registró la pantalla " + pantalla);
@@ -84,9 +95,15 @@ public class Navegacion {
         Scene actual;
         if (contenedor != null) {
             contenedor.setCenter(obtener(pantalla));
+            System.out.printf(
+                    "[NAVEGACION] mostrada=%s%n",
+                    pantalla);
             actual = contenedor.getScene();
         } else if (scene != null) {
             scene.setRoot(obtener(pantalla));
+            System.out.printf(
+                    "[NAVEGACION] mostrada=%s%n",
+                    pantalla);
             actual = scene;
         } else {
             return;
@@ -106,8 +123,15 @@ public class Navegacion {
     }
 
     private Parent crear(Pantalla pantalla) {
-        return Objects.requireNonNull(
+        System.out.printf(
+                "[NAVEGACION] ejecutando fabrica=%s%n",
+                pantalla);
+        Parent vista = Objects.requireNonNull(
                 fabricas.get(pantalla).get(),
                 "La fábrica de " + pantalla + " devolvió una pantalla nula");
+        System.out.printf(
+                "[NAVEGACION] fabrica completada=%s%n",
+                pantalla);
+        return vista;
     }
 }
