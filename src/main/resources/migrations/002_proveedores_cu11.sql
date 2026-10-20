@@ -52,16 +52,3 @@ CREATE TABLE IF NOT EXISTS Pregunta_Servicio (
     estado VARCHAR(30) DEFAULT 'PENDIENTE',
     FOREIGN KEY (id_servicio) REFERENCES Servicio(id_servicio)
 );
-
--- Relacionamos los ejemplos actuales con servicios concretos
-UPDATE Solicitud_Ejecucion
-SET id_servicio = 1
-WHERE id_solicitud = 1 AND id_servicio IS NULL;
-
-UPDATE Solicitud_Ejecucion
-SET id_servicio = 3
-WHERE id_solicitud = 2 AND id_servicio IS NULL;
-
-UPDATE Solicitud_Ejecucion
-SET id_servicio = 2
-WHERE id_solicitud = 3 AND id_servicio IS NULL;

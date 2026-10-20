@@ -1,7 +1,9 @@
 package views;
 
+import java.math.BigDecimal;
 import java.net.URL;
 import java.text.Normalizer;
+import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +16,7 @@ import entities.Evento;
 import entities.Invitacion;
 import entities.Invitado;
 import entities.Lugar;
+import entities.Regalo;
 import entities.SesionUsuario;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
@@ -41,6 +44,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -64,6 +68,8 @@ public final class ViewInvitados {
 
     private static final String CSS = "/styles/invitados.css";
     private static final double ANCHO_PANEL = 270;
+    /** Alto de cada fila de la tabla de invitaciones (dos filas de botones en Acciones). */
+    private static final double ALTO_FILA = 86;
     /**
      * Ancho de ventana desde el cual el panel derecho va al lado de la tabla.
      */
@@ -437,11 +443,11 @@ public final class ViewInvitados {
     private void configurarTabla() {
         tabla.setId("tablaInvitaciones");
         ajustarColumnas(tabla);
-        tabla.setFixedCellSize(58);
+        tabla.setFixedCellSize(ALTO_FILA);
         tabla.setPlaceholder(etiqueta("No hay invitaciones para mostrar.", "muted"));
         // La tabla crece con sus filas; el desplazamiento lo hace el ScrollPane de la página.
         tabla.prefHeightProperty().bind(Bindings.createDoubleBinding(
-                () -> 50 + 58.0 * Math.max(filtradas.size(), 2), filtradas));
+                () -> 50 + ALTO_FILA * Math.max(filtradas.size(), 2), filtradas));
         tabla.minHeightProperty().bind(tabla.prefHeightProperty());
         tabla.maxHeightProperty().bind(tabla.prefHeightProperty());
 
@@ -476,24 +482,33 @@ public final class ViewInvitados {
 
         TableColumn<FilaInvitacion, FilaInvitacion> acciones = new TableColumn<>("Acciones");
         acciones.setCellValueFactory(c -> new SimpleObjectProperty<>(c.getValue()));
-        acciones.setMinWidth(282);
-        acciones.setPrefWidth(282);
+        acciones.setMinWidth(222);
+        acciones.setPrefWidth(222);
         acciones.setSortable(false);
         acciones.setCellFactory(col -> new TableCell<>() {
             private final Button invitados = new Button("Invitados");
+            private final Button regalos = new Button("Regalos");
             private final Button editar = new Button("Editar");
             private final Button revocar = new Button("Revocar");
-            private final HBox caja = new HBox(6, invitados, editar, revocar);
-
+            private final GridPane caja = new GridPane();
             {
                 invitados.getStyleClass().addAll("btn-secondary", "btn-small");
+                regalos.getStyleClass().addAll("btn-secondary", "btn-small");
                 editar.getStyleClass().addAll("btn-secondary", "btn-small");
                 revocar.getStyleClass().addAll("btn-danger", "btn-small");
-                for (Button boton : new Button[]{invitados, editar, revocar}) {
+                for (Button boton : new Button[]{invitados, regalos, editar, revocar}) {
                     boton.setMinWidth(Region.USE_PREF_SIZE);
+                    boton.setMaxWidth(Double.MAX_VALUE);
+                    GridPane.setHgrow(boton, Priority.ALWAYS);
                 }
+                // Dos filas de botones para que la tabla no se salga de la tarjeta.
+                caja.setHgap(6);
+                caja.setVgap(6);
+                caja.addRow(0, invitados, regalos);
+                caja.addRow(1, editar, revocar);
                 caja.setAlignment(Pos.CENTER_LEFT);
                 invitados.setOnAction(e -> abrirInvitados(getItem()));
+                regalos.setOnAction(e -> abrirRegalos(getItem()));
                 editar.setOnAction(e -> abrirFormularioInvitacion(getItem()));
                 revocar.setOnAction(e -> revocar(getItem()));
             }
@@ -952,6 +967,162 @@ public final class ViewInvitados {
         refrescar.run();
         dialogo.showAndWait();
         cargarInvitaciones();
+    }
+
+    // ------------------------------------------------------------------
+    // Mesa de regalos de una invitación (CU-20, lado del organizador)
+    // ------------------------------------------------------------------
+    private void abrirRegalos(FilaInvitacion fila) {
+        if (fila == null) return;
+        Evento evento = selectorEvento.getValue();
+        NumberFormat pesos = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
+        pesos.setMaximumFractionDigits(0);
+        ObservableList<Regalo> lista = FXCollections.observableArrayList();
+        Label resumenValor = etiqueta("", "summary-value");
+        Label error = mensajeDialogo();
+
+        TableView<Regalo> tablaRegalos = new TableView<>(lista);
+        tablaRegalos.setId("tablaRegalos");
+        tablaRegalos.setFixedCellSize(50);
+        tablaRegalos.setPrefHeight(66 + 50 * 4);
+        tablaRegalos.setPlaceholder(etiqueta("Esta invitación todavía no tiene regalos en su mesa.", "muted"));
+
+        Runnable refrescar = () -> {
+            try {
+                lista.setAll(controller.listarRegalos(fila.id()));
+                long reservados = lista.stream().filter(Regalo::estaReservado).count();
+                resumenValor.setText(lista.size() + (lista.size() == 1 ? " regalo" : " regalos") + "  ·  "
+                        + reservados + " reservados  ·  " + (lista.size() - reservados) + " disponibles");
+            } catch (IllegalStateException e) {
+                mostrarError(error, e.getMessage());
+            }
+        };
+
+        TableColumn<Regalo, String> estado = columnaTexto("Estado",
+                r -> r.estaReservado() ? Regalo.ESTADO_RESERVADO : Regalo.ESTADO_DISPONIBLE, 100, 110);
+        estado.setCellFactory(col -> new TableCell<>() {
+            private final Label pill = new Label();
+            { pill.setMinWidth(Region.USE_PREF_SIZE); }
+            @Override
+            protected void updateItem(String valor, boolean vacio) {
+                super.updateItem(valor, vacio);
+                if (vacio || valor == null) {
+                    setGraphic(null);
+                } else {
+                    pill.setText(valor);
+                    pill.getStyleClass().setAll("label", "status",
+                            Regalo.ESTADO_DISPONIBLE.equals(valor) ? "status-confirmada" : "status-enviada");
+                    setGraphic(pill);
+                }
+                setText(null);
+            }
+        });
+        TableColumn<Regalo, Regalo> quitar = new TableColumn<>("");
+        quitar.setCellValueFactory(c -> new SimpleObjectProperty<>(c.getValue()));
+        quitar.setSortable(false);
+        quitar.setMinWidth(85);
+        quitar.setPrefWidth(85);
+        quitar.setCellFactory(col -> new TableCell<>() {
+            private final Button boton = new Button("Quitar");
+            {
+                boton.getStyleClass().addAll("btn-danger", "btn-small");
+                boton.setOnAction(e -> {
+                    try {
+                        controller.quitarRegalo(getItem().getIdRegalo());
+                        error.setVisible(false);
+                        error.setManaged(false);
+                        refrescar.run();
+                    } catch (IllegalArgumentException | IllegalStateException ex) {
+                        mostrarError(error, ex.getMessage());
+                    }
+                });
+            }
+            @Override
+            protected void updateItem(Regalo regalo, boolean vacio) {
+                super.updateItem(regalo, vacio);
+                if (!vacio && regalo != null) {
+                    boton.setDisable(regalo.estaReservado());
+                    boton.setTooltip(regalo.estaReservado()
+                            ? new Tooltip("Reservado por " + regalo.getReservadoPor() + "; no se puede quitar.") : null);
+                }
+                setGraphic(vacio || regalo == null || !fila.activa() ? null : boton);
+            }
+        });
+        ajustarColumnas(tablaRegalos);
+        tablaRegalos.getColumns().addAll(List.of(
+                this.<Regalo>columnaTexto("Regalo", Regalo::getNombre, 130, 160),
+                this.<Regalo>columnaTexto("Descripción", r -> r.getDescripcion() == null ? "-" : r.getDescripcion(), 150, 210),
+                this.<Regalo>columnaTexto("Precio estimado",
+                        r -> r.getPrecioEstimado() == null ? "-" : "$" + pesos.format(r.getPrecioEstimado()), 100, 110),
+                estado, quitar));
+
+        TextField nombre = campoDialogo("regNombre", "Nombre del regalo *");
+        TextField precio = campoDialogo("regPrecio", "Precio estimado * (ej. 50000)");
+        TextField descripcion = campoDialogo("regDescripcion", "Descripción");
+        Button agregar = new Button("Agregar regalo");
+        agregar.setId("agregarRegalo");
+        agregar.getStyleClass().add("btn-primary");
+        agregar.setDefaultButton(true);
+        agregar.setOnAction(e -> {
+            try {
+                controller.agregarRegalo(fila.id(), new Regalo(nombre.getText(), descripcion.getText(), leerPrecio(precio.getText())));
+                for (TextField campo : new TextField[]{nombre, precio, descripcion}) campo.clear();
+                error.setVisible(false);
+                error.setManaged(false);
+                nombre.requestFocus();
+                refrescar.run();
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                mostrarError(error, ex.getMessage());
+            }
+        });
+        GridPane formulario = new GridPane();
+        formulario.setHgap(12);
+        formulario.setVgap(12);
+        for (int i = 0; i < 2; i++) {
+            ColumnConstraints columna = new ColumnConstraints();
+            columna.setPercentWidth(50);
+            formulario.getColumnConstraints().add(columna);
+        }
+        formulario.addRow(0, nombre, precio);
+        formulario.add(descripcion, 0, 1, 2, 1);
+        HBox barraAgregar = new HBox(agregar);
+        barraAgregar.setAlignment(Pos.CENTER_RIGHT);
+        Label nota = etiqueta("Si quieren varias unidades de algo (por ejemplo pañitos), agrégalas como regalos separados. "
+                + "Los regalos reservados no se pueden quitar.", "hint");
+        nota.setWrapText(true);
+        nota.setMinHeight(Region.USE_PREF_SIZE);
+        VBox agregarCaja = new VBox(12, etiqueta("Agregar regalo", "section-title"), formulario, nota, barraAgregar);
+        if (!fila.activa()) {
+            agregarCaja = new VBox(etiqueta("La invitación fue revocada; ya no se puede modificar su mesa de regalos.", "muted"));
+        }
+
+        HBox resumen = new HBox(10, etiqueta("Mesa de regalos", "hint"), espacioHorizontal(), resumenValor);
+        resumen.setAlignment(Pos.CENTER_LEFT);
+        Label subtitulo = etiqueta(evento.getNombre() + "  ·  "
+                + (fila.invitacion().getMensaje() == null ? "" : fila.invitacion().getMensaje()), "muted");
+        subtitulo.setWrapText(true);
+        VBox contenido = new VBox(16, subtitulo, resumen, tablaRegalos, new Separator(), agregarCaja, error);
+        contenido.setPrefWidth(720);
+
+        Dialog<ButtonType> dialogo = crearDialogo("Regalos de la invitación #" + fila.id(), contenido);
+        dialogo.getDialogPane().getButtonTypes().add(new ButtonType("Cerrar", ButtonBar.ButtonData.CANCEL_CLOSE));
+        estilizarBotones(dialogo, null);
+        refrescar.run();
+        dialogo.showAndWait();
+    }
+
+    /** Convierte el precio escrito (acepta "50000", "50.000" o "$50.000") a número; vacío o inválido da null. */
+    private static BigDecimal leerPrecio(String texto) {
+        if (texto == null || texto.isBlank()) return null;
+        String limpio = texto.replace("$", "").replace(" ", "");
+        // Formato colombiano con puntos de miles (50.000 o 1.250.000,50); si no, el punto o la coma son decimales.
+        limpio = limpio.matches("\\d{1,3}(\\.\\d{3})+(,\\d+)?")
+                ? limpio.replace(".", "").replace(",", ".") : limpio.replace(",", ".");
+        try {
+            return new BigDecimal(limpio);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Escribe el precio estimado solo con números, por ejemplo 50000.");
+        }
     }
 
     // ------------------------------------------------------------------

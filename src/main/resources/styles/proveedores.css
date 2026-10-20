@@ -143,6 +143,10 @@
     -fx-text-fill: #858899;
 }
 
+.provider-gallery-error {
+    -fx-text-fill: #BA2424;
+}
+
 .provider-gallery-tools {
     -fx-padding: 0 0 13px 0;
     -fx-border-color: transparent transparent #E6E8EF transparent;
@@ -466,4 +470,112 @@
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
     -fx-padding: 12px;
+}
+/* CU12: solicitudes y propuestas */
+
+.cu12-content {
+    -fx-background-color: #F8F9FC;
+    -fx-spacing: 20;
+}
+
+.cu12-list {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.cu12-list .list-cell {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-color: #E8E9EF;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 18;
+    -fx-text-fill: #252638;
+    -fx-font-size: 14px;
+}
+
+.cu12-list .list-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.cu12-list .list-cell:filled:hover {
+    -fx-background-color: #FFF8F8;
+    -fx-border-color: #E79AA0;
+    -fx-cursor: hand;
+}
+
+.cu12-list .list-cell:filled:selected {
+    -fx-background-color: #FFF0F1;
+    -fx-border-color: #D71920;
+    -fx-border-width: 2;
+    -fx-text-fill: #252638;
+}
+
+.cu12-content .button {
+    -fx-background-radius: 10;
+    -fx-padding: 12 20;
+    -fx-cursor: hand;
+}
+
+.cu12-content .btn-primary {
+    -fx-background-color: #D71920;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.cu12-content .btn-primary:hover {
+    -fx-background-color: #B9151B;
+}
+/* Tarjetas de solicitudes y propuestas CU12 */
+
+.cu12-card-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.cu12-card-detail {
+    -fx-font-size: 13px;
+    -fx-text-fill: #626578;
+}
+
+.cu12-price {
+    -fx-font-size: 23px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #D71920;
+}
+
+.cu12-state {
+    -fx-padding: 6 12;
+    -fx-background-radius: 20;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.cu12-pending {
+    -fx-background-color: #FFF3DC;
+    -fx-text-fill: #A96A00;
+}
+
+.cu12-negotiating {
+    -fx-background-color: #E8F1FF;
+    -fx-text-fill: #2459A6;
+}
+
+.cu12-selected {
+    -fx-background-color: #E5F6EC;
+    -fx-text-fill: #237344;
+}
+
+.cu12-rejected {
+    -fx-background-color: #FDE9EA;
+    -fx-text-fill: #B9151B;
+}
+
+.cu12-neutral {
+    -fx-background-color: #F0F0F4;
+    -fx-text-fill: #626578;
 }

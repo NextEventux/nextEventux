@@ -11,15 +11,9 @@ CREATE TABLE IF NOT EXISTS Disponibilidad_Servicio (
 ALTER TABLE Contratacion ADD COLUMN IF NOT EXISTS id_disponibilidad INT REFERENCES Disponibilidad_Servicio(id_disponibilidad);
 ALTER TABLE Evento ADD COLUMN IF NOT EXISTS id_lugar INT REFERENCES Lugar(id_lugar);
 
--- Compatibilidad con bases locales que tengan un esquema anterior.
-ALTER TABLE Notificacion_interna
-    ADD COLUMN IF NOT EXISTS id_usuario INT
-    REFERENCES Usuario(id_usuario);
-
--- El destinatario puede ser un invitado sin cuenta de usuario.
-ALTER TABLE Notificacion_interna
-    ALTER COLUMN id_usuario DROP NOT NULL;
-
 -- Invitado no tiene cuenta Usuario en el modelo actual.
+ALTER TABLE Notificacion_interna ALTER COLUMN id_usuario DROP NOT NULL;
 ALTER TABLE Notificacion_interna ADD COLUMN IF NOT EXISTS id_invitado INT REFERENCES Invitado(id_invitado);
 ALTER TABLE Notificacion_interna ADD COLUMN IF NOT EXISTS id_evento INT REFERENCES Evento(id_evento);
+ALTER TABLE Notificacion_interna ADD CONSTRAINT IF NOT EXISTS destinatario_notificacion
+CHECK ((id_usuario IS NOT NULL AND id_invitado IS NULL) OR (id_usuario IS NULL AND id_invitado IS NOT NULL));
