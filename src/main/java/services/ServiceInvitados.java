@@ -5,6 +5,10 @@ import entities.Invitacion;
 import entities.InvitacionRecibida;
 import entities.Invitado;
 import entities.Lugar;
+import entities.Regalo;
+import entities.ReservaRegalo;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +18,8 @@ import repositories.RepositoryEvento;
 import repositories.RepositoryInvitacion;
 import repositories.RepositoryInvitado;
 import repositories.RepositoryLugar;
+import repositories.RepositoryRegalo;
+import repositories.RepositoryReservaRegalo;
 
 /**
  * Reglas de negocio del módulo de invitados.
@@ -22,8 +28,15 @@ import repositories.RepositoryLugar;
  * en el mismo evento (R40).
  * CU-16: el invitado consulta sus invitaciones (R37) y confirma o rechaza su
  * asistencia (R38); al rechazar libera su cupo (R39).
+ * CU-20: el organizador arma la mesa de regalos de cada invitación y el invitado
+ * reserva o cancela regalos; cada regalo tiene a lo sumo una reserva activa (R43).
  */
 public class ServiceInvitados {
+    private static final String MENSAJE_EVENTO_AJENO =
+            "Solo puedes gestionar las invitaciones de tus propios eventos.";
+    private static final String MENSAJE_MESA_AJENA =
+            "Solo el invitado puede usar su mesa de regalos. Verifica tu correo y tu teléfono.";
+
     public List<entities.Fotografia> consultarGaleria(String correo, String telefono) {
         String limpio=limpiar(correo);
         if(limpio==null || limpio.length()>150 || !CORREO.matcher(limpio).matches())
@@ -39,17 +52,29 @@ public class ServiceInvitados {
     private final RepositoryInvitado repositoryInvitado;
     private final RepositoryLugar repositoryLugar;
     private final RepositoryEvento repositoryEvento;
+    private final RepositoryRegalo repositoryRegalo;
+    private final RepositoryReservaRegalo repositoryReservaRegalo;
 
     public ServiceInvitados() {
-        this(new RepositoryInvitacion(), new RepositoryInvitado(), new RepositoryLugar(), new RepositoryEvento());
+        this(new RepositoryInvitacion(), new RepositoryInvitado(), new RepositoryLugar(), new RepositoryEvento(),
+                new RepositoryRegalo(), new RepositoryReservaRegalo());
     }
 
     public ServiceInvitados(RepositoryInvitacion repositoryInvitacion, RepositoryInvitado repositoryInvitado,
                             RepositoryLugar repositoryLugar, RepositoryEvento repositoryEvento) {
+        this(repositoryInvitacion, repositoryInvitado, repositoryLugar, repositoryEvento,
+                new RepositoryRegalo(), new RepositoryReservaRegalo());
+    }
+
+    public ServiceInvitados(RepositoryInvitacion repositoryInvitacion, RepositoryInvitado repositoryInvitado,
+                            RepositoryLugar repositoryLugar, RepositoryEvento repositoryEvento,
+                            RepositoryRegalo repositoryRegalo, RepositoryReservaRegalo repositoryReservaRegalo) {
         this.repositoryInvitacion = repositoryInvitacion;
         this.repositoryInvitado = repositoryInvitado;
         this.repositoryLugar = repositoryLugar;
         this.repositoryEvento = repositoryEvento;
+        this.repositoryRegalo = repositoryRegalo;
+        this.repositoryReservaRegalo = repositoryReservaRegalo;
     }
 
     // ------------------------------------------------------------------
@@ -57,6 +82,46 @@ public class ServiceInvitados {
     // ------------------------------------------------------------------
     public List<Evento> listarEventos() {
         return repositoryEvento.listarEventos();
+    }
+
+    /** Verifica contra la base que la sesión sigue perteneciendo a un organizador activo. */
+    public int validarSesionOrganizador(entities.SesionUsuario sesion) {
+        if (sesion == null || sesion.getIdUsuario() <= 0 || sesion.getIdActor() <= 0
+                || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoActor())
+                || !repositoryEvento.organizadorActivo(sesion.getIdUsuario(), sesion.getIdActor())) {
+            throw new IllegalStateException(
+                    "Inicia sesión como organizador activo para gestionar invitaciones y regalos.");
+        }
+        return sesion.getIdActor();
+    }
+
+    /** Eventos de un organizador: cada organizador solo gestiona las invitaciones de sus eventos. */
+    public List<Evento> listarEventos(int idOrganizador) {
+        return listarEventos().stream().filter(e -> e.getIdOrganizador() == idOrganizador).toList();
+    }
+
+    /** Comprueba que el evento pertenezca al organizador antes de consultarlo o modificarlo. */
+    public void validarEventoDelOrganizador(int idOrganizador, int eventoId) {
+        if (buscarEvento(eventoId).getIdOrganizador() != idOrganizador)
+            throw new IllegalArgumentException(MENSAJE_EVENTO_AJENO);
+    }
+
+    public int eventoDeInvitacion(int idInvitacion) {
+        Invitacion invitacion = repositoryInvitacion.buscarInvitacion(idInvitacion);
+        if (invitacion == null) throw new IllegalArgumentException("La invitación no existe.");
+        return invitacion.getIdEvento();
+    }
+
+    public int eventoDeInvitado(int idInvitado) {
+        Invitado invitado = repositoryInvitado.buscarInvitado(idInvitado);
+        if (invitado == null) throw new IllegalArgumentException("El invitado no existe.");
+        return eventoDeInvitacion(invitado.getIdInvitacion());
+    }
+
+    public int eventoDeRegalo(int idRegalo) {
+        return eventoDeInvitacion(buscarRegalo(idRegalo).getIdInvitacion());
     }
 
     public List<Lugar> listarLugares() {
@@ -250,16 +315,144 @@ public class ServiceInvitados {
     }
 
     // ------------------------------------------------------------------
+    // CU-20: mesa de regalos (organizador)
+    // ------------------------------------------------------------------
+    /** Mesa de regalos de una invitación; solo la consulta el organizador dueño del evento. */
+    public List<Regalo> listarRegalos(int idOrganizador, int idInvitacion) {
+        validarEventoDelOrganizador(idOrganizador, eventoDeInvitacion(idInvitacion));
+        return repositoryRegalo.listarRegalos(idInvitacion);
+    }
+
+    public void agregarRegalo(int idOrganizador, int idInvitacion, Regalo datos) {
+        if (datos == null) throw new IllegalArgumentException("Completa los datos del regalo.");
+        Invitacion invitacion = buscarInvitacionActiva(idInvitacion);
+        validarEventoDelOrganizador(idOrganizador, invitacion.getIdEvento());
+        validarEventoParaRegalos(invitacion.getIdEvento(), false);
+        String nombre = limpiar(datos.getNombre());
+        String descripcion = limpiar(datos.getDescripcion());
+        if (nombre == null || nombre.length() > 150)
+            throw new IllegalArgumentException("Ingresa el nombre del regalo (hasta 150 caracteres).");
+        if (descripcion != null && descripcion.length() > 255)
+            throw new IllegalArgumentException("La descripción del regalo debe tener hasta 255 caracteres.");
+        BigDecimal precio = datos.getPrecioEstimado();
+        if (precio == null || precio.signum() <= 0)
+            throw new IllegalArgumentException("Ingresa un precio estimado mayor que cero.");
+        // Se valida antes de redondear: 0.001 no puede guardarse como 0.00.
+        if (precio.stripTrailingZeros().scale() > 2)
+            throw new IllegalArgumentException("El precio estimado admite máximo dos decimales.");
+        precio = precio.setScale(2, RoundingMode.UNNECESSARY);
+        if (precio.precision() > 12)
+            throw new IllegalArgumentException("El precio estimado es demasiado alto.");
+        datos.setIdInvitacion(idInvitacion);
+        datos.setNombre(nombre);
+        datos.setDescripcion(descripcion);
+        datos.setPrecioEstimado(precio);
+        datos.setEstado(Regalo.ESTADO_DISPONIBLE);
+        repositoryRegalo.guardarRegalo(datos);
+    }
+
+    /** Un regalo reservado no se puede quitar: el invitado ya lo eligió. */
+    public void quitarRegalo(int idOrganizador, int idRegalo) {
+        Regalo regalo = buscarRegalo(idRegalo);
+        Invitacion invitacion = buscarInvitacionActiva(regalo.getIdInvitacion());
+        validarEventoDelOrganizador(idOrganizador, invitacion.getIdEvento());
+        validarEventoParaRegalos(invitacion.getIdEvento(), false);
+        if (regalo.estaReservado() || repositoryReservaRegalo.contarReservasActivas(idRegalo) > 0)
+            throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por un invitado; no se puede quitar.");
+        repositoryRegalo.eliminarRegalo(idRegalo);
+    }
+
+    // ------------------------------------------------------------------
+    // CU-20: mesa de regalos (invitado)
+    // ------------------------------------------------------------------
+    /**
+     * Mesa de regalos de la invitación del invitado. Cada regalo indica si está disponible,
+     * si lo reservó otro invitado o si lo reservó él mismo. Igual que en CU-16, el invitado se
+     * identifica con su correo y su teléfono: nadie ve ni reserva en la mesa de otra persona.
+     */
+    public List<Regalo> consultarRegalosDisponibles(int idInvitado, String correo, String telefono) {
+        Invitado invitado = buscarInvitado(idInvitado);
+        validarIdentidad(invitado, correo, telefono, MENSAJE_MESA_AJENA);
+        Invitacion invitacion = buscarInvitacionActiva(invitado.getIdInvitacion());
+        return repositoryRegalo.listarRegalos(invitacion.getIdInvitacion(), idInvitado);
+    }
+
+    /** R43: un regalo está disponible si nadie lo tiene reservado. */
+    public boolean validarDisponibilidadRegalo(int idRegalo) {
+        Regalo regalo = buscarRegalo(idRegalo);
+        return !regalo.estaReservado() && repositoryReservaRegalo.contarReservasActivas(idRegalo) == 0;
+    }
+
+    public void reservarRegalo(int idInvitado, String correo, String telefono, int idRegalo) {
+        Invitado invitado = buscarInvitado(idInvitado);
+        validarIdentidad(invitado, correo, telefono, MENSAJE_MESA_AJENA);
+        Invitacion invitacion = buscarInvitacionActiva(invitado.getIdInvitacion());
+        validarEventoParaRegalos(invitacion.getIdEvento(), true);
+        Regalo regalo = buscarRegalo(idRegalo);
+        if (regalo.getIdInvitacion() != invitacion.getIdInvitacion())
+            throw new IllegalArgumentException("El regalo no pertenece a la mesa de regalos de tu invitación.");
+        if (regalo.estaReservadoPor(idInvitado))
+            throw new IllegalArgumentException("Ya tienes reservado \"" + regalo.getNombre() + "\".");
+        if (!validarDisponibilidadRegalo(idRegalo))
+            throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por otro invitado. Elige otro regalo.");
+        ReservaRegalo reserva = new ReservaRegalo(0, invitacion.getIdEvento(), idInvitado, idRegalo,
+                LocalDateTime.now(), ReservaRegalo.ESTADO_RESERVADO);
+        if (!repositoryReservaRegalo.registrarReserva(reserva))
+            throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por otro invitado. Elige otro regalo.");
+    }
+
+    public void cancelarReservaRegalo(int idInvitado, String correo, String telefono, int idRegalo) {
+        Invitado invitado = buscarInvitado(idInvitado);
+        validarIdentidad(invitado, correo, telefono, MENSAJE_MESA_AJENA);
+        Invitacion invitacion = buscarInvitacionActiva(invitado.getIdInvitacion());
+        validarEventoParaRegalos(invitacion.getIdEvento(), true);
+        Regalo regalo = buscarRegalo(idRegalo);
+        ReservaRegalo reserva = repositoryReservaRegalo.buscarReservaActiva(idRegalo, idInvitado);
+        if (reserva == null)
+            throw new IllegalArgumentException("No tienes una reserva activa de \"" + regalo.getNombre() + "\".");
+        repositoryReservaRegalo.cancelarReserva(reserva);
+    }
+
+    // ------------------------------------------------------------------
     // Validaciones auxiliares
     // ------------------------------------------------------------------
+    /** La mesa no se modifica en eventos cancelados o finalizados; el invitado tampoco reserva si ya empezó. */
+    private void validarEventoParaRegalos(int eventoId, boolean comoInvitado) {
+        Evento evento = repositoryEvento.listarEventos().stream()
+                .filter(e -> e.getIdEvento() != null && e.getIdEvento() == eventoId)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("El evento no está registrado."));
+        String estado = evento.getEstado() == null ? "" : evento.getEstado().toUpperCase();
+        if (estado.equals("CANCELADO") || estado.equals("FINALIZADO"))
+            throw new IllegalArgumentException("El evento está " + estado.toLowerCase() + "; su mesa de regalos ya no se puede modificar.");
+        if (comoInvitado && evento.getFechaInicio() != null && !evento.getFechaInicio().isAfter(LocalDateTime.now()))
+            throw new IllegalArgumentException("El evento ya comenzó; la mesa de regalos está cerrada.");
+    }
+
+    private Invitado buscarInvitado(int idInvitado) {
+        Invitado invitado = repositoryInvitado.buscarInvitado(idInvitado);
+        if (invitado == null) throw new IllegalArgumentException("El invitado no existe.");
+        return invitado;
+    }
+
+    private Regalo buscarRegalo(int idRegalo) {
+        Regalo regalo = repositoryRegalo.buscarRegalo(idRegalo);
+        if (regalo == null) throw new IllegalArgumentException("El regalo no existe.");
+        return regalo;
+    }
+
     /** Solo el destinatario (su correo y su teléfono registrado) puede responder la invitación. */
     private void validarIdentidad(Invitado invitado, String correo, String telefono) {
+        validarIdentidad(invitado, correo, telefono, "Solo el invitado puede responder su invitación. "
+                + "Verifica tu correo y tu teléfono.");
+    }
+
+    private void validarIdentidad(Invitado invitado, String correo, String telefono, String mensaje) {
         String limpio = limpiar(correo);
         boolean mismoCorreo = limpio != null && invitado.getCorreo() != null
                 && invitado.getCorreo().trim().equalsIgnoreCase(limpio);
         if (!mismoCorreo || !mismoTelefono(invitado.getTelefono(), telefono))
-            throw new IllegalArgumentException("Solo el invitado puede responder su invitación. "
-                    + "Verifica tu correo y tu teléfono.");
+            throw new IllegalArgumentException(mensaje);
     }
 
     /** Compara solo los dígitos, para aceptar "300 555 4444" o "300-555-4444". */

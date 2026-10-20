@@ -25,6 +25,8 @@ public final class MenuCompartido {
         INVITADOS,
         CATALOGO,
         MIS_SERVICIOS,
+        MIS_INVITACIONES,
+        MESA_REGALOS,
         SOLICITUDES_PROVEEDOR,
         PROPUESTAS_ORGANIZADOR
     }
@@ -167,6 +169,64 @@ public final class MenuCompartido {
             cuenta.getStyleClass().add("sidebar-bottom");
             menu.getChildren().add(cuenta);
         }
+        return menu;
+    }
+
+    /**
+     * Menú del invitado (CU-16 y CU-20). El invitado no tiene cuenta: entra desde
+     * "Soy invitado" en el login y se identifica con su correo y teléfono.
+     */
+    public static VBox crearInvitado(
+            Pagina paginaActiva,
+            Runnable abrirInvitaciones,
+            Runnable abrirMesaRegalos,
+            Runnable salir) {
+
+        VBox menu = new VBox(7);
+        menu.getStyleClass().add("sidebar");
+        menu.setPrefWidth(250);
+        menu.setMinWidth(250);
+
+        VBox marca = new VBox(10, crearLogo(),
+                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        marca.setAlignment(Pos.CENTER);
+        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
+
+        menu.getChildren().addAll(
+                marca,
+                etiqueta("MENÚ DEL INVITADO", "menu-title"));
+
+        agregarOpcion(menu, "✉  Mis invitaciones",
+                paginaActiva == Pagina.MIS_INVITACIONES,
+                abrirInvitaciones);
+        agregarOpcion(menu, "♡  Mesa de regalos",
+                paginaActiva == Pagina.MESA_REGALOS,
+                abrirMesaRegalos);
+
+        Region espacio = new Region();
+        VBox.setVgrow(espacio, Priority.ALWAYS);
+        menu.getChildren().add(espacio);
+
+        VBox perfil = new VBox(4,
+                etiqueta("Invitado", "profile-name"),
+                etiqueta("Sin cuenta", "hint"));
+        perfil.setMinWidth(0);
+        HBox.setHgrow(perfil, Priority.ALWAYS);
+        if (salir != null) {
+            Label enlace = etiqueta("Cerrar sesión", "logout-link");
+            enlace.setOnMouseClicked(event -> salir.run());
+            enlace.setStyle("-fx-cursor: hand;");
+            perfil.getChildren().add(enlace);
+        }
+        Label avatar = etiqueta("IN", "avatar");
+        avatar.setMinSize(42, 42);
+        avatar.setPrefSize(42, 42);
+        avatar.setMaxSize(42, 42);
+        HBox cuenta = new HBox(12, avatar, perfil);
+        cuenta.setAlignment(Pos.CENTER_LEFT);
+        cuenta.setMaxWidth(Double.MAX_VALUE);
+        cuenta.getStyleClass().add("sidebar-bottom");
+        menu.getChildren().add(cuenta);
         return menu;
     }
 

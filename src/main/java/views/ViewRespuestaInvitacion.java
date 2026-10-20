@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import javafx.geometry.Insets;
+import java.util.function.BiConsumer;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
@@ -69,7 +69,23 @@ public final class ViewRespuestaInvitacion {
     private final ListView<String> avisos = new ListView<>();
     private final FlowPane galeria = new FlowPane(16,16);
 
-    public ViewRespuestaInvitacion(ControllerInvitados controller) {
+    /** Acciones del menú compartido del invitado. */
+    private Runnable abrirInvitaciones;
+    private Runnable abrirMesaRegalos;
+    private Runnable salir;
+    /** Avisa el correo y el teléfono verificados para no pedirlos otra vez en la otra pantalla. */
+    private BiConsumer<String, String> alVerificar;
+
+    public ViewRespuestaInvitacion(ControllerInvitados controller, Runnable abrirInvitaciones, Runnable abrirMesaRegalos,
+                    Runnable salir, BiConsumer<String, String> alVerificar) {
+        this(controller);
+        this.abrirInvitaciones = abrirInvitaciones;
+        this.abrirMesaRegalos = abrirMesaRegalos;
+        this.salir = salir;
+        this.alVerificar = alVerificar;
+    }
+
+    private ViewRespuestaInvitacion(ControllerInvitados controller) {
         this.controller = controller;
         correo.setId("correoInvitado");
         correo.setPromptText("Ej. sofia@email.com");
@@ -204,24 +220,18 @@ public final class ViewRespuestaInvitacion {
         return raiz;
     }
 
+    /** Llena correo y teléfono ya verificados en la otra pantalla y consulta, si aún no se ha hecho. */
+    public void usarDatos(String correoInvitado, String telefonoInvitado) {
+        if (correoInvitado == null || telefonoInvitado == null) return;
+        if (correoInvitado.equals(correoVerificado) && telefonoInvitado.equals(telefonoVerificado)) return;
+        correo.setText(correoInvitado);
+        telefono.setText(telefonoInvitado);
+        consultar();
+    }
+
     private VBox crearMenu() {
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-        VBox marca = new VBox(
-                10,
-                MenuCompartido.crearLogo(),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
-        marca.setAlignment(Pos.CENTER);
-        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
-        menu.getChildren().addAll(
-                marca,
-                etiqueta("RESPUESTA DE INVITACIÓN", "menu-title"));
-        Region espacio = new Region();
-        VBox.setVgrow(espacio, Priority.ALWAYS);
-        menu.getChildren().add(espacio);
-        return menu;
+        return MenuCompartido.crearInvitado(MenuCompartido.Pagina.MIS_INVITACIONES,
+                abrirInvitaciones, abrirMesaRegalos, salir);
     }
 
     private HBox crearBarraSuperior() {
@@ -414,6 +424,7 @@ public final class ViewRespuestaInvitacion {
         }
         correoVerificado = texto;
         telefonoVerificado = tel;
+        if (alVerificar != null) alVerificar.accept(texto, tel);
         ocultarMensaje();
         listaInvitaciones.getChildren().clear();
         for (InvitacionRecibida inv : encontradas) listaInvitaciones.getChildren().add(itemInvitacion(inv));

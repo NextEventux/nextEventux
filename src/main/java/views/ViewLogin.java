@@ -8,6 +8,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
@@ -22,6 +23,9 @@ public class ViewLogin {
     private final ControllerAutenticacion controller;
     private final Consumer<SesionUsuario> alIngresar;
 
+    // Acceso sin cuenta para invitados (CU-16 y CU-20). Puede ser null.
+    private final Runnable alEntrarComoInvitado;
+
     private final TextField usuario =
             new TextField();
 
@@ -35,14 +39,22 @@ public class ViewLogin {
             new Label();
 
     private boolean mostrarContrasena;
-    private Runnable consultarInvitaciones;
 
     public ViewLogin(
             ControllerAutenticacion controller,
             Consumer<SesionUsuario> alIngresar) {
 
+        this(controller, alIngresar, null);
+    }
+
+    public ViewLogin(
+            ControllerAutenticacion controller,
+            Consumer<SesionUsuario> alIngresar,
+            Runnable alEntrarComoInvitado) {
+
         this.controller = controller;
         this.alIngresar = alIngresar;
+        this.alEntrarComoInvitado = alEntrarComoInvitado;
 
         usuario.setId("usuarioLogin");
         usuario.setPromptText("Usuario");
@@ -78,11 +90,6 @@ public class ViewLogin {
         mensaje.setWrapText(true);
         mensaje.setVisible(false);
         mensaje.setManaged(false);
-    }
-
-    public ViewLogin(ControllerAutenticacion controller, Consumer<SesionUsuario> alIngresar, Runnable consultarInvitaciones) {
-        this(controller, alIngresar);
-        this.consultarInvitaciones = consultarInvitaciones;
     }
 
     public Parent crearPantalla() {
@@ -149,15 +156,40 @@ public class ViewLogin {
                         mensaje,
                         ingresar);
 
-        if (consultarInvitaciones != null) {
-            Button invitado = new Button("Consultar mis invitaciones");
-            invitado.setId("consultarComoInvitado");
-            invitado.setOnAction(e -> consultarInvitaciones.run());
-            formulario.getChildren().add(invitado);
-        }
-
         formulario.getStyleClass().add(
                 "login-card");
+
+        if (alEntrarComoInvitado != null) {
+
+            Label invitado =
+                    new Label(
+                            "¿Recibiste una invitación? Entra con tu correo, sin cuenta.");
+
+            invitado.getStyleClass().add(
+                    "login-muted");
+
+            invitado.setWrapText(true);
+
+            Button soyInvitado =
+                    new Button("Soy invitado");
+
+            soyInvitado.setId(
+                    "soyInvitado");
+
+            soyInvitado.getStyleClass().add(
+                    "login-guest-button");
+
+            soyInvitado.setMaxWidth(
+                    Double.MAX_VALUE);
+
+            soyInvitado.setOnAction(
+                    event -> alEntrarComoInvitado.run());
+
+            formulario.getChildren().addAll(
+                    new Separator(),
+                    invitado,
+                    soyInvitado);
+        }
 
         VBox contenido =
                 new VBox(
