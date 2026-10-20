@@ -3,6 +3,8 @@ package views;
 import controllers.ControllerFinanciera;
 import entities.MovimientoFinanciero;
 import entities.Servicio;
+import entities.SesionUsuario;
+import views.components.MenuCompartido;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -23,6 +25,9 @@ import javafx.stage.Window;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,13 +40,44 @@ import java.util.Map;
  */
 public class ViewFinanciera {
 
-    // Ruta del CSS dentro de resources. Cámbiala si tu archivo se llama distinto.
-    private static final String RUTA_CSS = "/styles/styles.css";
+    // Hoja de estilos compartida que ya existe en src/main/resources/styles.
+    // (src/main/java/styles/styles.css no se copia al classpath con Maven.)
+    private static final String RUTA_CSS = "/styles/eventos.css";
+
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final ControllerFinanciera controller;
 
+    // Datos de navegación cuando la pantalla vive dentro de NextEventuxApp.
+    // Si son null (por ejemplo en LanzadorFinanciera) se usa el menú propio y "Cerrar" cierra la ventana.
+    private final SesionUsuario sesion;
+    private final Runnable abrirEventos;
+    private final Runnable abrirMisEventos;
+    private final Runnable abrirCatalogo;
+    private final Runnable abrirInvitados;
+    private final Runnable cerrarSesion;
+
+    /** Uso independiente (LanzadorFinanciera). */
     public ViewFinanciera(ControllerFinanciera controller) {
+        this(controller, null, null, null, null, null, null);
+    }
+
+    /** Uso dentro de la aplicación, con el menú compartido. */
+    public ViewFinanciera(
+            ControllerFinanciera controller,
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirMisEventos,
+            Runnable abrirCatalogo,
+            Runnable abrirInvitados,
+            Runnable cerrarSesion) {
         this.controller = controller;
+        this.sesion = sesion;
+        this.abrirEventos = abrirEventos;
+        this.abrirMisEventos = abrirMisEventos;
+        this.abrirCatalogo = abrirCatalogo;
+        this.abrirInvitados = abrirInvitados;
+        this.cerrarSesion = cerrarSesion;
     }
 
     // ==========================================
@@ -67,7 +103,65 @@ public class ViewFinanciera {
     // ==========================================
     @SuppressWarnings("unchecked")
     public Parent crearPantalla(int idEvento) {
-        Map<String, Object> estado = controller.consultarEstadoFinanciero(idEvento);
+
+        BorderPane raiz = new BorderPane();
+        raiz.getStyleClass().add("app");
+
+        boolean dentroDeApp = sesion != null;
+        VBox sidebar = dentroDeApp
+                ? MenuCompartido.crear(sesion, MenuCompartido.Pagina.MIS_EVENTOS,
+                        abrirEventos, abrirInvitados, abrirCatalogo, null, cerrarSesion, abrirMisEventos)
+                : crearMenu();
+        raiz.setLeft(sidebar);
+
+        BorderPane principal = new BorderPane();
+        principal.setTop(dentroDeApp
+                ? MenuCompartido.crearBarraSuperior(sesion, "Estado financiero", "Mis eventos", abrirMisEventos)
+                : crearBarraSuperior());
+
+        VBox contenido = new VBox(30);
+        contenido.getStyleClass().add("content");
+        contenido.setMaxWidth(1320);
+
+        // Validación de evento seleccionado
+        if (idEvento <= 0) {
+            VBox aviso = new VBox(20);
+            aviso.getStyleClass().add("card");
+            aviso.setAlignment(Pos.CENTER);
+            aviso.setPadding(new Insets(40));
+
+            Label tituloAviso = etiqueta("No se ha seleccionado ningún evento", "card-title");
+            Label descAviso = etiqueta("Por favor, selecciona un evento de la lista para consultar su estado financiero.", "muted");
+            
+            aviso.getChildren().addAll(tituloAviso, descAviso);
+            contenido.getChildren().add(aviso);
+
+            StackPane centrado = new StackPane(contenido);
+            centrado.setAlignment(Pos.TOP_CENTER);
+            principal.setCenter(centrado);
+            raiz.setCenter(principal);
+            return raiz;
+        }
+        
+        Map<String, Object> estado;
+        try {
+            estado = controller.consultarEstadoFinanciero(idEvento);
+        } catch (RuntimeException e) {
+            // Antes los repositorios ocultaban el error y la pantalla salía vacía sin explicación.
+            e.printStackTrace();
+            String causa = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            VBox error = new VBox(12);
+            error.getStyleClass().add("card");
+            Label detalle = etiqueta(e.getMessage() + "\n" + causa, "muted");
+            detalle.setWrapText(true);
+            error.getChildren().addAll(etiqueta("No se pudo cargar el estado financiero", "card-title"), detalle);
+            contenido.getChildren().add(error);
+            StackPane centrado = new StackPane(contenido);
+            centrado.setAlignment(Pos.TOP_CENTER);
+            principal.setCenter(centrado);
+            raiz.setCenter(principal);
+            return raiz;
+        }
 
         String descripcion = estado.containsKey("Planificacion_Descripcion")
                 ? estado.get("Planificacion_Descripcion").toString()
@@ -75,9 +169,9 @@ public class ViewFinanciera {
         String estadoPlan = estado.containsKey("Planificacion_Estado")
                 ? estado.get("Planificacion_Estado").toString()
                 : "Desconocido";
-        String ingresos = estado.containsKey("Ingresos") ? estado.get("Ingresos").toString() : "0.0";
-        String egresos = estado.containsKey("Egresos") ? estado.get("Egresos").toString() : "0.0";
-        String balance = estado.containsKey("Balance") ? estado.get("Balance").toString() : "0.0";
+        String ingresos = dinero(estado.get("Ingresos"));
+        String egresos = dinero(estado.get("Egresos"));
+        String balance = dinero(estado.get("Balance"));
 
         List<Servicio> servicios = estado.containsKey("Servicios")
                 ? (List<Servicio>) estado.get("Servicios")
@@ -85,19 +179,6 @@ public class ViewFinanciera {
         List<MovimientoFinanciero> movimientos = estado.containsKey("Movimientos")
                 ? (List<MovimientoFinanciero>) estado.get("Movimientos")
                 : new ArrayList<>();
-
-        BorderPane raiz = new BorderPane();
-        raiz.getStyleClass().add("app");
-
-        VBox sidebar = crearMenu();
-        raiz.setLeft(sidebar);
-
-        BorderPane principal = new BorderPane();
-        principal.setTop(crearBarraSuperior());
-
-        VBox contenido = new VBox(30);
-        contenido.getStyleClass().add("content");
-        contenido.setMaxWidth(1320);
 
         // ---------- Encabezado ----------
         Label subtitulo = etiqueta(descripcion, "muted");
@@ -113,36 +194,70 @@ public class ViewFinanciera {
         HBox tituloTarjeta = new HBox(13, etiqueta("$", "heading-icon"), etiqueta("Resumen financiero", "card-title"));
         tituloTarjeta.setAlignment(Pos.CENTER_LEFT);
 
-        Label ayuda = etiqueta("Consulta los ingresos, egresos y el balance actualizado de tu evento.", "muted");
+        Label ayuda = etiqueta("Consulta el presupuesto, lo comprometido, los ingresos, egresos y el balance de tu evento.", "muted");
         ayuda.setWrapText(true);
 
+        // ---------- Presupuesto del evento ----------
+        boolean hayPresupuesto = Boolean.TRUE.equals(estado.get("Presupuesto_Registrado"));
+        double presupuesto = numero(estado.get("Presupuesto"));
+        double comprometido = numero(estado.get("Comprometido"));
+        double disponible = numero(estado.get("Disponible"));
+        double porcentajeUsado = numero(estado.get("Porcentaje_Usado"));
+        boolean excede = Boolean.TRUE.equals(estado.get("Excede_Presupuesto"));
+
+        tarjeta.getChildren().addAll(tituloTarjeta, ayuda, etiqueta("Presupuesto del evento", "section-title"));
+
+        if (!hayPresupuesto) {
+            tarjeta.getChildren().add(etiqueta("Este evento no tiene un presupuesto registrado.", "hint"));
+        } else {
+            GridPane datosPresupuesto = grilla();
+            datosPresupuesto.add(grupo("Presupuesto total", valor("presupuesto", dinero(presupuesto))), 0, 0);
+            datosPresupuesto.add(grupo("Comprometido en contrataciones", valor("comprometido", dinero(comprometido))), 1, 0);
+            datosPresupuesto.add(grupo("Disponible", valor("disponible", dinero(disponible))), 0, 1);
+            datosPresupuesto.add(grupo("Uso del presupuesto",
+                    valor("porcentajeUsado", Math.round(porcentajeUsado * 100) + "%")), 1, 1);
+            tarjeta.getChildren().addAll(datosPresupuesto,
+                    crearBarra("Comprometido", Math.round(porcentajeUsado * 100) + "%",
+                            Math.min(porcentajeUsado, 1.0), excede ? "#BA2424" : "#059669"));
+
+            if (excede) {
+                Label alerta = etiqueta("⚠ Las contrataciones superan el presupuesto en "
+                        + dinero(-disponible) + ".", "field-label");
+                alerta.setStyle("-fx-text-fill: #BA2424;");
+                alerta.setWrapText(true);
+                tarjeta.getChildren().add(alerta);
+            }
+        }
+
+        // ---------- Movimientos: ingresos, egresos y balance ----------
         GridPane datos = grilla();
-        datos.add(grupo("Total ingresos", valor("ingresos", "$" + ingresos)), 0, 0);
-        datos.add(grupo("Total egresos", valor("egresos", "$" + egresos)), 1, 0);
-        datos.add(grupo("Balance final", valor("balance", "$" + balance)), 0, 1);
+        datos.add(grupo("Total ingresos", valor("ingresos", ingresos)), 0, 0);
+        datos.add(grupo("Total egresos", valor("egresos", egresos)), 1, 0);
+        datos.add(grupo("Balance final", valor("balance", balance)), 0, 1);
         datos.add(grupo("Estado del plan", valor("estadoPlan", estadoPlan)), 1, 1);
 
-        tarjeta.getChildren().addAll(tituloTarjeta, ayuda, datos, new Separator(),
-                etiqueta("Presupuesto por categoría", "section-title"));
+        tarjeta.getChildren().addAll(new Separator(), etiqueta("Balance de movimientos", "section-title"),
+                datos, new Separator(), etiqueta("Presupuesto por categoría", "section-title"));
 
         // ---------- Categorías ----------
         if (servicios.isEmpty()) {
-            tarjeta.getChildren().add(etiqueta("No hay servicios asignados a este evento.", "hint"));
+            tarjeta.getChildren().add(etiqueta("No hay servicios contratados para este evento.", "hint"));
         } else {
             Map<String, Double> costosPorCategoria = new LinkedHashMap<>();
-            double totalPresupuesto = 0.0;
             for (Servicio s : servicios) {
                 String cat = s.getCategoria() != null ? s.getCategoria() : "Otros";
                 costosPorCategoria.put(cat, costosPorCategoria.getOrDefault(cat, 0.0) + s.getPrecio());
-                totalPresupuesto += s.getPrecio();
             }
+            // Cada categoría se mide contra el presupuesto del evento; sin presupuesto, contra lo comprometido.
+            double base = hayPresupuesto && presupuesto > 0 ? presupuesto : comprometido;
             String[] colores = {"#D71920", "#2563EB", "#059669", "#D97706", "#7C3AED"};
             int idx = 0;
             VBox barras = new VBox(16);
             for (Map.Entry<String, Double> entry : costosPorCategoria.entrySet()) {
-                double fraccion = totalPresupuesto > 0 ? entry.getValue() / totalPresupuesto : 0;
-                barras.getChildren().add(crearBarra(entry.getKey(), Math.round(fraccion * 100) + "%",
-                        fraccion, colores[idx % colores.length]));
+                double fraccion = base > 0 ? entry.getValue() / base : 0;
+                barras.getChildren().add(crearBarra(entry.getKey(),
+                        dinero(entry.getValue()) + " · " + Math.round(fraccion * 100) + "%",
+                        Math.min(fraccion, 1.0), colores[idx % colores.length]));
                 idx++;
             }
             tarjeta.getChildren().add(barras);
@@ -157,8 +272,8 @@ public class ViewFinanciera {
             VBox lista = new VBox(10);
             for (MovimientoFinanciero mov : movimientos) {
                 String tituloMov = mov.getDescripcion() != null ? mov.getDescripcion() : "Movimiento";
-                String fecha = mov.getFecha() != null ? mov.getFecha().toString() : "--";
-                String monto = "$" + mov.getValor();
+                String fecha = mov.getFecha() != null ? mov.getFecha().format(FORMATO_FECHA) : "--";
+                String monto = dinero(mov.getValor());
                 String estadoMov = mov.getEstado() != null ? mov.getEstado() : "Pendiente";
                 lista.getChildren().add(crearFilaMovimiento(tituloMov, fecha, monto, estadoMov));
             }
@@ -166,10 +281,15 @@ public class ViewFinanciera {
         }
 
         // ---------- Botones ----------
-        Button cerrar = new Button("Cerrar");
+        // Dentro de la app vuelve a "Mis eventos"; cerrar la ventana cerraría toda la aplicación.
+        Button cerrar = new Button(abrirMisEventos != null ? "Volver a mis eventos" : "Cerrar");
         cerrar.setId("cerrar");
         cerrar.getStyleClass().add("btn-secondary");
         cerrar.setOnAction(e -> {
+            if (abrirMisEventos != null) {
+                abrirMisEventos.run();
+                return;
+            }
             Window w = cerrar.getScene() != null ? cerrar.getScene().getWindow() : null;
             if (w instanceof Stage) ((Stage) w).close();
         });
@@ -316,6 +436,18 @@ public class ViewFinanciera {
         return fila;
     }
 
+    private double numero(Object valor) {
+        return valor instanceof Number ? ((Number) valor).doubleValue() : 0.0;
+    }
+
+    /** Formato de pesos colombianos: $ 1.800.000 (evita valores como 1.5E7). */
+    private String dinero(Object valor) {
+        double numero = valor instanceof Number ? ((Number) valor).doubleValue() : 0.0;
+        NumberFormat formato = NumberFormat.getNumberInstance(new Locale("es", "CO"));
+        formato.setMaximumFractionDigits(0);
+        return "$ " + formato.format(numero);
+    }
+
     private Label etiqueta(String texto, String estilo) {
         Label label = new Label(texto);
         label.getStyleClass().add(estilo);
@@ -346,6 +478,9 @@ public class ViewFinanciera {
 
                 writer.println("REPORTE FINANCIERO;" + estado.getOrDefault("Planificacion_Descripcion", ""));
                 writer.println("Estado del evento;" + estado.getOrDefault("Planificacion_Estado", ""));
+                writer.println("Presupuesto Total;" + dinero(estado.get("Presupuesto")));
+                writer.println("Comprometido;" + dinero(estado.get("Comprometido")));
+                writer.println("Disponible;" + dinero(estado.get("Disponible")));
                 writer.println("Ingresos Totales;$" + estado.getOrDefault("Ingresos", "0.0"));
                 writer.println("Egresos Totales;$" + estado.getOrDefault("Egresos", "0.0"));
                 writer.println("Balance Final;$" + estado.getOrDefault("Balance", "0.0"));

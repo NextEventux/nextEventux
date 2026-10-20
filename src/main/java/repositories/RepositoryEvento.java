@@ -147,4 +147,16 @@ public class RepositoryEvento {
                 result.getString("estado"),result.getTimestamp("fecha_creacion").toLocalDateTime());
     }
 
+    public java.math.BigDecimal buscarPresupuesto(int evento) {
+        String sql = "SELECT presupuesto FROM Evento WHERE id_evento = ?";
+        try (Connection connection = conectar(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, evento);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? result.getBigDecimal("presupuesto") : null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("No se pudo consultar el presupuesto del evento.", e);
+        }
+    }
+
 }
