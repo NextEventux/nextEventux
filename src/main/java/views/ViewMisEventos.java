@@ -56,18 +56,12 @@ public class ViewMisEventos {
             Consumer<Evento> publicar,
             Consumer<Evento> cancelar) {
 
-        this.controller = controller;
-        this.sesion = sesion;
-        this.abrirEventos = abrirEventos;
-        this.abrirMisEventos = abrirMisEventos;
-        this.abrirCatalogo = abrirCatalogo;
-        this.abrirInvitados = abrirInvitados;
-        this.cerrarSesion = cerrarSesion;
-        this.editar = editar;
-        this.publicar = publicar;
-        this.cancelar = cancelar;
+        // Delega en el constructor completo; sin la acción de finanzas el botón no se muestra.
+        this(controller, sesion, abrirEventos, abrirMisEventos, abrirCatalogo, abrirInvitados,
+                cerrarSesion, editar, publicar, cancelar, null);
     }
 
+    // CU06: agrega la acción "Ver finanzas" para el evento seleccionado.
     public ViewMisEventos(
             ControllerEventos controller,
             SesionUsuario sesion,

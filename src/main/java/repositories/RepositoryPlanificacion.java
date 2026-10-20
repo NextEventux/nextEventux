@@ -13,11 +13,13 @@ import java.util.List;
 public class RepositoryPlanificacion {
 
     /**
-     * Busca la planificación activa asociada a un evento específico.
+     * Busca la planificación vigente de un evento: la versión ACTIVA más reciente.
+     * Si el evento aún no tiene una versión ACTIVA, devuelve la más reciente (por ejemplo
+     * un BORRADOR); la pantalla muestra su estado para que el organizador lo distinga.
      */
     public Planificacion buscarPlanificacionPorEvento(int idEvento) {
-        // Selecciona la versión más reciente del evento sin importar si está en BORRADOR o ACTIVA
-        String sql = "SELECT * FROM Planificacion WHERE id_evento = ? ORDER BY version DESC LIMIT 1";
+        String sql = "SELECT * FROM Planificacion WHERE id_evento = ? "
+                + "ORDER BY CASE WHEN UPPER(estado) = 'ACTIVA' THEN 0 ELSE 1 END, version DESC LIMIT 1";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -116,4 +118,4 @@ public class RepositoryPlanificacion {
         plan.setEstado(rs.getString("estado"));
         return plan;
     }
-}
+}

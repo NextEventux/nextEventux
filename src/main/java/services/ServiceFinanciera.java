@@ -1,84 +1,159 @@
 package services;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import entities.CompromisoFinanciero;
+import entities.Evento;
 import entities.MovimientoFinanciero;
 import entities.Planificacion;
-import entities.Servicio;
+import entities.SesionUsuario;
 import repositories.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.RepositoryPlanificacion;
-import repositories.RepositoryServicio;
 
+/**
+ * CU06: consultar el estado financiero de un evento del organizador en sesión.
+ *
+ * Regla del presupuesto disponible (también la usa CU13 al contratar servicios):
+ *
+ *   disponible = presupuesto del evento (Evento.presupuesto)
+ *              − Σ valor de las contrataciones del evento que NO están CANCELADA
+ *
+ * - El valor de cada contratación es su valor acordado; si no lo tiene, el de la propuesta aceptada.
+ * - Una contratación FINALIZADA sigue contando: ya se pagó.
+ * - Una contratación sin ningún valor no se suma; se informa en "Contrataciones_Sin_Valor"
+ *   para que el organizador lo corrija (en ese caso el disponible real puede ser menor).
+ * - Todos los importes se calculan con BigDecimal.
+ */
 public class ServiceFinanciera {
 
-    private RepositoryMovimientoFinanciero repoMovimientos;
-    private RepositoryPlanificacion repoPlanificacion;
-    private RepositoryServicio repoServicios;
-    private RepositoryEvento repoEventos;
+    private final RepositoryMovimientoFinanciero repoMovimientos;
+    private final RepositoryPlanificacion repoPlanificacion;
+    private final RepositoryEvento repoEventos;
 
     public ServiceFinanciera(RepositoryMovimientoFinanciero repoMovimientos,
                              RepositoryPlanificacion repoPlanificacion,
-                             RepositoryServicio repoServicios,
                              RepositoryEvento repoEventos) {
         this.repoMovimientos = repoMovimientos;
         this.repoPlanificacion = repoPlanificacion;
-        this.repoServicios = repoServicios;
         this.repoEventos = repoEventos;
     }
 
-    // Se conserva el constructor de 3 repositorios para no romper Main ni otros lanzadores.
-    public ServiceFinanciera(RepositoryMovimientoFinanciero repoMovimientos,
-                             RepositoryPlanificacion repoPlanificacion,
-                             RepositoryServicio repoServicios) {
-        this(repoMovimientos, repoPlanificacion, repoServicios, new RepositoryEvento());
+    /** Estado financiero completo para la pantalla del CU06. */
+    public Map<String, Object> consultarEstadoFinanciero(int idEvento, SesionUsuario sesion) {
+        Evento evento = buscarEventoDelOrganizador(idEvento, sesion);
+
+        List<MovimientoFinanciero> movimientos;
+        Planificacion planificacion;
+        List<CompromisoFinanciero> compromisos;
+        try {
+            movimientos = repoMovimientos.listarMovimientosPorEvento(idEvento);
+            planificacion = repoPlanificacion.buscarPlanificacionPorEvento(idEvento);
+            compromisos = repoMovimientos.listarCompromisosPorEvento(idEvento);
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("No se pudo consultar el estado financiero. Vuelve a intentarlo.", e);
+        }
+
+        return calcularEstado(evento.getPresupuesto(), movimientos, planificacion, compromisos);
     }
 
-    public Map<String, Object> consultarEstadoFinanciero(int idEvento) {
-        // 1. Traer datos de las tablas
-        List<MovimientoFinanciero> movimientos = repoMovimientos.listarMovimientosPorEvento(idEvento);
-        Planificacion planificacion = repoPlanificacion.buscarPlanificacionPorEvento(idEvento);
-        List<Servicio> servicios = repoServicios.listarServiciosPorEvento(idEvento);
-        BigDecimal presupuestoEvento = repoEventos.buscarPresupuesto(idEvento);
+    /**
+     * Presupuesto disponible del evento según la regla documentada en la clase.
+     * Devuelve null si el evento no tiene presupuesto registrado.
+     */
+    public BigDecimal consultarPresupuestoDisponible(int idEvento, SesionUsuario sesion) {
+        Evento evento = buscarEventoDelOrganizador(idEvento, sesion);
+        if (evento.getPresupuesto() == null) {
+            return null;
+        }
+        try {
+            return evento.getPresupuesto().subtract(sumarComprometido(repoMovimientos.listarCompromisosPorEvento(idEvento)));
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("No se pudo consultar el presupuesto disponible. Vuelve a intentarlo.", e);
+        }
+    }
 
-        // 2. Calcular balance tolerando MAYÚSCULAS y minúsculas
-        double ingresos = 0.0;
-        double egresos = 0.0;
+    private Evento buscarEventoDelOrganizador(int idEvento, SesionUsuario sesion) {
+        int organizador = validarSesion(sesion);
+        if (idEvento <= 0) {
+            throw new IllegalArgumentException("Selecciona uno de tus eventos para consultar sus finanzas.");
+        }
+        // Solo se consultan eventos del organizador en sesión.
+        Evento evento = repoEventos.buscarEvento(idEvento, organizador);
+        if (evento == null) {
+            throw new IllegalArgumentException("Selecciona un evento existente de tu cuenta.");
+        }
+        return evento;
+    }
 
+    private int validarSesion(SesionUsuario sesion) {
+        if (sesion == null
+                || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                || !repoEventos.organizadorActivo(sesion.getIdUsuario(), sesion.getIdActor())) {
+            throw new IllegalStateException("Inicia sesión como organizador activo para consultar tus finanzas.");
+        }
+        return sesion.getIdActor();
+    }
+
+    private static BigDecimal sumarComprometido(List<CompromisoFinanciero> compromisos) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (CompromisoFinanciero compromiso : compromisos) {
+            if (compromiso.tieneValor()) {
+                total = total.add(compromiso.getValor());
+            }
+        }
+        return total;
+    }
+
+    private static Map<String, Object> calcularEstado(BigDecimal presupuestoEvento,
+                                                      List<MovimientoFinanciero> movimientos,
+                                                      Planificacion planificacion,
+                                                      List<CompromisoFinanciero> compromisos) {
+        // Balance de movimientos, tolerando mayúsculas y minúsculas en el tipo.
+        BigDecimal ingresos = BigDecimal.ZERO;
+        BigDecimal egresos = BigDecimal.ZERO;
         for (MovimientoFinanciero mov : movimientos) {
-            if (mov.getTipo() != null) {
-                String tipo = mov.getTipo().trim().toUpperCase();
-                if ("INGRESO".equals(tipo)) {
-                    ingresos += mov.getValor();
-                } else if ("EGRESO".equals(tipo)) {
-                    egresos += mov.getValor();
-                }
+            if (mov.getTipo() == null || mov.getValor() == null) {
+                continue;
+            }
+            String tipo = mov.getTipo().trim().toUpperCase();
+            if ("INGRESO".equals(tipo)) {
+                ingresos = ingresos.add(mov.getValor());
+            } else if ("EGRESO".equals(tipo)) {
+                egresos = egresos.add(mov.getValor());
             }
         }
 
-        // 3. Presupuesto: lo que el organizador definió vs. lo ya comprometido en contrataciones activas
-        double presupuesto = presupuestoEvento != null ? presupuestoEvento.doubleValue() : 0.0;
-        double comprometido = 0.0;
-        for (Servicio servicio : servicios) {
-            comprometido += servicio.getPrecio(); // valor acordado de cada contratación activa
+        boolean hayPresupuesto = presupuestoEvento != null;
+        BigDecimal presupuesto = hayPresupuesto ? presupuestoEvento : BigDecimal.ZERO;
+        BigDecimal comprometido = sumarComprometido(compromisos);
+        BigDecimal disponible = presupuesto.subtract(comprometido);
+        int sinValor = 0;
+        for (CompromisoFinanciero compromiso : compromisos) {
+            if (!compromiso.tieneValor()) {
+                sinValor++;
+            }
         }
-        double disponible = presupuesto - comprometido;
-        double porcentajeUsado = presupuesto > 0 ? comprometido / presupuesto : 0.0;
+        // Proporción usada (0.0 – 1.0+) solo para mostrar la barra; no se usa en cálculos.
+        double porcentajeUsado = presupuesto.signum() > 0
+                ? comprometido.divide(presupuesto, 4, RoundingMode.HALF_UP).doubleValue()
+                : 0.0;
 
-        // 4. Empaquetar todo en un Mapa
         Map<String, Object> estado = new HashMap<>();
         estado.put("Ingresos", ingresos);
         estado.put("Egresos", egresos);
-        estado.put("Balance", ingresos - egresos);
+        estado.put("Balance", ingresos.subtract(egresos));
 
-        estado.put("Presupuesto_Registrado", presupuestoEvento != null);
+        estado.put("Presupuesto_Registrado", hayPresupuesto);
         estado.put("Presupuesto", presupuesto);
         estado.put("Comprometido", comprometido);
         estado.put("Disponible", disponible);
         estado.put("Porcentaje_Usado", porcentajeUsado);
-        estado.put("Excede_Presupuesto", presupuestoEvento != null && comprometido > presupuesto);
+        estado.put("Excede_Presupuesto", hayPresupuesto && comprometido.compareTo(presupuesto) > 0);
+        estado.put("Contrataciones_Sin_Valor", sinValor);
 
         if (planificacion != null) {
             estado.put("Planificacion_Descripcion", planificacion.getDescripcion());
@@ -90,8 +165,7 @@ public class ServiceFinanciera {
         }
 
         estado.put("Movimientos", movimientos);
-        estado.put("Servicios", servicios);
-
+        estado.put("Compromisos", compromisos);
         return estado;
     }
 }
