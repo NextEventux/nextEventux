@@ -7,6 +7,7 @@ import controllers.ControllerFinanciera;
 import controllers.ControllerPublicacion;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
+import controllers.ControllerContratacionServicio;
 import controllers.ControllerSolicitudes;
 import entities.Evento;
 import entities.Servicio;
@@ -22,6 +23,7 @@ import repositories.RepositoryAutenticacion;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryEvento;
 import repositories.RepositoryContratacion;
+import repositories.RepositoryContratacionServicio;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.RepositoryPlanificacion;
 import repositories.RepositoryPublicacion;
@@ -31,6 +33,7 @@ import repositories.RepositorySolicitudEjecucion;
 import repositories.RepositoryOrganizador;
 import services.ServiceAdministracion;
 import services.ServiceAutenticacion;
+import services.ServiceContratacionServicio;
 import services.ServiceEventos;
 import services.ServiceFinanciera;
 import services.ServicePublicacion;
@@ -64,6 +67,7 @@ public class NextEventuxApp extends Application {
     private ControllerAutenticacion controllerAutenticacion;
     private ControllerProveedores controllerProveedores;
     private ControllerSolicitudes controllerSolicitudes;
+    private ControllerContratacionServicio controllerContratacion;
 
     private SesionUsuario sesionActual;
     private Navegacion navegacion;
@@ -182,6 +186,12 @@ public class NextEventuxApp extends Application {
                 new ServiceSolicitudes(
                         new RepositorySolicitudEjecucion(),
                         new RepositoryPropuestaServicio(),
+                        sesionActual));
+
+        // CU-13: contratar el servicio de la propuesta seleccionada
+        controllerContratacion = new ControllerContratacionServicio(
+                new ServiceContratacionServicio(
+                        new RepositoryContratacionServicio(),
                         sesionActual));
 
         contenedor.setTop(null);
@@ -499,6 +509,7 @@ public class NextEventuxApp extends Application {
                 this::mostrarMisEventos,
                 this::mostrarPropuestasOrganizador,
                 this::mostrarLogin)
+                .conContratacion(controllerContratacion)
                 .crearPantalla();
     }
 
