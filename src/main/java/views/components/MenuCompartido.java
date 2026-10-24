@@ -28,6 +28,7 @@ public final class MenuCompartido {
         MIS_INVITACIONES,
         MESA_REGALOS,
         SOLICITUDES_PROVEEDOR,
+        AVISOS_PROVEEDOR,
         PROPUESTAS_ORGANIZADOR,
         SANCIONES_PROVEEDOR
     }
@@ -105,6 +106,35 @@ public final class MenuCompartido {
             Runnable abrirSolicitudes,
             Runnable abrirPropuestas,
             Runnable abrirSanciones) {
+        return crear(
+                sesion,
+                paginaActiva,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                abrirServicios,
+                cerrarSesion,
+                abrirMisEventos,
+                abrirSolicitudes,
+                abrirPropuestas,
+                abrirSanciones,
+                null);
+    }
+
+    /** Igual que el anterior; agrega la opción de avisos del proveedor. */
+    public static VBox crear(
+            SesionUsuario sesion,
+            Pagina paginaActiva,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirServicios,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos,
+            Runnable abrirSolicitudes,
+            Runnable abrirPropuestas,
+            Runnable abrirSanciones,
+            Runnable abrirAvisos) {
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
@@ -132,6 +162,9 @@ public final class MenuCompartido {
             agregarOpcion(menu, "✉  Solicitudes recibidas",
                     paginaActiva == Pagina.SOLICITUDES_PROVEEDOR,
                     abrirSolicitudes);
+            agregarOpcion(menu, "●  Mis avisos",
+                    paginaActiva == Pagina.AVISOS_PROVEEDOR,
+                    abrirAvisos);
         } else {
             if (abrirMisEventos != null) {
                 agregarOpcion(menu, "▦  Mis eventos",
