@@ -529,6 +529,44 @@
 .cu12-content .btn-primary:hover {
     -fx-background-color: #B9151B;
 }
+
+.provider-notices-content {
+    -fx-background-color: #F8F9FC;
+    -fx-padding: 30px;
+}
+
+.provider-notices-scroll {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.provider-notices-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.provider-notice {
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-border-color: #E8E9EF;
+    -fx-border-radius: 10px;
+    -fx-padding: 14px 16px;
+}
+
+.provider-notice-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #252638;
+}
+
+.provider-notices-empty {
+    -fx-font-size: 14px;
+    -fx-text-fill: #858899;
+}
+
+.provider-notices-error {
+    -fx-text-fill: #BA2424;
+}
 /* Tarjetas de solicitudes y propuestas CU12 */
 
 .cu12-card-title {
