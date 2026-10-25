@@ -60,24 +60,40 @@ public class ViewSancionesProveedor {
                 ServiceSancionesProveedor.TIPOS_FALTA.stream().sorted().toList());
         tipoSancion.getItems().setAll(ServiceSancionesProveedor.SUSPENSION, ServiceSancionesProveedor.MULTA);
 
+        evento.setPrefWidth(280);
+        tipoFalta.setPrefWidth(280);
+        tipoSancion.setPrefWidth(280);
+        contrato.setPrefWidth(280);
+
         evento.setConverter(new StringConverter<>() {
-            @Override public String toString(EventoProveedor e) {
+            @Override
+            public String toString(EventoProveedor e) {
                 return e == null ? "" : e.nombre();
             }
-            @Override public EventoProveedor fromString(String s) { return null; }
+
+            @Override
+            public EventoProveedor fromString(String s) {
+                return null;
+            }
         });
         contrato.setConverter(new StringConverter<>() {
-            @Override public String toString(ContratoSancionable c) {
+            @Override
+            public String toString(ContratoSancionable c) {
                 if (c == null) {
                     return "";
                 }
                 String valor = c.valorAcordado() == null ? "sin valor" : "$" + c.valorAcordado().toPlainString();
                 return "Contrato #" + c.idContratacion() + " · " + valor + " · " + c.estado();
             }
-            @Override public ContratoSancionable fromString(String s) { return null; }
+
+            @Override
+            public ContratoSancionable fromString(String s) {
+                return null;
+            }
         });
         listaProveedores.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(ResumenProveedor p, boolean vacio) {
+            @Override
+            protected void updateItem(ResumenProveedor p, boolean vacio) {
                 super.updateItem(p, vacio);
                 setText(vacio || p == null ? null
                         : p.nombre() + " (#" + p.idProveedor() + ") · " + p.estado());
@@ -87,6 +103,7 @@ public class ViewSancionesProveedor {
         buscar.setPromptText("Nombre o ID del proveedor");
         buscar.setOnAction(e -> buscar());
         Button botonBuscar = new Button("Buscar");
+        botonBuscar.getStyleClass().add("btn-secondary");
         botonBuscar.setOnAction(e -> buscar());
         listaProveedores.getSelectionModel().selectedItemProperty()
                 .addListener((obs, anterior, nuevo) -> {
@@ -106,9 +123,11 @@ public class ViewSancionesProveedor {
         justificacion.setPromptText("Mínimo 10 caracteres, máximo 150");
 
         aplicar.setOnAction(e -> confirmarYAplicar());
+        aplicar.getStyleClass().add("btn-primary");
         mensaje.setWrapText(true);
 
         Button botonVolver = new Button("← Volver");
+        botonVolver.getStyleClass().add("btn-secondary");
         botonVolver.setOnAction(e -> volver.run());
         Label titulo = new Label("Aplicar sanciones a proveedores");
         titulo.getStyleClass().add("titulo-seccion");
