@@ -1,4 +1,3 @@
-
 package views.components;
 
 import java.util.Locale;
@@ -12,12 +11,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.shape.SVGPath;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.SVGPath;
 
 public final class MenuCompartido {
 
@@ -30,6 +29,7 @@ public final class MenuCompartido {
         AVISOS("M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z M10 21h4"),
         SERVICIOS("M3 8h18v13H3z M8 8V5h8v3 M3 13h18 M10 13v2h4v-2"),
         PROPUESTAS("M4 4h16v13H8l-4 4z M8 9h8 M8 13h5"),
+        PUBLICACION("M6 3h9l4 4v14H6z M15 3v5h4 M9 12h7 M9 16h7"),
         SANCIONES("M12 3v18 M5 7h14 M6 7l-4 7h8L6 7z M18 7l-4 7h8l-4-7z M8 21h8"),
         MESA_REGALOS("M20 12v9H4v-9 M2 7h20v5H2z M12 7v14 M12 7H8a2.5 2.5 0 1 1 2.5-2.5C10.5 6 12 7 12 7 M12 7h4a2.5 2.5 0 1 0-2.5-2.5C13.5 6 12 7 12 7");
 
@@ -51,6 +51,7 @@ public final class MenuCompartido {
         SOLICITUDES_PROVEEDOR,
         AVISOS_PROVEEDOR,
         PROPUESTAS_ORGANIZADOR,
+        PUBLICACION_EVENTOS,
         SANCIONES_PROVEEDOR
     }
 
@@ -114,7 +115,10 @@ public final class MenuCompartido {
                 abrirServicios, cerrarSesion, abrirMisEventos, abrirSolicitudes, abrirPropuestas, null);
     }
 
-    /** Igual que el anterior; agrega la opción de sanciones (solo administrador). */
+    /**
+     * Igual que el anterior; agrega la opción de sanciones (solo
+     * administrador).
+     */
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -142,7 +146,9 @@ public final class MenuCompartido {
                 null);
     }
 
-    /** Igual que el anterior; agrega la opción de avisos del proveedor. */
+    /**
+     * Igual que el anterior; agrega la opción de avisos del proveedor.
+     */
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -156,10 +162,34 @@ public final class MenuCompartido {
             Runnable abrirPropuestas,
             Runnable abrirSanciones,
             Runnable abrirAvisos) {
+        return crear(sesion, paginaActiva, abrirEventos, abrirInvitados, abrirCatalogo,
+                abrirServicios, cerrarSesion, abrirMisEventos, abrirSolicitudes,
+                abrirPropuestas, abrirSanciones, abrirAvisos, null);
+    }
+
+    public static VBox crear(
+            SesionUsuario sesion,
+            Pagina paginaActiva,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirServicios,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos,
+            Runnable abrirSolicitudes,
+            Runnable abrirPropuestas,
+            Runnable abrirSanciones,
+            Runnable abrirAvisos,
+            Runnable abrirPublicacion) {
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
+
+        if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
+            menu.setPrefWidth(300);
+            menu.setMinWidth(300);
+        }
 
         // Todas las pantallas utilizan exactamente la misma imagen
         ImageView logo = crearLogo();
@@ -210,6 +240,10 @@ public final class MenuCompartido {
         }
 
         if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
+            agregarOpcion(menu, Icono.PUBLICACION, "Publicación de eventos",
+                    paginaActiva == Pagina.PUBLICACION_EVENTOS,
+                    abrirPublicacion);
+
             agregarOpcion(menu, Icono.SANCIONES, "Sanciones a proveedores",
                     paginaActiva == Pagina.SANCIONES_PROVEEDOR,
                     abrirSanciones);
@@ -251,8 +285,9 @@ public final class MenuCompartido {
     }
 
     /**
-     * Menú del invitado (CU-16 y CU-20). El invitado no tiene cuenta: entra desde
-     * "Soy invitado" en el login y se identifica con su correo y teléfono.
+     * Menú del invitado (CU-16 y CU-20). El invitado no tiene cuenta: entra
+     * desde "Soy invitado" en el login y se identifica con su correo y
+     * teléfono.
      */
     public static VBox crearInvitado(
             Pagina paginaActiva,
