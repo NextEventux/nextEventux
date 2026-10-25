@@ -12,12 +12,33 @@ import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.shape.SVGPath;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public final class MenuCompartido {
+
+    private enum Icono {
+        MIS_EVENTOS("M3 4h18v17H3z M7 2v4 M17 2v4 M3 9h18 M7 13h3 M7 17h3"),
+        CREAR_EVENTO("M12 5v14 M5 12h14"),
+        PROVEEDORES("M3 10l1-6h16l1 6 M5 10v10h14V10 M9 20v-6h6v6"),
+        INVITADOS("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75"),
+        MENSAJES("M3 5h18v14H3z M3 7l9 7 9-7"),
+        AVISOS("M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z M10 21h4"),
+        SERVICIOS("M3 8h18v13H3z M8 8V5h8v3 M3 13h18 M10 13v2h4v-2"),
+        PROPUESTAS("M4 4h16v13H8l-4 4z M8 9h8 M8 13h5"),
+        SANCIONES("M12 3v18 M5 7h14 M6 7l-4 7h8L6 7z M18 7l-4 7h8l-4-7z M8 21h8"),
+        MESA_REGALOS("M20 12v9H4v-9 M2 7h20v5H2z M12 7v14 M12 7H8a2.5 2.5 0 1 1 2.5-2.5C10.5 6 12 7 12 7 M12 7h4a2.5 2.5 0 1 0-2.5-2.5C13.5 6 12 7 12 7");
+
+        private final String trazado;
+
+        Icono(String trazado) {
+            this.trazado = trazado;
+        }
+    }
 
     public enum Pagina {
         MIS_EVENTOS,
@@ -156,40 +177,40 @@ public final class MenuCompartido {
                 && "PROVEEDOR".equalsIgnoreCase(sesion.getTipoUsuario());
 
         if (proveedor) {
-            agregarOpcion(menu, "♧  Mis servicios",
+            agregarOpcion(menu, Icono.SERVICIOS, "Mis servicios",
                     paginaActiva == Pagina.MIS_SERVICIOS,
                     abrirServicios);
-            agregarOpcion(menu, "✉  Solicitudes recibidas",
+            agregarOpcion(menu, Icono.MENSAJES, "Solicitudes recibidas",
                     paginaActiva == Pagina.SOLICITUDES_PROVEEDOR,
                     abrirSolicitudes);
-            agregarOpcion(menu, "●  Mis avisos",
+            agregarOpcion(menu, Icono.AVISOS, "Mis avisos",
                     paginaActiva == Pagina.AVISOS_PROVEEDOR,
                     abrirAvisos);
         } else {
             if (abrirMisEventos != null) {
-                agregarOpcion(menu, "▦  Mis eventos",
+                agregarOpcion(menu, Icono.MIS_EVENTOS, "Mis eventos",
                         paginaActiva == Pagina.MIS_EVENTOS,
                         abrirMisEventos);
             }
 
-            agregarOpcion(menu, "＋  Crear evento",
+            agregarOpcion(menu, Icono.CREAR_EVENTO, "Crear evento",
                     paginaActiva == Pagina.CREAR_EVENTO,
                     abrirEventos);
 
-            agregarOpcion(menu, "♧  Proveedores",
+            agregarOpcion(menu, Icono.PROVEEDORES, "Proveedores",
                     paginaActiva == Pagina.CATALOGO,
                     abrirCatalogo);
 
-            agregarOpcion(menu, "♙  Invitados",
+            agregarOpcion(menu, Icono.INVITADOS, "Invitados",
                     paginaActiva == Pagina.INVITADOS,
                     abrirInvitados);
-            agregarOpcion(menu, "✉  Propuestas recibidas",
+            agregarOpcion(menu, Icono.PROPUESTAS, "Propuestas recibidas",
                     paginaActiva == Pagina.PROPUESTAS_ORGANIZADOR,
                     abrirPropuestas);
         }
 
         if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
-            agregarOpcion(menu, "⚖  Sanciones a proveedores",
+            agregarOpcion(menu, Icono.SANCIONES, "Sanciones a proveedores",
                     paginaActiva == Pagina.SANCIONES_PROVEEDOR,
                     abrirSanciones);
         }
@@ -253,10 +274,10 @@ public final class MenuCompartido {
                 marca,
                 etiqueta("MENÚ DEL INVITADO", "menu-title"));
 
-        agregarOpcion(menu, "✉  Mis invitaciones",
+        agregarOpcion(menu, Icono.MENSAJES, "Mis invitaciones",
                 paginaActiva == Pagina.MIS_INVITACIONES,
                 abrirInvitaciones);
-        agregarOpcion(menu, "♡  Mesa de regalos",
+        agregarOpcion(menu, Icono.MESA_REGALOS, "Mesa de regalos",
                 paginaActiva == Pagina.MESA_REGALOS,
                 abrirMesaRegalos);
 
@@ -356,6 +377,7 @@ public final class MenuCompartido {
 
     private static void agregarOpcion(
             VBox menu,
+            Icono icono,
             String texto,
             boolean activa,
             Runnable accion) {
@@ -364,7 +386,21 @@ public final class MenuCompartido {
             return;
         }
 
-        Label item = etiqueta(texto, "menu-item");
+        SVGPath grafico = new SVGPath();
+        grafico.setContent(icono.trazado);
+        grafico.setScaleX(0.75);
+        grafico.setScaleY(0.75);
+        grafico.getStyleClass().add("menu-icon");
+
+        StackPane contenedorIcono = new StackPane(grafico);
+        contenedorIcono.setMinSize(20, 20);
+        contenedorIcono.setPrefSize(20, 20);
+        contenedorIcono.setMaxSize(20, 20);
+
+        Label etiquetaTexto = etiqueta(texto, "menu-label");
+        HBox item = new HBox(8, contenedorIcono, etiquetaTexto);
+        item.setAlignment(Pos.CENTER_LEFT);
+        item.getStyleClass().add("menu-item");
         item.setMaxWidth(Double.MAX_VALUE);
 
         if (activa) {
