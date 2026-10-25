@@ -7,7 +7,6 @@ import controllers.ControllerSolicitudes;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SesionUsuario;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
@@ -239,6 +238,15 @@ public class ViewPropuestasOrganizador {
 
                 VBox tarjeta = new VBox(
                         9, cabecera, valor, detalle, alcance, condiciones);
+
+                tarjeta.setMinWidth(0);
+                tarjeta.prefWidthProperty().bind(widthProperty().subtract(48));
+
+                alcance.setMinWidth(0);
+                alcance.setMaxWidth(Double.MAX_VALUE);
+
+                condiciones.setMinWidth(0);
+                condiciones.setMaxWidth(Double.MAX_VALUE);
 
                 setText(null);
                 setGraphic(tarjeta);
