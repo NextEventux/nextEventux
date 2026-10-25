@@ -32,6 +32,7 @@ public class ViewSolicitudesProveedor {
     private final SesionUsuario sesion;
     private final Runnable abrirServicios;
     private final Runnable abrirSolicitudes;
+    private final Runnable abrirAvisos;
     private final Runnable cerrarSesion;
 
     private final ListView<SolicitudEjecucion> lista
@@ -56,6 +57,20 @@ public class ViewSolicitudesProveedor {
             Runnable abrirServicios,
             Runnable abrirSolicitudes,
             Runnable cerrarSesion) {
+        this(controller, idProveedor, idUsuario, volverServicios, sesion,
+                abrirServicios, abrirSolicitudes, cerrarSesion, null);
+    }
+
+    public ViewSolicitudesProveedor(
+            ControllerSolicitudes controller,
+            int idProveedor,
+            int idUsuario,
+            Runnable volverServicios,
+            SesionUsuario sesion,
+            Runnable abrirServicios,
+            Runnable abrirSolicitudes,
+            Runnable cerrarSesion,
+            Runnable abrirAvisos) {
 
         this.controller = controller;
         this.idProveedor = idProveedor;
@@ -64,6 +79,7 @@ public class ViewSolicitudesProveedor {
         this.sesion = sesion;
         this.abrirServicios = abrirServicios;
         this.abrirSolicitudes = abrirSolicitudes;
+        this.abrirAvisos = abrirAvisos;
         this.cerrarSesion = cerrarSesion;
     }
 
@@ -246,7 +262,9 @@ public class ViewSolicitudesProveedor {
                 cerrarSesion,
                 null,
                 abrirSolicitudes,
-                null);
+                null,
+                null,
+                abrirAvisos);
     }
 
     private void recargarSolicitudes() {

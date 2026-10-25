@@ -600,7 +600,11 @@ public class NextEventuxApp extends Application {
                 .registrarDinamica(
                         Navegacion.Pantalla.AVISOS_PROVEEDOR,
                         () -> new ViewAvisosProveedor(new ServiceAvisosProveedor(new RepositoryAvisosProveedor()),
-                                sesionActual,this::mostrarProveedores,this::mostrarLogin).crearPantalla())
+                                sesionActual,
+                                this::mostrarProveedores,
+                                this::mostrarSolicitudesProveedor,
+                                this::mostrarAvisosProveedor,
+                                this::mostrarLogin).crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.DETALLE_SERVICIO_PROVEEDOR,
                         this::crearVistaDetalleServicioProveedor)
@@ -648,7 +652,9 @@ public class NextEventuxApp extends Application {
                 sesionActual,
                 this::mostrarLogin,
                 servicioProveedorSeleccionado,
-                this::mostrarProveedores)
+                this::mostrarProveedores,
+                this::mostrarSolicitudesProveedor,
+                this::mostrarAvisosProveedor)
                 .crearPantalla();
     }
 
@@ -690,7 +696,8 @@ public class NextEventuxApp extends Application {
                 sesionActual,
                 this::mostrarProveedores,
                 this::mostrarSolicitudesProveedor,
-                this::mostrarLogin)
+                this::mostrarLogin,
+                this::mostrarAvisosProveedor)
                 .crearPantalla();
     }
 

@@ -27,6 +27,8 @@ public class ViewDetalleServicioProveedor {
 
     private Integer idServicioInicial;
     private Runnable volverServicios;
+    private Runnable abrirSolicitudes;
+    private Runnable abrirAvisos;
 
     private SesionUsuario sesion;
     private Runnable cerrarSesion;
@@ -109,6 +111,19 @@ public class ViewDetalleServicioProveedor {
             Runnable cerrarSesion,
             Integer idServicioInicial,
             Runnable volverServicios) {
+        this(controller, idProveedor, sesion, cerrarSesion, idServicioInicial,
+                volverServicios, null, null);
+    }
+
+    public ViewDetalleServicioProveedor(
+            ControllerProveedores controller,
+            int idProveedor,
+            SesionUsuario sesion,
+            Runnable cerrarSesion,
+            Integer idServicioInicial,
+            Runnable volverServicios,
+            Runnable abrirSolicitudes,
+            Runnable abrirAvisos) {
 
         this(
                 controller,
@@ -119,6 +134,8 @@ public class ViewDetalleServicioProveedor {
 
         this.idServicioInicial = idServicioInicial;
         this.volverServicios = volverServicios;
+        this.abrirSolicitudes = abrirSolicitudes;
+        this.abrirAvisos = abrirAvisos;
     }
 
     public ViewDetalleServicioProveedor(
@@ -235,7 +252,12 @@ public class ViewDetalleServicioProveedor {
                 null,
                 null,
                 volverServicios,
-                cerrarSesion);
+                cerrarSesion,
+                null,
+                abrirSolicitudes,
+                null,
+                null,
+                abrirAvisos);
     }
 
     private HBox crearBarraSuperior() {

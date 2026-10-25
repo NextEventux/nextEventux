@@ -1066,19 +1066,13 @@ public class ViewListaServiciosProveedor {
                 cerrarSesion,
                 null,
                 abrirSolicitudes,
-                null);
+                null,
+                null,
+                abrirAvisos);
     }
 
     private HBox crearBarraSuperior() {
-        HBox barra = MenuCompartido.crearBarraSuperior(sesion, "Mis servicios");
-        if (abrirAvisos != null) {
-            Button avisos = new Button("Mis avisos");
-            avisos.setId("abrirAvisosProveedorSesion");
-            avisos.getStyleClass().add("btn-secondary");
-            avisos.setOnAction(e -> abrirAvisos.run());
-            barra.getChildren().add(avisos);
-        }
-        return barra;
+        return MenuCompartido.crearBarraSuperior(sesion, "Mis servicios");
     }
 
     private void registrarExcepcion(String paso, Exception e) {
