@@ -37,6 +37,7 @@ public class ViewCatalogoServicios {
     private final Runnable abrirCatalogo;
     private final Runnable abrirEventos;
     private final Runnable abrirInvitados;
+    private Runnable abrirPropuestas;
     private final Runnable abrirMisEventos;
     private final Runnable cerrarSesion;
     private final Consumer<Servicio> abrirDetalle;
@@ -141,6 +142,11 @@ public class ViewCatalogoServicios {
         configurarLista();
     }
 
+    public ViewCatalogoServicios conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
+    }
+
     public Parent crearPantalla() {
 
         BorderPane raiz
@@ -240,7 +246,9 @@ public class ViewCatalogoServicios {
                 abrirCatalogo,
                 null,
                 cerrarSesion,
-                abrirMisEventos);
+                abrirMisEventos,
+                null,
+                abrirPropuestas);
     }
 
     private HBox crearBarraSuperior() {

@@ -19,6 +19,7 @@ public class ViewPublicacion {
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
     private final Runnable abrirSanciones;
+    private Runnable abrirPropuestas;
     private boolean esAdministrador;
     private final Label usuario = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
@@ -83,6 +84,11 @@ public class ViewPublicacion {
         configurarAvisos(avisosAdministrador);
     }
 
+    public ViewPublicacion conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
+    }
+
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().addAll("app", "publicacion");
@@ -98,7 +104,7 @@ public class ViewPublicacion {
                 cerrarSesion,
                 organizadorActivo ? abrirMisEventos : null,
                 null,
-                null,
+                organizadorActivo ? abrirPropuestas : null,
                 abrirSanciones));
         Button actualizar = boton("Actualizar", "actualizarPublicacion", this::actualizar, false);
         VBox contenido = new VBox(22);
