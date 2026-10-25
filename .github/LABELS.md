@@ -1,10 +1,16 @@
 # Labels recomendados para NextEventux
 
-Los labels permiten clasificar los Issues y Pull Requests sin reemplazar el tablero Kanban. Deben crearse manualmente en `Settings > Issues > Labels` antes de comenzar a usar las plantillas.
+Los labels permiten clasificar Issues y Pull Requests para facilitar su búsqueda y organización.
+
+Su uso es opcional, conforme a `CONTRIBUTING.md`. No es obligatorio crear labels para utilizar las plantillas de Issues ni para abrir Pull Requests.
+
+Si el equipo decide utilizarlos, deben existir previamente en GitHub para que puedan asignarse automáticamente desde las plantillas.
+
+Los labels no reemplazan el seguimiento oficial en `Control_de_Alcance_NextEventux.xlsx`.
 
 ## Labels de tipo
 
-Cada Issue debe tener solo uno de estos labels.
+Cuando se utilicen labels de tipo, se recomienda asignar como máximo uno por Issue.
 
 | Nombre | Color | Uso |
 | --- | --- | --- |
@@ -18,7 +24,7 @@ Cada Issue debe tener solo uno de estos labels.
 
 ## Labels de módulo
 
-Use uno cuando el trabajo pertenezca principalmente a un módulo. Si afecta a varios, utilice `módulo:compartido`.
+Cuando se utilicen labels de módulo, se recomienda elegir el módulo principalmente afectado. Para cambios transversales, puede utilizarse `módulo:compartido`.
 
 | Nombre | Color | Uso |
 | --- | --- | --- |
@@ -32,7 +38,7 @@ Use uno cuando el trabajo pertenezca principalmente a un módulo. Si afecta a va
 
 ## Labels de prioridad
 
-La prioridad debe definirse con relación al alcance y a la iteración actual.
+Cuando se utilicen labels de prioridad, se recomienda asignar como máximo uno por Issue, teniendo en cuenta el alcance y la iteración actual.
 
 | Nombre | Color | Uso |
 | --- | --- | --- |
@@ -50,7 +56,11 @@ La prioridad debe definirse con relación al alcance y a la iteración actual.
 
 ## Relación con el Kanban
 
-El tablero debe administrar estados como `Por hacer`, `En progreso`, `En revisión` y `Terminado`. Esos estados no necesitan labels porque duplicarlos genera inconsistencias. El label `estado:bloqueado` sí se conserva para que los impedimentos sean visibles en búsquedas, Issues y Pull Requests.
+Cuando el equipo utilice GitHub Project, puede organizar el trabajo mediante estados como `Por hacer`, `En progreso`, `En revisión` y `Terminado`.
+
+No es necesario crear labels para duplicar esos estados. El label `estado:bloqueado` puede utilizarse cuando exista un impedimento real.
+
+El tablero y los labels son herramientas de apoyo. El seguimiento oficial de tareas, estados y horas faltantes se mantiene en `Control_de_Alcance_NextEventux.xlsx`.
 
 ## Regla de uso
 
@@ -60,4 +70,4 @@ Una combinación típica sería:
 tipo:funcionalidad + módulo:proveedores + prioridad:alta
 ```
 
-Si la actividad queda impedida, se agrega temporalmente `estado:bloqueado` y se explica el bloqueo en un comentario. El label se retira cuando el impedimento se resuelve.
+Si la actividad queda impedida, puede agregarse temporalmente `estado:bloqueado` y explicar el bloqueo en un comentario. Cuando se resuelva el impedimento, se retira el label.
