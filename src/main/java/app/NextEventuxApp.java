@@ -1,17 +1,14 @@
 package app;
 
-import controllers.ControllerAutenticacion;
 import controllers.ControllerAdministracion;
+import controllers.ControllerAutenticacion;
+import controllers.ControllerContratacionServicio;
 import controllers.ControllerEventos;
 import controllers.ControllerFinanciera;
-import controllers.ControllerPublicacion;
 import controllers.ControllerInvitados;
 import controllers.ControllerProveedores;
-import controllers.ControllerContratacionServicio;
+import controllers.ControllerPublicacion;
 import controllers.ControllerSancionesProveedor;
-import repositories.RepositorySancionesProveedor;
-import services.ServiceSancionesProveedor;
-import views.ViewSancionesProveedor;
 import controllers.ControllerSolicitudes;
 import entities.Evento;
 import entities.Servicio;
@@ -24,45 +21,48 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryEvento;
+import repositories.RepositoryAvisosProveedor;
 import repositories.RepositoryContratacion;
 import repositories.RepositoryContratacionServicio;
+import repositories.RepositoryDisponibilidadServicio;
+import repositories.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
+import repositories.RepositoryOrganizador;
 import repositories.RepositoryPlanificacion;
-import repositories.RepositoryPublicacion;
 import repositories.RepositoryPropuestaServicio;
+import repositories.RepositoryPublicacion;
+import repositories.RepositorySancionesProveedor;
 import repositories.RepositoryServicio;
 import repositories.RepositorySolicitudEjecucion;
-import repositories.RepositoryOrganizador;
 import services.ServiceAdministracion;
 import services.ServiceAutenticacion;
+import services.ServiceAvisosProveedor;
 import services.ServiceContratacionServicio;
 import services.ServiceEventos;
 import services.ServiceFinanciera;
-import services.ServicePublicacion;
 import services.ServiceInvitados;
 import services.ServiceProveedores;
+import services.ServicePublicacion;
+import services.ServiceSancionesProveedor;
 import services.ServiceSolicitudes;
+import views.ViewAdministracion;
+import views.ViewAvisosProveedor;
+import views.ViewCancelacion;
 import views.ViewCatalogoServicios;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
-import views.ViewEventos;
-import views.ViewFinanciera;
-import views.ViewPublicacion;
 import views.ViewEdicion;
+import views.ViewEventos;
+import views.ViewFinalizacion;
+import views.ViewFinanciera;
 import views.ViewInvitados;
 import views.ViewListaServiciosProveedor;
 import views.ViewLogin;
-import views.ViewPropuestasOrganizador;
-import views.ViewSolicitudesProveedor;
 import views.ViewMisEventos;
-import views.ViewCancelacion;
-import views.ViewFinalizacion;
-import views.ViewAvisosProveedor;
-import views.ViewAdministracion;
-import services.ServiceAvisosProveedor;
-import repositories.RepositoryAvisosProveedor;
+import views.ViewPropuestasOrganizador;
+import views.ViewPublicacion;
+import views.ViewSancionesProveedor;
+import views.ViewSolicitudesProveedor;
 
 public class NextEventuxApp extends Application {
 
@@ -136,7 +136,9 @@ public class NextEventuxApp extends Application {
 
     private void mostrarLogin() {
 
-        if (sesionActual != null) sesionActual.cerrar();
+        if (sesionActual != null) {
+            sesionActual.cerrar();
+        }
         sesionActual = null;
         navegacion = null;
         servicioSeleccionado = null;
@@ -180,7 +182,7 @@ public class NextEventuxApp extends Application {
                 new RepositoryPublicacion(), new RepositoryEvento()), sesion);
         controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
         controllerFinanciera = new ControllerFinanciera(new ServiceFinanciera(new RepositoryMovimientoFinanciero(),
-            new RepositoryPlanificacion(), new RepositoryEvento()), sesion);
+                new RepositoryPlanificacion(), new RepositoryEvento()), sesion);
 
         String tipo = sesion.getTipoUsuario();
 
@@ -288,7 +290,7 @@ public class NextEventuxApp extends Application {
         }
         eventoSeleccionado = evento.getIdEvento();
         navegacion.ir(Navegacion.Pantalla.ESTADO_FINANCIERO);
-     }
+    }
 
     private void registrarRutasOrganizador() {
         navegacion
@@ -313,7 +315,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarLogin,
                                 sesionActual,
-                                this::mostrarMisEventos).crearPantalla())
+                                this::mostrarMisEventos)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.CATALOGO_SERVICIOS,
                         () -> new ViewCatalogoServicios(
@@ -324,7 +328,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarLogin,
                                 this::mostrarDetalleServicio,
-                                this::mostrarMisEventos).crearPantalla())
+                                this::mostrarMisEventos)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.DETALLE_SERVICIO,
                         this::crearVistaDetalleServicio)
@@ -347,6 +353,7 @@ public class NextEventuxApp extends Application {
                                 this::mostrarFinalizacion)
                                 .conSolicitudes(this::mostrarSolicitudesEvento)
                                 .conFinanzas(this::mostrarEstadoFinanciero)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
                                 .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.EDICION_EVENTO,
@@ -359,7 +366,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
-                                this::mostrarLogin).crearPantalla())
+                                this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.CANCELACION_EVENTO,
                         () -> new ViewCancelacion(
@@ -371,13 +380,17 @@ public class NextEventuxApp extends Application {
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
-                                this::mostrarLogin).crearPantalla())
+                                this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.FINALIZACION_EVENTO,
                         () -> new ViewFinalizacion(controllerEventos, this::mostrarMisEventos,
                                 null, eventoSeleccionado, sesionActual, this::mostrarEventos,
                                 this::mostrarMisEventos, this::mostrarCatalogoServicios,
-                                this::mostrarInvitados, this::mostrarLogin).crearPantalla())
+                                this::mostrarInvitados, this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.PUBLICACION_EVENTOS,
                         () -> new ViewPublicacion(
@@ -390,7 +403,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin,
-                                this::mostrarSancionesProveedor).crearPantalla())
+                                this::mostrarSancionesProveedor)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
                         () -> new ViewFinanciera(
@@ -401,17 +416,24 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
                                 .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0));
     }
 
     private void mostrarFinalizacion(Evento evento) {
-        if(!esOrganizador()) { mostrarLogin(); return; }
-        eventoSeleccionado=evento.getIdEvento();
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+        eventoSeleccionado = evento.getIdEvento();
         navegacion.ir(Navegacion.Pantalla.FINALIZACION_EVENTO);
     }
 
     private void mostrarSolicitudesEvento(Evento evento) {
-        if (!esOrganizador()) { mostrarLogin(); return; }
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
         new views.ViewSolicitudesEvento(controllerEventos, evento).mostrar(stage);
     }
 
@@ -452,7 +474,9 @@ public class NextEventuxApp extends Application {
         navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
     }
 
-    /** CU-09: solo el administrador puede aplicar sanciones. */
+    /**
+     * CU-09: solo el administrador puede aplicar sanciones.
+     */
     private void mostrarSancionesProveedor() {
         if (sesionActual == null
                 || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
@@ -506,7 +530,7 @@ public class NextEventuxApp extends Application {
 
         if (servicioSeleccionado == null
                 || servicioSeleccionado.getIdServicio()
-                        != servicio.getIdServicio()) {
+                != servicio.getIdServicio()) {
             navegacion.invalidar(Navegacion.Pantalla.DETALLE_SERVICIO);
         }
         servicioSeleccionado = servicio;
@@ -529,6 +553,7 @@ public class NextEventuxApp extends Application {
                 this::mostrarInvitados,
                 this::mostrarLogin,
                 this::mostrarMisEventos)
+                .conPropuestas(this::mostrarPropuestasOrganizador)
                 .crearPantalla();
     }
 
@@ -636,8 +661,9 @@ public class NextEventuxApp extends Application {
     }
 
     private void mostrarAvisosProveedor() {
-        if(sesionActual==null || !"PROVEEDOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
-            mostrarLogin(); return;
+        if (sesionActual == null || !"PROVEEDOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
         }
         navegacion.ir(Navegacion.Pantalla.AVISOS_PROVEEDOR);
     }
@@ -658,7 +684,10 @@ public class NextEventuxApp extends Application {
                 .crearPantalla();
     }
 
-    /** CU-026: un cliente solicita contratar un organizador desde su propia sesión. */
+    /**
+     * CU-026: un cliente solicita contratar un organizador desde su propia
+     * sesión.
+     */
     private void mostrarContratarOrganizador() {
         if (sesionActual == null || !"CLIENTE".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
             mostrarLogin();
