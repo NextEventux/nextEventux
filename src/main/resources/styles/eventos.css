@@ -77,7 +77,8 @@
 }
 
 .publicacion .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected {
-    -fx-border-width: 0 0 5 0;
+    -fx-border-width: 0 0 3 0;
+    -fx-background-color: #FFE4E7;
 }
 
 .publicacion .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
