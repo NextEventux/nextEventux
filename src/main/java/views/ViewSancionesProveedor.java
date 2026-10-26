@@ -3,7 +3,7 @@ package views;
 import java.util.Optional;
 
 import controllers.ControllerSancionesProveedor;
-import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -12,10 +12,15 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import repositories.RepositorySancionesProveedor.ContratoSancionable;
@@ -26,14 +31,13 @@ import services.ServiceSancionesProveedor.ResultadoSancion;
 import services.ServiceSancionesProveedor.SolicitudSancion;
 
 /**
- * Vista de CU-09: aplicar sanciones a un proveedor.
- * Flujo: buscar proveedor -> elegir evento -> tipo de falta y de sanción
- * -> (multa) contrato y porcentaje -> justificación -> confirmar.
+ * Vista de CU-09: aplicar sanciones a un proveedor. Flujo: buscar proveedor ->
+ * elegir evento -> tipo de falta y de sanción -> (multa) contrato y porcentaje
+ * -> justificación -> confirmar.
  */
 public class ViewSancionesProveedor {
 
     private final ControllerSancionesProveedor controller;
-    private final Runnable volver;
 
     private final TextField buscar = new TextField();
     private final ListView<ResumenProveedor> listaProveedores = new ListView<>();
@@ -50,9 +54,8 @@ public class ViewSancionesProveedor {
     private ResumenProveedor proveedor;
     private boolean refrescandoLista;
 
-    public ViewSancionesProveedor(ControllerSancionesProveedor controller, Runnable volver) {
+    public ViewSancionesProveedor(ControllerSancionesProveedor controller) {
         this.controller = controller;
-        this.volver = volver;
     }
 
     public Parent crearPantalla() {
@@ -60,24 +63,74 @@ public class ViewSancionesProveedor {
                 ServiceSancionesProveedor.TIPOS_FALTA.stream().sorted().toList());
         tipoSancion.getItems().setAll(ServiceSancionesProveedor.SUSPENSION, ServiceSancionesProveedor.MULTA);
 
+        StringConverter<String> nombresLegibles = new StringConverter<>() {
+            @Override
+            public String toString(String valor) {
+                if (valor == null) {
+                    return "";
+                }
+
+                return switch (valor) {
+                    case "CANCELACION_TARDIA" ->
+                        "Cancelación tardía";
+                    case "INASISTENCIA" ->
+                        "Inasistencia";
+                    case "INCUMPLIMIENTO_CONDICIONES" ->
+                        "Incumplimiento de condiciones";
+                    case "RETRASO" ->
+                        "Retraso";
+                    case "SUSPENSION" ->
+                        "Suspensión";
+                    case "MULTA" ->
+                        "Multa";
+                    default ->
+                        valor;
+                };
+            }
+
+            @Override
+            public String fromString(String texto) {
+                return texto;
+            }
+        };
+
+        tipoFalta.setConverter(nombresLegibles);
+        tipoSancion.setConverter(nombresLegibles);
+
+        evento.setPrefWidth(280);
+        tipoFalta.setPrefWidth(280);
+        tipoSancion.setPrefWidth(280);
+        contrato.setPrefWidth(280);
+
         evento.setConverter(new StringConverter<>() {
-            @Override public String toString(EventoProveedor e) {
+            @Override
+            public String toString(EventoProveedor e) {
                 return e == null ? "" : e.nombre();
             }
-            @Override public EventoProveedor fromString(String s) { return null; }
+
+            @Override
+            public EventoProveedor fromString(String s) {
+                return null;
+            }
         });
         contrato.setConverter(new StringConverter<>() {
-            @Override public String toString(ContratoSancionable c) {
+            @Override
+            public String toString(ContratoSancionable c) {
                 if (c == null) {
                     return "";
                 }
                 String valor = c.valorAcordado() == null ? "sin valor" : "$" + c.valorAcordado().toPlainString();
                 return "Contrato #" + c.idContratacion() + " · " + valor + " · " + c.estado();
             }
-            @Override public ContratoSancionable fromString(String s) { return null; }
+
+            @Override
+            public ContratoSancionable fromString(String s) {
+                return null;
+            }
         });
         listaProveedores.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(ResumenProveedor p, boolean vacio) {
+            @Override
+            protected void updateItem(ResumenProveedor p, boolean vacio) {
                 super.updateItem(p, vacio);
                 setText(vacio || p == null ? null
                         : p.nombre() + " (#" + p.idProveedor() + ") · " + p.estado());
@@ -87,6 +140,7 @@ public class ViewSancionesProveedor {
         buscar.setPromptText("Nombre o ID del proveedor");
         buscar.setOnAction(e -> buscar());
         Button botonBuscar = new Button("Buscar");
+        botonBuscar.getStyleClass().add("btn-secondary");
         botonBuscar.setOnAction(e -> buscar());
         listaProveedores.getSelectionModel().selectedItemProperty()
                 .addListener((obs, anterior, nuevo) -> {
@@ -96,7 +150,6 @@ public class ViewSancionesProveedor {
                 });
 
         evento.valueProperty().addListener((obs, anterior, nuevo) -> cargarContratos());
-        tipoSancion.valueProperty().addListener((obs, anterior, nuevo) -> actualizarCamposMulta());
 
         porcentaje.setPromptText("Ej. 10 o 12,5");
         porcentaje.setDisable(true);
@@ -106,37 +159,132 @@ public class ViewSancionesProveedor {
         justificacion.setPromptText("Mínimo 10 caracteres, máximo 150");
 
         aplicar.setOnAction(e -> confirmarYAplicar());
+        aplicar.getStyleClass().add("btn-primary");
         mensaje.setWrapText(true);
 
-        Button botonVolver = new Button("← Volver");
-        botonVolver.setOnAction(e -> volver.run());
-        Label titulo = new Label("Aplicar sanciones a proveedores");
-        titulo.getStyleClass().add("titulo-seccion");
+        Label titulo = new Label("Sanciones a proveedores");
+        titulo.getStyleClass().add("page-title");
 
-        HBox fila = new HBox(8, buscar, botonBuscar);
-        VBox izquierda = new VBox(10, fila, listaProveedores);
-        VBox.setVgrow(listaProveedores, javafx.scene.layout.Priority.ALWAYS);
-        izquierda.setPrefWidth(340);
+        Label descripcion = new Label(
+                "Busca un proveedor y registra una sanción asociada a un evento.");
+        descripcion.getStyleClass().add("muted");
+        descripcion.setWrapText(true);
+
+        VBox encabezado = new VBox(8, titulo, descripcion);
+
+        Label tituloBusqueda = new Label("Buscar proveedor");
+        tituloBusqueda.getStyleClass().add("card-title");
+
+        buscar.setMinWidth(0);
+        buscar.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(buscar, Priority.ALWAYS);
+
+        botonBuscar.setMinWidth(Region.USE_PREF_SIZE);
+
+        HBox filaBusqueda = new HBox(10, buscar, botonBuscar);
+
+        listaProveedores.getStyleClass().add("lista-proveedores-sanciones");
+        listaProveedores.setPrefHeight(240);
+
+        VBox izquierda = new VBox(
+                18,
+                tituloBusqueda,
+                filaBusqueda,
+                listaProveedores);
+
+        izquierda.getStyleClass().add("card");
+        izquierda.setPrefWidth(365);
+        izquierda.setMinWidth(330);
+
+        Label tituloFormulario = new Label("Datos de la sanción");
+        tituloFormulario.getStyleClass().add("card-title");
 
         GridPane formulario = new GridPane();
-        formulario.setHgap(12);
-        formulario.setVgap(10);
-        int siguiente = 0;
-        formulario.addRow(siguiente++, new Label("Proveedor"), proveedorElegido);
-        formulario.addRow(siguiente++, new Label("Evento"), evento);
-        formulario.addRow(siguiente++, new Label("Tipo de falta"), tipoFalta);
-        formulario.addRow(siguiente++, new Label("Tipo de sanción"), tipoSancion);
-        formulario.addRow(siguiente++, new Label("Contrato (multa)"), contrato);
-        formulario.addRow(siguiente++, new Label("Porcentaje (multa)"), porcentaje);
-        formulario.addRow(siguiente++, new Label("Justificación"), justificacion);
-        formulario.addRow(siguiente++, new Label(""), aplicar);
-        formulario.addRow(siguiente, new Label(""), mensaje);
+        formulario.setHgap(18);
+        formulario.setVgap(18);
 
-        HBox cuerpo = new HBox(24, izquierda, formulario);
-        cuerpo.setPadding(new Insets(16));
-        VBox raiz = new VBox(12, new HBox(12, botonVolver, titulo), cuerpo);
-        raiz.setPadding(new Insets(16));
-        return raiz;
+        ColumnConstraints columnaIzquierda = new ColumnConstraints();
+        columnaIzquierda.setPercentWidth(50);
+
+        ColumnConstraints columnaDerecha = new ColumnConstraints();
+        columnaDerecha.setPercentWidth(50);
+
+        formulario.getColumnConstraints().addAll(
+                columnaIzquierda, columnaDerecha);
+
+        formulario.add(campoFormulario("Proveedor", proveedorElegido), 0, 0, 2, 1);
+
+        formulario.add(campoFormulario("Evento", evento), 0, 1);
+        formulario.add(campoFormulario("Tipo de falta", tipoFalta), 1, 1);
+
+        formulario.add(campoFormulario("Tipo de sanción", tipoSancion), 0, 2, 2, 1);
+
+        VBox campoContrato = campoFormulario("Contrato (multa)", contrato);
+        VBox campoPorcentaje = campoFormulario("Porcentaje (multa)", porcentaje);
+
+        formulario.add(campoContrato, 0, 3);
+        formulario.add(campoPorcentaje, 1, 3);
+
+        formulario.add(campoFormulario("Justificación", justificacion), 0, 4, 2, 1);
+
+        formulario.add(aplicar, 0, 5);
+        formulario.add(mensaje, 0, 6, 2, 1);
+
+        Runnable actualizarVisibilidadMulta = () -> {
+            boolean esMulta = ServiceSancionesProveedor.MULTA.equals(tipoSancion.getValue());
+
+            campoContrato.setVisible(esMulta);
+            campoContrato.setManaged(esMulta);
+
+            campoPorcentaje.setVisible(esMulta);
+            campoPorcentaje.setManaged(esMulta);
+        };
+
+        tipoSancion.valueProperty().addListener((obs, anterior, nuevo) -> {
+            actualizarCamposMulta();
+            actualizarVisibilidadMulta.run();
+        });
+
+        actualizarCamposMulta();
+        actualizarVisibilidadMulta.run();
+
+        VBox derecha = new VBox(20, tituloFormulario, formulario);
+        derecha.getStyleClass().add("card");
+        derecha.setMinWidth(0);
+        HBox.setHgrow(derecha, Priority.ALWAYS);
+
+        HBox cuerpo = new HBox(24, izquierda, derecha);
+        cuerpo.setAlignment(Pos.TOP_LEFT);
+        cuerpo.setFillHeight(false);
+
+        VBox contenido = new VBox(
+                24,
+                encabezado,
+                cuerpo);
+
+        contenido.getStyleClass().add("content");
+        contenido.setMaxWidth(1120);
+
+        StackPane centrado = new StackPane(contenido);
+        centrado.setAlignment(Pos.TOP_CENTER);
+
+        ScrollPane scroll = new ScrollPane(centrado);
+        scroll.setFitToWidth(true);
+        scroll.getStyleClass().add("content-scroll");
+
+        return scroll;
+    }
+
+    private VBox campoFormulario(String texto, javafx.scene.layout.Region control) {
+        Label etiqueta = new Label(texto);
+        etiqueta.getStyleClass().add("field-label");
+
+        control.setMaxWidth(Double.MAX_VALUE);
+
+        VBox campo = new VBox(8, etiqueta, control);
+        campo.setMaxWidth(Double.MAX_VALUE);
+
+        return campo;
     }
 
     private void buscar() {

@@ -65,8 +65,30 @@
 .publicacion .tab-pane { -fx-tab-min-height: 42; }
 .publicacion .tab-header-background { -fx-background-color: transparent; }
 .publicacion .tab { -fx-background-color: #F1F2F6; -fx-padding: 8 16; }
-.publicacion .tab:selected { -fx-background-color: #FFF0F1; }
-.publicacion .tab:selected .tab-label { -fx-text-fill: #D71920; -fx-font-weight: bold; }
+.publicacion .tab:selected {
+    -fx-background-color: #FFF0F1;
+    -fx-border-color: transparent transparent #D71920 transparent;
+    -fx-border-width: 0 0 3 0;
+}
+
+.publicacion .tab:selected .tab-label {
+    -fx-text-fill: #D71920;
+    -fx-font-weight: bold;
+}
+
+.publicacion .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected {
+    -fx-border-width: 0 0 3 0;
+    -fx-background-color: #FFE4E7;
+}
+
+.publicacion .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
 .publicacion .list-view { -fx-border-color: #E8E9EF; -fx-background-color: white; }
 .publicacion .list-cell { -fx-padding: 12; }
 .publicacion .list-cell:filled:selected { -fx-background-color: #FFF0F1; -fx-text-fill: #252638; }
+.lista-proveedores-sanciones .list-cell:empty {
+    -fx-background-color: white;
+}
