@@ -229,8 +229,19 @@ public class NextEventuxApp extends Application {
                             null, null, null, null,
                             this::mostrarLogin,
                             null, null, null,
-                            this::mostrarSancionesProveedor));
-                    marco.setCenter(new ViewSancionesProveedor(controllerSanciones, this::mostrarPublicacion).crearPantalla());
+                            this::mostrarSancionesProveedor,
+                            null,
+                            this::mostrarPublicacion));
+                    BorderPane principal = new BorderPane();
+
+                    principal.setTop(
+                            views.components.MenuCompartido.crearBarraSuperior(
+                                    sesionActual, "Sanciones a proveedores"));
+
+                    principal.setCenter(
+                            new ViewSancionesProveedor(controllerSanciones).crearPantalla());
+
+                    marco.setCenter(principal);
                     return marco;
                 });
 
@@ -403,7 +414,8 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin,
-                                this::mostrarSancionesProveedor)
+                                this::mostrarSancionesProveedor,
+                                this::mostrarPublicacion)
                                 .conPropuestas(this::mostrarPropuestasOrganizador)
                                 .crearPantalla())
                 .registrarDinamica(
