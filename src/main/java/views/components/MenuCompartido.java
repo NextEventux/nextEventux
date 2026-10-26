@@ -186,11 +186,6 @@ public final class MenuCompartido {
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
 
-        if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
-            menu.setPrefWidth(300);
-            menu.setMinWidth(300);
-        }
-
         // Todas las pantallas utilizan exactamente la misma imagen
         ImageView logo = crearLogo();
 
@@ -240,11 +235,11 @@ public final class MenuCompartido {
         }
 
         if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
-            agregarOpcion(menu, Icono.PUBLICACION, "Publicación de eventos",
+            agregarOpcion(menu, Icono.PUBLICACION, "Publicación",
                     paginaActiva == Pagina.PUBLICACION_EVENTOS,
                     abrirPublicacion);
 
-            agregarOpcion(menu, Icono.SANCIONES, "Sanciones a proveedores",
+            agregarOpcion(menu, Icono.SANCIONES, "Sanciones",
                     paginaActiva == Pagina.SANCIONES_PROVEEDOR,
                     abrirSanciones);
         }
