@@ -25,7 +25,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
@@ -54,6 +53,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
+import views.ViewInvitados.FilaInvitacion;
 import views.components.MenuCompartido;
 
 /**
@@ -68,7 +68,10 @@ public final class ViewInvitados {
 
     private static final String CSS = "/styles/invitados.css";
     private static final double ANCHO_PANEL = 270;
-    /** Alto de cada fila de la tabla de invitaciones (dos filas de botones en Acciones). */
+    /**
+     * Alto de cada fila de la tabla de invitaciones (dos filas de botones en
+     * Acciones).
+     */
     private static final double ALTO_FILA = 86;
     /**
      * Ancho de ventana desde el cual el panel derecho va al lado de la tabla.
@@ -103,6 +106,7 @@ public final class ViewInvitados {
     private final Runnable abrirCatalogo;
     private final Runnable cerrarSesion;
     private final Runnable abrirMisEventos;
+    private Runnable abrirPropuestas;
 
     private final ObservableList<FilaInvitacion> filas = FXCollections.observableArrayList();
     private final FilteredList<FilaInvitacion> filtradas = new FilteredList<>(filas, fila -> true);
@@ -282,7 +286,9 @@ public final class ViewInvitados {
             double ancho = raiz.getWidth() <= 0 ? 1440 : raiz.getWidth();
             organizarEstadisticas(estadisticas, ancho >= 1280);
             boolean lateral = ancho >= ANCHO_PANEL_LATERAL;
-            if (inicializado[0] && lateral == lateralActual[0]) return;
+            if (inicializado[0] && lateral == lateralActual[0]) {
+                return;
+            }
             inicializado[0] = true;
             lateralActual[0] = lateral;
             panelVertical.getChildren().clear();
@@ -319,7 +325,9 @@ public final class ViewInvitados {
         });
         // Al mostrarse (también al volver desde otra pantalla del menú) se recargan los datos de H2.
         raiz.sceneProperty().addListener((obs, anterior, actual) -> {
-            if (actual != null) recargar();
+            if (actual != null) {
+                recargar();
+            }
         });
         return raiz;
     }
@@ -333,6 +341,11 @@ public final class ViewInvitados {
         }
     }
 
+    public ViewInvitados conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
+    }
+
     private VBox crearMenu() {
         return MenuCompartido.crear(
                 sesion,
@@ -342,7 +355,9 @@ public final class ViewInvitados {
                 abrirCatalogo,
                 null,
                 cerrarSesion,
-                abrirMisEventos);
+                abrirMisEventos,
+                null,
+                abrirPropuestas);
     }
 
     private HBox crearBarraSuperior() {
@@ -393,7 +408,9 @@ public final class ViewInvitados {
      */
     private void organizarEstadisticas(GridPane grid, boolean enFila) {
         int columnas = enFila ? 4 : 2;
-        if (grid.getColumnConstraints().size() == columnas) return;
+        if (grid.getColumnConstraints().size() == columnas) {
+            return;
+        }
         grid.getColumnConstraints().clear();
         for (int i = 0; i < columnas; i++) {
             ColumnConstraints columna = new ColumnConstraints();
@@ -491,6 +508,7 @@ public final class ViewInvitados {
             private final Button editar = new Button("Editar");
             private final Button revocar = new Button("Revocar");
             private final GridPane caja = new GridPane();
+
             {
                 invitados.getStyleClass().addAll("btn-secondary", "btn-small");
                 regalos.getStyleClass().addAll("btn-secondary", "btn-small");
@@ -973,7 +991,9 @@ public final class ViewInvitados {
     // Mesa de regalos de una invitación (CU-20, lado del organizador)
     // ------------------------------------------------------------------
     private void abrirRegalos(FilaInvitacion fila) {
-        if (fila == null) return;
+        if (fila == null) {
+            return;
+        }
         Evento evento = selectorEvento.getValue();
         NumberFormat pesos = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
         pesos.setMaximumFractionDigits(0);
@@ -1002,7 +1022,11 @@ public final class ViewInvitados {
                 r -> r.estaReservado() ? Regalo.ESTADO_RESERVADO : Regalo.ESTADO_DISPONIBLE, 100, 110);
         estado.setCellFactory(col -> new TableCell<>() {
             private final Label pill = new Label();
-            { pill.setMinWidth(Region.USE_PREF_SIZE); }
+
+            {
+                pill.setMinWidth(Region.USE_PREF_SIZE);
+            }
+
             @Override
             protected void updateItem(String valor, boolean vacio) {
                 super.updateItem(valor, vacio);
@@ -1024,6 +1048,7 @@ public final class ViewInvitados {
         quitar.setPrefWidth(85);
         quitar.setCellFactory(col -> new TableCell<>() {
             private final Button boton = new Button("Quitar");
+
             {
                 boton.getStyleClass().addAll("btn-danger", "btn-small");
                 boton.setOnAction(e -> {
@@ -1037,6 +1062,7 @@ public final class ViewInvitados {
                     }
                 });
             }
+
             @Override
             protected void updateItem(Regalo regalo, boolean vacio) {
                 super.updateItem(regalo, vacio);
@@ -1066,7 +1092,9 @@ public final class ViewInvitados {
         agregar.setOnAction(e -> {
             try {
                 controller.agregarRegalo(fila.id(), new Regalo(nombre.getText(), descripcion.getText(), leerPrecio(precio.getText())));
-                for (TextField campo : new TextField[]{nombre, precio, descripcion}) campo.clear();
+                for (TextField campo : new TextField[]{nombre, precio, descripcion}) {
+                    campo.clear();
+                }
                 error.setVisible(false);
                 error.setManaged(false);
                 nombre.requestFocus();
@@ -1111,9 +1139,14 @@ public final class ViewInvitados {
         dialogo.showAndWait();
     }
 
-    /** Convierte el precio escrito (acepta "50000", "50.000" o "$50.000") a número; vacío o inválido da null. */
+    /**
+     * Convierte el precio escrito (acepta "50000", "50.000" o "$50.000") a
+     * número; vacío o inválido da null.
+     */
     private static BigDecimal leerPrecio(String texto) {
-        if (texto == null || texto.isBlank()) return null;
+        if (texto == null || texto.isBlank()) {
+            return null;
+        }
         String limpio = texto.replace("$", "").replace(" ", "");
         // Formato colombiano con puntos de miles (50.000 o 1.250.000,50); si no, el punto o la coma son decimales.
         limpio = limpio.matches("\\d{1,3}(\\.\\d{3})+(,\\d+)?")

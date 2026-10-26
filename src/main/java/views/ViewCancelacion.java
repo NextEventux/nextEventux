@@ -15,6 +15,7 @@ public class ViewCancelacion {
     private final Integer eventoInicial;
     private final SesionUsuario sesion;
     private final Runnable abrirEventos, abrirMisEventos, abrirCatalogo, abrirInvitados, cerrarSesion;
+    private Runnable abrirPropuestas;
     private final Label organizador = new Label();
     private final ComboBox<Evento> evento = new ComboBox<>();
     private final CheckBox confirmar = new CheckBox("Confirmo que deseo cancelar el evento y revocar sus invitaciones.");
@@ -31,6 +32,11 @@ public class ViewCancelacion {
         this.controller=controller; this.volver=volver; this.eventoInicial=eventoInicial;
         this.sesion=sesion; this.abrirEventos=abrirEventos; this.abrirMisEventos=abrirMisEventos;
         this.abrirCatalogo=abrirCatalogo; this.abrirInvitados=abrirInvitados; this.cerrarSesion=cerrarSesion;
+    }
+
+    public ViewCancelacion conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
     }
 
     public Parent crearPantalla() {
@@ -71,7 +77,8 @@ public class ViewCancelacion {
             principal.setTop(MenuCompartido.crearBarraSuperior(sesion,"Cancelar evento","Mis eventos",volver));
             raiz.setCenter(principal);
             raiz.setLeft(MenuCompartido.crear(sesion,MenuCompartido.Pagina.MIS_EVENTOS,
-                    abrirEventos,abrirInvitados,abrirCatalogo,null,cerrarSesion,abrirMisEventos));
+                    abrirEventos,abrirInvitados,abrirCatalogo,null,cerrarSesion,abrirMisEventos,
+                    null,abrirPropuestas));
         }
         try {
             organizador.setText(controller.nombreOrganizadorCancelacion()); cargarEventos();
