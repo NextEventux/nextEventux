@@ -1,420 +1,490 @@
 package views;
 
-import java.text.NumberFormat;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-
 import controllers.ControllerContratacionServicio;
 import entities.ConfirmacionContratacion;
 import entities.DisponibilidadContratacion;
 import entities.PresupuestoContratacion;
 import entities.PropuestaServicio;
 import entities.ResumenContratacionServicio;
+import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.Window;
+import views.components.MenuCompartido;
 
 /**
  * CU-13: contratar el servicio de la propuesta seleccionada.
  *
- * El organizador revisa la versión exacta de la propuesta, comprueba la
- * disponibilidad del proveedor y el presupuesto del evento, revisa el resumen
- * final y confirma. Cerrar la ventana antes de confirmar no reserva nada (A3).
+ * Es una pantalla más de la aplicación, con el menú lateral y la barra
+ * superior. Al abrirla consulta la versión exacta de la propuesta, la
+ * disponibilidad del proveedor y el presupuesto del evento, y muestra el
+ * resultado sin pedir pasos manuales. El botón "Confirmar contratación" solo
+ * se habilita si todo es viable; contratar vuelve a validar dentro de su
+ * transacción, así que cualquier cambio de último momento se informa aquí
+ * mismo. Salir antes de confirmar no reserva nada (A3).
  */
 public class ViewContratarServicio {
-
-    private static final NumberFormat MONEDA = NumberFormat.getCurrencyInstance(
-            Locale.forLanguageTag("es-CO"));
-
-    private static final DateTimeFormatter FECHA_HORA
-            = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-    private static final DateTimeFormatter FECHA
-            = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ControllerContratacionServicio controller;
     private final int idOrganizador;
     private final PropuestaServicio propuesta;
-    private final Runnable alFinalizar;
+    private final Runnable volverPropuestas;
 
-    private Stage ventana;
+    private SesionUsuario sesion;
+    private Runnable abrirEventos;
+    private Runnable abrirInvitados;
+    private Runnable abrirCatalogo;
+    private Runnable abrirMisEventos;
+    private Runnable cerrarSesion;
+
+    private final VBox contenido = new VBox(18);
+
     private ResumenContratacionServicio resumen;
-
-    private boolean disponibilidadVerificada;
-    private boolean presupuestoVerificado;
-
-    private final VBox contenido = new VBox(16);
-
-    private final Label resultadoDisponibilidad = new Label();
-    private final Label resultadoPresupuesto = new Label();
-    private final VBox resumenFinal = new VBox(8);
-
-    private final Button verificarDisponibilidad
-            = new Button("Verificar disponibilidad");
-    private final Button verificarPresupuesto
-            = new Button("Comprobar presupuesto");
-    private final Button confirmar
-            = new Button("Confirmar contratación");
-    private final Button cancelar = new Button("No contratar todavía");
+    private DisponibilidadContratacion disponibilidad;
+    private PresupuestoContratacion presupuesto;
+    private String errorDisponibilidad;
+    private String errorPresupuesto;
 
     public ViewContratarServicio(
             ControllerContratacionServicio controller,
             int idOrganizador,
             PropuestaServicio propuesta,
-            Runnable alFinalizar) {
+            Runnable volverPropuestas) {
 
         this.controller = controller;
         this.idOrganizador = idOrganizador;
         this.propuesta = propuesta;
-        this.alFinalizar = alFinalizar;
+        this.volverPropuestas = volverPropuestas;
     }
 
-    public void mostrar(Window propietario) {
+    public ViewContratarServicio conMenu(
+            SesionUsuario sesion,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirMisEventos,
+            Runnable cerrarSesion) {
 
-        // Pasos 1 y 2: recuperar la versión exacta antes de abrir la ventana
+        this.sesion = sesion;
+        this.abrirEventos = abrirEventos;
+        this.abrirInvitados = abrirInvitados;
+        this.abrirCatalogo = abrirCatalogo;
+        this.abrirMisEventos = abrirMisEventos;
+        this.cerrarSesion = cerrarSesion;
+        return this;
+    }
+
+    public Parent crearPantalla() {
+
+        BorderPane raiz = new BorderPane();
+        raiz.getStyleClass().add("app");
+
+        VBox menu = MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.PROPUESTAS_ORGANIZADOR,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                null,
+                cerrarSesion,
+                abrirMisEventos,
+                null,
+                volverPropuestas);
+
+        raiz.setLeft(menu);
+
+        raiz.widthProperty().addListener((observable, anterior, actual) -> {
+            boolean mostrarMenu = actual.doubleValue() >= 1000;
+            menu.setVisible(mostrarMenu);
+            menu.setManaged(mostrarMenu);
+        });
+
+        contenido.getStyleClass().addAll("content", "cu12-content");
+        contenido.setMaxWidth(900);
+
+        ScrollPane scroll = new ScrollPane(contenido);
+        scroll.setFitToWidth(true);
+        scroll.getStyleClass().add("content-scroll");
+
+        BorderPane principal = new BorderPane(scroll);
+        principal.setTop(MenuCompartido.crearBarraSuperior(
+                sesion,
+                "Contratar servicio",
+                "Propuestas recibidas",
+                volverPropuestas));
+
+        raiz.setCenter(principal);
+
+        cargar();
+
+        return raiz;
+    }
+
+    // ------------------------------------------------------------------
+    // Carga automática: versión de la propuesta, disponibilidad y presupuesto
+    // ------------------------------------------------------------------
+
+    private void cargar() {
+
         try {
             resumen = controller.consultarResumen(
                     idOrganizador, propuesta.getIdPropuesta());
 
         } catch (RuntimeException e) {
-            mostrarError("No se puede contratar esta propuesta",
-                    e.getMessage());
+            mostrarNoContratable(e.getMessage());
             return;
         }
 
-        ventana = new Stage();
-        ventana.setTitle("Contratar servicio");
-        ventana.initModality(Modality.APPLICATION_MODAL);
+        verificar();
+        mostrarRevision(null);
+    }
 
-        if (propietario != null) {
-            ventana.initOwner(propietario);
+    private void verificar() {
+
+        disponibilidad = null;
+        presupuesto = null;
+        errorDisponibilidad = null;
+        errorPresupuesto = null;
+
+        try {
+            disponibilidad = controller.verificarDisponibilidad(
+                    idOrganizador, resumen.idPropuesta());
+
+        } catch (RuntimeException e) {
+            errorDisponibilidad = e.getMessage();
         }
 
-        contenido.getStyleClass().addAll("content", "cu12-content", "cu13-dialog");
-        contenido.setPadding(new Insets(24));
-        construirFormulario();
+        try {
+            presupuesto = controller.verificarPresupuesto(
+                    idOrganizador, resumen.idPropuesta());
 
-        ScrollPane scroll = new ScrollPane(contenido);
-        scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color: #F8F9FC;");
-
-        Scene escena = new Scene(scroll, 720, 760);
-
-        if (propietario != null && propietario.getScene() != null) {
-            escena.getStylesheets().addAll(
-                    propietario.getScene().getStylesheets());
+        } catch (RuntimeException e) {
+            errorPresupuesto = e.getMessage();
         }
-
-        ventana.setScene(escena);
-        ventana.showAndWait();
     }
 
     // ------------------------------------------------------------------
-    // Pantalla de revisión (pasos 1 a 7)
+    // Pantalla de revisión
     // ------------------------------------------------------------------
 
-    private void construirFormulario() {
+    private void mostrarNoContratable(String mensaje) {
 
-        contenido.getChildren().clear();
+        contenido.getChildren().setAll(
+                titulo("Contratar servicio"),
+                banner(mensaje == null
+                        ? "No se puede contratar esta propuesta."
+                        : mensaje, "banner-error"),
+                botonVolver("Volver a propuestas", "btn-secondary"));
+    }
 
-        Label titulo = new Label("Contratar servicio");
-        titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+    private void mostrarRevision(String errorConfirmacion) {
 
-        Label ayuda = new Label(
-                "Revisa la propuesta seleccionada, verifica la disponibilidad "
-                + "del proveedor y el presupuesto del evento. El horario solo "
-                + "se reserva cuando confirmas la contratación.");
-        ayuda.setWrapText(true);
-        ayuda.getStyleClass().add("cu12-card-detail");
+        boolean puedeConfirmar = PresentacionContratacion.puedeConfirmar(
+                disponibilidad, presupuesto);
 
-        verificarDisponibilidad.setOnAction(e -> comprobarDisponibilidad());
-
-        verificarPresupuesto.setOnAction(e -> comprobarPresupuesto());
-        verificarPresupuesto.setDisable(true);
-
+        Button confirmar = new Button("Confirmar contratación");
+        confirmar.setId("confirmarContratacion");
         confirmar.getStyleClass().add("btn-primary");
-        confirmar.setDisable(true);
-        confirmar.setOnAction(e -> confirmarContratacion());
+        confirmar.setDisable(!puedeConfirmar);
+        confirmar.setOnAction(e -> confirmar(confirmar));
 
-        cancelar.setOnAction(e -> ventana.close());
+        Button volver = new Button("Volver a propuestas");
+        volver.getStyleClass().add("btn-ghost");
+        volver.setOnAction(e -> volverPropuestas.run());
 
-        resultadoDisponibilidad.setWrapText(true);
-        resultadoPresupuesto.setWrapText(true);
+        HBox acciones = new HBox(12, confirmar, volver);
+        acciones.setAlignment(Pos.CENTER_LEFT);
 
-        HBox acciones = new HBox(12, cancelar, confirmar);
-        acciones.setAlignment(Pos.CENTER_RIGHT);
+        contenido.getChildren().setAll(
+                titulo("Contratar servicio"),
+                texto("Revisa el resumen. El horario del proveedor solo se "
+                        + "reserva cuando confirmas la contratación."));
+
+        if (errorConfirmacion != null) {
+            contenido.getChildren().add(
+                    banner(errorConfirmacion, "banner-error"));
+        }
 
         contenido.getChildren().addAll(
-                titulo,
-                ayuda,
-                tarjeta("1. Propuesta seleccionada", crearDetallePropuesta()),
-                tarjeta("2. Disponibilidad del proveedor",
-                        verificarDisponibilidad, resultadoDisponibilidad),
-                tarjeta("3. Presupuesto del evento",
-                        verificarPresupuesto, resultadoPresupuesto),
-                tarjeta("4. Resumen final", resumenFinal),
-                acciones);
+                crearTarjetaPropuesta(),
+                crearTarjetaVerificacion());
 
-        resumenFinal.getChildren().setAll(
-                nota("Completa la verificación de disponibilidad y de "
-                        + "presupuesto para ver el resumen final."));
-    }
+        String bloqueo = mensajeBloqueo();
 
-    private VBox crearDetallePropuesta() {
-
-        VBox detalle = new VBox(6);
-
-        Label valor = new Label(MONEDA.format(resumen.valor()));
-        valor.getStyleClass().add("cu12-price");
-
-        detalle.getChildren().addAll(
-                valor,
-                nota("Servicio: " + resumen.nombreServicio()
-                        + "  •  Proveedor: " + resumen.nombreProveedor()),
-                nota("Evento: " + resumen.nombreEvento() + " ("
-                        + resumen.fechaInicioEvento().format(FECHA_HORA)
-                        + " a "
-                        + resumen.fechaFinEvento().format(FECHA_HORA) + ")"),
-                nota("Propuesta #" + resumen.idPropuesta()
-                        + "  •  Versión " + resumen.numeroVersion()),
-                nota("Necesidad: " + resumen.necesidad()),
-                nota("Alcance: " + resumen.alcance()),
-                nota("Condiciones acordadas: " + resumen.condiciones()));
-
-        return detalle;
-    }
-
-    private void comprobarDisponibilidad() {
-
-        try {
-            DisponibilidadContratacion resultado
-                    = controller.verificarDisponibilidad(
-                            idOrganizador, resumen.idPropuesta());
-
-            disponibilidadVerificada = resultado.disponible();
-            marcar(resultadoDisponibilidad,
-                    resultado.mensaje(), resultado.disponible());
-
-            verificarPresupuesto.setDisable(!disponibilidadVerificada);
-
-            if (!disponibilidadVerificada) {
-                presupuestoVerificado = false;
-            }
-
-            actualizarResumenFinal(null);
-
-        } catch (RuntimeException e) {
-            disponibilidadVerificada = false;
-            marcar(resultadoDisponibilidad, e.getMessage(), false);
-            verificarPresupuesto.setDisable(true);
-            actualizarResumenFinal(null);
-        }
-    }
-
-    private PresupuestoContratacion ultimoPresupuesto;
-
-    private void comprobarPresupuesto() {
-
-        try {
-            ultimoPresupuesto
-                    = controller.verificarPresupuesto(
-                            idOrganizador, resumen.idPropuesta());
-
-            presupuestoVerificado = ultimoPresupuesto.suficiente();
-
-            marcar(resultadoPresupuesto,
-                    "Presupuesto total: "
-                    + MONEDA.format(ultimoPresupuesto.total())
-                    + "\nYa comprometido en otras necesidades: "
-                    + MONEDA.format(ultimoPresupuesto.comprometido())
-                    + "\nPrecio final acordado: "
-                    + MONEDA.format(ultimoPresupuesto.valor())
-                    + "\n" + ultimoPresupuesto.mensaje(),
-                    ultimoPresupuesto.suficiente());
-
-            actualizarResumenFinal(ultimoPresupuesto);
-
-        } catch (RuntimeException e) {
-            presupuestoVerificado = false;
-            marcar(resultadoPresupuesto, e.getMessage(), false);
-            actualizarResumenFinal(null);
-        }
-    }
-
-    private void actualizarResumenFinal(PresupuestoContratacion presupuesto) {
-
-        boolean listo = disponibilidadVerificada && presupuestoVerificado;
-
-        confirmar.setDisable(!listo);
-
-        if (!listo || presupuesto == null) {
-            resumenFinal.getChildren().setAll(
-                    nota("Completa la verificación de disponibilidad y de "
-                            + "presupuesto para ver el resumen final."));
-            return;
+        if (bloqueo != null) {
+            Node aviso = banner(bloqueo, "banner-aviso");
+            aviso.setId("motivoBloqueo");
+            contenido.getChildren().add(aviso);
         }
 
-        resumenFinal.getChildren().setAll(
-                nota("Se asociará a la contratación la propuesta #"
-                        + resumen.idPropuesta() + ", versión "
-                        + resumen.numeroVersion() + ", con las condiciones "
-                        + "indicadas arriba. No podrán modificarse después."),
-                nota("Se reservará el horario del proveedor y se "
-                        + "comprometerán " + MONEDA.format(resumen.valor())
-                        + " del presupuesto."),
-                nota("Presupuesto disponible después de contratar: "
-                        + MONEDA.format(presupuesto.disponibleDespues())),
-                nota("Las demás propuestas de esta necesidad quedarán como "
-                        + "\"No seleccionada\" y se avisará a sus proveedores."));
+        contenido.getChildren().add(acciones);
+    }
+
+    private String mensajeBloqueo() {
+
+        if (errorDisponibilidad != null) {
+            return errorDisponibilidad;
+        }
+
+        if (errorPresupuesto != null) {
+            return errorPresupuesto;
+        }
+
+        return PresentacionContratacion.motivoBloqueo(
+                disponibilidad, presupuesto);
+    }
+
+    private VBox crearTarjetaPropuesta() {
+
+        Label servicio = new Label(resumen.nombreServicio());
+        servicio.getStyleClass().add("titulo-seccion");
+
+        Label precio = new Label(FormatoUi.moneda(resumen.valor()));
+        precio.getStyleClass().add("dato-destacado");
+
+        GridPane datos = new GridPane();
+        datos.setHgap(32);
+        datos.setVgap(12);
+
+        datos.add(dato("Proveedor", resumen.nombreProveedor()), 0, 0);
+        datos.add(dato("Evento", resumen.nombreEvento()), 1, 0);
+        datos.add(dato("Fecha y hora", FormatoUi.rango(
+                resumen.fechaInicioEvento(), resumen.fechaFinEvento())), 0, 1);
+        datos.add(dato("Necesidad", resumen.necesidad()), 1, 1);
+        datos.add(dato("Propuesta", "#" + resumen.idPropuesta()
+                + " · versión " + resumen.numeroVersion()), 0, 2);
+
+        VBox tarjeta = tarjeta(
+                servicio,
+                precio,
+                datos,
+                dato("Alcance", resumen.alcance()),
+                dato("Condiciones acordadas", resumen.condiciones()));
+
+        tarjeta.setId("tarjetaPropuesta");
+
+        return tarjeta;
+    }
+
+    private VBox crearTarjetaVerificacion() {
+
+        Label encabezado = new Label("Verificaciones");
+        encabezado.getStyleClass().add("titulo-seccion");
+
+        VBox tarjeta = tarjeta(encabezado, filaDisponibilidad());
+
+        if (presupuesto != null) {
+            GridPane cifras = new GridPane();
+            cifras.setHgap(32);
+            cifras.setVgap(12);
+
+            cifras.add(dato("Precio acordado",
+                    FormatoUi.moneda(presupuesto.valor())), 0, 0);
+            cifras.add(dato("Presupuesto disponible del evento",
+                    FormatoUi.moneda(PresentacionContratacion
+                            .presupuestoDisponibleAntes(presupuesto))), 1, 0);
+            cifras.add(dato("Presupuesto después de contratar",
+                    FormatoUi.moneda(PresentacionContratacion
+                            .presupuestoDisponibleDespues(presupuesto))), 2, 0);
+
+            tarjeta.getChildren().add(cifras);
+        }
+
+        tarjeta.getChildren().add(filaPresupuesto());
+        tarjeta.setId("tarjetaVerificacion");
+
+        return tarjeta;
+    }
+
+    private Node filaDisponibilidad() {
+
+        if (errorDisponibilidad != null) {
+            return fila("Disponibilidad del proveedor",
+                    errorDisponibilidad, "chip-error", "No verificada");
+        }
+
+        boolean disponible = disponibilidad != null
+                && disponibilidad.disponible();
+
+        return fila("Disponibilidad del proveedor",
+                PresentacionContratacion.textoDisponibilidad(disponibilidad),
+                disponible ? "chip-ok" : "chip-error",
+                disponible ? "Disponible" : "No disponible");
+    }
+
+    private Node filaPresupuesto() {
+
+        if (errorPresupuesto != null) {
+            return fila("Presupuesto del evento",
+                    errorPresupuesto, "chip-error", "No verificado");
+        }
+
+        boolean suficiente = presupuesto != null && presupuesto.suficiente();
+
+        return fila("Presupuesto del evento",
+                PresentacionContratacion.textoPresupuesto(presupuesto),
+                suficiente ? "chip-ok" : "chip-error",
+                suficiente ? "Suficiente" : "Insuficiente");
     }
 
     // ------------------------------------------------------------------
-    // Confirmación (pasos 7 y 8)
+    // Confirmación
     // ------------------------------------------------------------------
 
-    private void confirmarContratacion() {
+    private void confirmar(Button boton) {
 
-        Alert pregunta = new Alert(
-                Alert.AlertType.CONFIRMATION,
-                "¿Confirmas la contratación de \"" + resumen.nombreServicio()
-                + "\" por " + MONEDA.format(resumen.valor()) + "?",
-                ButtonType.YES,
-                ButtonType.NO);
-
-        pregunta.setHeaderText("Confirmar contratación");
-        pregunta.initOwner(ventana);
-
-        if (pregunta.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) {
-            return;
-        }
+        boton.setDisable(true);
 
         try {
-            ConfirmacionContratacion confirmacion
-                    = controller.contratar(
-                            idOrganizador, resumen.idPropuesta());
+            ConfirmacionContratacion confirmacion = controller.contratar(
+                    idOrganizador, resumen.idPropuesta());
 
             mostrarConfirmacion(confirmacion);
 
         } catch (RuntimeException e) {
 
             // A1 y A2: no se formalizó nada y la propuesta sigue seleccionada
-            mostrarError("No se pudo contratar el servicio",
-                    e.getMessage());
+            String motivo = e.getMessage() == null
+                    ? "No se pudo contratar el servicio."
+                    : e.getMessage();
 
-            disponibilidadVerificada = false;
-            presupuestoVerificado = false;
-            confirmar.setDisable(true);
-            verificarPresupuesto.setDisable(true);
-            resultadoDisponibilidad.setText("");
-            resultadoPresupuesto.setText("");
-            actualizarResumenFinal(null);
+            verificar();
+            mostrarRevision(motivo);
         }
     }
 
     private void mostrarConfirmacion(ConfirmacionContratacion c) {
 
-        contenido.getChildren().clear();
+        Label servicio = new Label(c.nombreServicio());
+        servicio.getStyleClass().add("titulo-seccion");
 
-        Label titulo = new Label("Contratación confirmada");
-        titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        Label precio = new Label(FormatoUi.moneda(c.valor()));
+        precio.getStyleClass().add("dato-destacado");
 
-        Label valor = new Label(MONEDA.format(c.valor()));
-        valor.getStyleClass().add("cu12-price");
+        GridPane datos = new GridPane();
+        datos.setHgap(32);
+        datos.setVgap(12);
 
-        VBox detalle = new VBox(6,
-                valor,
-                nota("Contratación #" + c.idContratacion()),
-                nota("Servicio: " + c.nombreServicio()
-                        + "  •  Proveedor: " + c.nombreProveedor()),
-                nota("Evento: " + c.nombreEvento()),
-                nota("Propuesta #" + c.idPropuesta()
-                        + "  •  Versión " + c.numeroVersion()),
-                nota("Horario reservado: " + c.fechaServicio().format(FECHA)
-                        + " de " + c.horaInicio() + " a " + c.horaFin()),
-                nota("Alcance: " + c.alcance()),
-                nota("Condiciones acordadas: " + c.condiciones()),
-                nota("Presupuesto disponible del evento: "
-                        + MONEDA.format(c.presupuestoDisponible())),
-                nota("El proveedor fue notificado."));
+        datos.add(dato("Proveedor", c.nombreProveedor()), 0, 0);
+        datos.add(dato("Evento", c.nombreEvento()), 1, 0);
+        datos.add(dato("Horario reservado",
+                FormatoUi.fecha(c.fechaServicio()) + ", "
+                + FormatoUi.hora(c.horaInicio()) + " a "
+                + FormatoUi.hora(c.horaFin())), 0, 1);
+        datos.add(dato("Contratación",
+                "#" + c.idContratacion() + " · propuesta #"
+                + c.idPropuesta() + " versión " + c.numeroVersion()), 1, 1);
+        datos.add(dato("Presupuesto disponible del evento",
+                FormatoUi.moneda(c.presupuestoDisponible())), 0, 2);
 
-        Button cerrar = new Button("Cerrar");
-        cerrar.getStyleClass().add("btn-primary");
-        cerrar.setOnAction(e -> ventana.close());
+        VBox resultado = tarjeta(
+                servicio,
+                precio,
+                datos,
+                dato("Alcance", c.alcance()),
+                dato("Condiciones acordadas", c.condiciones()));
 
-        HBox acciones = new HBox(cerrar);
-        acciones.setAlignment(Pos.CENTER_RIGHT);
+        resultado.setId("resultadoContratacion");
 
-        contenido.getChildren().addAll(
-                titulo,
-                tarjeta("Resumen de la contratación", detalle),
+        Button ver = new Button("Ver propuestas");
+        ver.setId("verPropuestas");
+        ver.getStyleClass().add("btn-primary");
+        ver.setOnAction(e -> volverPropuestas.run());
+
+        HBox acciones = new HBox(ver);
+        acciones.setAlignment(Pos.CENTER_LEFT);
+
+        Node exito = banner("Contratación confirmada. El horario quedó "
+                + "reservado y el proveedor fue notificado.", "banner-ok");
+        exito.setId("bannerContratacion");
+
+        contenido.getChildren().setAll(
+                titulo("Contratación confirmada"),
+                exito,
+                resultado,
                 acciones);
-
-        ventana.setOnHidden(e -> {
-            if (alFinalizar != null) {
-                alFinalizar.run();
-            }
-        });
     }
 
     // ------------------------------------------------------------------
-    // Utilidades de presentación
+    // Componentes de presentación
     // ------------------------------------------------------------------
 
-    private VBox tarjeta(String titulo, javafx.scene.Node... nodos) {
-
-        Label etiqueta = new Label(titulo);
-        etiqueta.getStyleClass().add("cu12-card-title");
-
-        VBox tarjeta = new VBox(10);
-        tarjeta.getChildren().add(etiqueta);
-        tarjeta.getChildren().addAll(nodos);
-        tarjeta.setPadding(new Insets(18));
-        tarjeta.setStyle(
-                "-fx-background-color: white; -fx-background-radius: 12; "
-                + "-fx-border-color: #E8E9EF; -fx-border-radius: 12;");
-
-        return tarjeta;
-    }
-
-    private Label nota(String texto) {
+    private Label titulo(String texto) {
 
         Label etiqueta = new Label(texto);
-        etiqueta.setWrapText(true);
-        etiqueta.getStyleClass().add("cu12-card-detail");
+        etiqueta.getStyleClass().add("titulo-pantalla");
         return etiqueta;
     }
 
-    private void marcar(Label etiqueta, String mensaje, boolean correcto) {
+    private Label texto(String texto) {
 
-        etiqueta.setText(mensaje);
-        etiqueta.setStyle(correcto
-                ? "-fx-text-fill: #237344; -fx-font-weight: bold;"
-                : "-fx-text-fill: #B9151B; -fx-font-weight: bold;");
+        Label etiqueta = new Label(texto);
+        etiqueta.setWrapText(true);
+        etiqueta.getStyleClass().add("texto-apoyo");
+        return etiqueta;
     }
 
-    private void mostrarError(String encabezado, String mensaje) {
+    private Label banner(String mensaje, String estilo) {
 
-        Alert alerta = new Alert(
-                Alert.AlertType.ERROR,
-                mensaje == null ? "Ocurrió un error." : mensaje,
-                ButtonType.OK);
+        Label etiqueta = new Label(mensaje);
+        etiqueta.setWrapText(true);
+        etiqueta.setMaxWidth(Double.MAX_VALUE);
+        etiqueta.getStyleClass().addAll("banner", estilo);
+        return etiqueta;
+    }
 
-        alerta.setHeaderText(encabezado);
+    private VBox tarjeta(Node... nodos) {
 
-        if (ventana != null) {
-            alerta.initOwner(ventana);
-        }
+        VBox tarjeta = new VBox(14, nodos);
+        tarjeta.getStyleClass().add("tarjeta");
+        tarjeta.setPadding(new Insets(20));
+        return tarjeta;
+    }
 
-        alerta.showAndWait();
+    private VBox dato(String etiqueta, String valor) {
+
+        Label titulo = new Label(etiqueta);
+        titulo.getStyleClass().add("dato-etiqueta");
+
+        Label contenidoDato = new Label(
+                valor == null || valor.isBlank() ? FormatoUi.SIN_DATO : valor);
+        contenidoDato.setWrapText(true);
+        contenidoDato.getStyleClass().add("dato-valor");
+
+        return new VBox(2, titulo, contenidoDato);
+    }
+
+    private HBox fila(
+            String etiqueta,
+            String detalle,
+            String estiloChip,
+            String textoChip) {
+
+        Label chip = new Label(textoChip);
+        chip.getStyleClass().addAll("chip", estiloChip);
+
+        VBox texto = dato(etiqueta, detalle);
+        HBox.setHgrow(texto, Priority.ALWAYS);
+
+        HBox fila = new HBox(14, texto, chip);
+        fila.setAlignment(Pos.CENTER_LEFT);
+        return fila;
+    }
+
+    private Button botonVolver(String texto, String estilo) {
+
+        Button boton = new Button(texto);
+        boton.getStyleClass().add(estilo);
+        boton.setOnAction(e -> volverPropuestas.run());
+        return boton;
     }
 }

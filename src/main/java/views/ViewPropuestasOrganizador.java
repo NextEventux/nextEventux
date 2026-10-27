@@ -1,8 +1,8 @@
 package views;
 
 import java.util.List;
+import java.util.function.Consumer;
 
-import controllers.ControllerContratacionServicio;
 import controllers.ControllerSolicitudes;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
@@ -40,13 +40,13 @@ public class ViewPropuestasOrganizador {
     private final ListView<PropuestaServicio> lista
             = new ListView<>();
 
-    // CU-13: se habilita desde la aplicacion para poder contratar
-    private ControllerContratacionServicio controllerContratacion;
+    // CU-13: la aplicacion abre la pantalla de contratacion de la propuesta
+    private Consumer<PropuestaServicio> abrirContratacion;
 
     public ViewPropuestasOrganizador conContratacion(
-            ControllerContratacionServicio controllerContratacion) {
+            Consumer<PropuestaServicio> abrirContratacion) {
 
-        this.controllerContratacion = controllerContratacion;
+        this.abrirContratacion = abrirContratacion;
         return this;
     }
 
@@ -412,19 +412,12 @@ public class ViewPropuestasOrganizador {
             return;
         }
 
-        if (controllerContratacion == null) {
+        if (abrirContratacion == null) {
             mostrarError("La contratación de servicios no está habilitada.");
             return;
         }
 
-        new ViewContratarServicio(
-                controllerContratacion,
-                idOrganizador,
-                propuesta,
-                this::recargarPropuestas)
-                .mostrar(lista.getScene() == null
-                        ? null
-                        : lista.getScene().getWindow());
+        abrirContratacion.accept(propuesta);
     }
 
     private void rechazarPropuestaSeleccionada() {
