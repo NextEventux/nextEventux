@@ -617,3 +617,160 @@
     -fx-background-color: #F0F0F4;
     -fx-text-fill: #626578;
 }
+/* Jerarquía visual común (CU11, CU12 y CU13)
+   Botones: una acción principal por pantalla (btn-primary), acciones
+   secundarias (btn-secondary), acciones discretas (btn-ghost) y acciones
+   destructivas (btn-danger). */
+
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: #606477;
+    -fx-border-color: #D9DBE3;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+
+.btn-ghost:hover {
+    -fx-background-color: #F1F2F6;
+}
+
+.btn-danger-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: #BA2424;
+    -fx-border-color: #F0B8BB;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+
+.btn-danger-ghost:hover {
+    -fx-background-color: #FFF0F1;
+}
+
+.button:disabled {
+    -fx-opacity: 0.45;
+}
+
+/* Tamaños de texto: 14 px para el contenido y 20 px para los títulos */
+
+.texto-base {
+    -fx-font-size: 14px;
+    -fx-text-fill: #252638;
+}
+
+.texto-apoyo {
+    -fx-font-size: 14px;
+    -fx-text-fill: #626578;
+}
+
+.titulo-pantalla {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.titulo-seccion {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+.dato-etiqueta {
+    -fx-font-size: 12px;
+    -fx-text-fill: #858899;
+}
+
+.dato-valor {
+    -fx-font-size: 14px;
+    -fx-text-fill: #252638;
+}
+
+.dato-destacado {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #252638;
+}
+
+/* Contenedores */
+
+.tarjeta {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-color: #E8E9EF;
+    -fx-border-radius: 12;
+    -fx-padding: 18;
+}
+
+.barra-volver {
+    -fx-padding: 0 0 4 0;
+}
+
+/* Campo obligatorio */
+
+.campo-obligatorio {
+    -fx-text-fill: #D71920;
+    -fx-font-weight: bold;
+}
+
+/* Chips de estado */
+
+.chip {
+    -fx-padding: 5 12;
+    -fx-background-radius: 20;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.chip-ok {
+    -fx-background-color: #E5F6EC;
+    -fx-text-fill: #237344;
+}
+
+.chip-aviso {
+    -fx-background-color: #FFF3DC;
+    -fx-text-fill: #A96A00;
+}
+
+.chip-info {
+    -fx-background-color: #E8F1FF;
+    -fx-text-fill: #2459A6;
+}
+
+.chip-error {
+    -fx-background-color: #FDE9EA;
+    -fx-text-fill: #B9151B;
+}
+
+.chip-neutro {
+    -fx-background-color: #F0F0F4;
+    -fx-text-fill: #626578;
+}
+
+/* Mensajes dentro de la pantalla (reemplazan a las ventanas emergentes) */
+
+.banner {
+    -fx-padding: 12 16;
+    -fx-background-radius: 10;
+    -fx-font-size: 14px;
+}
+
+.banner-ok {
+    -fx-background-color: #E5F6EC;
+    -fx-text-fill: #237344;
+}
+
+.banner-error {
+    -fx-background-color: #FDE9EA;
+    -fx-text-fill: #B9151B;
+}
+
+.banner-info {
+    -fx-background-color: #E8F1FF;
+    -fx-text-fill: #2459A6;
+}
+
+.banner-aviso {
+    -fx-background-color: #FFF3DC;
+    -fx-text-fill: #A96A00;
+}
