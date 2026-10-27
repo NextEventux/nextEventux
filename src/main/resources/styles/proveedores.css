@@ -774,3 +774,9 @@
     -fx-background-color: #FFF3DC;
     -fx-text-fill: #A96A00;
 }
+
+.barra-acciones {
+    -fx-background-color: white;
+    -fx-border-color: #E8E9EF transparent transparent transparent;
+    -fx-padding: 14 30;
+}

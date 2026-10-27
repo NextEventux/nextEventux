@@ -48,6 +48,9 @@ public class ViewContratarServicio {
 
     private final VBox contenido = new VBox(18);
 
+    // Barra inferior fija: las acciones quedan visibles sin desplazarse
+    private final VBox barraAcciones = new VBox(10);
+
     private ResumenContratacionServicio resumen;
     private DisponibilidadContratacion disponibilidad;
     private PresupuestoContratacion presupuesto;
@@ -115,7 +118,10 @@ public class ViewContratarServicio {
         scroll.setFitToWidth(true);
         scroll.getStyleClass().add("content-scroll");
 
+        barraAcciones.getStyleClass().add("barra-acciones");
+
         BorderPane principal = new BorderPane(scroll);
+        principal.setBottom(barraAcciones);
         principal.setTop(MenuCompartido.crearBarraSuperior(
                 sesion,
                 "Contratar servicio",
@@ -182,7 +188,9 @@ public class ViewContratarServicio {
                 titulo("Contratar servicio"),
                 banner(mensaje == null
                         ? "No se puede contratar esta propuesta."
-                        : mensaje, "banner-error"),
+                        : mensaje, "banner-error"));
+
+        barraAcciones.getChildren().setAll(
                 botonVolver("Volver a propuestas", "btn-secondary"));
     }
 
@@ -209,24 +217,27 @@ public class ViewContratarServicio {
                 texto("Revisa el resumen. El horario del proveedor solo se "
                         + "reserva cuando confirmas la contratación."));
 
-        if (errorConfirmacion != null) {
-            contenido.getChildren().add(
-                    banner(errorConfirmacion, "banner-error"));
-        }
-
         contenido.getChildren().addAll(
                 crearTarjetaPropuesta(),
                 crearTarjetaVerificacion());
+
+        barraAcciones.getChildren().clear();
+
+        if (errorConfirmacion != null) {
+            Node error = banner(errorConfirmacion, "banner-error");
+            error.setId("errorContratacion");
+            barraAcciones.getChildren().add(error);
+        }
 
         String bloqueo = mensajeBloqueo();
 
         if (bloqueo != null) {
             Node aviso = banner(bloqueo, "banner-aviso");
             aviso.setId("motivoBloqueo");
-            contenido.getChildren().add(aviso);
+            barraAcciones.getChildren().add(aviso);
         }
 
-        contenido.getChildren().add(acciones);
+        barraAcciones.getChildren().add(acciones);
     }
 
     private String mensajeBloqueo() {
@@ -410,8 +421,9 @@ public class ViewContratarServicio {
         contenido.getChildren().setAll(
                 titulo("Contratación confirmada"),
                 exito,
-                resultado,
-                acciones);
+                resultado);
+
+        barraAcciones.getChildren().setAll(acciones);
     }
 
     // ------------------------------------------------------------------
