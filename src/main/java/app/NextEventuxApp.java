@@ -11,6 +11,7 @@ import controllers.ControllerPublicacion;
 import controllers.ControllerSancionesProveedor;
 import controllers.ControllerSolicitudes;
 import entities.Evento;
+import entities.PropuestaServicio;
 import entities.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
@@ -49,6 +50,7 @@ import views.ViewAdministracion;
 import views.ViewAvisosProveedor;
 import views.ViewCancelacion;
 import views.ViewCatalogoServicios;
+import views.ViewContratarServicio;
 import views.ViewDetalleServicio;
 import views.ViewDetalleServicioProveedor;
 import views.ViewEdicion;
@@ -79,6 +81,7 @@ public class NextEventuxApp extends Application {
     private Servicio servicioSeleccionado;
     private Integer servicioProveedorSeleccionado;
     private Integer eventoSeleccionado;
+    private PropuestaServicio propuestaAContratar;
     private Stage stage;
     private ControllerPublicacion publicaciones;
     private ControllerFinanciera controllerFinanciera;
@@ -345,6 +348,9 @@ public class NextEventuxApp extends Application {
                         Navegacion.Pantalla.PROPUESTAS_ORGANIZADOR,
                         this::crearVistaPropuestasOrganizador)
                 .registrarDinamica(
+                        Navegacion.Pantalla.CONTRATAR_SERVICIO,
+                        this::crearVistaContratarServicio)
+                .registrarDinamica(
                         Navegacion.Pantalla.MIS_EVENTOS,
                         () -> new ViewMisEventos(
                                 controllerEventos,
@@ -577,7 +583,34 @@ public class NextEventuxApp extends Application {
                 this::mostrarMisEventos,
                 this::mostrarPropuestasOrganizador,
                 this::mostrarLogin)
-                .conContratacion(controllerContratacion)
+                .conContratacion(this::mostrarContratarServicio)
+                .crearPantalla();
+    }
+
+    private void mostrarContratarServicio(PropuestaServicio propuesta) {
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        propuestaAContratar = propuesta;
+        navegacion.ir(Navegacion.Pantalla.CONTRATAR_SERVICIO);
+    }
+
+    private javafx.scene.Parent crearVistaContratarServicio() {
+        return new ViewContratarServicio(
+                controllerContratacion,
+                sesionActual.getIdActor(),
+                propuestaAContratar,
+                this::mostrarPropuestasOrganizador)
+                .conMenu(
+                        sesionActual,
+                        this::mostrarEventos,
+                        this::mostrarInvitados,
+                        this::mostrarCatalogoServicios,
+                        this::mostrarMisEventos,
+                        this::mostrarLogin)
                 .crearPantalla();
     }
 

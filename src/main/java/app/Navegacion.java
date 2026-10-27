@@ -29,6 +29,7 @@ public class Navegacion {
         MESA_REGALOS("NextEventux | Mesa de regalos"),
         SOLICITUDES_PROVEEDOR("NextEventux | Solicitudes recibidas"),
         PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas"),
+        CONTRATAR_SERVICIO("NextEventux | Contratar servicio"),
         ESTADO_FINANCIERO("NextEventux | Estado financiero"),
         SANCIONES_PROVEEDOR("NextEventux | Sanciones a proveedores");
 
