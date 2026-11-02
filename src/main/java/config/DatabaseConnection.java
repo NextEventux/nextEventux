@@ -100,6 +100,10 @@ public class DatabaseConnection {
         // CU-13: una propuesta solo puede contratarse una vez
         ejecutarUnaVez(connection, "012_cu13_contratar_servicio.sql",
                 c -> verificarSinDuplicados(c, "Contratacion", "id_propuesta"));
+        // CU-029: historial de suspensiones de usuarios.
+        ejecutarUnaVez(connection, "013_cu29_suspender_usuario.sql", null);
+        // CU-029: historial de reactivaciones de usuarios.
+        ejecutarUnaVez(connection, "014_cu29_reactivar_usuario.sql", null);
         actualizarContadorEventos(connection);
     }
 

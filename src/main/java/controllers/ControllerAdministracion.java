@@ -4,6 +4,8 @@ package controllers;
 import entities.Contratacion;
 import entities.Organizador;
 import entities.SesionUsuario;
+
+import repositories.RepositoryAdministracion.UsuarioResumen;
 import services.ServiceAdministracion;
 
 import java.time.LocalDate;
@@ -13,9 +15,11 @@ import java.util.Map;
 
 /**
  * Controlador del modulo de administracion.
- * Conecta las acciones de la vista con el servicio.
  *
- * En esta rama se implementan las operaciones de CU-026.
+ * CU-026: Contratar organizador.
+ * CU-029: Suspender y reactivar usuarios.
+ *
+ * Conecta las acciones de las vistas con el servicio.
  */
 public class ControllerAdministracion {
 
@@ -40,42 +44,36 @@ public class ControllerAdministracion {
         this.sesion = sesion;
     }
 
-    /**
-     * Consulta los organizadores disponibles segun los filtros
-     * ingresados por el cliente.
-     */
+    // ==========================================================
+    // CU-026: CONTRATAR ORGANIZADOR
+    // ==========================================================
+
     public List<Organizador> consultarOrganizadores(
             Map<String, Object> filtros) {
 
         validarSesionCliente();
+
         return serviceAdministracion.consultarOrganizadores(filtros);
     }
 
-    /**
-     * Consulta el perfil de un organizador seleccionado.
-     */
     public Organizador seleccionarOrganizador(int idOrganizador) {
 
         validarSesionCliente();
-        return serviceAdministracion.seleccionarOrganizador(idOrganizador);
+
+        return serviceAdministracion.seleccionarOrganizador(
+                idOrganizador);
     }
 
-    /**
-     * Consulta si el organizador esta disponible para la fecha indicada.
-     */
     public boolean verificarDisponibilidadOrganizador(
             int idOrganizador, LocalDate fecha) {
 
         validarSesionCliente();
 
         return serviceAdministracion
-                .verificarDisponibilidadOrganizador(idOrganizador, fecha);
+                .verificarDisponibilidadOrganizador(
+                        idOrganizador, fecha);
     }
 
-    /**
-     * Envia la solicitud en nombre del cliente autenticado.
-     * El identificador se toma de la sesion y no del formulario.
-     */
     public void contratarOrganizador(
             int idOrganizador, Contratacion datos) {
 
@@ -92,9 +90,6 @@ public class ControllerAdministracion {
                 idOrganizador, datos);
     }
 
-    /**
-     * Consulta unicamente las solicitudes del cliente autenticado.
-     */
     public List<Contratacion> consultarContrataciones(
             Map<String, Object> filtros) {
 
@@ -104,26 +99,112 @@ public class ControllerAdministracion {
                 ? new HashMap<>()
                 : new HashMap<>(filtros);
 
-        // El cliente solo puede consultar sus propias solicitudes.
-        filtrosSeguros.put("idCliente", sesion.getIdUsuario());
+        filtrosSeguros.put(
+                "idCliente", sesion.getIdUsuario());
 
         return serviceAdministracion
                 .consultarContrataciones(filtrosSeguros);
     }
 
+    // ==========================================================
+    // CU-029: GESTION DE USUARIOS
+    // ==========================================================
+
     /**
-     * Verifica que exista una sesion valida de cliente.
+     * Consulta los usuarios registrados.
+     */
+    public List<UsuarioResumen> consultarUsuarios(String filtro) {
+
+        validarSesionAdministrador();
+
+        return serviceAdministracion.consultarUsuarios(
+                sesion, filtro);
+    }
+
+    /**
+     * Consulta los datos del usuario seleccionado.
+     */
+    public UsuarioResumen consultarUsuario(int idUsuario) {
+
+        validarSesionAdministrador();
+
+        return serviceAdministracion.consultarUsuario(
+                sesion, idUsuario);
+    }
+
+    /**
+     * Comprueba si se cumplen las condiciones para suspender.
+     */
+    public boolean validarSuspension(
+            int idUsuario, String motivo) {
+
+        validarSesionAdministrador();
+
+        return serviceAdministracion.validarSuspension(
+                sesion, idUsuario, motivo);
+    }
+
+    /**
+     * Ejecuta la suspension del usuario seleccionado.
+     */
+    public void suspenderUsuario(
+            int idUsuario, String motivo) {
+
+        validarSesionAdministrador();
+
+        serviceAdministracion.suspenderUsuario(
+                sesion, idUsuario, motivo);
+    }
+
+    /**
+     * Ejecuta la reactivacion del usuario seleccionado.
+     */
+    public void reactivarUsuario(
+            int idUsuario, String motivo) {
+
+        validarSesionAdministrador();
+
+        serviceAdministracion.reactivarUsuario(
+                sesion, idUsuario, motivo);
+    }
+
+    // ==========================================================
+    // VALIDACIONES DE SESION
+    // ==========================================================
+
+    /**
+     * CU-026: acceso exclusivo para clientes activos.
      */
     private void validarSesionCliente() {
 
         if (sesion == null
                 || sesion.getIdUsuario() <= 0
-                || !"CLIENTE".equalsIgnoreCase(sesion.getTipoUsuario())
-                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario())) {
+                || !"CLIENTE".equalsIgnoreCase(
+                sesion.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(
+                sesion.getEstadoUsuario())) {
 
             throw new IllegalStateException(
                     "Inicia sesion con una cuenta de cliente activa "
-                    + "para contratar un organizador.");
+                            + "para contratar un organizador.");
+        }
+    }
+
+    /**
+     * CU-029: acceso exclusivo para administradores activos.
+     */
+    private void validarSesionAdministrador() {
+
+        if (sesion == null
+                || sesion.getIdUsuario() <= 0
+                || !"ADMINISTRADOR".equalsIgnoreCase(
+                sesion.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(
+                sesion.getEstadoUsuario())) {
+
+            throw new IllegalStateException(
+                    "Solo un administrador con cuenta activa "
+                            + "puede gestionar usuarios.");
         }
     }
 }

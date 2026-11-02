@@ -1,3 +1,4 @@
+
 package app;
 
 import controllers.ControllerAdministracion;
@@ -20,6 +21,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import repositories.RepositoryAdministracion;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryAvisosProveedor;
 import repositories.RepositoryContratacion;
@@ -63,6 +65,7 @@ import views.ViewPropuestasOrganizador;
 import views.ViewPublicacion;
 import views.ViewSancionesProveedor;
 import views.ViewSolicitudesProveedor;
+import views.ViewSuspenderUsuario;
 
 public class NextEventuxApp extends Application {
 
@@ -231,7 +234,8 @@ public class NextEventuxApp extends Application {
                             null, null, null,
                             this::mostrarSancionesProveedor,
                             null,
-                            this::mostrarPublicacion));
+                            this::mostrarPublicacion,
+                            this::mostrarGestionUsuarios));
                     BorderPane principal = new BorderPane();
 
                     principal.setTop(
@@ -269,7 +273,7 @@ public class NextEventuxApp extends Application {
 
         return sesionActual != null
                 && "ORGANIZADOR".equalsIgnoreCase(
-                        sesionActual.getTipoUsuario());
+                sesionActual.getTipoUsuario());
     }
 
     private void mostrarEventos() {
@@ -404,7 +408,8 @@ public class NextEventuxApp extends Application {
                                 this::mostrarInvitados,
                                 this::mostrarLogin,
                                 this::mostrarSancionesProveedor,
-                                this::mostrarPublicacion).crearPantalla())
+                                this::mostrarPublicacion,
+                                this::mostrarGestionUsuarios).crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
                         () -> new ViewFinanciera(
@@ -482,6 +487,73 @@ public class NextEventuxApp extends Application {
             return;
         }
         navegacion.mostrarEn(contenedor, Navegacion.Pantalla.SANCIONES_PROVEEDOR);
+    }
+
+    /**
+     * CU-029: acceso exclusivo para administradores activos.
+     */
+    private void mostrarGestionUsuarios() {
+
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(
+                sesionActual.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(
+                sesionActual.getEstadoUsuario())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        // Crear los componentes del módulo de administración.
+        ControllerAdministracion controller =
+                new ControllerAdministracion(
+                        new ServiceAdministracion(
+                                new RepositoryContratacion(),
+                                new RepositoryOrganizador(),
+                                new RepositoryAdministracion()
+                        ),
+                        sesionActual
+                );
+
+        // Construir el marco de la pantalla.
+        BorderPane marco = new BorderPane();
+        marco.getStyleClass().addAll("app", "publicacion");
+
+        marco.setLeft(
+                views.components.MenuCompartido.crear(
+                        sesionActual,
+                        views.components.MenuCompartido.Pagina.GESTION_USUARIOS,
+                        null, null, null, null,
+                        this::mostrarLogin,
+                        null, null, null,
+                        this::mostrarSancionesProveedor,
+                        null,
+                        this::mostrarPublicacion,
+                        this::mostrarGestionUsuarios
+                )
+        );
+
+        BorderPane principal = new BorderPane();
+
+        principal.setTop(
+                views.components.MenuCompartido.crearBarraSuperior(
+                        sesionActual,
+                        "Gestión de usuarios"
+                )
+        );
+
+        principal.setCenter(
+                new ViewSuspenderUsuario(
+                        controller,
+                        sesionActual
+                ).crearPantalla()
+        );
+
+        marco.setCenter(principal);
+
+        contenedor.setCenter(marco);
+
+        stage.setTitle("NextEventux | Gestión de usuarios");
     }
 
     private void mostrarCancelacion(Evento evento) {
@@ -589,7 +661,7 @@ public class NextEventuxApp extends Application {
 
         if (sesionActual == null
                 || !"PROVEEDOR".equalsIgnoreCase(
-                        sesionActual.getTipoUsuario())) {
+                sesionActual.getTipoUsuario())) {
 
             mostrarLogin();
             return;
@@ -604,7 +676,7 @@ public class NextEventuxApp extends Application {
     private void registrarRutasProveedor() {
         System.out.println(
                 "[NAVEGACION] registrando rutas MIS_SERVICIOS, "
-                + "DETALLE_SERVICIO_PROVEEDOR y SOLICITUDES_PROVEEDOR");
+                        + "DETALLE_SERVICIO_PROVEEDOR y SOLICITUDES_PROVEEDOR");
         navegacion
                 .registrar(
                         Navegacion.Pantalla.MIS_SERVICIOS,
@@ -640,7 +712,7 @@ public class NextEventuxApp extends Application {
 
         if (sesionActual == null
                 || !"PROVEEDOR".equalsIgnoreCase(
-                        sesionActual.getTipoUsuario())) {
+                sesionActual.getTipoUsuario())) {
 
             mostrarLogin();
             return;
@@ -701,7 +773,7 @@ public class NextEventuxApp extends Application {
 
         if (sesionActual == null
                 || !"PROVEEDOR".equalsIgnoreCase(
-                        sesionActual.getTipoUsuario())) {
+                sesionActual.getTipoUsuario())) {
 
             mostrarLogin();
             return;
@@ -726,5 +798,4 @@ public class NextEventuxApp extends Application {
                 this::mostrarAvisosProveedor)
                 .crearPantalla();
     }
-
 }
