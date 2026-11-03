@@ -1,3 +1,4 @@
+
 package entities;
 
 import java.math.BigDecimal;
@@ -13,6 +14,11 @@ public class Contratacion {
     private int idContratacion;
     private int idCliente;
     private int idOrganizador;
+
+    // Nombres para mostrar en las consultas.
+    private String nombreCliente;
+    private String nombreOrganizador;
+
     private String tipoEvento;
     private String ciudad;
     private LocalDate fechaAproximada;
@@ -66,6 +72,22 @@ public class Contratacion {
 
     public void setIdOrganizador(int idOrganizador) {
         this.idOrganizador = idOrganizador;
+    }
+
+    public String getNombreCliente() {
+        return nombreCliente;
+    }
+
+    public void setNombreCliente(String nombreCliente) {
+        this.nombreCliente = nombreCliente;
+    }
+
+    public String getNombreOrganizador() {
+        return nombreOrganizador;
+    }
+
+    public void setNombreOrganizador(String nombreOrganizador) {
+        this.nombreOrganizador = nombreOrganizador;
     }
 
     public String getTipoEvento() {

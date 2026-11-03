@@ -31,7 +31,8 @@ public final class MenuCompartido {
         PROPUESTAS("M4 4h16v13H8l-4 4z M8 9h8 M8 13h5"),
         PUBLICACION("M6 3h9l4 4v14H6z M15 3v5h4 M9 12h7 M9 16h7"),
         SANCIONES("M12 3v18 M5 7h14 M6 7l-4 7h8L6 7z M18 7l-4 7h8l-4-7z M8 21h8"),
-        MESA_REGALOS("M20 12v9H4v-9 M2 7h20v5H2z M12 7v14 M12 7H8a2.5 2.5 0 1 1 2.5-2.5C10.5 6 12 7 12 7 M12 7h4a2.5 2.5 0 1 0-2.5-2.5C13.5 6 12 7 12 7");
+        MESA_REGALOS("M20 12v9H4v-9 M2 7h20v5H2z M12 7v14 M12 7H8a2.5 2.5 0 1 1 2.5-2.5C10.5 6 12 7 12 7 M12 7h4a2.5 2.5 0 1 0-2.5-2.5C13.5 6 12 7 12 7"),
+        SOLICITUDES_CONTRATACION("M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z M10 21h4");
 
         private final String trazado;
 
@@ -52,12 +53,14 @@ public final class MenuCompartido {
         AVISOS_PROVEEDOR,
         PROPUESTAS_ORGANIZADOR,
         PUBLICACION_EVENTOS,
-        SANCIONES_PROVEEDOR
+        SANCIONES_PROVEEDOR,
+        SOLICITUDES_CONTRATACION_ORGANIZADOR
     }
 
     private MenuCompartido() {
     }
 
+    // Sobrecarga original de 7 argumentos.
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -75,9 +78,11 @@ public final class MenuCompartido {
                 abrirCatalogo,
                 abrirServicios,
                 cerrarSesion,
-                null);
+                null
+        );
     }
 
+    // Sobrecarga original de 8 argumentos.
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -87,6 +92,7 @@ public final class MenuCompartido {
             Runnable abrirServicios,
             Runnable cerrarSesion,
             Runnable abrirMisEventos) {
+
         return crear(
                 sesion,
                 paginaActiva,
@@ -97,9 +103,11 @@ public final class MenuCompartido {
                 cerrarSesion,
                 abrirMisEventos,
                 null,
-                null);
+                null
+        );
     }
 
+    // Sobrecarga original de 10 argumentos.
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -111,14 +119,23 @@ public final class MenuCompartido {
             Runnable abrirMisEventos,
             Runnable abrirSolicitudes,
             Runnable abrirPropuestas) {
-        return crear(sesion, paginaActiva, abrirEventos, abrirInvitados, abrirCatalogo,
-                abrirServicios, cerrarSesion, abrirMisEventos, abrirSolicitudes, abrirPropuestas, null);
+
+        return crear(
+                sesion,
+                paginaActiva,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                abrirServicios,
+                cerrarSesion,
+                abrirMisEventos,
+                abrirSolicitudes,
+                abrirPropuestas,
+                null
+        );
     }
 
-    /**
-     * Igual que el anterior; agrega la opción de sanciones (solo
-     * administrador).
-     */
+    // Sobrecarga original de 11 argumentos.
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -131,6 +148,7 @@ public final class MenuCompartido {
             Runnable abrirSolicitudes,
             Runnable abrirPropuestas,
             Runnable abrirSanciones) {
+
         return crear(
                 sesion,
                 paginaActiva,
@@ -143,12 +161,11 @@ public final class MenuCompartido {
                 abrirSolicitudes,
                 abrirPropuestas,
                 abrirSanciones,
-                null);
+                null
+        );
     }
 
-    /**
-     * Igual que el anterior; agrega la opción de avisos del proveedor.
-     */
+    // Sobrecarga original de 12 argumentos.
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -162,11 +179,25 @@ public final class MenuCompartido {
             Runnable abrirPropuestas,
             Runnable abrirSanciones,
             Runnable abrirAvisos) {
-        return crear(sesion, paginaActiva, abrirEventos, abrirInvitados, abrirCatalogo,
-                abrirServicios, cerrarSesion, abrirMisEventos, abrirSolicitudes,
-                abrirPropuestas, abrirSanciones, abrirAvisos, null);
+
+        return crear(
+                sesion,
+                paginaActiva,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                abrirServicios,
+                cerrarSesion,
+                abrirMisEventos,
+                abrirSolicitudes,
+                abrirPropuestas,
+                abrirSanciones,
+                abrirAvisos,
+                null
+        );
     }
 
+    // Sobrecarga original de 13 argumentos.
     public static VBox crear(
             SesionUsuario sesion,
             Pagina paginaActiva,
@@ -181,91 +212,240 @@ public final class MenuCompartido {
             Runnable abrirSanciones,
             Runnable abrirAvisos,
             Runnable abrirPublicacion) {
+
+        return crear(
+                sesion,
+                paginaActiva,
+                abrirEventos,
+                abrirInvitados,
+                abrirCatalogo,
+                abrirServicios,
+                cerrarSesion,
+                abrirMisEventos,
+                abrirSolicitudes,
+                abrirPropuestas,
+                abrirSanciones,
+                abrirAvisos,
+                abrirPublicacion,
+                null
+        );
+    }
+
+    /**
+     * Implementación principal del menú compartido.
+     *
+     * Incluye la opción CU-026 para organizadores,
+     * conservando las opciones de los demás roles.
+     */
+    public static VBox crear(
+            SesionUsuario sesion,
+            Pagina paginaActiva,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirServicios,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos,
+            Runnable abrirSolicitudes,
+            Runnable abrirPropuestas,
+            Runnable abrirSanciones,
+            Runnable abrirAvisos,
+            Runnable abrirPublicacion,
+            Runnable abrirSolicitudesContratacion) {
+
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
 
-        // Todas las pantallas utilizan exactamente la misma imagen
+        // Logo compartido.
         ImageView logo = crearLogo();
 
-        VBox marca = new VBox(10, logo,
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        VBox marca = new VBox(
+                10,
+                logo,
+                etiqueta("GESTIÓN DE EVENTOS", "brand-caption")
+        );
+
         marca.setAlignment(Pos.CENTER);
         VBox.setMargin(marca, new Insets(0, 0, 38, 0));
 
         menu.getChildren().addAll(
                 marca,
-                etiqueta("MENÚ PRINCIPAL", "menu-title"));
+                etiqueta("MENÚ PRINCIPAL", "menu-title")
+        );
 
         boolean proveedor = sesion != null
-                && "PROVEEDOR".equalsIgnoreCase(sesion.getTipoUsuario());
+                && "PROVEEDOR".equalsIgnoreCase(
+                sesion.getTipoUsuario());
 
+        boolean organizador = sesion != null
+                && "ORGANIZADOR".equalsIgnoreCase(
+                sesion.getTipoUsuario());
+
+        // Menú exclusivo del proveedor.
         if (proveedor) {
-            agregarOpcion(menu, Icono.SERVICIOS, "Mis servicios",
+
+            agregarOpcion(
+                    menu,
+                    Icono.SERVICIOS,
+                    "Mis servicios",
                     paginaActiva == Pagina.MIS_SERVICIOS,
-                    abrirServicios);
-            agregarOpcion(menu, Icono.MENSAJES, "Solicitudes recibidas",
+                    abrirServicios
+            );
+
+            agregarOpcion(
+                    menu,
+                    Icono.MENSAJES,
+                    "Solicitudes recibidas",
                     paginaActiva == Pagina.SOLICITUDES_PROVEEDOR,
-                    abrirSolicitudes);
-            agregarOpcion(menu, Icono.AVISOS, "Mis avisos",
+                    abrirSolicitudes
+            );
+
+            agregarOpcion(
+                    menu,
+                    Icono.AVISOS,
+                    "Mis avisos",
                     paginaActiva == Pagina.AVISOS_PROVEEDOR,
-                    abrirAvisos);
+                    abrirAvisos
+            );
+
         } else {
+
+            // Mis eventos.
             if (abrirMisEventos != null) {
-                agregarOpcion(menu, Icono.MIS_EVENTOS, "Mis eventos",
+                agregarOpcion(
+                        menu,
+                        Icono.MIS_EVENTOS,
+                        "Mis eventos",
                         paginaActiva == Pagina.MIS_EVENTOS,
-                        abrirMisEventos);
+                        abrirMisEventos
+                );
             }
 
-            agregarOpcion(menu, Icono.CREAR_EVENTO, "Crear evento",
+            // Crear evento.
+            agregarOpcion(
+                    menu,
+                    Icono.CREAR_EVENTO,
+                    "Crear evento",
                     paginaActiva == Pagina.CREAR_EVENTO,
-                    abrirEventos);
+                    abrirEventos
+            );
 
-            agregarOpcion(menu, Icono.PROVEEDORES, "Proveedores",
+            // Proveedores.
+            agregarOpcion(
+                    menu,
+                    Icono.PROVEEDORES,
+                    "Proveedores",
                     paginaActiva == Pagina.CATALOGO,
-                    abrirCatalogo);
+                    abrirCatalogo
+            );
 
-            agregarOpcion(menu, Icono.INVITADOS, "Invitados",
+            // Invitados.
+            agregarOpcion(
+                    menu,
+                    Icono.INVITADOS,
+                    "Invitados",
                     paginaActiva == Pagina.INVITADOS,
-                    abrirInvitados);
-            agregarOpcion(menu, Icono.PROPUESTAS, "Propuestas recibidas",
+                    abrirInvitados
+            );
+
+            // Propuestas recibidas.
+            agregarOpcion(
+                    menu,
+                    Icono.PROPUESTAS,
+                    "Propuestas recibidas",
                     paginaActiva == Pagina.PROPUESTAS_ORGANIZADOR,
-                    abrirPropuestas);
+                    abrirPropuestas
+            );
+
+            // CU-026: solicitudes de contratación.
+            // Solo se muestra a usuarios ORGANIZADOR.
+            if (organizador) {
+                agregarOpcion(
+                        menu,
+                        Icono.SOLICITUDES_CONTRATACION,
+                        "Solicitudes de contratación",
+                        paginaActiva
+                                == Pagina.SOLICITUDES_CONTRATACION_ORGANIZADOR,
+                        abrirSolicitudesContratacion
+                );
+            }
         }
 
-        if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
-            agregarOpcion(menu, Icono.PUBLICACION, "Publicación",
+        // Opciones exclusivas del administrador.
+        if (sesion != null
+                && "ADMINISTRADOR".equalsIgnoreCase(
+                sesion.getTipoUsuario())) {
+
+            agregarOpcion(
+                    menu,
+                    Icono.PUBLICACION,
+                    "Publicación",
                     paginaActiva == Pagina.PUBLICACION_EVENTOS,
-                    abrirPublicacion);
+                    abrirPublicacion
+            );
 
-            agregarOpcion(menu, Icono.SANCIONES, "Sanciones",
+            agregarOpcion(
+                    menu,
+                    Icono.SANCIONES,
+                    "Sanciones",
                     paginaActiva == Pagina.SANCIONES_PROVEEDOR,
-                    abrirSanciones);
+                    abrirSanciones
+            );
         }
 
+        // Espacio entre las opciones y el perfil.
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
 
         menu.getChildren().add(espacio);
+
+        // Perfil y cierre de sesión.
         if (sesion != null) {
+
             String nombre = nombreSesion(sesion);
-            Label nombrePerfil = etiqueta(nombre, "profile-name");
+
+            Label nombrePerfil = etiqueta(
+                    nombre,
+                    "profile-name"
+            );
+
             nombrePerfil.setMaxWidth(Double.MAX_VALUE);
-            nombrePerfil.setTextOverrun(OverrunStyle.ELLIPSIS);
-            VBox perfil = new VBox(4,
+            nombrePerfil.setTextOverrun(
+                    OverrunStyle.ELLIPSIS
+            );
+
+            VBox perfil = new VBox(
+                    4,
                     nombrePerfil,
-                    etiqueta(rolSesion(sesion), "hint"));
+                    etiqueta(rolSesion(sesion), "hint")
+            );
+
             perfil.setMinWidth(0);
             HBox.setHgrow(perfil, Priority.ALWAYS);
+
             if (cerrarSesion != null) {
-                Label salir = etiqueta("Cerrar sesión", "logout-link");
-                salir.setOnMouseClicked(event -> cerrarSesion.run());
+
+                Label salir = etiqueta(
+                        "Cerrar sesión",
+                        "logout-link"
+                );
+
+                salir.setOnMouseClicked(
+                        event -> cerrarSesion.run()
+                );
+
                 salir.setStyle("-fx-cursor: hand;");
+
                 perfil.getChildren().add(salir);
             }
 
-            Label avatar = etiqueta(iniciales(nombre), "avatar");
+            Label avatar = etiqueta(
+                    iniciales(nombre),
+                    "avatar"
+            );
+
             avatar.setMinSize(42, 42);
             avatar.setPrefSize(42, 42);
             avatar.setMaxSize(42, 42);
@@ -274,15 +454,16 @@ public final class MenuCompartido {
             cuenta.setAlignment(Pos.CENTER_LEFT);
             cuenta.setMaxWidth(Double.MAX_VALUE);
             cuenta.getStyleClass().add("sidebar-bottom");
+
             menu.getChildren().add(cuenta);
         }
+
         return menu;
     }
 
     /**
-     * Menú del invitado (CU-16 y CU-20). El invitado no tiene cuenta: entra
-     * desde "Soy invitado" en el login y se identifica con su correo y
-     * teléfono.
+     * Menú del invitado (CU-16 y CU-20).
+     * El invitado no tiene cuenta.
      */
     public static VBox crearInvitado(
             Pagina paginaActiva,
@@ -295,58 +476,95 @@ public final class MenuCompartido {
         menu.setPrefWidth(250);
         menu.setMinWidth(250);
 
-        VBox marca = new VBox(10, crearLogo(),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
+        VBox marca = new VBox(
+                10,
+                crearLogo(),
+                etiqueta("GESTIÓN DE EVENTOS", "brand-caption")
+        );
+
         marca.setAlignment(Pos.CENTER);
         VBox.setMargin(marca, new Insets(0, 0, 38, 0));
 
         menu.getChildren().addAll(
                 marca,
-                etiqueta("MENÚ DEL INVITADO", "menu-title"));
+                etiqueta("MENÚ DEL INVITADO", "menu-title")
+        );
 
-        agregarOpcion(menu, Icono.MENSAJES, "Mis invitaciones",
+        agregarOpcion(
+                menu,
+                Icono.MENSAJES,
+                "Mis invitaciones",
                 paginaActiva == Pagina.MIS_INVITACIONES,
-                abrirInvitaciones);
-        agregarOpcion(menu, Icono.MESA_REGALOS, "Mesa de regalos",
+                abrirInvitaciones
+        );
+
+        agregarOpcion(
+                menu,
+                Icono.MESA_REGALOS,
+                "Mesa de regalos",
                 paginaActiva == Pagina.MESA_REGALOS,
-                abrirMesaRegalos);
+                abrirMesaRegalos
+        );
 
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
         menu.getChildren().add(espacio);
 
-        VBox perfil = new VBox(4,
+        VBox perfil = new VBox(
+                4,
                 etiqueta("Invitado", "profile-name"),
-                etiqueta("Sin cuenta", "hint"));
+                etiqueta("Sin cuenta", "hint")
+        );
+
         perfil.setMinWidth(0);
         HBox.setHgrow(perfil, Priority.ALWAYS);
+
         if (salir != null) {
-            Label enlace = etiqueta("Cerrar sesión", "logout-link");
-            enlace.setOnMouseClicked(event -> salir.run());
+            Label enlace = etiqueta(
+                    "Cerrar sesión",
+                    "logout-link"
+            );
+
+            enlace.setOnMouseClicked(
+                    event -> salir.run()
+            );
+
             enlace.setStyle("-fx-cursor: hand;");
             perfil.getChildren().add(enlace);
         }
+
         Label avatar = etiqueta("IN", "avatar");
         avatar.setMinSize(42, 42);
         avatar.setPrefSize(42, 42);
         avatar.setMaxSize(42, 42);
+
         HBox cuenta = new HBox(12, avatar, perfil);
         cuenta.setAlignment(Pos.CENTER_LEFT);
         cuenta.setMaxWidth(Double.MAX_VALUE);
         cuenta.getStyleClass().add("sidebar-bottom");
+
         menu.getChildren().add(cuenta);
+
         return menu;
     }
 
     public static ImageView crearLogo() {
-        ImageView logo = new ImageView(new Image(
-                Objects.requireNonNull(
-                        MenuCompartido.class.getResource("/images/logo-nexteventux.png"),
-                        "No se encontró /images/logo-nexteventux.png")
-                        .toExternalForm()));
+
+        ImageView logo = new ImageView(
+                new Image(
+                        Objects.requireNonNull(
+                                MenuCompartido.class.getResource(
+                                        "/images/logo-nexteventux.png"
+                                ),
+                                "No se encontró /images/logo-nexteventux.png"
+                        ).toExternalForm()
+                )
+        );
+
         logo.setFitWidth(190);
         logo.setPreserveRatio(true);
         logo.setSmooth(true);
+
         return logo;
     }
 
@@ -354,7 +572,12 @@ public final class MenuCompartido {
             SesionUsuario sesion,
             String titulo) {
 
-        return crearBarraSuperior(sesion, titulo, null, null);
+        return crearBarraSuperior(
+                sesion,
+                titulo,
+                null,
+                null
+        );
     }
 
     public static HBox crearBarraSuperior(
@@ -364,21 +587,36 @@ public final class MenuCompartido {
             Runnable alRegresar) {
 
         HBox barra = new HBox(18);
+
         if (alRegresar != null) {
-            Button volver = new Button("← " + textoRegreso);
+
+            Button volver = new Button(
+                    "← " + textoRegreso
+            );
+
             volver.getStyleClass().add("btn-secondary");
-            volver.setOnAction(evento -> alRegresar.run());
+            volver.setOnAction(
+                    evento -> alRegresar.run()
+            );
+
             barra.getChildren().add(volver);
         }
+
         barra.getChildren().addAll(
                 etiqueta("Inicio /", "breadcrumb"),
-                etiqueta(titulo, "breadcrumb-current"));
+                etiqueta(titulo, "breadcrumb-current")
+        );
+
         barra.getChildren().add(espacioHorizontal());
+
         if (sesion != null) {
             barra.getChildren().add(
-                    etiqueta(nombreSesion(sesion), "user-badge"));
+                    etiqueta(nombreSesion(sesion), "user-badge")
+            );
         }
+
         configurarBarraSuperior(barra);
+
         return barra;
     }
 
@@ -389,16 +627,26 @@ public final class MenuCompartido {
         HBox barra = new HBox(
                 18,
                 etiqueta("Inicio /", "breadcrumb"),
-                etiqueta(titulo, "breadcrumb-current"));
+                etiqueta(titulo, "breadcrumb-current")
+        );
+
         barra.getChildren().add(espacioHorizontal());
-        if (nombreUsuario != null && !nombreUsuario.isBlank()) {
-            barra.getChildren().add(etiqueta(nombreUsuario, "user-badge"));
+
+        if (nombreUsuario != null
+                && !nombreUsuario.isBlank()) {
+
+            barra.getChildren().add(
+                    etiqueta(nombreUsuario, "user-badge")
+            );
         }
+
         configurarBarraSuperior(barra);
+
         return barra;
     }
 
     private static void configurarBarraSuperior(HBox barra) {
+
         barra.setAlignment(Pos.CENTER_LEFT);
         barra.setPrefHeight(78);
         barra.setMinHeight(78);
@@ -427,8 +675,17 @@ public final class MenuCompartido {
         contenedorIcono.setPrefSize(20, 20);
         contenedorIcono.setMaxSize(20, 20);
 
-        Label etiquetaTexto = etiqueta(texto, "menu-label");
-        HBox item = new HBox(8, contenedorIcono, etiquetaTexto);
+        Label etiquetaTexto = etiqueta(
+                texto,
+                "menu-label"
+        );
+
+        HBox item = new HBox(
+                8,
+                contenedorIcono,
+                etiquetaTexto
+        );
+
         item.setAlignment(Pos.CENTER_LEFT);
         item.getStyleClass().add("menu-item");
         item.setMaxWidth(Double.MAX_VALUE);
@@ -437,19 +694,27 @@ public final class MenuCompartido {
             item.getStyleClass().add("active");
         }
 
-        item.setOnMouseClicked(event -> accion.run());
+        item.setOnMouseClicked(
+                event -> accion.run()
+        );
+
         item.setStyle("-fx-cursor: hand;");
 
         menu.getChildren().add(item);
     }
 
-    private static Label etiqueta(String texto, String estilo) {
+    private static Label etiqueta(
+            String texto,
+            String estilo) {
+
         Label label = new Label(texto);
         label.getStyleClass().add(estilo);
+
         return label;
     }
 
     private static String iniciales(String nombre) {
+
         if (nombre == null || nombre.isBlank()) {
             return "U";
         }
@@ -459,33 +724,47 @@ public final class MenuCompartido {
         String resultado = partes[0].substring(0, 1);
 
         if (partes.length > 1) {
-            resultado += partes[partes.length - 1].substring(0, 1);
+            resultado += partes[partes.length - 1]
+                    .substring(0, 1);
         }
 
         return resultado.toUpperCase(Locale.ROOT);
     }
 
     private static String nombreSesion(SesionUsuario sesion) {
-        if (sesion == null || sesion.getNombre() == null
+
+        if (sesion == null
+                || sesion.getNombre() == null
                 || sesion.getNombre().isBlank()) {
+
             return "Usuario";
         }
+
         return sesion.getNombre().trim();
     }
 
     private static String rolSesion(SesionUsuario sesion) {
-        if (sesion == null || sesion.getTipoUsuario() == null
+
+        if (sesion == null
+                || sesion.getTipoUsuario() == null
                 || sesion.getTipoUsuario().isBlank()) {
+
             return "Usuario";
         }
 
-        String rol = sesion.getTipoUsuario().trim().toLowerCase(Locale.ROOT);
-        return Character.toUpperCase(rol.charAt(0)) + rol.substring(1);
+        String rol = sesion.getTipoUsuario()
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        return Character.toUpperCase(rol.charAt(0))
+                + rol.substring(1);
     }
 
     private static Region espacioHorizontal() {
+
         Region espacio = new Region();
         HBox.setHgrow(espacio, Priority.ALWAYS);
+
         return espacio;
     }
 }

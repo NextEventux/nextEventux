@@ -1,3 +1,4 @@
+
 package app;
 
 import java.util.EnumMap;
@@ -13,6 +14,7 @@ import javafx.stage.Stage;
 public class Navegacion {
 
     public enum Pantalla {
+
         EVENTOS("NextEventux | Crear evento"),
         INVITADOS("NextEventux | Invitaciones"),
         CATALOGO_SERVICIOS("NextEventux | Proveedores"),
@@ -29,6 +31,12 @@ public class Navegacion {
         MESA_REGALOS("NextEventux | Mesa de regalos"),
         SOLICITUDES_PROVEEDOR("NextEventux | Solicitudes recibidas"),
         PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas"),
+
+        // CU-026: solicitudes de contratación recibidas
+        // por el organizador autenticado.
+        SOLICITUDES_CONTRATACION_ORGANIZADOR(
+                "NextEventux | Solicitudes de contratación"),
+
         ESTADO_FINANCIERO("NextEventux | Estado financiero"),
         SANCIONES_PROVEEDOR("NextEventux | Sanciones a proveedores");
 
@@ -39,13 +47,22 @@ public class Navegacion {
         }
     }
 
-    private final Map<Pantalla, Supplier<Parent>> fabricas = new EnumMap<>(Pantalla.class);
-    private final Map<Pantalla, Parent> creadas = new EnumMap<>(Pantalla.class);
-    private final Map<Pantalla, Boolean> dinamicas = new EnumMap<>(Pantalla.class);
+    private final Map<Pantalla, Supplier<Parent>> fabricas =
+            new EnumMap<>(Pantalla.class);
+
+    private final Map<Pantalla, Parent> creadas =
+            new EnumMap<>(Pantalla.class);
+
+    private final Map<Pantalla, Boolean> dinamicas =
+            new EnumMap<>(Pantalla.class);
+
     private Scene scene;
     private BorderPane contenedor;
 
-    public Navegacion registrar(Pantalla pantalla, Supplier<Parent> fabrica) {
+    public Navegacion registrar(
+            Pantalla pantalla,
+            Supplier<Parent> fabrica) {
+
         registrar(pantalla, fabrica, false);
         return this;
     }
@@ -59,7 +76,8 @@ public class Navegacion {
     }
 
     public void invalidar(Pantalla pantalla) {
-        creadas.remove(Objects.requireNonNull(pantalla, "pantalla"));
+        creadas.remove(
+                Objects.requireNonNull(pantalla, "pantalla"));
     }
 
     private void registrar(
@@ -70,69 +88,101 @@ public class Navegacion {
         fabricas.put(
                 Objects.requireNonNull(pantalla, "pantalla"),
                 Objects.requireNonNull(fabrica, "fabrica"));
+
         dinamicas.put(pantalla, dinamica);
         creadas.remove(pantalla);
     }
 
-    public Scene crearEscena(Pantalla inicial, double ancho, double alto) {
+    public Scene crearEscena(
+            Pantalla inicial,
+            double ancho,
+            double alto) {
+
         scene = new Scene(obtener(inicial), ancho, alto);
         return scene;
     }
 
-    public void mostrarEn(BorderPane contenedor, Pantalla inicial) {
-        this.contenedor = Objects.requireNonNull(contenedor, "contenedor");
+    public void mostrarEn(
+            BorderPane contenedor,
+            Pantalla inicial) {
+
+        this.contenedor = Objects.requireNonNull(
+                contenedor, "contenedor");
+
         ir(inicial);
     }
 
     public void ir(Pantalla pantalla) {
+
         System.out.printf(
                 "[NAVEGACION] solicitada=%s registrada=%s%n",
                 pantalla,
                 fabricas.containsKey(pantalla));
+
         if (!fabricas.containsKey(pantalla)) {
             throw new IllegalArgumentException(
                     "No se registró la pantalla " + pantalla);
         }
+
         Scene actual;
+
         if (contenedor != null) {
+
             contenedor.setCenter(obtener(pantalla));
+
             System.out.printf(
                     "[NAVEGACION] mostrada=%s%n",
                     pantalla);
+
             actual = contenedor.getScene();
+
         } else if (scene != null) {
+
             scene.setRoot(obtener(pantalla));
+
             System.out.printf(
                     "[NAVEGACION] mostrada=%s%n",
                     pantalla);
+
             actual = scene;
+
         } else {
             return;
         }
-        if (actual != null && actual.getWindow() instanceof Stage stage) {
+
+        if (actual != null
+                && actual.getWindow() instanceof Stage stage) {
+
             stage.setTitle(pantalla.titulo);
         }
     }
 
     private Parent obtener(Pantalla pantalla) {
+
         if (Boolean.TRUE.equals(dinamicas.get(pantalla))) {
             return crear(pantalla);
         }
-        return creadas.computeIfAbsent(pantalla, p -> {
-            return crear(p);
-        });
+
+        return creadas.computeIfAbsent(
+                pantalla,
+                p -> crear(p));
     }
 
     private Parent crear(Pantalla pantalla) {
+
         System.out.printf(
                 "[NAVEGACION] ejecutando fabrica=%s%n",
                 pantalla);
+
         Parent vista = Objects.requireNonNull(
                 fabricas.get(pantalla).get(),
-                "La fábrica de " + pantalla + " devolvió una pantalla nula");
+                "La fábrica de " + pantalla
+                        + " devolvió una pantalla nula");
+
         System.out.printf(
                 "[NAVEGACION] fabrica completada=%s%n",
                 pantalla);
+
         return vista;
     }
 }

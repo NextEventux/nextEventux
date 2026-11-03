@@ -63,6 +63,7 @@ import views.ViewPropuestasOrganizador;
 import views.ViewPublicacion;
 import views.ViewSancionesProveedor;
 import views.ViewSolicitudesProveedor;
+import views.ViewSolicitudesContratacionOrganizador;
 
 public class NextEventuxApp extends Application {
 
@@ -315,7 +316,11 @@ public class NextEventuxApp extends Application {
                                 this::mostrarLogin,
                                 sesionActual,
                                 this::mostrarMisEventos,
-                                this::mostrarPropuestasOrganizador).conSolicitudes(this::mostrarSolicitudesEvento).crearPantalla())
+                                this::mostrarPropuestasOrganizador)
+                                .conSolicitudes(this::mostrarSolicitudesEvento)
+                                .conSolicitudesContratacion(
+                                        this::mostrarSolicitudesContratacionOrganizador)
+                                .crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.INVITADOS,
                         () -> new ViewInvitados(
@@ -344,6 +349,9 @@ public class NextEventuxApp extends Application {
                 .registrarDinamica(
                         Navegacion.Pantalla.PROPUESTAS_ORGANIZADOR,
                         this::crearVistaPropuestasOrganizador)
+                .registrarDinamica(
+                        Navegacion.Pantalla.SOLICITUDES_CONTRATACION_ORGANIZADOR,
+                        this::crearVistaSolicitudesContratacionOrganizador)
                 .registrarDinamica(
                         Navegacion.Pantalla.MIS_EVENTOS,
                         () -> new ViewMisEventos(
@@ -415,7 +423,10 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin)
-                                .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0));
+                                .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0))
+                .registrarDinamica(
+                        Navegacion.Pantalla.SOLICITUDES_CONTRATACION_ORGANIZADOR,
+                        this::crearVistaSolicitudesContratacionOrganizador);
     }
 
     private void mostrarFinalizacion(Evento evento) {
@@ -685,16 +696,36 @@ public class NextEventuxApp extends Application {
      * CU-026: un cliente solicita contratar un organizador desde su propia
      * sesión.
      */
+    /**
+     * CU-026: un cliente solicita contratar un organizador
+     * desde su propia sesión.
+     */
     private void mostrarContratarOrganizador() {
-        if (sesionActual == null || !"CLIENTE".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+
+        if (sesionActual == null
+                || !"CLIENTE".equalsIgnoreCase(
+                sesionActual.getTipoUsuario())) {
+
             mostrarLogin();
             return;
         }
-        ControllerAdministracion controlador = new ControllerAdministracion(
-                new ServiceAdministracion(new RepositoryContratacion(), new RepositoryOrganizador()),
-                sesionActual);
-        contenedor.setCenter(new ViewAdministracion(controlador, sesionActual).crearPantalla());
-        stage.setTitle("NextEventux | Contratar organizador");
+
+        ControllerAdministracion controlador =
+                new ControllerAdministracion(
+                        new ServiceAdministracion(
+                                new RepositoryContratacion(),
+                                new RepositoryOrganizador()),
+                        sesionActual);
+
+        contenedor.setCenter(
+                new ViewAdministracion(
+                        controlador,
+                        sesionActual,
+                        this::mostrarLogin)
+                        .crearPantalla());
+
+        stage.setTitle(
+                "NextEventux | Contratar organizador");
     }
 
     private void mostrarSolicitudesProveedor() {
@@ -726,5 +757,90 @@ public class NextEventuxApp extends Application {
                 this::mostrarAvisosProveedor)
                 .crearPantalla();
     }
+    /**
+     * CU-026: acceso a las solicitudes recibidas
+     * por el organizador autenticado.
+     */
+    private void mostrarSolicitudesContratacionOrganizador() {
 
+        if (sesionActual == null
+                || !esOrganizador()
+                || !"ACTIVO".equalsIgnoreCase(
+                sesionActual.getEstadoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(
+                sesionActual.getEstadoActor())) {
+
+            mostrarLogin();
+            return;
+        }
+
+        navegacion.ir(
+                Navegacion.Pantalla.SOLICITUDES_CONTRATACION_ORGANIZADOR);
+    }
+
+    /**
+     * Construye la vista de solicitudes de contratación recibidas.
+     */
+    private javafx.scene.Parent crearVistaSolicitudesContratacionOrganizador() {
+
+        if (sesionActual == null
+                || !esOrganizador()
+                || !"ACTIVO".equalsIgnoreCase(
+                sesionActual.getEstadoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(
+                sesionActual.getEstadoActor())) {
+
+            throw new IllegalStateException(
+                    "Se requiere una cuenta de organizador activa.");
+        }
+
+        ControllerAdministracion controlador =
+                new ControllerAdministracion(
+                        new ServiceAdministracion(
+                                new RepositoryContratacion(),
+                                new RepositoryOrganizador()),
+                        sesionActual);
+
+        BorderPane marco = new BorderPane();
+        marco.getStyleClass().addAll("app", "publicacion");
+
+        marco.setLeft(
+                views.components.MenuCompartido.crear(
+                        sesionActual,
+                        views.components.MenuCompartido.Pagina
+                                .SOLICITUDES_CONTRATACION_ORGANIZADOR,
+                        this::mostrarEventos,
+                        this::mostrarInvitados,
+                        this::mostrarCatalogoServicios,
+                        null,
+                        this::mostrarLogin,
+                        this::mostrarMisEventos,
+                        null,
+                        this::mostrarPropuestasOrganizador,
+                        null,
+                        null,
+                        null,
+                        this::mostrarSolicitudesContratacionOrganizador
+                )
+        );
+
+        BorderPane principal = new BorderPane();
+
+        principal.setTop(
+                views.components.MenuCompartido.crearBarraSuperior(
+                        sesionActual,
+                        "Solicitudes de contratación"
+                )
+        );
+
+        principal.setCenter(
+                new ViewSolicitudesContratacionOrganizador(
+                        controlador
+                ).crearPantalla()
+        );
+
+        marco.setCenter(principal);
+
+        return marco;
+    }
 }

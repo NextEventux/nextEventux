@@ -16,8 +16,9 @@ import java.util.Map;
 
 /**
  * Repositorio de organizadores.
- * Permite consultar perfiles para CU-026 y mantiene operaciones
- * de consulta y actualizacion requeridas por el diagrama.
+ *
+ * Gestiona las consultas y actualizaciones de perfiles utilizadas
+ * por CU-026 y conserva las operaciones administrativas existentes.
  */
 public class RepositoryOrganizador {
 
@@ -28,7 +29,8 @@ public class RepositoryOrganizador {
     }
 
     /**
-     * Permite utilizar una base de datos aislada en las pruebas.
+     * Constructor que permite utilizar una base de datos especifica.
+     * Se conserva para compatibilidad con las pruebas existentes.
      */
     public RepositoryOrganizador(String url) {
         this.url = url;
@@ -40,20 +42,37 @@ public class RepositoryOrganizador {
                 : DatabaseConnection.getConnection(url);
     }
 
+    /**
+     * Consulta base de perfiles y sus resenas reales.
+     *
+     * Las resenas se obtienen de Resena_Organizador.
+     * No se generan registros artificiales.
+     */
     private static final String CONSULTA_BASE =
-            "SELECT o.id_organizador, u.nombre, o.empresa, o.ciudad, "
-            + "o.especialidad, o.portafolio, o.tarifa_base, "
-            + "COALESCE(AVG(r.calificacion), 0) AS calificacion_promedio, "
-            + "COUNT(r.id_resena_organizador) AS total_resenas "
-            + "FROM Organizador o "
-            + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
-            + "LEFT JOIN Resena_Organizador r "
-            + "ON r.id_organizador = o.id_organizador ";
+            "SELECT o.id_organizador, "
+                    + "u.nombre, "
+                    + "o.empresa, "
+                    + "o.ciudad, "
+                    + "o.especialidad, "
+                    + "o.portafolio, "
+                    + "o.tarifa_base, "
+                    + "COALESCE(AVG(r.calificacion), 0) AS calificacion_promedio, "
+                    + "COUNT(r.id_resena_organizador) AS total_resenas "
+                    + "FROM Organizador o "
+                    + "INNER JOIN Usuario u "
+                    + "ON u.id_usuario = o.id_usuario "
+                    + "LEFT JOIN Resena_Organizador r "
+                    + "ON r.id_organizador = o.id_organizador ";
 
     /**
-     * Busca un organizador por su identificador.
+     * Consulta un organizador por su identificador.
      */
     public Organizador buscarOrganizador(int idOrganizador) {
+
+        if (idOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del organizador no es valido.");
+        }
 
         String sql = CONSULTA_BASE
                 + "WHERE o.id_organizador = ? "
@@ -77,19 +96,28 @@ public class RepositoryOrganizador {
     }
 
     /**
-     * Comprueba que el organizador este activo y verificado.
+     * Verifica que el organizador tenga:
+     * - Usuario activo.
+     * - Tipo de usuario ORGANIZADOR.
+     * - Perfil activo.
+     * - Verificacion aprobada.
      */
     public boolean organizadorActivoVerificado(int idOrganizador) {
 
+        if (idOrganizador <= 0) {
+            return false;
+        }
+
         String sql =
                 "SELECT COUNT(*) "
-                + "FROM Organizador o "
-                + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
-                + "WHERE o.id_organizador = ? "
-                + "AND UPPER(o.estado) = 'ACTIVO' "
-                + "AND UPPER(o.estado_verificacion) = 'VERIFICADO' "
-                + "AND UPPER(u.estado) = 'ACTIVO' "
-                + "AND UPPER(u.tipo_usuario) = 'ORGANIZADOR'";
+                        + "FROM Organizador o "
+                        + "INNER JOIN Usuario u "
+                        + "ON u.id_usuario = o.id_usuario "
+                        + "WHERE o.id_organizador = ? "
+                        + "AND UPPER(TRIM(o.estado)) = 'ACTIVO' "
+                        + "AND UPPER(TRIM(o.estado_verificacion)) = 'VERIFICADO' "
+                        + "AND UPPER(TRIM(u.estado)) = 'ACTIVO' "
+                        + "AND UPPER(TRIM(u.tipo_usuario)) = 'ORGANIZADOR'";
 
         try (Connection connection = conectar();
              PreparedStatement statement =
@@ -108,11 +136,13 @@ public class RepositoryOrganizador {
     }
 
     /**
-     * Busca organizadores activos y verificados que coincidan
-     * con los criterios ingresados por el cliente.
+     * Busca organizadores activos y verificados.
      *
      * Filtros admitidos:
-     * ciudad, tipoEvento, presupuestoEstimado y fechaAproximada.
+     * ciudad
+     * tipoEvento
+     * presupuestoEstimado
+     * fechaAproximada
      */
     public List<Organizador> consultarOrganizadoresDisponibles(
             Map<String, Object> filtros) {
@@ -120,10 +150,10 @@ public class RepositoryOrganizador {
         StringBuilder sql = new StringBuilder(CONSULTA_BASE);
 
         sql.append(
-                "WHERE UPPER(u.estado) = 'ACTIVO' "
-                + "AND UPPER(u.tipo_usuario) = 'ORGANIZADOR' "
-                + "AND UPPER(o.estado) = 'ACTIVO' "
-                + "AND UPPER(o.estado_verificacion) = 'VERIFICADO' ");
+                "WHERE UPPER(TRIM(u.estado)) = 'ACTIVO' "
+                        + "AND UPPER(TRIM(u.tipo_usuario)) = 'ORGANIZADOR' "
+                        + "AND UPPER(TRIM(o.estado)) = 'ACTIVO' "
+                        + "AND UPPER(TRIM(o.estado_verificacion)) = 'VERIFICADO' ");
 
         List<Object> parametros = new ArrayList<>();
 
@@ -136,9 +166,9 @@ public class RepositoryOrganizador {
 
         sql.append(
                 "GROUP BY o.id_organizador, u.nombre, o.empresa, "
-                + "o.ciudad, o.especialidad, o.portafolio, o.tarifa_base "
-                + "ORDER BY calificacion_promedio DESC, "
-                + "total_resenas DESC, u.nombre ASC");
+                        + "o.ciudad, o.especialidad, o.portafolio, o.tarifa_base "
+                        + "ORDER BY calificacion_promedio DESC, "
+                        + "total_resenas DESC, u.nombre ASC");
 
         try (Connection connection = conectar();
              PreparedStatement statement =
@@ -147,6 +177,7 @@ public class RepositoryOrganizador {
             asignarParametros(statement, parametros);
 
             try (ResultSet result = statement.executeQuery()) {
+
                 List<Organizador> organizadores = new ArrayList<>();
 
                 while (result.next()) {
@@ -165,14 +196,16 @@ public class RepositoryOrganizador {
 
     /**
      * Lista los organizadores pendientes de verificacion.
+     *
+     * Se conserva para las funciones administrativas existentes.
      */
     public List<Organizador> listarOrganizadoresPendientes() {
 
         String sql = CONSULTA_BASE
-                + "WHERE UPPER(o.estado_verificacion) = 'PENDIENTE' "
+                + "WHERE UPPER(TRIM(o.estado_verificacion)) = 'PENDIENTE' "
                 + "GROUP BY o.id_organizador, u.nombre, o.empresa, "
                 + "o.ciudad, o.especialidad, o.portafolio, o.tarifa_base "
-                + "ORDER BY u.nombre";
+                + "ORDER BY u.nombre ASC";
 
         try (Connection connection = conectar();
              PreparedStatement statement =
@@ -195,7 +228,9 @@ public class RepositoryOrganizador {
     }
 
     /**
-     * Actualiza el nombre y la informacion de perfil de un organizador.
+     * Actualiza el nombre y los datos del perfil.
+     *
+     * No modifica el estado de verificacion.
      */
     public void actualizarOrganizador(
             int idOrganizador, Organizador organizador) {
@@ -218,11 +253,12 @@ public class RepositoryOrganizador {
             connection.setAutoCommit(false);
 
             try {
+
                 String actualizarUsuario =
                         "UPDATE Usuario SET nombre = ? "
-                        + "WHERE id_usuario = ("
-                        + "SELECT id_usuario FROM Organizador "
-                        + "WHERE id_organizador = ?)";
+                                + "WHERE id_usuario = ("
+                                + "SELECT id_usuario FROM Organizador "
+                                + "WHERE id_organizador = ?)";
 
                 try (PreparedStatement statement =
                              connection.prepareStatement(actualizarUsuario)) {
@@ -237,9 +273,13 @@ public class RepositoryOrganizador {
                 }
 
                 String actualizarPerfil =
-                        "UPDATE Organizador SET empresa = ?, ciudad = ?, "
-                        + "especialidad = ?, portafolio = ?, tarifa_base = ? "
-                        + "WHERE id_organizador = ?";
+                        "UPDATE Organizador SET "
+                                + "empresa = ?, "
+                                + "ciudad = ?, "
+                                + "especialidad = ?, "
+                                + "portafolio = ?, "
+                                + "tarifa_base = ? "
+                                + "WHERE id_organizador = ?";
 
                 try (PreparedStatement statement =
                              connection.prepareStatement(actualizarPerfil)) {
@@ -248,7 +288,14 @@ public class RepositoryOrganizador {
                     statement.setString(2, organizador.ciudad());
                     statement.setString(3, organizador.especialidad());
                     statement.setString(4, organizador.portafolio());
-                    statement.setBigDecimal(5, organizador.tarifaBase());
+
+                    if (organizador.tarifaBase() == null) {
+                        statement.setNull(5, java.sql.Types.DECIMAL);
+                    } else {
+                        statement.setBigDecimal(
+                                5, organizador.tarifaBase());
+                    }
+
                     statement.setInt(6, idOrganizador);
 
                     if (statement.executeUpdate() != 1) {
@@ -260,6 +307,7 @@ public class RepositoryOrganizador {
                 connection.commit();
 
             } catch (SQLException | RuntimeException e) {
+
                 try {
                     connection.rollback();
                 } catch (SQLException rollback) {
@@ -276,8 +324,8 @@ public class RepositoryOrganizador {
     }
 
     /**
-     * Comprueba el estado y la disponibilidad del organizador
-     * para la fecha del evento.
+     * Verifica que el organizador este activo y no tenga
+     * eventos vigentes en la fecha solicitada.
      */
     public boolean verificarDisponibilidadOrganizador(
             int idOrganizador, java.time.LocalDate fecha) {
@@ -294,27 +342,30 @@ public class RepositoryOrganizador {
 
         String sql =
                 "SELECT COUNT(*) "
-                + "FROM Organizador o "
-                + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
-                + "WHERE o.id_organizador = ? "
-                + "AND UPPER(u.estado) = 'ACTIVO' "
-                + "AND UPPER(u.tipo_usuario) = 'ORGANIZADOR' "
-                + "AND UPPER(o.estado) = 'ACTIVO' "
-                + "AND UPPER(o.estado_verificacion) = 'VERIFICADO' "
-                + "AND NOT EXISTS ("
-                + "SELECT 1 FROM Evento e "
-                + "WHERE e.id_organizador = o.id_organizador "
-                + "AND CAST(e.fecha_inicio AS DATE) <= ? "
-                + "AND CAST(e.fecha_fin AS DATE) >= ? "
-                + "AND UPPER(e.estado) <> 'CANCELADO')";
+                        + "FROM Organizador o "
+                        + "INNER JOIN Usuario u "
+                        + "ON u.id_usuario = o.id_usuario "
+                        + "WHERE o.id_organizador = ? "
+                        + "AND UPPER(TRIM(u.estado)) = 'ACTIVO' "
+                        + "AND UPPER(TRIM(u.tipo_usuario)) = 'ORGANIZADOR' "
+                        + "AND UPPER(TRIM(o.estado)) = 'ACTIVO' "
+                        + "AND UPPER(TRIM(o.estado_verificacion)) = 'VERIFICADO' "
+                        + "AND NOT EXISTS ("
+                        + "SELECT 1 FROM Evento e "
+                        + "WHERE e.id_organizador = o.id_organizador "
+                        + "AND CAST(e.fecha_inicio AS DATE) <= ? "
+                        + "AND CAST(e.fecha_fin AS DATE) >= ? "
+                        + "AND UPPER(TRIM(e.estado)) <> 'CANCELADO')";
 
         try (Connection connection = conectar();
              PreparedStatement statement =
                      connection.prepareStatement(sql)) {
 
+            Date fechaSQL = Date.valueOf(fecha);
+
             statement.setInt(1, idOrganizador);
-            statement.setDate(2, Date.valueOf(fecha));
-            statement.setDate(3, Date.valueOf(fecha));
+            statement.setDate(2, fechaSQL);
+            statement.setDate(3, fechaSQL);
 
             try (ResultSet result = statement.executeQuery()) {
                 return result.next() && result.getInt(1) > 0;
@@ -327,6 +378,9 @@ public class RepositoryOrganizador {
         }
     }
 
+    /**
+     * Agrega el filtro de ciudad.
+     */
     private void agregarFiltroCiudad(
             StringBuilder sql,
             List<Object> parametros,
@@ -338,10 +392,14 @@ public class RepositoryOrganizador {
             return;
         }
 
-        sql.append("AND LOWER(o.ciudad) = LOWER(?) ");
+        sql.append("AND LOWER(TRIM(o.ciudad)) = LOWER(TRIM(?)) ");
+
         parametros.add(ciudad.toString().trim());
     }
 
+    /**
+     * Relaciona el tipo de evento con la especialidad del organizador.
+     */
     private void agregarFiltroTipoEvento(
             StringBuilder sql,
             List<Object> parametros,
@@ -354,9 +412,14 @@ public class RepositoryOrganizador {
         }
 
         sql.append("AND LOWER(o.especialidad) LIKE LOWER(?) ");
+
         parametros.add("%" + tipoEvento.toString().trim() + "%");
     }
 
+    /**
+     * Solo muestra organizadores cuya tarifa base
+     * no supere el presupuesto estimado.
+     */
     private void agregarFiltroPresupuesto(
             StringBuilder sql,
             List<Object> parametros,
@@ -380,10 +443,16 @@ public class RepositoryOrganizador {
                     "El presupuesto no puede ser negativo.");
         }
 
+        sql.append("AND o.tarifa_base IS NOT NULL ");
         sql.append("AND o.tarifa_base <= ? ");
+
         parametros.add(valor);
     }
 
+    /**
+     * Excluye organizadores que tengan eventos activos
+     * en la fecha aproximada solicitada.
+     */
     private void agregarFiltroFecha(
             StringBuilder sql,
             List<Object> parametros,
@@ -402,18 +471,22 @@ public class RepositoryOrganizador {
 
         sql.append(
                 "AND NOT EXISTS ("
-                + "SELECT 1 FROM Evento e "
-                + "WHERE e.id_organizador = o.id_organizador "
-                + "AND CAST(e.fecha_inicio AS DATE) <= ? "
-                + "AND CAST(e.fecha_fin AS DATE) >= ? "
-                + "AND UPPER(e.estado) <> 'CANCELADO') ");
+                        + "SELECT 1 FROM Evento e "
+                        + "WHERE e.id_organizador = o.id_organizador "
+                        + "AND CAST(e.fecha_inicio AS DATE) <= ? "
+                        + "AND CAST(e.fecha_fin AS DATE) >= ? "
+                        + "AND UPPER(TRIM(e.estado)) <> 'CANCELADO') ");
 
-        Date fechaSQL = Date.valueOf((java.time.LocalDate) fecha);
+        Date fechaSQL = Date.valueOf(
+                (java.time.LocalDate) fecha);
 
         parametros.add(fechaSQL);
         parametros.add(fechaSQL);
     }
 
+    /**
+     * Asigna los parametros de las consultas preparadas.
+     */
     private void asignarParametros(
             PreparedStatement statement,
             List<Object> parametros) throws SQLException {
@@ -423,10 +496,15 @@ public class RepositoryOrganizador {
         }
     }
 
+    /**
+     * Convierte el resultado SQL en una entidad Organizador.
+     */
     private Organizador convertir(ResultSet result) throws SQLException {
 
         BigDecimal tarifa = result.getBigDecimal("tarifa_base");
-        BigDecimal promedio = result.getBigDecimal("calificacion_promedio");
+
+        BigDecimal promedio =
+                result.getBigDecimal("calificacion_promedio");
 
         return new Organizador(
                 result.getInt("id_organizador"),
@@ -435,7 +513,7 @@ public class RepositoryOrganizador {
                 result.getString("ciudad"),
                 result.getString("especialidad"),
                 result.getString("portafolio"),
-                tarifa == null ? BigDecimal.ZERO : tarifa,
+                tarifa,
                 promedio == null ? BigDecimal.ZERO : promedio,
                 result.getInt("total_resenas")
         );

@@ -53,6 +53,8 @@ public class ViewAdministracion {
 
     private final ControllerAdministracion controller;
     private final SesionUsuario sesion;
+    private final Runnable cerrarSesion;
+
     private TabPane pestanasPrincipal;
     private Tab pestanaMisSolicitudes;
 
@@ -95,12 +97,23 @@ public class ViewAdministracion {
 
     public ViewAdministracion(
             ControllerAdministracion controller) {
-        this(controller, null);
+        this(controller, null, null);
     }
 
     public ViewAdministracion(
             ControllerAdministracion controller,
             SesionUsuario sesion) {
+        this(controller, sesion, null);
+    }
+
+    /**
+     * Constructor con accion de cierre de sesion.
+     * Se conserva compatibilidad con los constructores anteriores.
+     */
+    public ViewAdministracion(
+            ControllerAdministracion controller,
+            SesionUsuario sesion,
+            Runnable cerrarSesion) {
 
         if (controller == null) {
             throw new IllegalArgumentException(
@@ -109,6 +122,7 @@ public class ViewAdministracion {
 
         this.controller = controller;
         this.sesion = sesion;
+        this.cerrarSesion = cerrarSesion;
 
         formatoMoneda.setMaximumFractionDigits(0);
 
@@ -182,14 +196,14 @@ public class ViewAdministracion {
         buscar.setClosable(false);
 
         Tab solicitudes = new Tab(
-        "Mis solicitudes",
-        crearVistaContrataciones());
-solicitudes.setClosable(false);
+                "Mis solicitudes",
+                crearVistaContrataciones());
+        solicitudes.setClosable(false);
 
-this.pestanaMisSolicitudes = solicitudes;
+        this.pestanaMisSolicitudes = solicitudes;
 
-TabPane pestanas = new TabPane(buscar, solicitudes);
-this.pestanasPrincipal = pestanas;
+        TabPane pestanas = new TabPane(buscar, solicitudes);
+        this.pestanasPrincipal = pestanas;
 
         pestanas.getStyleClass().add("publicacion");
         pestanas.setTabClosingPolicy(
@@ -220,7 +234,7 @@ this.pestanasPrincipal = pestanas;
 
         Label subtitulo = etiqueta(
                 "Encuentra, compara y solicita la contratación "
-                + "de un organizador para tu evento.",
+                        + "de un organizador para tu evento.",
                 "muted");
 
         subtitulo.setWrapText(true);
@@ -295,13 +309,7 @@ this.pestanasPrincipal = pestanas;
         Label tituloMenu = etiqueta(
                 "MENÚ PRINCIPAL", "menu-title");
 
-        Label inicio = etiqueta(
-                "⌂  Inicio", "menu-item");
-
-        inicio.setMaxWidth(Double.MAX_VALUE);
-        inicio.setOnMouseClicked(
-                event -> seleccionarPestana(buscar));
-
+        // Opción de búsqueda.
         menuBuscar = etiqueta(
                 "♧  Buscar organizadores", "menu-item");
 
@@ -310,6 +318,7 @@ this.pestanasPrincipal = pestanas;
         menuBuscar.setOnMouseClicked(
                 event -> seleccionarPestana(buscar));
 
+        // Opción de solicitudes.
         menuSolicitudes = etiqueta(
                 "▤  Mis solicitudes", "menu-item");
 
@@ -320,30 +329,51 @@ this.pestanasPrincipal = pestanas;
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
 
+        // Información de la sesión actual.
         String nombre = sesion == null
                 || sesion.getNombre() == null
                 || sesion.getNombre().isBlank()
                 ? "Cliente"
-                : sesion.getNombre();
+                : sesion.getNombre().trim();
 
         String inicial = nombre.substring(0, 1)
                 .toUpperCase(Locale.ROOT);
 
         Label avatar = etiqueta(inicial, "avatar");
 
+        String rol = sesion == null
+                || sesion.getTipoUsuario() == null
+                || sesion.getTipoUsuario().isBlank()
+                ? "Cliente"
+                : capitalizarRol(sesion.getTipoUsuario());
+
         VBox perfil = new VBox(
                 4,
                 etiqueta(nombre, "profile-name"),
-                etiqueta("Mi cuenta", "hint"));
+                etiqueta(rol, "hint"));
+
+        // Cierre de sesión conectado al método de navegación principal.
+        if (cerrarSesion != null) {
+
+            Label salir = etiqueta(
+                    "Cerrar sesión", "logout-link");
+
+            salir.setStyle("-fx-cursor: hand;");
+
+            salir.setOnMouseClicked(
+                    event -> cerrarSesion.run());
+
+            perfil.getChildren().add(salir);
+        }
 
         HBox cuenta = new HBox(12, avatar, perfil);
         cuenta.setAlignment(Pos.CENTER_LEFT);
         cuenta.getStyleClass().add("sidebar-bottom");
 
+        // Se elimina la opción Inicio.
         menu.getChildren().addAll(
                 marca,
                 tituloMenu,
-                inicio,
                 menuBuscar,
                 menuSolicitudes,
                 espacio,
@@ -365,11 +395,18 @@ this.pestanasPrincipal = pestanas;
 
         String nombre = sesion == null
                 || sesion.getNombre() == null
+                || sesion.getNombre().isBlank()
                 ? "Cliente"
-                : sesion.getNombre();
+                : sesion.getNombre().trim();
+
+        String rol = sesion == null
+                || sesion.getTipoUsuario() == null
+                || sesion.getTipoUsuario().isBlank()
+                ? "CLIENTE"
+                : sesion.getTipoUsuario().toUpperCase(Locale.ROOT);
 
         Label usuario = etiqueta(
-                nombre + " · CLIENTE", "user-badge");
+                nombre + " · " + rol, "user-badge");
 
         HBox barra = new HBox(
                 18, ruta, actual, espacio, usuario);
@@ -378,6 +415,15 @@ this.pestanasPrincipal = pestanas;
         barra.getStyleClass().add("topbar");
 
         return barra;
+    }
+
+    private String capitalizarRol(String tipoUsuario) {
+
+        String rol = tipoUsuario.trim()
+                .toLowerCase(Locale.ROOT);
+
+        return Character.toUpperCase(rol.charAt(0))
+                + rol.substring(1);
     }
 
     private void seleccionarPestana(Tab pestana) {
@@ -427,7 +473,7 @@ this.pestanasPrincipal = pestanas;
 
         Label ayuda = etiqueta(
                 "Completa los campos obligatorios para encontrar "
-                + "organizadores compatibles con tu evento.",
+                        + "organizadores compatibles con tu evento.",
                 "muted");
 
         ayuda.setWrapText(true);
@@ -574,17 +620,17 @@ this.pestanasPrincipal = pestanas;
 
                         setText(
                                 item.nombre()
-                                + "\n" + empresa
-                                + " · " + ciudadOrganizador
-                                + "\nEspecialidad: "
-                                + texto(item.especialidad(), "No registrada")
-                                + "\nTarifa base: " + tarifa
-                                + "\nCalificación: "
-                                + promedio.setScale(
+                                        + "\n" + empresa
+                                        + " · " + ciudadOrganizador
+                                        + "\nEspecialidad: "
+                                        + texto(item.especialidad(), "No registrada")
+                                        + "\nTarifa base: " + tarifa
+                                        + "\nCalificación: "
+                                        + promedio.setScale(
                                         1,
                                         java.math.RoundingMode.HALF_UP)
-                                + " / 5 · "
-                                + item.totalResenas() + " reseñas");
+                                        + " / 5 · "
+                                        + item.totalResenas() + " reseñas");
                     }
                 });
 
@@ -612,10 +658,10 @@ this.pestanasPrincipal = pestanas;
 
             mostrarMensaje(
                     "Completa los campos obligatorios antes de buscar:\n\n"
-                    + "- Tipo de evento\n"
-                    + "- Ciudad\n"
-                    + "- Fecha aproximada\n"
-                    + "- Presupuesto máximo");
+                            + "- Tipo de evento\n"
+                            + "- Ciudad\n"
+                            + "- Fecha aproximada\n"
+                            + "- Presupuesto máximo");
 
             return;
         }
@@ -662,7 +708,7 @@ this.pestanasPrincipal = pestanas;
             if (coincidencias.isEmpty()) {
                 mostrarMensaje(
                         "No encontramos organizadores para esos criterios. "
-                        + "Prueba con otra ciudad, fecha o presupuesto.");
+                                + "Prueba con otra ciudad, fecha o presupuesto.");
             }
 
         } catch (RuntimeException e) {
@@ -690,30 +736,30 @@ this.pestanasPrincipal = pestanas;
             Organizador perfil =
                     controller.seleccionarOrganizador(
                             organizador.id());
-            
-        organizadorSeleccionado = perfil;
+
+            organizadorSeleccionado = perfil;
 
             detalleNombre.setText(perfil.nombre());
 
             detalleEmpresa.setText(
                     "Empresa: "
-                    + texto(perfil.empresa(), "No registrada"));
+                            + texto(perfil.empresa(), "No registrada"));
 
             detalleCiudad.setText(
                     "Ciudad: "
-                    + texto(perfil.ciudad(), "No registrada"));
+                            + texto(perfil.ciudad(), "No registrada"));
 
             detalleEspecialidad.setText(
                     "Especialidad: "
-                    + texto(perfil.especialidad(), "No registrada"));
+                            + texto(perfil.especialidad(), "No registrada"));
 
             detallePortafolio.setText(
                     "Portafolio: "
-                    + texto(perfil.portafolio(), "No registrado"));
+                            + texto(perfil.portafolio(), "No registrado"));
 
             detalleTarifa.setText(
                     "Tarifa base: "
-                    + formatoMoneda.format(
+                            + formatoMoneda.format(
                             perfil.tarifaBase() == null
                                     ? BigDecimal.ZERO
                                     : perfil.tarifaBase()));
@@ -725,18 +771,18 @@ this.pestanasPrincipal = pestanas;
 
             detalleResenas.setText(
                     "Calificación: "
-                    + promedio.setScale(
+                            + promedio.setScale(
                             1,
                             java.math.RoundingMode.HALF_UP)
-                    + " / 5 · "
-                    + perfil.totalResenas() + " reseñas");
+                            + " / 5 · "
+                            + perfil.totalResenas() + " reseñas");
 
             LocalDate fecha = fechaAproximada.getValue();
 
             if (fecha == null) {
                 disponibilidad.setText(
                         "Selecciona una fecha para comprobar "
-                        + "la disponibilidad.");
+                                + "la disponibilidad.");
                 return;
             }
 
@@ -753,7 +799,7 @@ this.pestanasPrincipal = pestanas;
             } else {
                 disponibilidad.setText(
                         "No está disponible o no cumple las condiciones "
-                        + "para la fecha indicada. Selecciona otro organizador.");
+                                + "para la fecha indicada. Selecciona otro organizador.");
             }
 
         } catch (RuntimeException e) {
@@ -798,7 +844,7 @@ this.pestanasPrincipal = pestanas;
 
                 mostrarMensaje(
                         "El organizador ya no está disponible. "
-                        + "Busca nuevamente y selecciona otra opción.");
+                                + "Busca nuevamente y selecciona otra opción.");
 
                 return;
             }
@@ -810,15 +856,15 @@ this.pestanasPrincipal = pestanas;
 
             confirmacion.setHeaderText(
                     "Enviar solicitud a "
-                    + organizadorSeleccionado.nombre());
+                            + organizadorSeleccionado.nombre());
 
             confirmacion.setContentText(
                     "Tipo de evento: " + tipoEvento.getText().trim()
-                    + "\nCiudad: " + ciudad.getText().trim()
-                    + "\nFecha aproximada: " + fecha
-                    + "\nPresupuesto máximo: "
-                    + formatoMoneda.format(valorPresupuesto)
-                    + "\n\nLa solicitud quedará en estado Pendiente.");
+                            + "\nCiudad: " + ciudad.getText().trim()
+                            + "\nFecha aproximada: " + fecha
+                            + "\nPresupuesto máximo: "
+                            + formatoMoneda.format(valorPresupuesto)
+                            + "\n\nLa solicitud quedará en estado Pendiente.");
 
             Optional<ButtonType> respuesta =
                     confirmacion.showAndWait();
@@ -842,46 +888,36 @@ this.pestanasPrincipal = pestanas;
                     datos);
 
             // La solicitud ya fue guardada correctamente.
-int idSolicitud = datos.getIdContratacion();
-
-organizadorSeleccionado = null;
-
-listaOrganizadores.getSelectionModel().clearSelection();
-solicitarContratacion.setDisable(true);
-
-limpiarPerfil();
-
-// Actualizar las solicitudes del cliente.
-mostrarContrataciones();
-
-// Navegar directamente a "Mis solicitudes".
-if (pestanasPrincipal != null
-        && pestanaMisSolicitudes != null) {
-
-    pestanasPrincipal.getSelectionModel()
-            .select(pestanaMisSolicitudes);
-}
-
-// Confirmar el resultado al cliente.
-mostrarMensaje(
-        "Solicitud #" + idSolicitud
-        + " registrada correctamente con estado PENDIENTE. "
-        + "Se envió una notificación interna al organizador.");
+            int idSolicitud = datos.getIdContratacion();
 
             organizadorSeleccionado = null;
-
-            listaOrganizadores.getSelectionModel()
-                    .clearSelection();
-
+            listaOrganizadores.getSelectionModel().clearSelection();
             solicitarContratacion.setDisable(true);
             limpiarPerfil();
+
+            // Actualizar las solicitudes del cliente.
+            mostrarContrataciones();
+
+            // Navegar directamente a "Mis solicitudes".
+            if (pestanasPrincipal != null
+                    && pestanaMisSolicitudes != null) {
+
+                pestanasPrincipal.getSelectionModel()
+                        .select(pestanaMisSolicitudes);
+            }
+
+            // Confirmar el resultado al cliente.
+            mostrarMensaje(
+                    "Solicitud #" + idSolicitud
+                            + " registrada correctamente con estado PENDIENTE. "
+                            + "Se envió una notificación interna al organizador.");
 
         } catch (RuntimeException e) {
             mostrarMensaje(
                     mensajeDeError(
                             e,
                             "No fue posible completar la solicitud. "
-                            + "Inténtalo nuevamente."));
+                                    + "Inténtalo nuevamente."));
         }
     }
 
@@ -899,7 +935,7 @@ mostrarMensaje(
 
         Label ayuda = etiqueta(
                 "Consulta las solicitudes enviadas y el estado "
-                + "registrado para cada organizador.",
+                        + "registrado para cada organizador.",
                 "muted");
 
         ayuda.setWrapText(true);
@@ -939,16 +975,16 @@ mostrarMensaje(
 
                         setText(
                                 "Solicitud #"
-                                + item.getIdContratacion()
-                                + "\nOrganizador #"
-                                + item.getIdOrganizador()
-                                + " · Estado: " + item.getEstado()
-                                + "\nEvento: " + item.getTipoEvento()
-                                + " · Ciudad: " + item.getCiudad()
-                                + "\nFecha aproximada: "
-                                + item.getFechaAproximada()
-                                + "\nPresupuesto: "
-                                + formatoMoneda.format(
+                                        + item.getIdContratacion()
+                                        + "\nOrganizador #"
+                                        + item.getIdOrganizador()
+                                        + " · Estado: " + item.getEstado()
+                                        + "\nEvento: " + item.getTipoEvento()
+                                        + " · Ciudad: " + item.getCiudad()
+                                        + "\nFecha aproximada: "
+                                        + item.getFechaAproximada()
+                                        + "\nPresupuesto: "
+                                        + formatoMoneda.format(
                                         item.getPresupuestoEstimado()));
                     }
                 });

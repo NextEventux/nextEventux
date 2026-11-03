@@ -8,6 +8,7 @@ import repositories.RepositoryOrganizador;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,9 +38,6 @@ public class ServiceAdministracion {
     /**
      * Consulta organizadores activos y verificados que coincidan
      * con la ciudad, el tipo de evento, el presupuesto y la fecha.
-     *
-     * Filtros requeridos:
-     * ciudad, tipoEvento, presupuestoEstimado y fechaAproximada.
      */
     public List<Organizador> consultarOrganizadores(
             Map<String, Object> filtros) {
@@ -118,15 +116,13 @@ public class ServiceAdministracion {
                     "Los datos de la solicitud son obligatorios.");
         }
 
-        // Verificar el estado actual antes de continuar.
         seleccionarOrganizador(idOrganizador);
 
-        // La disponibilidad se comprueba nuevamente al enviar.
         if (!verificarDisponibilidadOrganizador(
                 idOrganizador, datos.getFechaAproximada())) {
             throw new IllegalStateException(
                     "El organizador seleccionado no esta disponible "
-                    + "para la fecha indicada. Busca otra opcion.");
+                            + "para la fecha indicada. Busca otra opcion.");
         }
 
         datos.setIdOrganizador(idOrganizador);
@@ -137,6 +133,9 @@ public class ServiceAdministracion {
 
     /**
      * Consulta las solicitudes de contratacion mediante filtros.
+     *
+     * Se conserva para la consulta de solicitudes del cliente
+     * y otras operaciones existentes de CU-026.
      */
     public List<Contratacion> consultarContrataciones(
             Map<String, Object> filtros) {
@@ -144,6 +143,32 @@ public class ServiceAdministracion {
         return repositoryContratacion.listarContrataciones(filtros);
     }
 
+    /**
+     * CU-026:
+     * Consulta exclusivamente las solicitudes recibidas
+     * por el organizador autenticado.
+     *
+     * El identificador debe obtenerse desde la sesion
+     * del usuario y no desde un campo editable de la vista.
+     */
+    public List<Contratacion> consultarSolicitudesRecibidas(
+            int idOrganizador) {
+
+        if (idOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del organizador no es valido.");
+        }
+
+        Map<String, Object> filtros = new HashMap<>();
+
+        filtros.put("idOrganizador", idOrganizador);
+
+        return repositoryContratacion.listarContrataciones(filtros);
+    }
+
+    /**
+     * Valida los criterios obligatorios de busqueda.
+     */
     private void validarFiltrosBusqueda(
             Map<String, Object> filtros) {
 
@@ -163,7 +188,7 @@ public class ServiceAdministracion {
 
             throw new IllegalArgumentException(
                     "Completa el tipo de evento, la ciudad, "
-                    + "la fecha aproximada y el presupuesto.");
+                            + "la fecha aproximada y el presupuesto.");
         }
 
         if (!(presupuesto instanceof Number)) {
@@ -189,5 +214,29 @@ public class ServiceAdministracion {
             throw new IllegalArgumentException(
                     "La ciudad o el tipo de evento son demasiado largos.");
         }
+    }
+    /**
+     * Permite al organizador responder una solicitud.
+     */
+    public void responderSolicitud(
+            int idSolicitud,
+            int idOrganizador,
+            String nuevoEstado) {
+
+        if (idSolicitud <= 0 || idOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores no son válidos.");
+        }
+
+        if (!"ACEPTADA".equalsIgnoreCase(nuevoEstado)
+                && !"RECHAZADA".equalsIgnoreCase(nuevoEstado)) {
+            throw new IllegalArgumentException(
+                    "Selecciona aceptar o rechazar la solicitud.");
+        }
+
+        repositoryContratacion.responderSolicitud(
+                idSolicitud,
+                idOrganizador,
+                nuevoEstado);
     }
 }
