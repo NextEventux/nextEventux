@@ -10,7 +10,6 @@ import entities.ImagenServicio;
 import entities.PreguntaServicio;
 import entities.Servicio;
 import entities.SesionUsuario;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
@@ -35,7 +34,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import views.components.MenuCompartido;
 
-
 public class ViewDetalleServicio {
 
     private final ControllerProveedores controller;
@@ -47,6 +45,7 @@ public class ViewDetalleServicio {
     private final Runnable abrirEventos;
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private Runnable abrirPropuestas;
     private final Runnable abrirMisEventos;
 
     private final FlowPane imagenes
@@ -329,6 +328,11 @@ public class ViewDetalleServicio {
         return raiz;
     }
 
+    public ViewDetalleServicio conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
+    }
+
     private VBox crearMenu() {
         return MenuCompartido.crear(
                 sesion,
@@ -338,7 +342,9 @@ public class ViewDetalleServicio {
                 volverCatalogo,
                 null,
                 cerrarSesion,
-                abrirMisEventos);
+                abrirMisEventos,
+                null,
+                abrirPropuestas);
     }
 
     private HBox crearBarraSuperior() {

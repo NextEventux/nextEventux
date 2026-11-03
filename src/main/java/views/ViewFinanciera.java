@@ -61,6 +61,7 @@ public class ViewFinanciera {
     private final Runnable abrirCatalogo;
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
+    private Runnable abrirPropuestas;
 
     /** Uso independiente (LanzadorFinanciera). */
     public ViewFinanciera(ControllerFinanciera controller) {
@@ -83,6 +84,11 @@ public class ViewFinanciera {
         this.abrirCatalogo = abrirCatalogo;
         this.abrirInvitados = abrirInvitados;
         this.cerrarSesion = cerrarSesion;
+    }
+
+    public ViewFinanciera conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
     }
 
     // ==========================================
@@ -115,7 +121,8 @@ public class ViewFinanciera {
         boolean dentroDeApp = sesion != null;
         VBox sidebar = dentroDeApp
                 ? MenuCompartido.crear(sesion, MenuCompartido.Pagina.MIS_EVENTOS,
-                        abrirEventos, abrirInvitados, abrirCatalogo, null, cerrarSesion, abrirMisEventos)
+                        abrirEventos, abrirInvitados, abrirCatalogo, null, cerrarSesion, abrirMisEventos,
+                        null, abrirPropuestas)
                 : crearMenu();
         raiz.setLeft(sidebar);
 

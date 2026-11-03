@@ -25,6 +25,7 @@ public class ViewFinalizacion {
     private final Integer eventoInicial;
     private final SesionUsuario sesion;
     private final Runnable abrirEventos, abrirMisEventos, abrirCatalogo, abrirInvitados, cerrarSesion;
+    private Runnable abrirPropuestas;
     private final ComboBox<Evento> evento=new ComboBox<>();
     private final List<Fotografia> fotos=new ArrayList<>();
     private final FlowPane miniaturas=new FlowPane(12,12);
@@ -48,6 +49,11 @@ public class ViewFinalizacion {
         this.eventoInicial=eventoInicial; this.sesion=sesion; this.abrirEventos=abrirEventos;
         this.abrirMisEventos=abrirMisEventos; this.abrirCatalogo=abrirCatalogo;
         this.abrirInvitados=abrirInvitados; this.cerrarSesion=cerrarSesion;
+    }
+
+    public ViewFinalizacion conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
     }
 
     public Parent crearPantalla() {
@@ -91,7 +97,8 @@ public class ViewFinalizacion {
             principal.setTop(MenuCompartido.crearBarraSuperior(sesion,"Finalizar evento","Mis eventos",volver));
             raiz.setCenter(principal);
             raiz.setLeft(MenuCompartido.crear(sesion,MenuCompartido.Pagina.MIS_EVENTOS,
-                    abrirEventos,abrirInvitados,abrirCatalogo,null,cerrarSesion,abrirMisEventos));
+                    abrirEventos,abrirInvitados,abrirCatalogo,null,cerrarSesion,abrirMisEventos,
+                    null,abrirPropuestas));
         }
         raiz.getStylesheets().add(getClass().getResource("/styles/eventos.css").toExternalForm());
         try {

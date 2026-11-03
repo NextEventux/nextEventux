@@ -326,7 +326,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarLogin,
                                 sesionActual,
-                                this::mostrarMisEventos).crearPantalla())
+                                this::mostrarMisEventos)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.CATALOGO_SERVICIOS,
                         () -> new ViewCatalogoServicios(
@@ -337,7 +339,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarLogin,
                                 this::mostrarDetalleServicio,
-                                this::mostrarMisEventos).crearPantalla())
+                                this::mostrarMisEventos)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrar(
                         Navegacion.Pantalla.DETALLE_SERVICIO,
                         this::crearVistaDetalleServicio)
@@ -360,6 +364,7 @@ public class NextEventuxApp extends Application {
                                 this::mostrarFinalizacion)
                                 .conSolicitudes(this::mostrarSolicitudesEvento)
                                 .conFinanzas(this::mostrarEstadoFinanciero)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
                                 .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.EDICION_EVENTO,
@@ -372,7 +377,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
-                                this::mostrarLogin).crearPantalla())
+                                this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.CANCELACION_EVENTO,
                         () -> new ViewCancelacion(
@@ -384,13 +391,17 @@ public class NextEventuxApp extends Application {
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
-                                this::mostrarLogin).crearPantalla())
+                                this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.FINALIZACION_EVENTO,
                         () -> new ViewFinalizacion(controllerEventos, this::mostrarMisEventos,
                                 null, eventoSeleccionado, sesionActual, this::mostrarEventos,
                                 this::mostrarMisEventos, this::mostrarCatalogoServicios,
-                                this::mostrarInvitados, this::mostrarLogin).crearPantalla())
+                                this::mostrarInvitados, this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.PUBLICACION_EVENTOS,
                         () -> new ViewPublicacion(
@@ -404,7 +415,9 @@ public class NextEventuxApp extends Application {
                                 this::mostrarInvitados,
                                 this::mostrarLogin,
                                 this::mostrarSancionesProveedor,
-                                this::mostrarPublicacion).crearPantalla())
+                                this::mostrarPublicacion)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
                         () -> new ViewFinanciera(
@@ -415,6 +428,7 @@ public class NextEventuxApp extends Application {
                                 this::mostrarCatalogoServicios,
                                 this::mostrarInvitados,
                                 this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
                                 .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0));
     }
 
@@ -551,6 +565,7 @@ public class NextEventuxApp extends Application {
                 this::mostrarInvitados,
                 this::mostrarLogin,
                 this::mostrarMisEventos)
+                .conPropuestas(this::mostrarPropuestasOrganizador)
                 .crearPantalla();
     }
 
