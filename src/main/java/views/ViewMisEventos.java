@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 public class ViewMisEventos {
+
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final ControllerEventos controller;
@@ -46,12 +47,18 @@ public class ViewMisEventos {
     private final Button botonFinanzas = boton("Ver finanzas", "verFinanzasEvento");
     private final Button botonFinalizar = boton("Finalizar evento", "abrirFinalizacion");
 
+    private Runnable abrirPropuestas;
     private Consumer<Evento> abrirSolicitudes;
     private final Button botonServicios = boton("Servicios y presupuesto", "serviciosPresupuestoEvento");
     private Consumer<Evento> abrirFinanzas;
 
     public ViewMisEventos conSolicitudes(Consumer<Evento> accion) {
         abrirSolicitudes = accion;
+        return this;
+    }
+
+    public ViewMisEventos conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
         return this;
     }
 
@@ -98,7 +105,9 @@ public class ViewMisEventos {
                 abrirCatalogo,
                 null,
                 cerrarSesion,
-                abrirMisEventos));
+                abrirMisEventos,
+                null,
+                abrirPropuestas));
 
         BorderPane principal = new BorderPane();
         principal.setTop(MenuCompartido.crearBarraSuperior(sesion, "Mis eventos"));
@@ -190,7 +199,7 @@ public class ViewMisEventos {
         mostrar(botonEditar, planeado);
         mostrar(botonPublicar, finalizado);
         mostrar(botonCancelar, cancelable);
-        boolean confirmado=seleccionado!=null && "CONFIRMADO".equalsIgnoreCase(seleccionado.getEstado());
+        boolean confirmado = seleccionado != null && "CONFIRMADO".equalsIgnoreCase(seleccionado.getEstado());
         mostrar(botonFinalizar, confirmado && seleccionado.getFechaFin().isBefore(LocalDateTime.now()));
         mostrar(botonFinanzas, seleccionado != null && abrirFinanzas != null);
         mensaje.setText("");
@@ -206,18 +215,20 @@ public class ViewMisEventos {
                 + "Estado: " + mostrarEstado(seleccionado.getEstado()) + "\n"
                 + "Fecha de fin: " + seleccionado.getFechaFin().format(FECHA));
 
-        if(confirmado) {
+        if (confirmado) {
             try {
-                boolean pendiente=controller.galeriaPendiente(seleccionado.getIdEvento());
+                boolean pendiente = controller.galeriaPendiente(seleccionado.getIdEvento());
                 botonFinalizar.setText(pendiente ? "Reintentar envío de galería" : "Finalizar evento");
-                if(pendiente) {
-                    mostrar(botonCancelar,false);
+                if (pendiente) {
+                    mostrar(botonCancelar, false);
                     mostrarAviso("Las reservas ya están liberadas y las fotos guardadas. Reintenta el envío de la galería.");
-                } else if(!seleccionado.getFechaFin().isBefore(LocalDateTime.now())) {
-                    mostrarAviso("Podrás finalizar el evento después del "+seleccionado.getFechaFin().format(FECHA)+".");
+                } else if (!seleccionado.getFechaFin().isBefore(LocalDateTime.now())) {
+                    mostrarAviso("Podrás finalizar el evento después del " + seleccionado.getFechaFin().format(FECHA) + ".");
                 }
-            } catch(IllegalStateException e) {
-                mostrar(botonFinalizar,false); mostrar(botonCancelar,false); mostrarMensaje(e.getMessage());
+            } catch (IllegalStateException e) {
+                mostrar(botonFinalizar, false);
+                mostrar(botonCancelar, false);
+                mostrarMensaje(e.getMessage());
             }
         }
     }
@@ -253,11 +264,16 @@ public class ViewMisEventos {
             return "Desconocido";
         }
         return switch (estado.trim().toUpperCase(Locale.ROOT)) {
-            case "PLANEADO" -> "En planeación";
-            case "CONFIRMADO" -> "Confirmado";
-            case "FINALIZADO" -> "Finalizado";
-            case "CANCELADO" -> "Cancelado";
-            default -> estado;
+            case "PLANEADO" ->
+                "En planeación";
+            case "CONFIRMADO" ->
+                "Confirmado";
+            case "FINALIZADO" ->
+                "Finalizado";
+            case "CANCELADO" ->
+                "Cancelado";
+            default ->
+                estado;
         };
     }
 
