@@ -135,10 +135,7 @@ public class ViewContratarServicio {
         return raiz;
     }
 
-    // ------------------------------------------------------------------
-    // Carga automática: versión de la propuesta, disponibilidad y presupuesto
-    // ------------------------------------------------------------------
-
+    // Consulta la propuesta, la disponibilidad y el presupuesto al abrir la pantalla.
     private void cargar() {
 
         try {
@@ -177,10 +174,6 @@ public class ViewContratarServicio {
             errorPresupuesto = e.getMessage();
         }
     }
-
-    // ------------------------------------------------------------------
-    // Pantalla de revisión
-    // ------------------------------------------------------------------
 
     private void mostrarNoContratable(String mensaje) {
 
@@ -347,10 +340,6 @@ public class ViewContratarServicio {
                 suficiente ? "Suficiente" : "Insuficiente");
     }
 
-    // ------------------------------------------------------------------
-    // Confirmación
-    // ------------------------------------------------------------------
-
     private void confirmar(Button boton) {
 
         boton.setDisable(true);
@@ -425,10 +414,6 @@ public class ViewContratarServicio {
 
         barraAcciones.getChildren().setAll(acciones);
     }
-
-    // ------------------------------------------------------------------
-    // Componentes de presentación
-    // ------------------------------------------------------------------
 
     private Label titulo(String texto) {
 
