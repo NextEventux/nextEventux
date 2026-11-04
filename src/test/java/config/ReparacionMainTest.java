@@ -27,13 +27,13 @@ class ReparacionMainTest {
         String url=url();
         try(Connection c=DatabaseConnection.getConnection(url)) {
             CargarDatosEjemplo.cargar(c);
-            assertEquals(2,contar(c,"Evento"));
+            assertEquals(4,contar(c,"Evento"));
             assertEquals(MIGRACIONES_REGISTRADAS,contar(c,"Esquema_version"));
             assertThrows(SQLException.class,()->CargarDatosEjemplo.cargar(c));
         }
         DatabaseConnection.reiniciarInicializacion();
         try(Connection c=DatabaseConnection.getConnection(url)) {
-            assertEquals(2,contar(c,"Evento"));
+            assertEquals(4,contar(c,"Evento"));
             assertEquals(MIGRACIONES_REGISTRADAS,contar(c,"Esquema_version"));
         }
     }
