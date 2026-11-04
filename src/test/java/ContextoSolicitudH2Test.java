@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import entities.ContextoSolicitud;
+import entities.PropuestaServicio;
 import entities.SolicitudEjecucion;
 
 /** CU-12: el proveedor ve nombres, fechas y lugar en vez de identificadores. */
@@ -43,6 +44,28 @@ class ContextoSolicitudH2Test {
         assertEquals(LocalDateTime.of(2026, 12, 5, 23, 0), contexto.finEvento());
         assertEquals("Decoración floral", contexto.nombreServicio());
         assertEquals("Valentina Flores", contexto.nombreOrganizador());
+        assertEquals("Decoración del salón", contexto.descripcionNecesidad());
+    }
+
+    @Test
+    void elOrganizadorVeLaPropuestaConProveedorServicioYEvento() {
+        DatosCU12Prueba.servicioProveedor().enviarPropuesta(
+                DatosCU12Prueba.PROVEEDOR,
+                DatosCU12Prueba.SOLICITUD,
+                new java.math.BigDecimal("1500000"),
+                "Arreglos florales para 10 mesas",
+                "Anticipo del 50 %");
+
+        List<PropuestaServicio> propuestas = DatosCU12Prueba
+                .servicioOrganizador()
+                .listarPropuestasOrganizador(DatosCU12Prueba.ORGANIZADOR);
+
+        assertEquals(1, propuestas.size());
+        ContextoSolicitud contexto = propuestas.get(0).getContexto();
+
+        assertEquals("Luna Decoraciones", contexto.nombreProveedor());
+        assertEquals("Decoración floral", contexto.nombreServicio());
+        assertEquals("Boda de Valentina", contexto.nombreEvento());
         assertEquals("Decoración del salón", contexto.descripcionNecesidad());
     }
 
