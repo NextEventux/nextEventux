@@ -590,7 +590,6 @@ public class NextEventuxApp extends Application {
                 controllerSolicitudes,
                 sesionActual.getIdActor(),
                 sesionActual.getIdUsuario(),
-                this::mostrarEventos,
                 sesionActual,
                 this::mostrarEventos,
                 this::mostrarInvitados,
