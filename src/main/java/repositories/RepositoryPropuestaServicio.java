@@ -28,6 +28,7 @@ public class RepositoryPropuestaServicio {
                        p.valor,
                        p.descripcion,
                        p.condiciones,
+                       p.material_apoyo,
                                               CASE
                            WHEN p.estado IN ('CONTRATADA', 'NO_SELECCIONADA')
                            THEN p.estado
@@ -76,6 +77,9 @@ public class RepositoryPropuestaServicio {
                     propuesta.setCondiciones(
                             result.getString("condiciones"));
 
+                    propuesta.setMaterialApoyo(
+                            result.getString("material_apoyo"));
+
                     propuesta.setEstado(
                             result.getString("estado"));
 
@@ -114,6 +118,7 @@ public class RepositoryPropuestaServicio {
                        p.valor,
                        p.descripcion,
                        p.condiciones,
+                       p.material_apoyo,
                        CASE
                            WHEN p.estado IN ('CONTRATADA', 'NO_SELECCIONADA')
                            THEN p.estado
@@ -165,6 +170,9 @@ public class RepositoryPropuestaServicio {
 
                     propuesta.setCondiciones(
                             result.getString("condiciones"));
+
+                    propuesta.setMaterialApoyo(
+                            result.getString("material_apoyo"));
 
                     propuesta.setEstado(
                             result.getString("estado"));
@@ -429,6 +437,23 @@ public class RepositoryPropuestaServicio {
             String descripcion,
             String condiciones) {
 
+        return guardarNuevaVersion(
+                idProveedor,
+                idSolicitud,
+                valor,
+                descripcion,
+                condiciones,
+                null);
+    }
+
+    public int guardarNuevaVersion(
+            int idProveedor,
+            int idSolicitud,
+            BigDecimal valor,
+            String descripcion,
+            String condiciones,
+            String materialApoyo) {
+
         try (Connection connection = DatabaseConnection.getConnection()) {
 
             connection.setAutoCommit(false);
@@ -537,8 +562,9 @@ public class RepositoryPropuestaServicio {
                 String insertarPropuesta = """
                     INSERT INTO Propuesta
                     (id_solicitud, valor, descripcion, estado,
-                     numero_version, condiciones, fecha_envio, vigente)
-                    VALUES (?, ?, ?, 'ENVIADA', ?, ?, CURRENT_TIMESTAMP, TRUE)
+                     numero_version, condiciones, material_apoyo,
+                     fecha_envio, vigente)
+                    VALUES (?, ?, ?, 'ENVIADA', ?, ?, ?, CURRENT_TIMESTAMP, TRUE)
                     """;
 
                 int idPropuesta;
@@ -553,6 +579,7 @@ public class RepositoryPropuestaServicio {
                     statement.setString(3, descripcion);
                     statement.setInt(4, siguienteVersion);
                     statement.setString(5, condiciones);
+                    statement.setString(6, materialApoyo);
 
                     statement.executeUpdate();
 

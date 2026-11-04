@@ -48,6 +48,23 @@ public class ControllerSolicitudes {
                 condiciones);
     }
 
+    public int enviarPropuesta(
+            int idProveedor,
+            int idSolicitud,
+            BigDecimal valor,
+            String descripcion,
+            String condiciones,
+            String materialApoyo) {
+
+        return service.enviarPropuesta(
+                idProveedor,
+                idSolicitud,
+                valor,
+                descripcion,
+                condiciones,
+                materialApoyo);
+    }
+
     public List<MensajeSolicitud> listarMensajes(
             int idSolicitud,
             int idUsuario) {
