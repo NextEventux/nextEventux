@@ -243,13 +243,62 @@ VALUES
 -- SERVICIOS
 -- ---------------------------------------------------------
 
+-- Cada proveedor tiene cinco servicios en estados distintos (CU-11):
+-- publicados con horarios, en borrador (sin horarios) y retirados.
 INSERT INTO Servicio
-(id_servicio, id_proveedor, nombre, descripcion, precio, categoria, estado)
+(id_servicio, id_proveedor, nombre, descripcion, precio, categoria, estado,
+ tipo, cantidad_maxima_personas, ciudad_zona, anticipacion_minima)
 VALUES
-(1, 1, 'Decoración floral', 'Decoración floral para eventos sociales', 1200000.00, 'DECORACION', 'DISPONIBLE'),
-(2, 1, 'Decoración temática', 'Decoración personalizada según temática', 900000.00, 'DECORACION', 'DISPONIBLE'),
-(3, 2, 'Catering básico', 'Servicio de alimentación para eventos', 1800000.00, 'ALIMENTACION', 'DISPONIBLE'),
-(4, 2, 'Mesa de postres', 'Postres variados para celebraciones', 650000.00, 'ALIMENTACION', 'DISPONIBLE');
+(1, 1, 'Decoración floral', 'Decoración floral para eventos sociales', 1200000.00, 'DECORACION', 'DISPONIBLE', 'Decoración', 300, 'Bogotá', 7),
+(2, 1, 'Decoración temática', 'Decoración personalizada según temática', 900000.00, 'DECORACION', 'DISPONIBLE', 'Decoración', 200, 'Bogotá', 10),
+(3, 2, 'Catering básico', 'Servicio de alimentación para eventos', 1800000.00, 'ALIMENTACION', 'DISPONIBLE', 'Catering', 100, 'Bogotá', 7),
+(4, 2, 'Mesa de postres', 'Postres variados para celebraciones', 650000.00, 'ALIMENTACION', 'DISPONIBLE', 'Postres', 150, 'Bogotá', 5),
+(5, 5, 'Cobertura fotográfica completa', 'Fotógrafo profesional durante todo el evento, con galería digital', 1500000.00, 'FOTOGRAFIA', 'DISPONIBLE', 'Fotografía', 300, 'Bogotá', 7),
+(6, 5, 'Video highlights del evento', 'Video resumen de cinco minutos con los mejores momentos', 950000.00, 'FOTOGRAFIA', 'DISPONIBLE', 'Video', 300, 'Bogotá', 10),
+(7, 5, 'Sesión de retratos', 'Sesión de retratos familiares antes del evento', 400000.00, 'FOTOGRAFIA', 'BORRADOR', 'Fotografía', 20, 'Bogotá', 3),
+(8, 5, 'Álbum impreso premium', 'Álbum de 40 páginas con las mejores fotos', 600000.00, 'FOTOGRAFIA', 'RETIRADO', 'Fotografía', 1, 'Bogotá', 15),
+(9, 1, 'Arreglos de mesa', 'Centros de mesa con flores de temporada', 450000.00, 'DECORACION', 'DISPONIBLE', 'Decoración', 200, 'Bogotá', 5),
+(10, 1, 'Arco de globos', 'Arco de globos para la entrada del salón', 380000.00, 'DECORACION', 'BORRADOR', 'Decoración', 300, 'Bogotá', 3),
+(11, 1, 'Ambientación de salón', 'Ambientación completa con iluminación y cortinas', 1100000.00, 'DECORACION', 'DISPONIBLE', 'Decoración', 250, 'Bogotá', 14),
+(12, 2, 'Catering gourmet', 'Menú de tres tiempos con meseros y montaje de buffet', 1900000.00, 'ALIMENTACION', 'DISPONIBLE', 'Catering', 150, 'Bogotá', 10),
+(13, 2, 'Cóctel de bienvenida', 'Cóctel sin alcohol con estación de bebidas', 520000.00, 'ALIMENTACION', 'DISPONIBLE', 'Bebidas', 150, 'Bogotá', 5),
+(14, 2, 'Estación de café', 'Café de origen y repostería para la sobremesa', 300000.00, 'ALIMENTACION', 'BORRADOR', 'Bebidas', 100, 'Bogotá', 3),
+(15, 5, 'Cabina de fotos', 'Cabina instantánea con accesorios y fotos impresas', 700000.00, 'FOTOGRAFIA', 'DISPONIBLE', 'Fotografía', 150, 'Bogotá', 7);
+
+
+-- ---------------------------------------------------------
+-- HORARIOS DE LOS SERVICIOS (CU-11)
+-- Los identificadores empiezan en 101 para no mezclarse con los horarios
+-- que crean las pruebas y las contrataciones de las demostraciones.
+-- ---------------------------------------------------------
+
+INSERT INTO Disponibilidad_Servicio
+(id_disponibilidad, id_servicio, fecha, hora_inicio, hora_fin, estado)
+VALUES
+(101, 5, DATE '2027-02-20', TIME '14:00:00', TIME '23:59:00', 'DISPONIBLE'),
+(102, 5, DATE '2027-03-13', TIME '12:00:00', TIME '23:00:00', 'DISPONIBLE'),
+(103, 6, DATE '2027-02-20', TIME '14:00:00', TIME '23:00:00', 'DISPONIBLE'),
+(104, 6, DATE '2027-03-13', TIME '12:00:00', TIME '23:00:00', 'DISPONIBLE'),
+(105, 9, DATE '2027-02-20', TIME '10:00:00', TIME '20:00:00', 'DISPONIBLE'),
+(106, 11, DATE '2027-03-13', TIME '10:00:00', TIME '20:00:00', 'DISPONIBLE'),
+(107, 12, DATE '2027-02-20', TIME '12:00:00', TIME '23:00:00', 'DISPONIBLE'),
+(108, 13, DATE '2027-02-20', TIME '12:00:00', TIME '23:00:00', 'DISPONIBLE'),
+(109, 13, DATE '2027-03-13', TIME '12:00:00', TIME '23:00:00', 'DISPONIBLE'),
+(110, 4, DATE '2027-03-13', TIME '10:00:00', TIME '20:00:00', 'DISPONIBLE'),
+(111, 15, DATE '2027-02-20', TIME '14:00:00', TIME '23:00:00', 'DISPONIBLE');
+
+
+-- ---------------------------------------------------------
+-- PREGUNTAS PÚBLICAS DE LOS SERVICIOS (CU-11)
+-- ---------------------------------------------------------
+
+INSERT INTO Pregunta_Servicio
+(id_pregunta, id_servicio, id_organizador, pregunta, respuesta, fecha_pregunta, fecha_respuesta, estado)
+VALUES
+(1, 5, 3, '¿Entregan las fotos editadas o solo las originales?', 'Entregamos 300 fotos editadas en una galería privada.', TIMESTAMP '2026-10-25 10:00:00', TIMESTAMP '2026-10-25 15:00:00', 'RESPONDIDA'),
+(2, 5, 1, '¿Cuántas horas de cobertura incluye?', NULL, TIMESTAMP '2026-11-02 09:00:00', NULL, 'PENDIENTE'),
+(3, 12, 3, '¿El menú incluye opciones vegetarianas?', 'Sí, incluimos un plato vegetariano en cada tiempo.', TIMESTAMP '2026-10-26 11:00:00', TIMESTAMP '2026-10-26 16:00:00', 'RESPONDIDA'),
+(4, 1, 2, '¿Pueden usar solo flores blancas?', NULL, TIMESTAMP '2026-11-02 14:30:00', NULL, 'PENDIENTE');
 
 
 -- ---------------------------------------------------------
@@ -432,7 +481,9 @@ ALTER TABLE Acompanante ALTER COLUMN id_acompanante RESTART WITH 4;
 ALTER TABLE Necesidad_Especial ALTER COLUMN id_necesidad RESTART WITH 3;
 ALTER TABLE Regalo ALTER COLUMN id_regalo RESTART WITH 5;
 ALTER TABLE Reserva_regalo ALTER COLUMN id_reserva RESTART WITH 4;
-ALTER TABLE Servicio ALTER COLUMN id_servicio RESTART WITH 5;
+ALTER TABLE Servicio ALTER COLUMN id_servicio RESTART WITH 16;
+ALTER TABLE Disponibilidad_Servicio ALTER COLUMN id_disponibilidad RESTART WITH 112;
+ALTER TABLE Pregunta_Servicio ALTER COLUMN id_pregunta RESTART WITH 5;
 ALTER TABLE Paquete_servicio ALTER COLUMN id_paquete RESTART WITH 3;
 ALTER TABLE Solicitud_Ejecucion ALTER COLUMN id_solicitud RESTART WITH 4;
 ALTER TABLE Propuesta ALTER COLUMN id_propuesta RESTART WITH 4;
