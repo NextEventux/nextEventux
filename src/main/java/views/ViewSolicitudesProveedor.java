@@ -12,16 +12,21 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import views.components.ComponentesUi;
 import views.components.MenuCompartido;
+import views.solicitudes.DetalleSolicitud;
+import views.solicitudes.PresentacionSolicitud;
+import views.solicitudes.TarjetaSolicitud;
 
 public class ViewSolicitudesProveedor {
 
@@ -37,6 +42,7 @@ public class ViewSolicitudesProveedor {
 
     private final ListView<SolicitudEjecucion> lista
             = new ListView<>();
+    private final VBox detalle = new VBox(16);
 
     public ViewSolicitudesProveedor(
             ControllerSolicitudes controller,
@@ -86,21 +92,37 @@ public class ViewSolicitudesProveedor {
     public Parent crearPantalla() {
 
         BorderPane raiz = new BorderPane();
-
         raiz.getStyleClass().add("app");
 
-        Label titulo = new Label("Solicitudes recibidas");
-        titulo.setStyle(
-                "-fx-font-size: 26px; -fx-font-weight: bold;");
+        VBox menu = crearMenu();
+        raiz.setLeft(menu);
 
-        Button volver = new Button("Volver a mis servicios");
+        BorderPane principal = new BorderPane();
+        principal.setTop(crearBarraSuperior());
+        principal.setCenter(crearContenido());
+        raiz.setCenter(principal);
 
-        volver.setOnAction(event -> volverServicios.run());
+        raiz.widthProperty().addListener(
+                (observable, anterior, actual) -> {
+                    boolean mostrarMenu = actual.doubleValue() >= 1000;
+                    menu.setVisible(mostrarMenu);
+                    menu.setManaged(mostrarMenu);
+                });
 
-        HBox encabezado = new HBox(20, titulo, volver);
-        encabezado.setAlignment(Pos.CENTER_LEFT);
+        lista.getSelectionModel().selectedItemProperty().addListener(
+                (observable, anterior, actual) -> mostrarDetalle(actual));
+
+        recargarSolicitudes();
+
+        return raiz;
+    }
+
+    /** Lista de solicitudes a la izquierda y detalle de la elegida a la derecha. */
+    private HBox crearContenido() {
 
         lista.getStyleClass().add("cu12-list");
+        lista.setPrefWidth(380);
+        lista.setMinWidth(320);
         lista.setCellFactory(vista -> new ListCell<>() {
 
             @Override
@@ -110,138 +132,74 @@ public class ViewSolicitudesProveedor {
 
                 super.updateItem(solicitud, vacia);
 
-                if (vacia || solicitud == null) {
-                    setText(null);
-                    setGraphic(null);
-                    return;
-                }
-
-                Label nombre = new Label(
-                        "Solicitud #" + solicitud.getIdSolicitud());
-
-                nombre.getStyleClass().add("cu12-card-title");
-
-                Label detalle = new Label(
-                        "Evento #" + solicitud.getIdEvento()
-                        + "  •  Servicio #" + solicitud.getIdServicio());
-
-                detalle.getStyleClass().add("cu12-card-detail");
-
-                String fecha = solicitud.getFechaSolicitud()
-                        .format(java.time.format.DateTimeFormatter
-                                .ofPattern("dd/MM/yyyy  HH:mm"));
-
-                Label fechaSolicitud = new Label(
-                        "Recibida el " + fecha);
-
-                fechaSolicitud.getStyleClass().add("cu12-card-detail");
-
-                String estado = solicitud.getEstado();
-
-                Label etiquetaEstado = new Label(
-                        estado.replace("_", " "));
-
-                etiquetaEstado.getStyleClass().add("cu12-state");
-
-                if ("PENDIENTE".equalsIgnoreCase(estado)) {
-                    etiquetaEstado.getStyleClass().add("cu12-pending");
-                } else if ("EN_NEGOCIACION".equalsIgnoreCase(estado)) {
-                    etiquetaEstado.getStyleClass().add("cu12-negotiating");
-                } else if ("RECHAZADA".equalsIgnoreCase(estado)) {
-                    etiquetaEstado.getStyleClass().add("cu12-rejected");
-                } else {
-                    etiquetaEstado.getStyleClass().add("cu12-neutral");
-                }
-
-                HBox encabezadoTarjeta = new HBox(
-                        15, nombre, etiquetaEstado);
-
-                encabezadoTarjeta.setAlignment(Pos.CENTER_LEFT);
-
-                VBox tarjeta = new VBox(
-                        9,
-                        encabezadoTarjeta,
-                        detalle,
-                        fechaSolicitud);
-
                 setText(null);
-                setGraphic(tarjeta);
+                setGraphic(vacia || solicitud == null
+                        ? null
+                        : TarjetaSolicitud.crear(solicitud));
             }
         });
 
-        Button enviarMensaje = new Button("Enviar mensaje");
+        ScrollPane desplazable = new ScrollPane(detalle);
+        desplazable.setFitToWidth(true);
+        desplazable.getStyleClass().add("panel-desplazable");
+        HBox.setHgrow(desplazable, Priority.ALWAYS);
 
-        enviarMensaje.setOnAction(
-                event -> enviarMensajeSeleccionado());
+        VBox izquierda = new VBox(14,
+                ComponentesUi.titulo("Solicitudes recibidas"),
+                lista);
+        VBox.setVgrow(lista, Priority.ALWAYS);
 
-        Button verMensajes = new Button("Ver conversación");
+        HBox contenido = new HBox(24, izquierda, desplazable);
+        contenido.getStyleClass().add("cu12-content");
+        contenido.setPadding(new Insets(30));
 
-        verMensajes.setOnAction(
-                event -> verMensajesSeleccionados());
-        Button rechazar = new Button("Rechazar solicitud");
+        mostrarDetalle(null);
+        return contenido;
+    }
 
-        rechazar.setOnAction(
-                event -> rechazarSeleccionada());
+    private void mostrarDetalle(SolicitudEjecucion solicitud) {
 
-        Button enviarPropuesta = new Button("Enviar propuesta");
-        enviarPropuesta.getStyleClass().add("btn-primary");
+        detalle.getChildren().clear();
 
-        enviarPropuesta.setOnAction(
-                event -> enviarPropuestaSeleccionada());
+        if (solicitud == null) {
+            detalle.getChildren().add(ComponentesUi.texto(
+                    "Selecciona una solicitud para ver sus datos."));
+            return;
+        }
 
-        Button verHistorial = new Button("Ver historial de propuestas");
+        detalle.getChildren().addAll(
+                DetalleSolicitud.crear(solicitud),
+                crearAcciones(solicitud));
+    }
 
-        verHistorial.setOnAction(
-                event -> mostrarHistorialSeleccionado());
+    private FlowPane crearAcciones(SolicitudEjecucion solicitud) {
 
-        javafx.scene.layout.FlowPane acciones
-                = new javafx.scene.layout.FlowPane();
-
-        acciones.setHgap(12);
-        acciones.setVgap(12);
-
-        acciones.getChildren().addAll(
-                enviarPropuesta,
-                verHistorial,
-                enviarMensaje,
-                verMensajes,
-                rechazar);
-
+        FlowPane acciones = new FlowPane(12, 12);
         acciones.setAlignment(Pos.CENTER_LEFT);
 
-        VBox contenido = new VBox(
-                20,
-                encabezado,
-                lista,
-                acciones);
+        if (PresentacionSolicitud.puedeEnviarPropuesta(solicitud.getEstado())) {
+            acciones.getChildren().add(ComponentesUi.boton(
+                    PresentacionSolicitud.textoBotonPropuesta(
+                            solicitud.getEstado()),
+                    "btn-primary",
+                    this::enviarPropuestaSeleccionada));
+        }
 
-        contenido.getStyleClass().add("cu12-content");
+        acciones.getChildren().addAll(
+                ComponentesUi.boton("Ver conversación", "btn-ghost",
+                        this::verMensajesSeleccionados),
+                ComponentesUi.boton("Enviar mensaje", "btn-ghost",
+                        this::enviarMensajeSeleccionado),
+                ComponentesUi.boton("Historial de propuestas", "btn-ghost",
+                        this::mostrarHistorialSeleccionado));
 
-        contenido.setPadding(new Insets(30));
-        VBox.setVgrow(lista, javafx.scene.layout.Priority.ALWAYS);
+        if (PresentacionSolicitud.puedeRechazar(solicitud.getEstado())) {
+            acciones.getChildren().add(ComponentesUi.boton(
+                    "Rechazar solicitud", "btn-danger-ghost",
+                    this::rechazarSeleccionada));
+        }
 
-        VBox menu = crearMenu();
-        raiz.setLeft(menu);
-
-        BorderPane principal = new BorderPane();
-        principal.setTop(crearBarraSuperior());
-        principal.setCenter(contenido);
-
-        raiz.setCenter(principal);
-
-        raiz.widthProperty().addListener(
-                (observable, anterior, actual) -> {
-
-                    boolean mostrarMenu
-                    = actual.doubleValue() >= 1000;
-
-                    menu.setVisible(mostrarMenu);
-                    menu.setManaged(mostrarMenu);
-                });
-
-        recargarSolicitudes();
-
-        return raiz;
+        return acciones;
     }
 
     private HBox crearBarraSuperior() {
