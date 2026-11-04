@@ -61,10 +61,14 @@ public class RepositoryMensajesSolicitud {
                        m.id_usuario_remitente,
                        m.contenido,
                        m.adjunto_url,
-                       m.fecha_hora
+                       m.fecha_hora,
+                       m.id_propuesta,
+                       pr.numero_version
                 FROM Mensaje m
                 JOIN Conversacion c
                   ON c.id_conversacion = m.id_conversacion
+                LEFT JOIN Propuesta pr
+                  ON pr.id_propuesta = m.id_propuesta
                 WHERE c.id_solicitud = ?
                 ORDER BY m.fecha_hora, m.id_mensaje
                 """;
@@ -98,6 +102,13 @@ public class RepositoryMensajesSolicitud {
                         mensaje.setAdjuntoUrl(
                                 result.getString("adjunto_url"));
 
+                        int idPropuesta = result.getInt("id_propuesta");
+                        if (!result.wasNull()) {
+                            mensaje.setIdPropuesta(idPropuesta);
+                            mensaje.setVersionPropuesta(
+                                    result.getInt("numero_version"));
+                        }
+
                         Timestamp fecha
                                 = result.getTimestamp("fecha_hora");
 
@@ -123,6 +134,20 @@ public class RepositoryMensajesSolicitud {
             int idUsuario,
             String contenido,
             String adjuntoUrl) {
+
+        enviarMensaje(idSolicitud, idUsuario, contenido, adjuntoUrl, null);
+    }
+
+    /**
+     * Guarda un mensaje. Si se indica {@code idPropuesta}, el mensaje es una
+     * solicitud de ajuste vinculada a esa versión de la propuesta (CU-12 A2).
+     */
+    public void enviarMensaje(
+            int idSolicitud,
+            int idUsuario,
+            String contenido,
+            String adjuntoUrl,
+            Integer idPropuesta) {
 
         try (Connection connection = DatabaseConnection.getConnection()) {
 
@@ -216,8 +241,8 @@ public class RepositoryMensajesSolicitud {
                 String insertarMensaje = """
                         INSERT INTO Mensaje
                         (id_conversacion, id_usuario_remitente,
-                         contenido, adjunto_url, fecha_hora)
-                        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                         contenido, adjunto_url, id_propuesta, fecha_hora)
+                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                         """;
 
                 try (PreparedStatement statement
@@ -227,6 +252,7 @@ public class RepositoryMensajesSolicitud {
                     statement.setInt(2, idUsuario);
                     statement.setString(3, contenido);
                     statement.setString(4, adjuntoUrl);
+                    statement.setObject(5, idPropuesta);
                     statement.executeUpdate();
                 }
 

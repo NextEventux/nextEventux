@@ -87,6 +87,19 @@ public class ControllerSolicitudes {
                 adjuntoUrl);
     }
 
+    public void solicitarAjuste(
+            int idOrganizador,
+            int idPropuesta,
+            String ajuste,
+            String adjuntoUrl) {
+
+        service.solicitarAjuste(
+                idOrganizador,
+                idPropuesta,
+                ajuste,
+                adjuntoUrl);
+    }
+
     public void rechazarPropuesta(
             int idOrganizador,
             int idPropuesta) {

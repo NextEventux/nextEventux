@@ -204,6 +204,66 @@ public class RepositoryPropuestaServicio {
         return propuestas;
     }
 
+    /**
+     * Devuelve la solicitud de una propuesta sobre la que el organizador puede
+     * pedir un ajuste: debe ser su propuesta, ser la versión vigente y no estar
+     * seleccionada, contratada ni descartada (CU-12 A2).
+     */
+    public int buscarSolicitudParaAjuste(
+            int idOrganizador,
+            int idPropuesta) {
+
+        String sql = """
+                SELECT s.id_solicitud,
+                       p.estado,
+                       n.id_propuesta_seleccionada
+                FROM Propuesta p
+                JOIN Solicitud_Ejecucion s
+                  ON s.id_solicitud = p.id_solicitud
+                JOIN Evento e
+                  ON e.id_evento = s.id_evento
+                LEFT JOIN Necesidad_Servicio_Evento n
+                  ON n.id_necesidad_servicio = s.id_necesidad_servicio
+                WHERE p.id_propuesta = ?
+                  AND e.id_organizador = ?
+                  AND p.vigente = TRUE
+                """;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idPropuesta);
+            statement.setInt(2, idOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+
+                if (!result.next()) {
+                    throw new IllegalStateException(
+                            "La propuesta no existe o ya no es la "
+                            + "versión vigente.");
+                }
+
+                String estado = result.getString("estado");
+                int seleccionada = result.getInt(3);
+
+                if ("CONTRATADA".equalsIgnoreCase(estado)
+                        || "NO_SELECCIONADA".equalsIgnoreCase(estado)
+                        || "RECHAZADA".equalsIgnoreCase(estado)
+                        || seleccionada == idPropuesta) {
+                    throw new IllegalStateException(
+                            "No puedes pedir ajustes sobre una propuesta "
+                            + "seleccionada o cerrada.");
+                }
+
+                return result.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "No se pudo consultar la propuesta.", e);
+        }
+    }
+
     public void rechazarPropuesta(
             int idOrganizador,
             int idPropuesta) {
