@@ -8,12 +8,9 @@ import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -23,6 +20,7 @@ import views.components.ComponentesUi;
 import views.components.MenuCompartido;
 import views.solicitudes.DatosPropuesta;
 import views.solicitudes.DetalleSolicitud;
+import views.solicitudes.FormularioMotivo;
 import views.solicitudes.FormularioPropuesta;
 import views.solicitudes.HistorialPropuestas;
 import views.solicitudes.PanelConversacion;
@@ -34,7 +32,6 @@ public class ViewSolicitudesProveedor {
     private final ControllerSolicitudes controller;
     private final int idProveedor;
     private final int idUsuario;
-    private final Runnable volverServicios;
     private final SesionUsuario sesion;
     private final Runnable abrirServicios;
     private final Runnable abrirSolicitudes;
@@ -50,30 +47,6 @@ public class ViewSolicitudesProveedor {
             ControllerSolicitudes controller,
             int idProveedor,
             int idUsuario,
-            Runnable volverServicios) {
-
-        this(controller, idProveedor, idUsuario, volverServicios, null,
-                volverServicios, null, null);
-    }
-
-    public ViewSolicitudesProveedor(
-            ControllerSolicitudes controller,
-            int idProveedor,
-            int idUsuario,
-            Runnable volverServicios,
-            SesionUsuario sesion,
-            Runnable abrirServicios,
-            Runnable abrirSolicitudes,
-            Runnable cerrarSesion) {
-        this(controller, idProveedor, idUsuario, volverServicios, sesion,
-                abrirServicios, abrirSolicitudes, cerrarSesion, null);
-    }
-
-    public ViewSolicitudesProveedor(
-            ControllerSolicitudes controller,
-            int idProveedor,
-            int idUsuario,
-            Runnable volverServicios,
             SesionUsuario sesion,
             Runnable abrirServicios,
             Runnable abrirSolicitudes,
@@ -83,7 +56,6 @@ public class ViewSolicitudesProveedor {
         this.controller = controller;
         this.idProveedor = idProveedor;
         this.idUsuario = idUsuario;
-        this.volverServicios = volverServicios;
         this.sesion = sesion;
         this.abrirServicios = abrirServicios;
         this.abrirSolicitudes = abrirSolicitudes;
@@ -247,56 +219,31 @@ public class ViewSolicitudesProveedor {
             }
 
         } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+            detalle.getChildren().setAll(
+                    ComponentesUi.banner(e.getMessage(), "banner-error"));
         }
     }
 
     private void rechazarSeleccionada() {
 
-        SolicitudEjecucion seleccionada
+        SolicitudEjecucion solicitud
                 = lista.getSelectionModel().getSelectedItem();
 
-        if (seleccionada == null) {
-            mostrarError("Selecciona una solicitud.");
+        if (solicitud == null) {
             return;
         }
 
-        if (!"PENDIENTE".equalsIgnoreCase(
-                seleccionada.getEstado())) {
-
-            mostrarError(
-                    "Solo puedes rechazar solicitudes pendientes.");
-            return;
-        }
-
-        TextInputDialog dialogo = new TextInputDialog();
-
-        dialogo.setTitle("Rechazar solicitud");
-        dialogo.setHeaderText(
-                "Solicitud #" + seleccionada.getIdSolicitud());
-        dialogo.setContentText("Motivo del rechazo:");
-
-        dialogo.showAndWait().ifPresent(motivo -> {
-
-            try {
-                controller.rechazarSolicitud(
-                        idProveedor,
-                        seleccionada.getIdSolicitud(),
-                        motivo);
-
-                Alert confirmacion = new Alert(
-                        Alert.AlertType.INFORMATION,
-                        "Solicitud rechazada correctamente.",
-                        ButtonType.OK);
-
-                confirmacion.showAndWait();
-
-                recargarSolicitudes();
-
-            } catch (RuntimeException e) {
-                mostrarError(e.getMessage());
-            }
-        });
+        zona.getChildren().setAll(new FormularioMotivo(
+                "Rechazar solicitud",
+                "El organizador verá este motivo. La solicitud quedará cerrada.",
+                "Rechazar solicitud",
+                motivo -> {
+                    controller.rechazarSolicitud(
+                            idProveedor, solicitud.getIdSolicitud(), motivo);
+                    recargarSolicitudes();
+                    mostrarAviso("Solicitud rechazada.", "banner-ok");
+                },
+                () -> zona.getChildren().clear()));
     }
 
     private void enviarPropuestaSeleccionada() {
@@ -376,16 +323,5 @@ public class ViewSolicitudesProveedor {
                         idSolicitud, idUsuario, texto, adjunto),
                 idUsuario,
                 solicitud.getContexto().nombreOrganizador()));
-    }
-
-    private void mostrarError(String mensaje) {
-
-        Alert alerta = new Alert(
-                Alert.AlertType.ERROR,
-                mensaje,
-                ButtonType.OK);
-
-        alerta.setHeaderText("No se pudo completar la operación");
-        alerta.showAndWait();
     }
 }
