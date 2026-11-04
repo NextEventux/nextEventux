@@ -3,7 +3,7 @@ package views;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
-final class PrecioPropuestaParser {
+public final class PrecioPropuestaParser {
 
     private static final Pattern FORMATO_PRECIO
             = Pattern.compile("[+-]?\\d+(?:\\.\\d+)?");
@@ -11,7 +11,7 @@ final class PrecioPropuestaParser {
     private PrecioPropuestaParser() {
     }
 
-    static BigDecimal parsear(String entrada) {
+    public static BigDecimal parsear(String entrada) {
         if (entrada == null || entrada.isBlank()) {
             throw new NumberFormatException("El precio esta vacio.");
         }

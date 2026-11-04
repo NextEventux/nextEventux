@@ -1,6 +1,5 @@
 package views;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import controllers.ControllerSolicitudes;
@@ -24,7 +23,9 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import views.components.ComponentesUi;
 import views.components.MenuCompartido;
+import views.solicitudes.DatosPropuesta;
 import views.solicitudes.DetalleSolicitud;
+import views.solicitudes.FormularioPropuesta;
 import views.solicitudes.PresentacionSolicitud;
 import views.solicitudes.TarjetaSolicitud;
 
@@ -43,6 +44,7 @@ public class ViewSolicitudesProveedor {
     private final ListView<SolicitudEjecucion> lista
             = new ListView<>();
     private final VBox detalle = new VBox(16);
+    private final VBox zona = new VBox(16);
 
     public ViewSolicitudesProveedor(
             ControllerSolicitudes controller,
@@ -167,9 +169,11 @@ public class ViewSolicitudesProveedor {
             return;
         }
 
+        zona.getChildren().clear();
         detalle.getChildren().addAll(
                 DetalleSolicitud.crear(solicitud),
-                crearAcciones(solicitud));
+                crearAcciones(solicitud),
+                zona);
     }
 
     private FlowPane crearAcciones(SolicitudEjecucion solicitud) {
@@ -231,7 +235,18 @@ public class ViewSolicitudesProveedor {
             List<SolicitudEjecucion> solicitudes
                     = controller.listarSolicitudesProveedor(idProveedor);
 
+            SolicitudEjecucion elegida
+                    = lista.getSelectionModel().getSelectedItem();
+
             lista.getItems().setAll(solicitudes);
+
+            if (elegida != null) {
+                solicitudes.stream()
+                        .filter(item -> item.getIdSolicitud()
+                                == elegida.getIdSolicitud())
+                        .findFirst()
+                        .ifPresent(lista.getSelectionModel()::select);
+            }
 
         } catch (RuntimeException e) {
             mostrarError(e.getMessage());
@@ -288,127 +303,44 @@ public class ViewSolicitudesProveedor {
 
     private void enviarPropuestaSeleccionada() {
 
-        SolicitudEjecucion seleccionada
+        SolicitudEjecucion solicitud
                 = lista.getSelectionModel().getSelectedItem();
 
-        if (seleccionada == null) {
-            mostrarError("Selecciona una solicitud.");
+        if (solicitud == null) {
             return;
         }
 
-        String estado = seleccionada.getEstado();
+        String aviso = "EN_NEGOCIACION".equalsIgnoreCase(solicitud.getEstado())
+                ? "Se creará una nueva versión. La anterior queda en el "
+                + "historial y deja de estar vigente."
+                : null;
 
-        if (!"PENDIENTE".equalsIgnoreCase(estado)
-                && !"EN_NEGOCIACION".equalsIgnoreCase(estado)) {
+        zona.getChildren().setAll(new FormularioPropuesta(
+                PresentacionSolicitud.textoBotonPropuesta(
+                        solicitud.getEstado()),
+                aviso,
+                datos -> guardarPropuesta(solicitud, datos),
+                () -> zona.getChildren().clear()));
+    }
 
-            mostrarError(
-                    "Esta solicitud ya no permite enviar propuestas.");
-            return;
-        }
+    private void guardarPropuesta(
+            SolicitudEjecucion solicitud, DatosPropuesta datos) {
 
-        TextInputDialog dialogoPrecio = new TextInputDialog();
+        controller.enviarPropuesta(
+                idProveedor,
+                solicitud.getIdSolicitud(),
+                datos.precio(),
+                datos.descripcion(),
+                datos.condiciones(),
+                datos.materialApoyo());
 
-        dialogoPrecio.setTitle("Enviar propuesta");
-        dialogoPrecio.setHeaderText(
-                "Solicitud #" + seleccionada.getIdSolicitud());
-        dialogoPrecio.setContentText(
-                "Precio final del servicio:");
+        recargarSolicitudes();
+        mostrarAviso("Propuesta enviada. El organizador ya puede revisarla.",
+                "banner-ok");
+    }
 
-        var precioIngresado = dialogoPrecio.showAndWait();
-
-        if (precioIngresado.isEmpty()) {
-            return;
-        }
-
-        BigDecimal valor;
-
-        try {
-            valor = PrecioPropuestaParser.parsear(
-                    precioIngresado.get());
-
-        } catch (NumberFormatException e) {
-            mostrarError(
-                    "El precio debe ser un numero valido. "
-                    + "Ejemplo: 1500000");
-            return;
-        }
-
-        if (valor.signum() <= 0) {
-            mostrarError(
-                    "El precio final debe ser mayor que cero.");
-            return;
-        }
-
-        TextInputDialog dialogoDescripcion
-                = new TextInputDialog();
-
-        dialogoDescripcion.setTitle("Enviar propuesta");
-        dialogoDescripcion.setHeaderText(
-                "Alcance del servicio");
-        dialogoDescripcion.setContentText(
-                "Describe lo que incluye la propuesta:");
-
-        var descripcionIngresada
-                = dialogoDescripcion.showAndWait();
-
-        if (descripcionIngresada.isEmpty()) {
-            return;
-        }
-
-        TextInputDialog dialogoCondiciones
-                = new TextInputDialog();
-
-        dialogoCondiciones.setTitle("Enviar propuesta");
-        dialogoCondiciones.setHeaderText(
-                "Condiciones del servicio");
-        dialogoCondiciones.setContentText(
-                "Indica las condiciones de la propuesta:");
-
-        var condicionesIngresadas
-                = dialogoCondiciones.showAndWait();
-
-        if (condicionesIngresadas.isEmpty()) {
-            return;
-        }
-
-        Alert confirmacion = new Alert(
-                Alert.AlertType.CONFIRMATION,
-                "¿Confirmas el envio de esta propuesta?",
-                ButtonType.YES,
-                ButtonType.NO);
-
-        confirmacion.setHeaderText(
-                "Confirmar propuesta");
-
-        if (confirmacion.showAndWait().orElse(
-                ButtonType.NO) != ButtonType.YES) {
-            return;
-        }
-
-        try {
-            int idPropuesta = controller.enviarPropuesta(
-                    idProveedor,
-                    seleccionada.getIdSolicitud(),
-                    valor,
-                    descripcionIngresada.get(),
-                    condicionesIngresadas.get());
-
-            Alert resultado = new Alert(
-                    Alert.AlertType.INFORMATION,
-                    "Propuesta #" + idPropuesta
-                    + " guardada correctamente.",
-                    ButtonType.OK);
-
-            resultado.setHeaderText(
-                    "Propuesta enviada");
-
-            resultado.showAndWait();
-
-            recargarSolicitudes();
-
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
-        }
+    private void mostrarAviso(String mensaje, String estilo) {
+        zona.getChildren().setAll(ComponentesUi.banner(mensaje, estilo));
     }
 
     private void mostrarHistorialSeleccionado() {
