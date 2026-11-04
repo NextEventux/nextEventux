@@ -3,6 +3,8 @@ package services;
 import java.math.BigDecimal;
 import java.util.List;
 
+import entities.EventoSolicitable;
+import entities.NecesidadAbierta;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SesionUsuario;
@@ -362,17 +364,29 @@ public class ServiceSolicitudes {
                 idOrganizador);
     }
 
-    public List<String> listarNecesidadesOrganizador(
+    public List<NecesidadAbierta> listarNecesidadesOrganizador(
             int idOrganizador) {
 
+        validarOrganizador(idOrganizador);
+
+        return repository.listarNecesidadesOrganizador(
+                idOrganizador);
+    }
+
+    public List<EventoSolicitable> listarEventosSolicitables(
+            int idOrganizador) {
+
+        validarOrganizador(idOrganizador);
+
+        return repository.listarEventosSolicitables(idOrganizador);
+    }
+
+    private void validarOrganizador(int idOrganizador) {
         if (idOrganizador <= 0) {
             throw new IllegalArgumentException(
                     "El organizador no es valido.");
         }
         exigirSesion("ORGANIZADOR", idOrganizador);
-
-        return repository.listarNecesidadesOrganizador(
-                idOrganizador);
     }
 
     public int crearSolicitudParaNecesidad(
