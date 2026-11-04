@@ -13,6 +13,17 @@ public class SolicitudEjecucion {
     private String estado;
     private String motivoRechazo;
     private LocalDateTime fechaRespuesta;
+    private ContextoSolicitud contexto = ContextoSolicitud.vacio();
+
+    public ContextoSolicitud getContexto() {
+        return contexto;
+    }
+
+    public void setContexto(ContextoSolicitud contexto) {
+        this.contexto = contexto == null
+                ? ContextoSolicitud.vacio()
+                : contexto;
+    }
 
     public int getIdSolicitud() {
         return idSolicitud;
