@@ -86,6 +86,16 @@ Por defecto, H2 conserva la base en la carpeta del usuario del sistema:
 
 La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. Al abrir una base vacía se inicializan el esquema y las migraciones, y la aplicación carga datos de ejemplo solo si no encuentra registros de negocio. Una base con datos existentes no se reemplaza por los ejemplos. Cambiar la ubicación no copia la base anterior.
 
+### Consultar la base con la aplicación abierta
+
+La URL por defecto incluye `AUTO_SERVER=TRUE`, así que la base se puede consultar desde otra herramienta mientras la aplicación está abierta. En DBeaver, la consola de H2 o `org.h2.tools.Shell` se usa:
+
+- URL: `jdbc:h2:<carpeta del usuario>/.nexteventux/nexteventux;AUTO_SERVER=TRUE` (en Windows, `jdbc:h2:C:/Users/<usuario>/.nexteventux/nexteventux;AUTO_SERVER=TRUE`)
+- Usuario: `sa`
+- Contraseña: vacía
+
+Hay que escribir `AUTO_SERVER=TRUE` en la herramienta: sin esa opción H2 rechaza la segunda conexión porque el archivo ya está abierto. Si la aplicación se abrió con una versión anterior, se cierra una vez para que arranque con la URL nueva. Los cambios hechos desde la aplicación se ven desde la herramienta en cuanto se guardan, y viceversa.
+
 Los datos persisten entre ejecuciones. **No borres ni reemplaces el archivo de H2 para solucionar problemas si contiene información que quieras conservar.** Antes de cambiar la ubicación o manipular la base, cierra la aplicación y haz una copia de seguridad. La [documentación de persistencia y presupuesto](docs/cu01-solicitudes-presupuesto.md) explica reglas y limitaciones adicionales.
 
 ## Módulos del alcance y equipo
