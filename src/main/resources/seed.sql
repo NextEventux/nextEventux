@@ -28,25 +28,22 @@ INSERT INTO Rol (id_rol, nombre, descripcion, estado) VALUES
 -- USUARIOS
 -- ---------------------------------------------------------
 
+-- Tres cuentas por actor. Todas usan la clave 1234.
 INSERT INTO Usuario
 (id_usuario, nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario)
 VALUES
-(1, 'Laura Gómez', 'laura.gomez', 'clave123', 'ACTIVO', TIMESTAMP '2026-10-01 09:00:00', TRUE, 'ORGANIZADOR'),
-(2, 'Carlos Rodríguez', 'carlos.rodriguez', 'clave456', 'ACTIVO', TIMESTAMP '2026-10-02 10:30:00', TRUE, 'ORGANIZADOR'),
-(3, 'Decoraciones Arcoíris', 'decoraciones.arcoiris', 'clave789', 'ACTIVO', TIMESTAMP '2026-10-03 11:00:00', TRUE, 'PROVEEDOR'),
-(4, 'Sabores & Eventos', 'sabores.eventos', 'clave321', 'ACTIVO', TIMESTAMP '2026-10-03 14:00:00', FALSE, 'PROVEEDOR'),
-(5, 'Ana Martínez', 'ana.martinez', 'clave654', 'ACTIVO', TIMESTAMP '2026-10-04 08:30:00', TRUE, 'CLIENTE'),
-(6, 'Diego Pérez', 'diego.perez', 'clave987', 'ACTIVO', TIMESTAMP '2026-10-05 16:00:00', FALSE, 'CLIENTE'),
-(7, 'Administrador NextEventux', 'admin.nexteventux', 'claveadmin', 'ACTIVO', TIMESTAMP '2026-10-18 09:00:00', FALSE, 'ADMINISTRADOR'),
-(8, 'Valentina Flores', 'valentina', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'),
-(9, 'Santiago Rivera', 'santiago', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'),
-(10, 'Juliana Torres', 'juliana', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'),
-(11, 'Luna Decoraciones', 'luna', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'PROVEEDOR'),
-(12, 'Sabor & Fiesta Catering', 'sabor', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'PROVEEDOR'),
-(13, 'Flash Studio Fotografía', 'flash', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'PROVEEDOR'),
-(14, 'Camila Reyes', 'camila', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ADMINISTRADOR'),
-(15, 'Mateo Castillo', 'mateo', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ADMINISTRADOR'),
-(16, 'Shirly Montenegro', 'shirly', '1234', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ADMINISTRADOR');
+(1, 'Laura Gómez', 'laura.gomez', '1234', 'ACTIVO', TIMESTAMP '2026-10-01 09:00:00', TRUE, 'ORGANIZADOR'),
+(2, 'Carlos Rodríguez', 'carlos.rodriguez', '1234', 'ACTIVO', TIMESTAMP '2026-10-02 10:30:00', TRUE, 'ORGANIZADOR'),
+(8, 'Valentina Flores', 'valentina', '1234', 'ACTIVO', TIMESTAMP '2026-10-03 08:00:00', FALSE, 'ORGANIZADOR'),
+(3, 'Decoraciones Arcoíris', 'decoraciones.arcoiris', '1234', 'ACTIVO', TIMESTAMP '2026-10-03 11:00:00', TRUE, 'PROVEEDOR'),
+(4, 'Sabores & Eventos', 'sabores.eventos', '1234', 'ACTIVO', TIMESTAMP '2026-10-03 14:00:00', FALSE, 'PROVEEDOR'),
+(13, 'Flash Studio Fotografía', 'flash', '1234', 'ACTIVO', TIMESTAMP '2026-10-04 09:00:00', FALSE, 'PROVEEDOR'),
+(5, 'Ana Martínez', 'ana.martinez', '1234', 'ACTIVO', TIMESTAMP '2026-10-04 08:30:00', TRUE, 'CLIENTE'),
+(6, 'Diego Pérez', 'diego.perez', '1234', 'ACTIVO', TIMESTAMP '2026-10-05 16:00:00', FALSE, 'CLIENTE'),
+(7, 'Paula Ríos', 'paula.rios', '1234', 'ACTIVO', TIMESTAMP '2026-10-05 17:00:00', FALSE, 'CLIENTE'),
+(14, 'Camila Reyes', 'camila', '1234', 'ACTIVO', TIMESTAMP '2026-10-06 09:00:00', FALSE, 'ADMINISTRADOR'),
+(15, 'Mateo Castillo', 'mateo', '1234', 'ACTIVO', TIMESTAMP '2026-10-06 09:10:00', FALSE, 'ADMINISTRADOR'),
+(16, 'Shirly Montenegro', 'shirly', '1234', 'ACTIVO', TIMESTAMP '2026-10-06 09:20:00', FALSE, 'ADMINISTRADOR');
 
 -- ---------------------------------------------------------
 -- ROLES Y PERMISOS
@@ -76,12 +73,8 @@ VALUES
 (4, 4, 3),
 (5, 5, 4),
 (6, 6, 4),
-(7, 7, 1),
+(7, 7, 4),
 (8, 8, 2),
-(9, 9, 2),
-(10, 10, 2),
-(11, 11, 3),
-(12, 12, 3),
 (13, 13, 3),
 (14, 14, 1),
 (15, 15, 1),
@@ -121,17 +114,7 @@ VALUES
 (3, 8, 'Momentos Valentina', '3005550101', 'ACTIVO',
  'Bogota', 'Eventos sociales',
  'Organizacion de eventos sociales y familiares',
- 900000.00, 'VERIFICADO'),
-
-(4, 9, 'Eventos Rivera', '3005550102', 'ACTIVO',
- 'Medellin', 'Eventos empresariales',
- 'Organizacion de encuentros y eventos empresariales',
- 1200000.00, 'VERIFICADO'),
-
-(5, 10, 'Sueños de Juliana', '3005550103', 'ACTIVO',
- 'Bogota', 'Eventos personalizados',
- 'Organizacion de celebraciones personalizadas',
- 1100000.00, 'VERIFICADO');
+ 900000.00, 'VERIFICADO');
 
 -- ---------------------------------------------------------
 -- RESENAS DE ORGANIZADORES PARA CU-026
@@ -143,8 +126,7 @@ VALUES
 (1, 5, 5, 'Buena organizacion y comunicacion durante el evento.'),
 (2, 6, 4, 'La celebracion estuvo bien organizada.'),
 (3, 5, 5, 'Excelente atencion y organizacion.'),
-(4, 6, 4, 'Buen servicio para eventos empresariales.'),
-(5, 5, 5, 'Una celebracion muy bien organizada.');
+(3, 7, 5, 'Una celebracion muy bien organizada.');
 
 -- ---------------------------------------------------------
 -- PROVEEDORES
@@ -155,9 +137,7 @@ INSERT INTO Proveedor
 VALUES
 (1, 3, 'Mariana López', 'Decoraciones Arcoíris', 'contacto@arcoiris.com', '3101234567', 'Carrera 15 #80-20', 'APROBADO'),
 (2, 4, 'Andrés Torres', 'Sabores & Eventos', 'contacto@saboreseventos.com', '3117654321', 'Calle 90 #20-30', 'APROBADO'),
-(3, 11, 'Luna Decoraciones', 'Luna Decoraciones', 'luna@ejemplo.com', '3005550201', 'Bogotá', 'APROBADO'),
-(4, 12, 'Sabor & Fiesta Catering', 'Sabor & Fiesta Catering', 'sabor@ejemplo.com', '3005550202', 'Bogotá', 'APROBADO'),
-(5, 13, 'Flash Studio Fotografía', 'Flash Studio Fotografía', 'flash@ejemplo.com', '3005550203', 'Bogotá', 'APROBADO');
+(5, 13, 'Flash Studio Fotografía', 'Flash Studio Fotografía', 'flash@ejemplo.com', '3005550203', 'Bogotá', 'VERIFICADO');
 
 
 -- ---------------------------------------------------------
@@ -432,7 +412,8 @@ INSERT INTO Puntos_fidelidad
 (id_puntos, id_usuario, cantidad, fecha_actualizacion)
 VALUES
 (1, 5, 350, TIMESTAMP '2026-10-10 18:00:00'),
-(2, 6, 120, TIMESTAMP '2026-10-10 18:00:00');
+(2, 6, 120, TIMESTAMP '2026-10-10 18:00:00'),
+(3, 7, 80, TIMESTAMP '2026-10-10 18:00:00');
 
 -- Continuar los identificadores automáticos después de los datos de ejemplo.
 ALTER TABLE Permiso ALTER COLUMN id_permiso RESTART WITH 5;
@@ -441,7 +422,7 @@ ALTER TABLE Usuario ALTER COLUMN id_usuario RESTART WITH 17;
 ALTER TABLE Rol_permiso ALTER COLUMN id_rol_permiso RESTART WITH 7;
 ALTER TABLE Usuario_rol ALTER COLUMN id_usuario_rol RESTART WITH 17;
 ALTER TABLE Lugar ALTER COLUMN id_lugar RESTART WITH 4;
-ALTER TABLE Organizador ALTER COLUMN id_organizador RESTART WITH 6;
+ALTER TABLE Organizador ALTER COLUMN id_organizador RESTART WITH 4;
 ALTER TABLE Proveedor ALTER COLUMN id_proveedor RESTART WITH 6;
 ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH 3;
 ALTER TABLE Planificacion ALTER COLUMN id_planificacion RESTART WITH 4;
@@ -465,4 +446,4 @@ ALTER TABLE Sancion ALTER COLUMN id_sancion RESTART WITH 3;
 ALTER TABLE Segmentacion ALTER COLUMN id_segmento RESTART WITH 4;
 ALTER TABLE Campana ALTER COLUMN id_campana RESTART WITH 3;
 ALTER TABLE Envio_Campana ALTER COLUMN id_envio RESTART WITH 5;
-ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 3;
+ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 4;
