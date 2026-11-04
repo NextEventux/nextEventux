@@ -4,18 +4,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import controllers.ControllerSolicitudes;
-import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -24,6 +20,8 @@ import javafx.scene.layout.VBox;
 import views.components.ComponentesUi;
 import views.components.MenuCompartido;
 import views.solicitudes.DetallePropuesta;
+import views.solicitudes.FormularioMotivo;
+import views.solicitudes.PanelConversacion;
 import views.solicitudes.PresentacionSolicitud;
 import views.solicitudes.TarjetaPropuesta;
 
@@ -192,14 +190,12 @@ public class ViewPropuestasOrganizador {
         if (PresentacionSolicitud.puedeAjustar(estado)) {
             acciones.getChildren().add(ComponentesUi.boton(
                     "Solicitar ajuste", "btn-ghost",
-                    this::solicitarAjusteSeleccionado));
+                    () -> pedirAjuste(propuesta)));
         }
 
-        acciones.getChildren().addAll(
-                ComponentesUi.boton("Ver conversación", "btn-ghost",
-                        this::verMensajesSeleccionados),
-                ComponentesUi.boton("Enviar mensaje", "btn-ghost",
-                        this::enviarMensajeSeleccionado));
+        acciones.getChildren().add(ComponentesUi.boton(
+                "Conversación", "btn-ghost",
+                () -> mostrarConversacion(propuesta)));
 
         if (PresentacionSolicitud.puedeRechazarPropuesta(estado)) {
             acciones.getChildren().add(ComponentesUi.boton(
@@ -285,186 +281,33 @@ public class ViewPropuestasOrganizador {
         zona.getChildren().setAll(ComponentesUi.banner(mensaje, estilo));
     }
 
-    private void solicitarAjusteSeleccionado() {
-
-        PropuestaServicio propuesta
-                = lista.getSelectionModel().getSelectedItem();
-
-        if (propuesta == null) {
-            mostrarError("Selecciona una propuesta.");
-            return;
-        }
-
-        TextInputDialog dialogo = new TextInputDialog();
-
-        dialogo.setTitle("Solicitar ajuste");
-        dialogo.setHeaderText(
-                "Propuesta #" + propuesta.getIdPropuesta()
-                + " - Version " + propuesta.getNumeroVersion());
-        dialogo.setContentText(
-                "¿Que necesitas que modifique el proveedor?");
-
-        var respuesta = dialogo.showAndWait();
-
-        if (respuesta.isEmpty()) {
-            return;
-        }
-
-        if (respuesta.get().isBlank()) {
-            mostrarError("Debes explicar el ajuste solicitado.");
-            return;
-        }
-
-        String mensaje
-                = "SOLICITUD DE AJUSTE - Propuesta #"
-                + propuesta.getIdPropuesta()
-                + ", version "
-                + propuesta.getNumeroVersion()
-                + ": "
-                + respuesta.get().trim();
-
-        try {
-            controller.enviarMensaje(
-                    propuesta.getIdSolicitud(),
-                    idUsuario,
-                    mensaje,
-                    null);
-
-            Alert confirmacion = new Alert(
-                    Alert.AlertType.INFORMATION,
-                    "La solicitud de ajuste fue enviada al proveedor.",
-                    ButtonType.OK);
-
-            confirmacion.showAndWait();
-
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
-        }
+    private void pedirAjuste(PropuestaServicio propuesta) {
+        zona.getChildren().setAll(new FormularioMotivo(
+                "Solicitar ajuste a la versión "
+                + propuesta.getNumeroVersion(),
+                "El proveedor recibirá tu mensaje y podrá enviar una "
+                + "nueva versión.",
+                "Qué necesitas que cambie",
+                "Enviar ajuste",
+                "btn-primary",
+                texto -> {
+                    controller.solicitarAjuste(
+                            idOrganizador, propuesta.getIdPropuesta(),
+                            texto, null);
+                    mostrarAviso("Ajuste enviado al proveedor.", "banner-ok");
+                },
+                () -> zona.getChildren().clear()));
     }
 
-    private void enviarMensajeSeleccionado() {
+    private void mostrarConversacion(PropuestaServicio propuesta) {
+        int idSolicitud = propuesta.getIdSolicitud();
 
-        PropuestaServicio propuesta
-                = lista.getSelectionModel().getSelectedItem();
-
-        if (propuesta == null) {
-            mostrarError("Selecciona una propuesta.");
-            return;
-        }
-
-        TextInputDialog dialogo = new TextInputDialog();
-
-        dialogo.setTitle("Enviar mensaje");
-        dialogo.setHeaderText(
-                "Propuesta #" + propuesta.getIdPropuesta());
-        dialogo.setContentText("Mensaje:");
-
-        var contenido = dialogo.showAndWait();
-
-        if (contenido.isEmpty()) {
-            return;
-        }
-
-        TextInputDialog dialogoEnlace = new TextInputDialog();
-
-        dialogoEnlace.setTitle("Adjunto opcional");
-        dialogoEnlace.setHeaderText(
-                "Puedes agregar un enlace de apoyo.");
-        dialogoEnlace.setContentText(
-                "Enlace (puede quedar vacio):");
-
-        var enlace = dialogoEnlace.showAndWait();
-
-        if (enlace.isEmpty()) {
-            return;
-        }
-
-        try {
-            controller.enviarMensaje(
-                    propuesta.getIdSolicitud(),
-                    idUsuario,
-                    contenido.get(),
-                    enlace.get());
-
-            Alert confirmacion = new Alert(
-                    Alert.AlertType.INFORMATION,
-                    "Mensaje enviado correctamente.",
-                    ButtonType.OK);
-
-            confirmacion.showAndWait();
-
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
-        }
-    }
-
-    private void verMensajesSeleccionados() {
-
-        PropuestaServicio propuesta
-                = lista.getSelectionModel().getSelectedItem();
-
-        if (propuesta == null) {
-            mostrarError("Selecciona una propuesta.");
-            return;
-        }
-
-        try {
-            List<MensajeSolicitud> mensajes
-                    = controller.listarMensajes(
-                            propuesta.getIdSolicitud(),
-                            idUsuario);
-
-            StringBuilder historial = new StringBuilder();
-
-            for (MensajeSolicitud mensaje : mensajes) {
-
-                historial.append("Usuario #")
-                        .append(mensaje.getIdUsuarioRemitente())
-                        .append(" - ")
-                        .append(mensaje.getFechaHora())
-                        .append("\n")
-                        .append(mensaje.getContenido())
-                        .append("\n");
-
-                if (mensaje.getAdjuntoUrl() != null
-                        && !mensaje.getAdjuntoUrl().isBlank()) {
-
-                    historial.append("Enlace: ")
-                            .append(mensaje.getAdjuntoUrl())
-                            .append("\n");
-                }
-
-                historial.append("\n");
-            }
-
-            if (mensajes.isEmpty()) {
-                historial.append("Todavia no hay mensajes.");
-            }
-
-            Alert informacion = new Alert(
-                    Alert.AlertType.INFORMATION);
-
-            informacion.setTitle("Conversación");
-            informacion.setHeaderText(
-                    "Solicitud #" + propuesta.getIdSolicitud());
-            informacion.setContentText(historial.toString());
-            informacion.setResizable(true);
-            informacion.getDialogPane().setPrefWidth(600);
-            informacion.showAndWait();
-
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
-        }
-    }
-
-    private void mostrarError(String mensaje) {
-
-        Alert alerta = new Alert(
-                Alert.AlertType.ERROR,
-                mensaje,
-                ButtonType.OK);
-
-        alerta.showAndWait();
+        zona.getChildren().setAll(new PanelConversacion(
+                () -> controller.listarMensajes(idSolicitud, idUsuario),
+                (texto, adjunto) -> controller.enviarMensaje(
+                        idSolicitud, idUsuario, texto, adjunto),
+                idUsuario,
+                propuesta.getContexto().nombreProveedor()));
     }
 
     private void recargarPropuestas() {

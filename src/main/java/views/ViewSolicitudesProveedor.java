@@ -236,7 +236,9 @@ public class ViewSolicitudesProveedor {
         zona.getChildren().setAll(new FormularioMotivo(
                 "Rechazar solicitud",
                 "El organizador verá este motivo. La solicitud quedará cerrada.",
+                "Motivo del rechazo",
                 "Rechazar solicitud",
+                "btn-danger",
                 motivo -> {
                     controller.rechazarSolicitud(
                             idProveedor, solicitud.getIdSolicitud(), motivo);
