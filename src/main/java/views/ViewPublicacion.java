@@ -34,6 +34,7 @@ public class ViewPublicacion {
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
     private final Runnable abrirSanciones;
+    private Runnable abrirPropuestas;
     private final Runnable abrirPublicacion;
     private boolean esAdministrador;
     private final Label usuario = new Label();
@@ -101,6 +102,11 @@ public class ViewPublicacion {
         configurarAvisos(avisosAdministrador);
     }
 
+    public ViewPublicacion conPropuestas(Runnable accion) {
+        this.abrirPropuestas = accion;
+        return this;
+    }
+
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().addAll("app", "publicacion");
@@ -118,7 +124,7 @@ public class ViewPublicacion {
                 cerrarSesion,
                 organizadorActivo ? abrirMisEventos : null,
                 null,
-                null,
+                organizadorActivo ? abrirPropuestas : null,
                 abrirSanciones,
                 null,
                 abrirPublicacion));
