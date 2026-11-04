@@ -116,6 +116,12 @@ public class ViewPropuestasOrganizador {
                 + "un proveedor responda tus solicitudes."));
         lista.setCellFactory(vista -> new ListCell<>() {
 
+            {
+                // Sin esto la celda ocupa el ancho del texto sin partir
+                // y la lista muestra una barra horizontal.
+                setPrefWidth(0);
+            }
+
             @Override
             protected void updateItem(
                     PropuestaServicio propuesta,

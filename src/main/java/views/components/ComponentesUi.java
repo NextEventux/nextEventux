@@ -7,6 +7,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import views.FormatoUi;
 
@@ -45,7 +46,9 @@ public final class ComponentesUi {
 
     /** Estado corto con color; el estilo es chip-ok, -aviso, -info, -error o -neutro. */
     public static Label chip(String texto, String estilo) {
-        return etiqueta(texto, "chip", estilo);
+        Label chip = etiqueta(texto, "chip", estilo);
+        chip.setMinWidth(Region.USE_PREF_SIZE);
+        return chip;
     }
 
     public static VBox tarjeta(Node... nodos) {

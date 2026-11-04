@@ -99,6 +99,12 @@ public class ViewSolicitudesProveedor {
         lista.setMinWidth(320);
         lista.setCellFactory(vista -> new ListCell<>() {
 
+            {
+                // Sin esto la celda ocupa el ancho del texto sin partir
+                // y la lista muestra una barra horizontal.
+                setPrefWidth(0);
+            }
+
             @Override
             protected void updateItem(
                     SolicitudEjecucion solicitud,
