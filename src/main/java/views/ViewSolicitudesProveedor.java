@@ -3,8 +3,6 @@ package views;
 import java.util.List;
 
 import controllers.ControllerSolicitudes;
-import entities.MensajeSolicitud;
-import entities.PropuestaServicio;
 import entities.SolicitudEjecucion;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
@@ -26,6 +24,8 @@ import views.components.MenuCompartido;
 import views.solicitudes.DatosPropuesta;
 import views.solicitudes.DetalleSolicitud;
 import views.solicitudes.FormularioPropuesta;
+import views.solicitudes.HistorialPropuestas;
+import views.solicitudes.PanelConversacion;
 import views.solicitudes.PresentacionSolicitud;
 import views.solicitudes.TarjetaSolicitud;
 
@@ -190,10 +190,8 @@ public class ViewSolicitudesProveedor {
         }
 
         acciones.getChildren().addAll(
-                ComponentesUi.boton("Ver conversación", "btn-ghost",
-                        this::verMensajesSeleccionados),
-                ComponentesUi.boton("Enviar mensaje", "btn-ghost",
-                        this::enviarMensajeSeleccionado),
+                ComponentesUi.boton("Conversación", "btn-ghost",
+                        this::mostrarConversacionSeleccionada),
                 ComponentesUi.boton("Historial de propuestas", "btn-ghost",
                         this::mostrarHistorialSeleccionado));
 
@@ -345,186 +343,39 @@ public class ViewSolicitudesProveedor {
 
     private void mostrarHistorialSeleccionado() {
 
-        SolicitudEjecucion seleccionada
+        SolicitudEjecucion solicitud
                 = lista.getSelectionModel().getSelectedItem();
 
-        if (seleccionada == null) {
-            mostrarError("Selecciona una solicitud.");
+        if (solicitud == null) {
             return;
         }
 
         try {
-            List<PropuestaServicio> historial
-                    = controller.listarHistorialPropuestas(
-                            idProveedor,
-                            seleccionada.getIdSolicitud());
-
-            if (historial.isEmpty()) {
-
-                Alert informacion = new Alert(
-                        Alert.AlertType.INFORMATION,
-                        "Esta solicitud todavia no tiene propuestas.",
-                        ButtonType.OK);
-
-                informacion.showAndWait();
-                return;
-            }
-
-            StringBuilder contenido = new StringBuilder();
-
-            for (PropuestaServicio propuesta : historial) {
-
-                contenido.append("Version ")
-                        .append(propuesta.getNumeroVersion());
-
-                if (propuesta.isVigente()) {
-                    contenido.append(" (actual)");
-                }
-
-                contenido.append("\nPrecio: $")
-                        .append(propuesta.getValor())
-                        .append("\nDescripcion: ")
-                        .append(propuesta.getDescripcion())
-                        .append("\nCondiciones: ")
-                        .append(propuesta.getCondiciones())
-                        .append("\nEstado: ")
-                        .append(propuesta.getEstado())
-                        .append("\n\n");
-            }
-
-            Alert informacion = new Alert(
-                    Alert.AlertType.INFORMATION);
-
-            informacion.setTitle("Historial de propuestas");
-            informacion.setHeaderText(
-                    "Solicitud #" + seleccionada.getIdSolicitud());
-
-            informacion.setContentText(
-                    contenido.toString());
-
-            informacion.setResizable(true);
-            informacion.getDialogPane().setPrefWidth(550);
-
-            informacion.showAndWait();
-
+            zona.getChildren().setAll(HistorialPropuestas.crear(
+                    controller.listarHistorialPropuestas(
+                            idProveedor, solicitud.getIdSolicitud())));
         } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+            mostrarAviso(e.getMessage(), "banner-error");
         }
     }
 
-    private void enviarMensajeSeleccionado() {
+    private void mostrarConversacionSeleccionada() {
 
-        SolicitudEjecucion seleccionada
+        SolicitudEjecucion solicitud
                 = lista.getSelectionModel().getSelectedItem();
 
-        if (seleccionada == null) {
-            mostrarError("Selecciona una solicitud.");
+        if (solicitud == null) {
             return;
         }
 
-        TextInputDialog dialogo = new TextInputDialog();
+        int idSolicitud = solicitud.getIdSolicitud();
 
-        dialogo.setTitle("Enviar mensaje");
-        dialogo.setHeaderText(
-                "Solicitud #" + seleccionada.getIdSolicitud());
-        dialogo.setContentText("Mensaje:");
-
-        var contenido = dialogo.showAndWait();
-
-        if (contenido.isEmpty()) {
-            return;
-        }
-
-        TextInputDialog dialogoEnlace = new TextInputDialog();
-
-        dialogoEnlace.setTitle("Adjunto opcional");
-        dialogoEnlace.setHeaderText(
-                "Puedes agregar un enlace de apoyo.");
-        dialogoEnlace.setContentText(
-                "Enlace (puede quedar vacio):");
-
-        var enlace = dialogoEnlace.showAndWait();
-
-        if (enlace.isEmpty()) {
-            return;
-        }
-
-        try {
-            controller.enviarMensaje(
-                    seleccionada.getIdSolicitud(),
-                    idUsuario,
-                    contenido.get(),
-                    enlace.get());
-
-            Alert confirmacion = new Alert(
-                    Alert.AlertType.INFORMATION,
-                    "Mensaje enviado correctamente.",
-                    ButtonType.OK);
-
-            confirmacion.showAndWait();
-
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
-        }
-    }
-
-    private void verMensajesSeleccionados() {
-
-        SolicitudEjecucion seleccionada
-                = lista.getSelectionModel().getSelectedItem();
-
-        if (seleccionada == null) {
-            mostrarError("Selecciona una solicitud.");
-            return;
-        }
-
-        try {
-            List<MensajeSolicitud> mensajes
-                    = controller.listarMensajes(
-                            seleccionada.getIdSolicitud(),
-                            idUsuario);
-
-            StringBuilder historial = new StringBuilder();
-
-            for (MensajeSolicitud mensaje : mensajes) {
-
-                historial.append("Usuario #")
-                        .append(mensaje.getIdUsuarioRemitente())
-                        .append(" - ")
-                        .append(mensaje.getFechaHora())
-                        .append("\n")
-                        .append(mensaje.getContenido())
-                        .append("\n");
-
-                if (mensaje.getAdjuntoUrl() != null
-                        && !mensaje.getAdjuntoUrl().isBlank()) {
-
-                    historial.append("Enlace: ")
-                            .append(mensaje.getAdjuntoUrl())
-                            .append("\n");
-                }
-
-                historial.append("\n");
-            }
-
-            if (mensajes.isEmpty()) {
-                historial.append("Todavia no hay mensajes.");
-            }
-
-            Alert informacion = new Alert(
-                    Alert.AlertType.INFORMATION);
-
-            informacion.setTitle("Conversación");
-            informacion.setHeaderText(
-                    "Solicitud #" + seleccionada.getIdSolicitud());
-            informacion.setContentText(historial.toString());
-            informacion.setResizable(true);
-            informacion.getDialogPane().setPrefWidth(600);
-            informacion.showAndWait();
-
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
-        }
+        zona.getChildren().setAll(new PanelConversacion(
+                () -> controller.listarMensajes(idSolicitud, idUsuario),
+                (texto, adjunto) -> controller.enviarMensaje(
+                        idSolicitud, idUsuario, texto, adjunto),
+                idUsuario,
+                solicitud.getContexto().nombreOrganizador()));
     }
 
     private void mostrarError(String mensaje) {

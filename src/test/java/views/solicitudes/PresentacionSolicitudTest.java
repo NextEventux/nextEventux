@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
 import entities.ContextoSolicitud;
+import entities.MensajeSolicitud;
 
 class PresentacionSolicitudTest {
 
@@ -98,5 +99,33 @@ class PresentacionSolicitudTest {
                 PresentacionSolicitud.personas(contexto("Boda", "Decoración", 1)));
         assertEquals("—",
                 PresentacionSolicitud.personas(contexto("Boda", "Decoración", null)));
+    }
+
+    private static MensajeSolicitud mensaje(int remitente, Integer propuesta, Integer version) {
+        MensajeSolicitud mensaje = new MensajeSolicitud();
+        mensaje.setIdUsuarioRemitente(remitente);
+        mensaje.setIdPropuesta(propuesta);
+        mensaje.setVersionPropuesta(version);
+        return mensaje;
+    }
+
+    @Test
+    void elAutorDelMensajePropioSeMuestraComoTu() {
+        assertEquals("Tú", PresentacionSolicitud.autorMensaje(
+                mensaje(5, null, null), 5, "Valentina Flores"));
+        assertEquals("Valentina Flores", PresentacionSolicitud.autorMensaje(
+                mensaje(8, null, null), 5, "Valentina Flores"));
+        assertEquals("Otro participante", PresentacionSolicitud.autorMensaje(
+                mensaje(8, null, null), 5, null));
+    }
+
+    @Test
+    void soloLosAjustesTienenAvisoConLaVersion() {
+        assertEquals(null, PresentacionSolicitud.textoAjuste(
+                mensaje(8, null, null)));
+        assertEquals("Ajuste solicitado sobre la versión 2",
+                PresentacionSolicitud.textoAjuste(mensaje(8, 40, 2)));
+        assertEquals("Ajuste solicitado",
+                PresentacionSolicitud.textoAjuste(mensaje(8, 40, null)));
     }
 }

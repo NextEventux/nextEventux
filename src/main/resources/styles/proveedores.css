@@ -792,3 +792,19 @@
 .panel-desplazable > .viewport {
     -fx-background-color: transparent;
 }
+
+/* Burbujas de la conversación (CU12) */
+
+.burbuja {
+    -fx-padding: 10 14;
+    -fx-background-radius: 12;
+    -fx-max-width: 420;
+}
+
+.burbuja-propia {
+    -fx-background-color: #FFF0F1;
+}
+
+.burbuja-ajena {
+    -fx-background-color: #F0F0F4;
+}

@@ -1,6 +1,7 @@
 package views.solicitudes;
 
 import entities.ContextoSolicitud;
+import entities.MensajeSolicitud;
 import views.FormatoUi;
 
 /**
@@ -93,6 +94,28 @@ public final class PresentacionSolicitud {
         }
 
         return personas == 1 ? "1 persona" : personas + " personas";
+    }
+
+    /** "Tú" para los mensajes propios; para los demás, el nombre del otro. */
+    public static String autorMensaje(
+            MensajeSolicitud mensaje, int idUsuarioActual, String interlocutor) {
+
+        if (mensaje.getIdUsuarioRemitente() == idUsuarioActual) {
+            return "Tú";
+        }
+        return vacio(interlocutor) ? "Otro participante" : interlocutor;
+    }
+
+    /** Aviso para los mensajes que piden un ajuste de una versión concreta. */
+    public static String textoAjuste(MensajeSolicitud mensaje) {
+        if (!mensaje.esSolicitudDeAjuste()) {
+            return null;
+        }
+
+        Integer version = mensaje.getVersionPropuesta();
+        return version == null
+                ? "Ajuste solicitado"
+                : "Ajuste solicitado sobre la versión " + version;
     }
 
     private static boolean vacio(String texto) {
