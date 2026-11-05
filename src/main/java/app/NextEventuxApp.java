@@ -766,7 +766,6 @@ public class NextEventuxApp extends Application {
                 controllerSolicitudes,
                 sesionActual.getIdActor(),
                 sesionActual.getIdUsuario(),
-                this::mostrarProveedores,
                 sesionActual,
                 this::mostrarProveedores,
                 this::mostrarSolicitudesProveedor,
