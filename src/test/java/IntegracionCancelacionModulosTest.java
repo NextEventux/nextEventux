@@ -31,7 +31,7 @@ class IntegracionCancelacionModulosTest {
         invitados=new ServiceInvitados(new RepositoryInvitacion(url),new RepositoryInvitado(url),new RepositoryLugar(url),new RepositoryEvento(url));
         avisos=new ServiceAvisosProveedor(new RepositoryAvisosProveedor(url));
         login=new ServiceAutenticacion(new RepositoryAutenticacion(url));
-        organizador=login.iniciarSesion("laura.gomez","clave123");
+        organizador=login.iniciarSesion("laura.gomez","1234");
     }
 
     @AfterEach void limpiar() throws Exception {
@@ -45,8 +45,8 @@ class IntegracionCancelacionModulosTest {
         assertEquals("CANCELADA",valor("SELECT estado FROM Contratacion WHERE id_contratacion=1"));
         assertNotNull(valor("SELECT id_disponibilidad FROM Contratacion WHERE id_contratacion=1"));
         assertEquals(1,disponibilidades.contarDisponibilidades(1));
-        assertEquals(1,avisos.listar(login.iniciarSesion("decoraciones.arcoiris","clave789")).size());
-        assertEquals(1,avisos.listar(login.iniciarSesion("sabores.eventos","clave321")).size());
+        assertEquals(1,avisos.listar(login.iniciarSesion("decoraciones.arcoiris","1234")).size());
+        assertEquals(1,avisos.listar(login.iniciarSesion("sabores.eventos","1234")).size());
         assertTrue(invitados.consultarInvitacionesPorCorreo("sofia@email.com","3005551111").isEmpty());
         assertEquals(1,invitados.consultarAvisosPorCorreo(" SOFIA@email.com ").size());
         assertThrows(IllegalArgumentException.class,()->invitados.gestionarRespuestaInvitacion(1,"sofia@email.com","3005551111","CONFIRMADO"));
@@ -86,7 +86,7 @@ class IntegracionCancelacionModulosTest {
         contratarSinVinculo("CONFIRMADA", "2026-11-15");
         eventos.cancelarEvento(1,organizador,true);
         assertEquals(0,disponibilidades.contarDisponibilidades(1));
-        eventos.cancelarEvento(2,login.iniciarSesion("carlos.rodriguez","clave456"),true);
+        eventos.cancelarEvento(2,login.iniciarSesion("carlos.rodriguez","1234"),true);
         assertEquals(1,disponibilidades.contarDisponibilidades(1));
         assertEquals("CANCELADA",valor("SELECT estado FROM Contratacion WHERE id_evento=2"));
     }
@@ -100,9 +100,9 @@ class IntegracionCancelacionModulosTest {
 
     @Test void avisosDelProveedorSeFiltranPorSuCuentaYSeBloqueanAlSalir() throws Exception {
         eventos.cancelarEvento(1,organizador,true);
-        SesionUsuario proveedor=login.iniciarSesion("decoraciones.arcoiris","clave789");
+        SesionUsuario proveedor=login.iniciarSesion("decoraciones.arcoiris","1234");
         assertEquals(1,avisos.listar(proveedor).size());
-        assertTrue(avisos.listar(login.iniciarSesion("luna","1234")).isEmpty());
+        assertTrue(avisos.listar(login.iniciarSesion("flash","1234")).isEmpty());
         assertThrows(IllegalStateException.class,()->avisos.listar(organizador));
         sql("UPDATE Proveedor SET estado='SUSPENDIDO' WHERE id_proveedor=1");
         assertThrows(IllegalStateException.class,()->avisos.listar(proveedor));

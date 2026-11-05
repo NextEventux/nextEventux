@@ -20,7 +20,7 @@ public class PruebaCU01 {
 
         ControllerEventos controllerEventos =
                 new ControllerEventos(serviceEventos, new services.ServiceAutenticacion(
-                        new repositories.RepositoryAutenticacion(url)).iniciarSesion("laura.gomez","clave123"));
+                        new repositories.RepositoryAutenticacion(url)).iniciarSesion("laura.gomez","1234"));
 
         Evento evento = new Evento(
                 1, // Organizador de ejemplo; JDBC deberá comprobar que exista.

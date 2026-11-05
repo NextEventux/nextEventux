@@ -75,9 +75,9 @@ class RepositoryEventoTest {
             assertThrows(SQLException.class, () -> config.CargarDatosEjemplo.cargar(connection));
         }
         RepositoryEvento repository = new RepositoryEvento(url);
-        assertEquals(2, repository.listarEventos().size());
+        assertEquals(4, repository.listarEventos().size());
         new ServiceEventos(repository).crearEvento(evento(1));
-        assertEquals(3, repository.listarEventos().size());
+        assertEquals(5, repository.listarEventos().size());
     }
 
     @Test

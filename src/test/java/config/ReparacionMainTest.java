@@ -27,13 +27,13 @@ class ReparacionMainTest {
         String url=url();
         try(Connection c=DatabaseConnection.getConnection(url)) {
             CargarDatosEjemplo.cargar(c);
-            assertEquals(2,contar(c,"Evento"));
+            assertEquals(4,contar(c,"Evento"));
             assertEquals(MIGRACIONES_REGISTRADAS,contar(c,"Esquema_version"));
             assertThrows(SQLException.class,()->CargarDatosEjemplo.cargar(c));
         }
         DatabaseConnection.reiniciarInicializacion();
         try(Connection c=DatabaseConnection.getConnection(url)) {
-            assertEquals(2,contar(c,"Evento"));
+            assertEquals(4,contar(c,"Evento"));
             assertEquals(MIGRACIONES_REGISTRADAS,contar(c,"Esquema_version"));
         }
     }
@@ -42,7 +42,7 @@ class ReparacionMainTest {
         String url=url();
         try(Connection c=DatabaseConnection.getConnection(url)) {
             assertTrue(CargarDatosEjemplo.cargarSiEstaVacia(c));
-            assertEquals(16,contar(c,"Usuario"));
+            assertEquals(12,contar(c,"Usuario"));
             try(Statement s=c.createStatement()) {
                 s.executeUpdate("UPDATE Usuario SET nombre='Cambiado' WHERE id_usuario=1");
             }
@@ -52,7 +52,7 @@ class ReparacionMainTest {
         try(Connection c=DatabaseConnection.getConnection(url);Statement s=c.createStatement();
             ResultSet r=s.executeQuery("SELECT nombre FROM Usuario WHERE id_usuario=1")) {
             assertFalse(CargarDatosEjemplo.cargarSiEstaVacia(c));
-            assertEquals(16,contar(c,"Usuario"));
+            assertEquals(12,contar(c,"Usuario"));
             assertTrue(r.next());assertEquals("Cambiado",r.getString(1));
         }
     }
