@@ -23,3 +23,31 @@ En una vista autenticada:
 
 «Proveedores» es la ruta de catálogo del organizador. «Mis servicios» es la
 ruta de gestión del proveedor; deben registrarse y navegarse por separado.
+
+## Contratación del servicio (CU-13)
+
+La contratación es una pantalla más de la aplicación (`CONTRATAR_SERVICIO`,
+registrada con `registrarDinamica(...)`) y no una ventana emergente. Se llega
+desde «Propuestas recibidas» con el botón «Contratar servicio» de una propuesta
+en estado `SELECCIONADA`; `NextEventuxApp` guarda la propuesta elegida y
+navega a la pantalla.
+
+Al abrirla, `ViewContratarServicio` consulta sola el resumen, la
+disponibilidad del proveedor y el presupuesto del evento. No hay botones de
+verificación. Muestra el servicio, el proveedor, el precio acordado, el
+presupuesto disponible antes y después de contratar y el mensaje
+«Disponibilidad verificada para el evento».
+
+- «Confirmar contratación» es la única acción principal y solo se habilita si
+  `PresentacionContratacion.puedeConfirmar(...)` es verdadero. Si no, la
+  pantalla indica el motivo.
+- Confirmar no pide una segunda confirmación. `contratar()` vuelve a validar
+  dentro de su transacción; si algo cambió, el error aparece en la misma
+  pantalla y se actualizan las verificaciones.
+- El resultado se muestra en el mismo panel con el botón «Ver propuestas».
+- Salir antes de confirmar («Volver a propuestas» o el menú) no reserva nada.
+
+Los formatos de valores y fechas están en `FormatoUi` (`$1.500.000`,
+`20 nov. 2026`). Los estilos comunes (`btn-primary`, `btn-secondary`,
+`btn-ghost`, `btn-danger`, chips de estado y banners) están en
+`styles/proveedores.css`.
