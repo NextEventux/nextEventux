@@ -41,12 +41,12 @@ public class DatosDemostracionH2Test {
                     = new ServiceAutenticacion(
                             new RepositoryAutenticacion());
 
+            comprobarUsuario(service, "laura.gomez", "ORGANIZADOR");
+            comprobarUsuario(service, "carlos.rodriguez", "ORGANIZADOR");
             comprobarUsuario(service, "valentina", "ORGANIZADOR");
-            comprobarUsuario(service, "santiago", "ORGANIZADOR");
-            comprobarUsuario(service, "juliana", "ORGANIZADOR");
 
-            comprobarUsuario(service, "luna", "PROVEEDOR");
-            comprobarUsuario(service, "sabor", "PROVEEDOR");
+            comprobarUsuario(service, "decoraciones.arcoiris", "PROVEEDOR");
+            comprobarUsuario(service, "sabores.eventos", "PROVEEDOR");
             comprobarUsuario(service, "flash", "PROVEEDOR");
 
             comprobarUsuario(service, "camila", "ADMINISTRADOR");
@@ -77,7 +77,7 @@ public class DatosDemostracionH2Test {
 
                 comprobarContador(connection, "USUARIO", "ID_USUARIO", 17);
                 comprobarContador(connection, "USUARIO_ROL", "ID_USUARIO_ROL", 17);
-                comprobarContador(connection, "ORGANIZADOR", "ID_ORGANIZADOR", 6);
+                comprobarContador(connection, "ORGANIZADOR", "ID_ORGANIZADOR", 4);
                 comprobarContador(connection, "PROVEEDOR", "ID_PROVEEDOR", 6);
                 comprobarContador(connection, "INVITADO", "ID_INVITADO", 8);
 

@@ -22,7 +22,7 @@ class PublicacionDemoTest {
         }
         var service=new ServicePublicacion(new RepositoryPublicacion(url),new RepositoryEvento(url));
         var login=new ServiceAutenticacion(new RepositoryAutenticacion(url));
-        var organizador=login.iniciarSesion("laura.gomez","clave123");
+        var organizador=login.iniciarSesion("laura.gomez","1234");
         var administrador=login.iniciarSesion("admin.demo","solo-demostracion");
         var finalizado=service.listarEventos(organizador).stream().filter(e->"FINALIZADO".equals(e.getEstado())).findFirst().orElseThrow();
         service.solicitar(organizador,finalizado.getIdEvento());

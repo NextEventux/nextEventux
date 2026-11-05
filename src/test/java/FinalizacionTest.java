@@ -27,7 +27,7 @@ class FinalizacionTest {
         sql("UPDATE Contratacion SET id_disponibilidad=id_contratacion");
         sql("UPDATE Lugar SET estado='RESERVADO' WHERE id_lugar=1");
         service=new ServiceEventos(new RepositoryEvento(url),new RepositoryCancelacion(url),new RepositoryFinalizacion(url,reloj));
-        sesion=new ServiceAutenticacion(new RepositoryAutenticacion(url)).iniciarSesion("laura.gomez","clave123");
+        sesion=new ServiceAutenticacion(new RepositoryAutenticacion(url)).iniciarSesion("laura.gomez","1234");
         controller=new ControllerEventos(service,sesion);
         var imagen=new java.awt.image.BufferedImage(2,2,java.awt.image.BufferedImage.TYPE_INT_RGB);
         var salida=new java.io.ByteArrayOutputStream();
@@ -166,7 +166,7 @@ class FinalizacionTest {
         sql("ALTER TABLE Notificacion_interna ADD CONSTRAINT fallo CHECK (id_evento IS NULL OR id_evento<>1)");
         assertThrows(IllegalStateException.class,()->controller.finalizarEvento(1,fotos));
         assertEquals("RESERVADO",valor("SELECT estado FROM Lugar WHERE id_lugar=1"));
-        var otra=new ServiceAutenticacion(new RepositoryAutenticacion(url)).iniciarSesion("carlos.rodriguez","clave456");
+        var otra=new ServiceAutenticacion(new RepositoryAutenticacion(url)).iniciarSesion("carlos.rodriguez","1234");
         service.cancelarEvento(2,otra,true);
         assertEquals("DISPONIBLE",valor("SELECT estado FROM Lugar WHERE id_lugar=1"));
         assertEquals("DISPONIBLE",valor("SELECT estado FROM Disponibilidad_Servicio WHERE id_disponibilidad=1"));
