@@ -125,6 +125,23 @@ public class ServiceSolicitudes {
             String descripcion,
             String condiciones) {
 
+        return enviarPropuesta(
+                idProveedor,
+                idSolicitud,
+                valor,
+                descripcion,
+                condiciones,
+                null);
+    }
+
+    public int enviarPropuesta(
+            int idProveedor,
+            int idSolicitud,
+            BigDecimal valor,
+            String descripcion,
+            String condiciones,
+            String materialApoyo) {
+
         if (idProveedor <= 0 || idSolicitud <= 0) {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
@@ -171,12 +188,25 @@ public class ServiceSolicitudes {
                     "Las condiciones no pueden superar los 1000 caracteres.");
         }
 
+        // CU-12: el material de apoyo es opcional
+        String material = null;
+        if (materialApoyo != null && !materialApoyo.isBlank()) {
+            material = materialApoyo.trim();
+
+            if (material.length() > 1000) {
+                throw new IllegalArgumentException(
+                        "El material de apoyo no puede superar "
+                        + "los 1000 caracteres.");
+            }
+        }
+
         return repositoryPropuestas.guardarNuevaVersion(
                 idProveedor,
                 idSolicitud,
                 valor,
                 descripcionLimpia,
-                condicionesLimpias);
+                condicionesLimpias,
+                material);
     }
 
     public List<MensajeSolicitud> listarMensajes(

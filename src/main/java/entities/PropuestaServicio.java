@@ -11,10 +11,19 @@ public class PropuestaServicio {
     private BigDecimal valor;
     private String descripcion;
     private String condiciones;
+    private String materialApoyo;
     private String estado;
     private boolean vigente;
     private LocalDateTime fechaEnvio;
     private ContextoSolicitud contexto = ContextoSolicitud.vacio();
+
+    public String getMaterialApoyo() {
+        return materialApoyo;
+    }
+
+    public void setMaterialApoyo(String materialApoyo) {
+        this.materialApoyo = materialApoyo;
+    }
 
     public ContextoSolicitud getContexto() {
         return contexto;
