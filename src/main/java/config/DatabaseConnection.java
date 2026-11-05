@@ -95,6 +95,7 @@ public class DatabaseConnection {
         ejecutarScript(connection, "/migrations/004_proveedores_cu12.sql");
         ejecutarScript(connection, "/migrations/008_finalizacion_eventos.sql");
         ejecutarScript(connection, "/migrations/009_solicitudes_evento.sql");
+        ejecutarScript(connection, "/migrations/013_cu12_material_y_ajuste.sql");
         // La restricción de unicidad se valida y registra sin modificar datos repetidos.
         ejecutarUnaVez(connection, "010_organizador_usuario_unico.sql",
                 c -> verificarSinDuplicados(c, "Organizador", "id_usuario"));

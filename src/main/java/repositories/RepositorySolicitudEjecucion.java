@@ -5,10 +5,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 import config.DatabaseConnection;
+import entities.EventoSolicitable;
+import entities.NecesidadAbierta;
 import entities.SolicitudEjecucion;
 
 public class RepositorySolicitudEjecucion {
@@ -256,10 +259,10 @@ public class RepositorySolicitudEjecucion {
         }
     }
 
-    public List<String> listarNecesidadesOrganizador(
+    public List<NecesidadAbierta> listarNecesidadesOrganizador(
             int idOrganizador) {
 
-        List<String> necesidades = new ArrayList<>();
+        List<NecesidadAbierta> necesidades = new ArrayList<>();
 
         String sql = """
                 SELECT n.id_necesidad_servicio,
@@ -281,13 +284,10 @@ public class RepositorySolicitudEjecucion {
             try (ResultSet result = statement.executeQuery()) {
 
                 while (result.next()) {
-
-                    necesidades.add(
-                            result.getInt("id_necesidad_servicio")
-                            + " | Evento "
-                            + result.getInt("id_evento")
-                            + " | "
-                            + result.getString("descripcion"));
+                    necesidades.add(new NecesidadAbierta(
+                            result.getInt("id_necesidad_servicio"),
+                            result.getInt("id_evento"),
+                            result.getString("descripcion")));
                 }
             }
 
@@ -300,22 +300,63 @@ public class RepositorySolicitudEjecucion {
         return necesidades;
     }
 
+    /** Eventos del organizador que no están cancelados ni finalizados. */
+    public List<EventoSolicitable> listarEventosSolicitables(
+            int idOrganizador) {
+
+        List<EventoSolicitable> eventos = new ArrayList<>();
+
+        String sql = """
+                SELECT id_evento, nombre, fecha_inicio
+                FROM Evento
+                WHERE id_organizador = ?
+                  AND UPPER(estado) NOT IN ('CANCELADO', 'FINALIZADO')
+                ORDER BY fecha_inicio, id_evento
+                """;
+
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+
+                while (result.next()) {
+                    Timestamp inicio = result.getTimestamp("fecha_inicio");
+
+                    eventos.add(new EventoSolicitable(
+                            result.getInt("id_evento"),
+                            result.getString("nombre"),
+                            inicio == null ? null : inicio.toLocalDateTime()));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "No se pudieron consultar los eventos del organizador.",
+                    e);
+        }
+
+        return eventos;
+    }
+
     public List<SolicitudEjecucion> listarPorProveedor(int idProveedor) {
 
         List<SolicitudEjecucion> solicitudes = new ArrayList<>();
 
         String sql = """
-                SELECT id_solicitud,
-                       id_proveedor,
-                       id_evento,
-                       id_servicio,
-                       fecha_solicitud,
-                       estado,
-                       motivo_rechazo,
-                       fecha_respuesta
-                FROM Solicitud_Ejecucion
-                WHERE id_proveedor = ?
-                ORDER BY fecha_solicitud DESC
+                SELECT s.id_solicitud,
+                       s.id_proveedor,
+                       s.id_evento,
+                       s.id_servicio,
+                       s.fecha_solicitud,
+                       s.estado,
+                       s.motivo_rechazo,
+                       s.fecha_respuesta,
+                """ + ConsultaContextoSolicitud.COLUMNAS + """
+                FROM Solicitud_Ejecucion s
+                """ + ConsultaContextoSolicitud.JOINS + """
+                WHERE s.id_proveedor = ?
+                ORDER BY s.fecha_solicitud DESC
                 """;
 
         try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -343,6 +384,9 @@ public class RepositorySolicitudEjecucion {
                         solicitud.setFechaRespuesta(
                                 result.getTimestamp("fecha_respuesta").toLocalDateTime());
                     }
+
+                    solicitud.setContexto(
+                            ConsultaContextoSolicitud.leer(result));
 
                     solicitudes.add(solicitud);
                 }

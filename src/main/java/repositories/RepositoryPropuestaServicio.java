@@ -28,6 +28,7 @@ public class RepositoryPropuestaServicio {
                        p.valor,
                        p.descripcion,
                        p.condiciones,
+                       p.material_apoyo,
                                               CASE
                            WHEN p.estado IN ('CONTRATADA', 'NO_SELECCIONADA')
                            THEN p.estado
@@ -76,6 +77,9 @@ public class RepositoryPropuestaServicio {
                     propuesta.setCondiciones(
                             result.getString("condiciones"));
 
+                    propuesta.setMaterialApoyo(
+                            result.getString("material_apoyo"));
+
                     propuesta.setEstado(
                             result.getString("estado"));
 
@@ -114,6 +118,7 @@ public class RepositoryPropuestaServicio {
                        p.valor,
                        p.descripcion,
                        p.condiciones,
+                       p.material_apoyo,
                        CASE
                            WHEN p.estado IN ('CONTRATADA', 'NO_SELECCIONADA')
                            THEN p.estado
@@ -122,7 +127,8 @@ public class RepositoryPropuestaServicio {
                            ELSE p.estado
                        END AS estado,
                        p.vigente,
-                       p.fecha_envio
+                       p.fecha_envio,
+                """ + ConsultaContextoSolicitud.COLUMNAS + """
                 FROM Propuesta p
                 JOIN Solicitud_Ejecucion s
                   ON s.id_solicitud = p.id_solicitud
@@ -130,6 +136,7 @@ public class RepositoryPropuestaServicio {
                   ON e.id_evento = s.id_evento
                 LEFT JOIN Necesidad_Servicio_Evento n
                   ON n.id_necesidad_servicio = s.id_necesidad_servicio
+                """ + ConsultaContextoSolicitud.JOINS + """
                 WHERE e.id_organizador = ?
                   AND p.vigente = TRUE
                   AND s.estado IN ('EN_NEGOCIACION', 'CONTRATADA', 'NO_SELECCIONADA')
@@ -164,6 +171,9 @@ public class RepositoryPropuestaServicio {
                     propuesta.setCondiciones(
                             result.getString("condiciones"));
 
+                    propuesta.setMaterialApoyo(
+                            result.getString("material_apoyo"));
+
                     propuesta.setEstado(
                             result.getString("estado"));
 
@@ -178,6 +188,9 @@ public class RepositoryPropuestaServicio {
                                 fecha.toLocalDateTime());
                     }
 
+                    propuesta.setContexto(
+                            ConsultaContextoSolicitud.leer(result));
+
                     propuestas.add(propuesta);
                 }
             }
@@ -189,6 +202,66 @@ public class RepositoryPropuestaServicio {
         }
 
         return propuestas;
+    }
+
+    /**
+     * Devuelve la solicitud de una propuesta sobre la que el organizador puede
+     * pedir un ajuste: debe ser su propuesta, ser la versión vigente y no estar
+     * seleccionada, contratada ni descartada (CU-12 A2).
+     */
+    public int buscarSolicitudParaAjuste(
+            int idOrganizador,
+            int idPropuesta) {
+
+        String sql = """
+                SELECT s.id_solicitud,
+                       p.estado,
+                       n.id_propuesta_seleccionada
+                FROM Propuesta p
+                JOIN Solicitud_Ejecucion s
+                  ON s.id_solicitud = p.id_solicitud
+                JOIN Evento e
+                  ON e.id_evento = s.id_evento
+                LEFT JOIN Necesidad_Servicio_Evento n
+                  ON n.id_necesidad_servicio = s.id_necesidad_servicio
+                WHERE p.id_propuesta = ?
+                  AND e.id_organizador = ?
+                  AND p.vigente = TRUE
+                """;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idPropuesta);
+            statement.setInt(2, idOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+
+                if (!result.next()) {
+                    throw new IllegalStateException(
+                            "La propuesta no existe o ya no es la "
+                            + "versión vigente.");
+                }
+
+                String estado = result.getString("estado");
+                int seleccionada = result.getInt(3);
+
+                if ("CONTRATADA".equalsIgnoreCase(estado)
+                        || "NO_SELECCIONADA".equalsIgnoreCase(estado)
+                        || "RECHAZADA".equalsIgnoreCase(estado)
+                        || seleccionada == idPropuesta) {
+                    throw new IllegalStateException(
+                            "No puedes pedir ajustes sobre una propuesta "
+                            + "seleccionada o cerrada.");
+                }
+
+                return result.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "No se pudo consultar la propuesta.", e);
+        }
     }
 
     public void rechazarPropuesta(
@@ -424,6 +497,23 @@ public class RepositoryPropuestaServicio {
             String descripcion,
             String condiciones) {
 
+        return guardarNuevaVersion(
+                idProveedor,
+                idSolicitud,
+                valor,
+                descripcion,
+                condiciones,
+                null);
+    }
+
+    public int guardarNuevaVersion(
+            int idProveedor,
+            int idSolicitud,
+            BigDecimal valor,
+            String descripcion,
+            String condiciones,
+            String materialApoyo) {
+
         try (Connection connection = DatabaseConnection.getConnection()) {
 
             connection.setAutoCommit(false);
@@ -532,8 +622,9 @@ public class RepositoryPropuestaServicio {
                 String insertarPropuesta = """
                     INSERT INTO Propuesta
                     (id_solicitud, valor, descripcion, estado,
-                     numero_version, condiciones, fecha_envio, vigente)
-                    VALUES (?, ?, ?, 'ENVIADA', ?, ?, CURRENT_TIMESTAMP, TRUE)
+                     numero_version, condiciones, material_apoyo,
+                     fecha_envio, vigente)
+                    VALUES (?, ?, ?, 'ENVIADA', ?, ?, ?, CURRENT_TIMESTAMP, TRUE)
                     """;
 
                 int idPropuesta;
@@ -548,6 +639,7 @@ public class RepositoryPropuestaServicio {
                     statement.setString(3, descripcion);
                     statement.setInt(4, siguienteVersion);
                     statement.setString(5, condiciones);
+                    statement.setString(6, materialApoyo);
 
                     statement.executeUpdate();
 

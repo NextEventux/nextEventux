@@ -3,6 +3,8 @@ package services;
 import java.math.BigDecimal;
 import java.util.List;
 
+import entities.EventoSolicitable;
+import entities.NecesidadAbierta;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SesionUsuario;
@@ -125,6 +127,23 @@ public class ServiceSolicitudes {
             String descripcion,
             String condiciones) {
 
+        return enviarPropuesta(
+                idProveedor,
+                idSolicitud,
+                valor,
+                descripcion,
+                condiciones,
+                null);
+    }
+
+    public int enviarPropuesta(
+            int idProveedor,
+            int idSolicitud,
+            BigDecimal valor,
+            String descripcion,
+            String condiciones,
+            String materialApoyo) {
+
         if (idProveedor <= 0 || idSolicitud <= 0) {
             throw new IllegalArgumentException(
                     "Los identificadores no son validos.");
@@ -171,12 +190,16 @@ public class ServiceSolicitudes {
                     "Las condiciones no pueden superar los 1000 caracteres.");
         }
 
+        // CU-12: el material de apoyo es opcional y debe ser un enlace https
+        String material = EnlaceMaterialApoyo.validar(materialApoyo);
+
         return repositoryPropuestas.guardarNuevaVersion(
                 idProveedor,
                 idSolicitud,
                 valor,
                 descripcionLimpia,
-                condicionesLimpias);
+                condicionesLimpias,
+                material);
     }
 
     public List<MensajeSolicitud> listarMensajes(
@@ -245,6 +268,50 @@ public class ServiceSolicitudes {
                 enlace);
     }
 
+    /**
+     * CU-12 A2: el organizador pide un cambio sobre la versión vigente de una
+     * propuesta. Queda como mensaje de la conversación vinculado a esa versión.
+     */
+    public void solicitarAjuste(
+            int idOrganizador,
+            int idPropuesta,
+            String ajuste,
+            String adjuntoUrl) {
+
+        if (idOrganizador <= 0 || idPropuesta <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+        exigirSesion("ORGANIZADOR", idOrganizador);
+
+        if (ajuste == null || ajuste.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Debes explicar el ajuste solicitado.");
+        }
+
+        String texto = ajuste.trim();
+
+        if (texto.length() > 1000) {
+            throw new IllegalArgumentException(
+                    "El mensaje no puede superar los 1000 caracteres.");
+        }
+
+        int idSolicitud = repositoryPropuestas.buscarSolicitudParaAjuste(
+                idOrganizador,
+                idPropuesta);
+
+        String enlace = adjuntoUrl == null || adjuntoUrl.isBlank()
+                ? null
+                : adjuntoUrl.trim();
+
+        repositoryMensajes.enviarMensaje(
+                idSolicitud,
+                sesion.getIdUsuario(),
+                texto,
+                enlace,
+                idPropuesta);
+    }
+
     public void rechazarPropuesta(
             int idOrganizador,
             int idPropuesta) {
@@ -288,17 +355,29 @@ public class ServiceSolicitudes {
                 idOrganizador);
     }
 
-    public List<String> listarNecesidadesOrganizador(
+    public List<NecesidadAbierta> listarNecesidadesOrganizador(
             int idOrganizador) {
 
+        validarOrganizador(idOrganizador);
+
+        return repository.listarNecesidadesOrganizador(
+                idOrganizador);
+    }
+
+    public List<EventoSolicitable> listarEventosSolicitables(
+            int idOrganizador) {
+
+        validarOrganizador(idOrganizador);
+
+        return repository.listarEventosSolicitables(idOrganizador);
+    }
+
+    private void validarOrganizador(int idOrganizador) {
         if (idOrganizador <= 0) {
             throw new IllegalArgumentException(
                     "El organizador no es valido.");
         }
         exigirSesion("ORGANIZADOR", idOrganizador);
-
-        return repository.listarNecesidadesOrganizador(
-                idOrganizador);
     }
 
     public int crearSolicitudParaNecesidad(

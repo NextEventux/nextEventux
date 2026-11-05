@@ -14,13 +14,10 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -32,7 +29,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import views.components.ComponentesUi;
 import views.components.MenuCompartido;
+import views.solicitudes.FormularioSolicitudServicio;
+import views.solicitudes.SolicitudNueva;
 
 public class ViewDetalleServicio {
 
@@ -53,6 +53,9 @@ public class ViewDetalleServicio {
 
     private final VBox preguntas
             = new VBox(10);
+
+    private final VBox zonaSolicitud
+            = new VBox(14);
 
     private final TextArea nuevaPregunta
             = new TextArea();
@@ -260,7 +263,7 @@ public class ViewDetalleServicio {
         solicitarServicio.setOnAction(
                 event -> solicitarServicio());
 
-        contenido.getChildren().add(solicitarServicio);
+        contenido.getChildren().addAll(solicitarServicio, zonaSolicitud);
 
         StackPane centrado
                 = new StackPane(contenido);
@@ -522,153 +525,54 @@ public class ViewDetalleServicio {
 
     private void solicitarServicio() {
 
-        TextInputDialog dialogoEvento = new TextInputDialog();
-
-        dialogoEvento.setTitle("Solicitar servicio");
-        dialogoEvento.setHeaderText(
-                "Solicitar: " + servicio.getNombre());
-        dialogoEvento.setContentText(
-                "ID del evento para el que necesitas el servicio:");
-
-        var eventoIngresado = dialogoEvento.showAndWait();
-
-        if (eventoIngresado.isEmpty()) {
+        if (controllerSolicitudes == null) {
+            mostrarAvisoSolicitud(
+                    "La solicitud de servicios no está habilitada.",
+                    "banner-error");
             return;
         }
 
-        int idEvento;
-
         try {
-            idEvento = Integer.parseInt(
-                    eventoIngresado.get().trim());
-
-        } catch (NumberFormatException e) {
-            mostrarMensajeSolicitud(
-                    Alert.AlertType.ERROR,
-                    "El ID del evento debe ser un numero entero.");
-            return;
-        }
-
-        List<String> necesidades;
-
-        try {
-            necesidades
-                    = controllerSolicitudes.listarNecesidadesOrganizador(
-                            idOrganizador);
+            zonaSolicitud.getChildren().setAll(
+                    new FormularioSolicitudServicio(
+                            servicio.getNombre(),
+                            controllerSolicitudes
+                                    .listarEventosSolicitables(idOrganizador),
+                            controllerSolicitudes
+                                    .listarNecesidadesOrganizador(idOrganizador),
+                            this::enviarSolicitud,
+                            () -> zonaSolicitud.getChildren().clear()));
 
         } catch (RuntimeException e) {
-            mostrarMensajeSolicitud(
-                    Alert.AlertType.ERROR,
-                    e.getMessage());
-            return;
-        }
-
-        String opcionNueva = "Crear necesidad nueva";
-
-        necesidades.add(0, opcionNueva);
-
-        ChoiceDialog<String> selector
-                = new ChoiceDialog<>(opcionNueva, necesidades);
-
-        selector.setTitle("Necesidad del evento");
-        selector.setHeaderText(
-                "Selecciona una necesidad existente "
-                + "o crea una nueva.");
-        selector.setContentText("Necesidad:");
-
-        var opcionSeleccionada = selector.showAndWait();
-
-        if (opcionSeleccionada.isEmpty()) {
-            return;
-        }
-
-        int idNecesidadExistente = 0;
-        String descripcionNecesidad = null;
-
-        if (opcionNueva.equals(opcionSeleccionada.get())) {
-
-            TextInputDialog dialogoNecesidad
-                    = new TextInputDialog();
-
-            dialogoNecesidad.setTitle("Nueva necesidad");
-            dialogoNecesidad.setHeaderText(
-                    "Describe lo que necesitas para tu evento");
-            dialogoNecesidad.setContentText(
-                    "Descripcion de la necesidad:");
-
-            var descripcionIngresada
-                    = dialogoNecesidad.showAndWait();
-
-            if (descripcionIngresada.isEmpty()) {
-                return;
-            }
-
-            descripcionNecesidad = descripcionIngresada.get();
-
-        } else {
-
-            String identificador = opcionSeleccionada.get()
-                    .split("\\|")[0]
-                    .trim();
-
-            idNecesidadExistente
-                    = Integer.parseInt(identificador);
-        }
-
-        Alert confirmacion = new Alert(
-                Alert.AlertType.CONFIRMATION,
-                "¿Confirmas que deseas solicitar este servicio?",
-                ButtonType.YES,
-                ButtonType.NO);
-
-        if (confirmacion.showAndWait().orElse(
-                ButtonType.NO) != ButtonType.YES) {
-            return;
-        }
-
-        try {
-            int idSolicitud;
-
-            if (idNecesidadExistente > 0) {
-
-                idSolicitud
-                        = controllerSolicitudes.crearSolicitudParaNecesidad(
-                                idOrganizador,
-                                idEvento,
-                                servicio.getIdServicio(),
-                                idNecesidadExistente);
-
-            } else {
-
-                idSolicitud = controllerSolicitudes.crearSolicitud(
-                        idOrganizador,
-                        idEvento,
-                        servicio.getIdServicio(),
-                        descripcionNecesidad);
-            }
-
-            mostrarMensajeSolicitud(
-                    Alert.AlertType.INFORMATION,
-                    "Solicitud #" + idSolicitud
-                    + " registrada correctamente.");
-
-        } catch (RuntimeException e) {
-            mostrarMensajeSolicitud(
-                    Alert.AlertType.ERROR,
-                    e.getMessage());
+            mostrarAvisoSolicitud(e.getMessage(), "banner-error");
         }
     }
 
-    private void mostrarMensajeSolicitud(
-            Alert.AlertType tipo,
-            String mensaje) {
+    private void enviarSolicitud(SolicitudNueva datos) {
 
-        Alert alerta = new Alert(
-                tipo,
-                mensaje,
-                ButtonType.OK);
+        if (datos.esNecesidadNueva()) {
+            controllerSolicitudes.crearSolicitud(
+                    idOrganizador,
+                    datos.idEvento(),
+                    servicio.getIdServicio(),
+                    datos.descripcionNecesidad());
+        } else {
+            controllerSolicitudes.crearSolicitudParaNecesidad(
+                    idOrganizador,
+                    datos.idEvento(),
+                    servicio.getIdServicio(),
+                    datos.idNecesidadExistente());
+        }
 
-        alerta.showAndWait();
+        mostrarAvisoSolicitud(
+                "Solicitud enviada. El proveedor la verá en sus "
+                + "solicitudes recibidas.",
+                "banner-ok");
+    }
+
+    private void mostrarAvisoSolicitud(String mensaje, String estilo) {
+        zonaSolicitud.getChildren().setAll(
+                ComponentesUi.banner(mensaje, estilo));
     }
 
     private VBox crearPanelPreguntas() {
