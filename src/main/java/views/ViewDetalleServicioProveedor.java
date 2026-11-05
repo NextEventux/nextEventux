@@ -13,7 +13,9 @@ import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
+import views.components.ComponentesUi;
 import views.components.MenuCompartido;
+import views.servicios.RevisionPublicacion;
 
 import java.sql.Date;
 import java.io.File;
@@ -79,6 +81,9 @@ public class ViewDetalleServicioProveedor {
 
     private final Label estadoServicio
             = new Label("Nuevo servicio");
+
+    private final VBox avisos
+            = new VBox(8);
 
     public ViewDetalleServicioProveedor(
             ControllerProveedores controller,
@@ -320,6 +325,7 @@ public class ViewDetalleServicioProveedor {
                             .getSelectionModel()
                             .clearSelection();
 
+                    avisos.getChildren().clear();
                     limpiarFormulario();
                 });
 
@@ -492,35 +498,14 @@ public class ViewDetalleServicioProveedor {
                 .getStyleClass()
                 .add("provider-detail-tabs");
 
-        Button guardar
-                = new Button("Guardar");
+        Button guardar = ComponentesUi.boton(
+                "Guardar cambios", "btn-primary", this::guardarServicio);
 
-        guardar
-                .getStyleClass()
-                .add("btn-primary");
+        Button publicar = ComponentesUi.boton(
+                "Revisar y publicar", "btn-ghost", this::revisarPublicacion);
 
-        guardar.setOnAction(
-                event -> guardarServicio());
-
-        Button publicar
-                = new Button("Publicar");
-
-        publicar
-                .getStyleClass()
-                .add("btn-primary");
-
-        publicar.setOnAction(
-                event -> publicarServicio());
-
-        Button retirar
-                = new Button("Retirar");
-
-        retirar
-                .getStyleClass()
-                .add("btn-danger");
-
-        retirar.setOnAction(
-                event -> retirarServicio());
+        Button retirar = ComponentesUi.boton(
+                "Retirar", "btn-danger-ghost", this::retirarServicio);
 
         HBox acciones = new HBox(
                 10,
@@ -536,6 +521,7 @@ public class ViewDetalleServicioProveedor {
                 22,
                 identidad,
                 acciones,
+                avisos,
                 pestanas);
 
         formulario
@@ -1124,6 +1110,9 @@ public class ViewDetalleServicioProveedor {
             }
         });
 
+        listaServicios.setOnMouseClicked(
+                event -> avisos.getChildren().clear());
+
         listaServicios
                 .getSelectionModel()
                 .selectedItemProperty()
@@ -1177,10 +1166,6 @@ public class ViewDetalleServicioProveedor {
                 datos.setEstado("BORRADOR");
                 controller.crearServicio(datos);
 
-                mostrarInformacion(
-                        "Servicio creado",
-                        "El servicio se guardó correctamente.");
-
             } else {
 
                 datos.setEstado(
@@ -1190,10 +1175,6 @@ public class ViewDetalleServicioProveedor {
                         idProveedor,
                         seleccionado.getIdServicio(),
                         datos);
-
-                mostrarInformacion(
-                        "Servicio actualizado",
-                        "Los cambios se guardaron correctamente.");
             }
 
             int idGuardado
@@ -1203,6 +1184,12 @@ public class ViewDetalleServicioProveedor {
 
             recargarServicios();
             seleccionarServicio(idGuardado);
+
+            mostrarInformacion(
+                    seleccionado == null
+                            ? "Servicio creado"
+                            : "Servicio actualizado",
+                    "Los cambios se guardaron correctamente.");
 
         } catch (Exception e) {
             mostrarError(e.getMessage());
@@ -1323,6 +1310,31 @@ public class ViewDetalleServicioProveedor {
         return servicio;
     }
 
+    /** Antes de publicar se muestra un resumen que el proveedor confirma. */
+    private void revisarPublicacion() {
+
+        Servicio servicio
+                = servicioSeleccionado();
+
+        if (servicio == null) {
+            return;
+        }
+
+        if ("DISPONIBLE".equalsIgnoreCase(servicio.getEstado())) {
+            mostrarInformacion(
+                    "Servicio publicado",
+                    "Este servicio ya está disponible en el catálogo.");
+            return;
+        }
+
+        avisos.getChildren().setAll(new RevisionPublicacion(
+                servicio,
+                listaDisponibilidades.getItems().size(),
+                listaImagenes.getItems().size(),
+                this::publicarServicio,
+                () -> avisos.getChildren().clear()));
+    }
+
     private void publicarServicio() {
 
         Servicio servicio
@@ -1338,14 +1350,14 @@ public class ViewDetalleServicioProveedor {
                     idProveedor,
                     servicio.getIdServicio());
 
-            mostrarInformacion(
-                    "Servicio publicado",
-                    "El servicio ahora está disponible.");
-
             recargarServicios();
 
             seleccionarServicio(
                     servicio.getIdServicio());
+
+            mostrarInformacion(
+                    "Servicio publicado",
+                    "El servicio ahora está disponible.");
 
         } catch (Exception e) {
             mostrarError(e.getMessage());
@@ -1367,14 +1379,14 @@ public class ViewDetalleServicioProveedor {
                     idProveedor,
                     servicio.getIdServicio());
 
-            mostrarInformacion(
-                    "Servicio retirado",
-                    "El servicio fue retirado correctamente.");
-
             recargarServicios();
 
             seleccionarServicio(
                     servicio.getIdServicio());
+
+            mostrarInformacion(
+                    "Servicio retirado",
+                    "El servicio fue retirado correctamente.");
 
         } catch (Exception e) {
             mostrarError(e.getMessage());
@@ -1807,41 +1819,25 @@ public class ViewDetalleServicioProveedor {
                 : valor;
     }
 
+    /** Los avisos se muestran dentro de la pantalla, no en una ventana emergente. */
     private void mostrarError(
             String mensaje) {
 
-        Alert alert
-                = new Alert(
-                        Alert.AlertType.ERROR);
-
-        alert.setTitle(
-                "NextEventux");
-
-        alert.setHeaderText(
-                "No se pudo completar la operación");
-
-        alert.setContentText(
-                mensaje == null
-                        ? "Ocurrió un error."
-                        : mensaje);
-
-        alert.showAndWait();
+        avisos.getChildren().setAll(
+                ComponentesUi.banner(
+                        mensaje == null
+                                ? "Ocurrió un error."
+                                : mensaje,
+                        "banner-error"));
     }
 
     private void mostrarInformacion(
             String titulo,
             String mensaje) {
 
-        Alert alert
-                = new Alert(
-                        Alert.AlertType.INFORMATION);
-
-        alert.setTitle(
-                "NextEventux");
-
-        alert.setHeaderText(titulo);
-        alert.setContentText(mensaje);
-
-        alert.showAndWait();
+        avisos.getChildren().setAll(
+                ComponentesUi.banner(
+                        titulo + ". " + mensaje,
+                        "banner-ok"));
     }
 }
