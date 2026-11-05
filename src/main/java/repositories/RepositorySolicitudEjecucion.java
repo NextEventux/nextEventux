@@ -305,17 +305,19 @@ public class RepositorySolicitudEjecucion {
         List<SolicitudEjecucion> solicitudes = new ArrayList<>();
 
         String sql = """
-                SELECT id_solicitud,
-                       id_proveedor,
-                       id_evento,
-                       id_servicio,
-                       fecha_solicitud,
-                       estado,
-                       motivo_rechazo,
-                       fecha_respuesta
-                FROM Solicitud_Ejecucion
-                WHERE id_proveedor = ?
-                ORDER BY fecha_solicitud DESC
+                SELECT s.id_solicitud,
+                       s.id_proveedor,
+                       s.id_evento,
+                       s.id_servicio,
+                       s.fecha_solicitud,
+                       s.estado,
+                       s.motivo_rechazo,
+                       s.fecha_respuesta,
+                """ + ConsultaContextoSolicitud.COLUMNAS + """
+                FROM Solicitud_Ejecucion s
+                """ + ConsultaContextoSolicitud.JOINS + """
+                WHERE s.id_proveedor = ?
+                ORDER BY s.fecha_solicitud DESC
                 """;
 
         try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -343,6 +345,9 @@ public class RepositorySolicitudEjecucion {
                         solicitud.setFechaRespuesta(
                                 result.getTimestamp("fecha_respuesta").toLocalDateTime());
                     }
+
+                    solicitud.setContexto(
+                            ConsultaContextoSolicitud.leer(result));
 
                     solicitudes.add(solicitud);
                 }
