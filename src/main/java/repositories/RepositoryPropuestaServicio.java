@@ -122,7 +122,8 @@ public class RepositoryPropuestaServicio {
                            ELSE p.estado
                        END AS estado,
                        p.vigente,
-                       p.fecha_envio
+                       p.fecha_envio,
+                """ + ConsultaContextoSolicitud.COLUMNAS + """
                 FROM Propuesta p
                 JOIN Solicitud_Ejecucion s
                   ON s.id_solicitud = p.id_solicitud
@@ -130,6 +131,7 @@ public class RepositoryPropuestaServicio {
                   ON e.id_evento = s.id_evento
                 LEFT JOIN Necesidad_Servicio_Evento n
                   ON n.id_necesidad_servicio = s.id_necesidad_servicio
+                """ + ConsultaContextoSolicitud.JOINS + """
                 WHERE e.id_organizador = ?
                   AND p.vigente = TRUE
                   AND s.estado IN ('EN_NEGOCIACION', 'CONTRATADA', 'NO_SELECCIONADA')
@@ -177,6 +179,9 @@ public class RepositoryPropuestaServicio {
                         propuesta.setFechaEnvio(
                                 fecha.toLocalDateTime());
                     }
+
+                    propuesta.setContexto(
+                            ConsultaContextoSolicitud.leer(result));
 
                     propuestas.add(propuesta);
                 }
