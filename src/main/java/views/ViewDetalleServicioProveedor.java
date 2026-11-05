@@ -15,6 +15,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import views.components.ComponentesUi;
 import views.components.MenuCompartido;
+import views.servicios.RevisionPublicacion;
 
 import java.sql.Date;
 import java.io.File;
@@ -497,35 +498,14 @@ public class ViewDetalleServicioProveedor {
                 .getStyleClass()
                 .add("provider-detail-tabs");
 
-        Button guardar
-                = new Button("Guardar");
+        Button guardar = ComponentesUi.boton(
+                "Guardar cambios", "btn-primary", this::guardarServicio);
 
-        guardar
-                .getStyleClass()
-                .add("btn-primary");
+        Button publicar = ComponentesUi.boton(
+                "Revisar y publicar", "btn-ghost", this::revisarPublicacion);
 
-        guardar.setOnAction(
-                event -> guardarServicio());
-
-        Button publicar
-                = new Button("Publicar");
-
-        publicar
-                .getStyleClass()
-                .add("btn-primary");
-
-        publicar.setOnAction(
-                event -> publicarServicio());
-
-        Button retirar
-                = new Button("Retirar");
-
-        retirar
-                .getStyleClass()
-                .add("btn-danger");
-
-        retirar.setOnAction(
-                event -> retirarServicio());
+        Button retirar = ComponentesUi.boton(
+                "Retirar", "btn-danger-ghost", this::retirarServicio);
 
         HBox acciones = new HBox(
                 10,
@@ -1328,6 +1308,31 @@ public class ViewDetalleServicioProveedor {
                         .trim());
 
         return servicio;
+    }
+
+    /** Antes de publicar se muestra un resumen que el proveedor confirma. */
+    private void revisarPublicacion() {
+
+        Servicio servicio
+                = servicioSeleccionado();
+
+        if (servicio == null) {
+            return;
+        }
+
+        if ("DISPONIBLE".equalsIgnoreCase(servicio.getEstado())) {
+            mostrarInformacion(
+                    "Servicio publicado",
+                    "Este servicio ya está disponible en el catálogo.");
+            return;
+        }
+
+        avisos.getChildren().setAll(new RevisionPublicacion(
+                servicio,
+                listaDisponibilidades.getItems().size(),
+                listaImagenes.getItems().size(),
+                this::publicarServicio,
+                () -> avisos.getChildren().clear()));
     }
 
     private void publicarServicio() {
