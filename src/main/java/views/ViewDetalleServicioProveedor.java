@@ -581,24 +581,12 @@ public class ViewDetalleServicioProveedor {
         listaDisponibilidades
                 .setPrefHeight(150);
 
-        Button eliminar
-                = new Button(
-                        "Eliminar seleccionada");
-
-        eliminar
-                .getStyleClass()
-                .add("btn-danger");
-
-        eliminar.setOnAction(
-                event -> eliminarDisponibilidad());
-
         return new VBox(
                 12,
                 titulo,
                 datos,
                 agregar,
-                listaDisponibilidades,
-                eliminar);
+                listaDisponibilidades);
     }
 
     private VBox crearImagenesServicio() {
@@ -1138,13 +1126,28 @@ public class ViewDetalleServicioProveedor {
 
                 if (empty || disponibilidad == null) {
                     setText(null);
+                    setGraphic(null);
                     return;
                 }
 
-                setText(
+                Label horario = new Label(
                         new java.text.SimpleDateFormat("dd/MM/yyyy").format(disponibilidad.getFecha())
                         + "   "
                         + disponibilidad.getHorario());
+
+                HBox fila = new HBox(
+                        10,
+                        horario,
+                        espacioHorizontal(),
+                        ComponentesUi.boton(
+                                "Eliminar",
+                                "btn-danger-ghost",
+                                () -> eliminarDisponibilidad(disponibilidad)));
+
+                fila.setAlignment(Pos.CENTER_LEFT);
+
+                setText(null);
+                setGraphic(fila);
             }
         });
     }
@@ -1454,20 +1457,8 @@ public class ViewDetalleServicioProveedor {
         }
     }
 
-    private void eliminarDisponibilidad() {
-
-        DisponibilidadServicio disponibilidad
-                = listaDisponibilidades
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (disponibilidad == null) {
-
-            mostrarError(
-                    "Selecciona una disponibilidad.");
-
-            return;
-        }
+    private void eliminarDisponibilidad(
+            DisponibilidadServicio disponibilidad) {
 
         try {
 
@@ -1476,17 +1467,12 @@ public class ViewDetalleServicioProveedor {
                     disponibilidad.getIdServicio(),
                     disponibilidad.getIdDisponibilidad());
 
-            Servicio servicio
-                    = listaServicios
-                            .getSelectionModel()
-                            .getSelectedItem();
+            cargarDisponibilidades(
+                    disponibilidad.getIdServicio());
 
-            if (servicio != null) {
-
-                cargarDisponibilidades(
-                        servicio.getIdServicio());
-
-            }
+            mostrarInformacion(
+                    "Disponibilidad eliminada",
+                    "El horario ya no está disponible para este servicio.");
 
         } catch (Exception e) {
             mostrarError(e.getMessage());
