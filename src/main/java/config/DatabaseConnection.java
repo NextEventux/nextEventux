@@ -28,7 +28,9 @@ public class DatabaseConnection {
                 : Path.of(carpeta);
         String archivo = base.toAbsolutePath().resolve("nexteventux").toString().replace('\\', '/');
         // La base permanece abierta durante la ejecución para evitar reabrir el archivo.
-        return "jdbc:h2:" + archivo + ";DB_CLOSE_DELAY=-1";
+        // AUTO_SERVER permite que otra herramienta (consola H2, DBeaver) consulte la
+        // misma base mientras la aplicación está abierta.
+        return "jdbc:h2:" + archivo + ";DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE";
     }
 
     public static Connection getConnection() throws SQLException {
