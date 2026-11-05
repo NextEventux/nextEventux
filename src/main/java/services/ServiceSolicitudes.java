@@ -275,6 +275,50 @@ public class ServiceSolicitudes {
                 enlace);
     }
 
+    /**
+     * CU-12 A2: el organizador pide un cambio sobre la versión vigente de una
+     * propuesta. Queda como mensaje de la conversación vinculado a esa versión.
+     */
+    public void solicitarAjuste(
+            int idOrganizador,
+            int idPropuesta,
+            String ajuste,
+            String adjuntoUrl) {
+
+        if (idOrganizador <= 0 || idPropuesta <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores no son validos.");
+        }
+        exigirSesion("ORGANIZADOR", idOrganizador);
+
+        if (ajuste == null || ajuste.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Debes explicar el ajuste solicitado.");
+        }
+
+        String texto = ajuste.trim();
+
+        if (texto.length() > 1000) {
+            throw new IllegalArgumentException(
+                    "El mensaje no puede superar los 1000 caracteres.");
+        }
+
+        int idSolicitud = repositoryPropuestas.buscarSolicitudParaAjuste(
+                idOrganizador,
+                idPropuesta);
+
+        String enlace = adjuntoUrl == null || adjuntoUrl.isBlank()
+                ? null
+                : adjuntoUrl.trim();
+
+        repositoryMensajes.enviarMensaje(
+                idSolicitud,
+                sesion.getIdUsuario(),
+                texto,
+                enlace,
+                idPropuesta);
+    }
+
     public void rechazarPropuesta(
             int idOrganizador,
             int idPropuesta) {

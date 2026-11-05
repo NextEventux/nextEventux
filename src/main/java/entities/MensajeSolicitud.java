@@ -10,6 +10,29 @@ public class MensajeSolicitud {
     private String contenido;
     private String adjuntoUrl;
     private LocalDateTime fechaHora;
+    private Integer idPropuesta;
+    private Integer versionPropuesta;
+
+    /** Propuesta sobre la que se pide un ajuste; null si es un mensaje normal. */
+    public Integer getIdPropuesta() {
+        return idPropuesta;
+    }
+
+    public void setIdPropuesta(Integer idPropuesta) {
+        this.idPropuesta = idPropuesta;
+    }
+
+    public Integer getVersionPropuesta() {
+        return versionPropuesta;
+    }
+
+    public void setVersionPropuesta(Integer versionPropuesta) {
+        this.versionPropuesta = versionPropuesta;
+    }
+
+    public boolean esSolicitudDeAjuste() {
+        return idPropuesta != null;
+    }
 
     public int getIdMensaje() {
         return idMensaje;
