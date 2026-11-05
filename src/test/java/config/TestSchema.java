@@ -23,7 +23,7 @@ public class TestSchema {
                         TestSchema.class.getResourceAsStream("/seed.sql"), StandardCharsets.UTF_8)) {
                     RunScript.execute(connection, reader);
                 }
-                comprobarEventos(connection, 2);
+                comprobarEventos(connection, 4);
                 // Simular una base anterior a CU01, conservando eventos existentes.
                 try (Statement statement = connection.createStatement()) {
                     statement.execute("ALTER TABLE Evento DROP COLUMN tipo");
@@ -41,13 +41,13 @@ public class TestSchema {
                     }
                 }
                 DatabaseConnection.inicializarEsquema(connection);
-                comprobarEventos(connection, 2);
+                comprobarEventos(connection, 4);
                 try (Statement statement = connection.createStatement();
                      ResultSet result = statement.executeQuery(
                              "SELECT IDENTITY_BASE FROM INFORMATION_SCHEMA.COLUMNS "
                              + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = 'EVENTO' "
                              + "AND COLUMN_NAME = 'ID_EVENTO'")) {
-                    if (!result.next() || result.getLong(1) != 3) {
+                    if (!result.next() || result.getLong(1) != 5) {
                         throw new AssertionError("No se recuperó el contador de eventos.");
                     }
                 }
@@ -58,7 +58,7 @@ public class TestSchema {
             }
             try (Connection connection = DriverManager.getConnection(url, "sa", "")) {
                 DatabaseConnection.inicializarEsquema(connection);
-                comprobarEventos(connection, 2);
+                comprobarEventos(connection, 4);
                 try (Statement statement = connection.createStatement();
                      ResultSet result = statement.executeQuery(
                              "SELECT IDENTITY_BASE FROM INFORMATION_SCHEMA.COLUMNS "
