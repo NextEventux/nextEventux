@@ -3,6 +3,8 @@ package controllers;
 import java.math.BigDecimal;
 import java.util.List;
 
+import entities.EventoSolicitable;
+import entities.NecesidadAbierta;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SolicitudEjecucion;
@@ -125,11 +127,17 @@ public class ControllerSolicitudes {
                 idOrganizador);
     }
 
-    public List<String> listarNecesidadesOrganizador(
+    public List<NecesidadAbierta> listarNecesidadesOrganizador(
             int idOrganizador) {
 
         return service.listarNecesidadesOrganizador(
                 idOrganizador);
+    }
+
+    public List<EventoSolicitable> listarEventosSolicitables(
+            int idOrganizador) {
+
+        return service.listarEventosSolicitables(idOrganizador);
     }
 
     public int crearSolicitudParaNecesidad(
