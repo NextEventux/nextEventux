@@ -13,7 +13,7 @@ el organizador selecciona una (la contratación es CU-13).
 - Al elegir una solicitud aparece su detalle (lugar, invitados, organizador,
   necesidad) y las acciones según el estado.
 - **Enviar propuesta** abre un formulario en la misma pantalla con precio,
-  alcance, condiciones y material de apoyo opcional (enlace o archivo). Antes de
+  alcance, condiciones y material de apoyo opcional (un enlace https). Antes de
   enviar se muestra un resumen. Si ya hay una propuesta, el botón pasa a **Enviar
   nueva versión**.
 - **Rechazar solicitud** pide el motivo en un formulario en pantalla.

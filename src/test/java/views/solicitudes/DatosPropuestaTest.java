@@ -70,4 +70,23 @@ class DatosPropuestaTest {
         assertEquals("Las condiciones pueden tener hasta 1000 caracteres.",
                 mensajeDe("100", "Alcance", "a".repeat(1001)));
     }
+
+    @Test
+    void elMaterialDeApoyoDebeSerUnEnlaceHttps() {
+        String mensaje = "El material de apoyo debe ser un enlace que empiece "
+                + "por https://, por ejemplo https://ejemplo.com/catalogo.";
+
+        for (String material : new String[] {
+            "C:\\Users\\ana\\catalogo.pdf",
+            "/Users/ana/catalogo.pdf",
+            "http://ejemplo.com/catalogo",
+            "https://",
+            "https://ejemplo .com/catalogo"
+        }) {
+            assertEquals(mensaje, assertThrows(IllegalArgumentException.class,
+                    () -> DatosPropuesta.validar(
+                            "100", "Alcance", "Condiciones", material))
+                    .getMessage());
+        }
+    }
 }

@@ -190,17 +190,8 @@ public class ServiceSolicitudes {
                     "Las condiciones no pueden superar los 1000 caracteres.");
         }
 
-        // CU-12: el material de apoyo es opcional
-        String material = null;
-        if (materialApoyo != null && !materialApoyo.isBlank()) {
-            material = materialApoyo.trim();
-
-            if (material.length() > 1000) {
-                throw new IllegalArgumentException(
-                        "El material de apoyo no puede superar "
-                        + "los 1000 caracteres.");
-            }
-        }
+        // CU-12: el material de apoyo es opcional y debe ser un enlace https
+        String material = EnlaceMaterialApoyo.validar(materialApoyo);
 
         return repositoryPropuestas.guardarNuevaVersion(
                 idProveedor,

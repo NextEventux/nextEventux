@@ -2,6 +2,7 @@ package views.solicitudes;
 
 import java.math.BigDecimal;
 
+import services.EnlaceMaterialApoyo;
 import views.PrecioPropuestaParser;
 
 /**
@@ -52,9 +53,9 @@ public record DatosPropuesta(
                     + MAX_CONDICIONES + " caracteres.");
         }
 
-        String material = limpiar(materialApoyo);
         return new DatosPropuesta(
-                valor, alcance, reglas, material.isEmpty() ? null : material);
+                valor, alcance, reglas,
+                EnlaceMaterialApoyo.validar(materialApoyo));
     }
 
     private static BigDecimal leerPrecio(String texto) {

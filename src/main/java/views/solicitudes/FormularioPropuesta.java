@@ -1,16 +1,12 @@
 package views.solicitudes;
 
-import java.io.File;
 import java.util.function.Consumer;
 
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import views.FormatoUi;
 import views.components.ComponentesUi;
 
@@ -51,7 +47,7 @@ public final class FormularioPropuesta extends VBox {
         descripcion.setPromptText("Qué incluye el servicio");
         condiciones.setPromptText(
                 "Anticipo, cancelación, tiempos de entrega…");
-        material.setPromptText("Enlace o archivo (opcional)");
+        material.setPromptText("Enlace https:// (opcional)");
         descripcion.setPrefRowCount(3);
         descripcion.setWrapText(true);
         condiciones.setPrefRowCount(3);
@@ -75,7 +71,7 @@ public final class FormularioPropuesta extends VBox {
                 campo("Precio final (COP)", precio),
                 campo("Qué incluye", descripcion),
                 campo("Condiciones", condiciones),
-                campo("Material de apoyo", filaMaterial()),
+                campo("Material de apoyo (enlace)", material),
                 ComponentesUi.acciones(
                         ComponentesUi.boton("Revisar propuesta", "btn-primary",
                                 () -> revisar(titulo)),
@@ -121,22 +117,6 @@ public final class FormularioPropuesta extends VBox {
             enviar.accept(datos);
         } catch (RuntimeException e) {
             mostrarResumen(titulo, datos, e.getMessage());
-        }
-    }
-
-    private HBox filaMaterial() {
-        HBox.setHgrow(material, Priority.ALWAYS);
-        return new HBox(10, material,
-                ComponentesUi.boton("Elegir archivo", "btn-ghost",
-                        this::elegirArchivo));
-    }
-
-    private void elegirArchivo() {
-        File archivo = new FileChooser().showOpenDialog(
-                getScene() == null ? null : getScene().getWindow());
-
-        if (archivo != null) {
-            material.setText(archivo.getAbsolutePath());
         }
     }
 

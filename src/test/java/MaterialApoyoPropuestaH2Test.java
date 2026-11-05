@@ -75,13 +75,13 @@ class MaterialApoyoPropuestaH2Test {
 
     @Test
     void cadaVersionConservaSuPropioMaterial() {
-        enviar("catalogo-v1.pdf");
-        enviar("catalogo-v2.pdf");
+        enviar("https://ejemplo.com/catalogo-v1.pdf");
+        enviar("https://ejemplo.com/catalogo-v2.pdf");
 
         List<PropuestaServicio> versiones = historial();
 
-        assertEquals("catalogo-v2.pdf", versiones.get(0).getMaterialApoyo());
-        assertEquals("catalogo-v1.pdf", versiones.get(1).getMaterialApoyo());
+        assertEquals("https://ejemplo.com/catalogo-v2.pdf", versiones.get(0).getMaterialApoyo());
+        assertEquals("https://ejemplo.com/catalogo-v1.pdf", versiones.get(1).getMaterialApoyo());
     }
 
     @Test
@@ -100,5 +100,15 @@ class MaterialApoyoPropuestaH2Test {
     void elMaterialNoPuedeSuperarMilCaracteres() {
         assertThrows(IllegalArgumentException.class,
                 () -> enviar("x".repeat(1001)));
+    }
+
+    @Test
+    void elMaterialDebeSerUnEnlaceHttps() {
+        assertThrows(IllegalArgumentException.class,
+                () -> enviar("C:\\Users\\ana\\catalogo.pdf"));
+        assertThrows(IllegalArgumentException.class,
+                () -> enviar("http://ejemplo.com/catalogo"));
+        assertThrows(IllegalArgumentException.class,
+                () -> enviar("catalogo.pdf"));
     }
 }
