@@ -28,8 +28,8 @@ class CancelacionTest {
         sql("UPDATE Evento SET id_lugar=id_evento");
         sql("UPDATE Lugar SET estado='RESERVADO' WHERE id_lugar IN (1,2)");
         var login=new ServiceAutenticacion(new RepositoryAutenticacion(url));
-        sesion=login.iniciarSesion("laura.gomez","clave123");
-        otraSesion=login.iniciarSesion("carlos.rodriguez","clave456");
+        sesion=login.iniciarSesion("laura.gomez","1234");
+        otraSesion=login.iniciarSesion("carlos.rodriguez","1234");
         service=new ServiceEventos(new RepositoryEvento(url),new RepositoryCancelacion(url));
     }
 
