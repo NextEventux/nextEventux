@@ -780,3 +780,15 @@
     -fx-border-color: #E8E9EF transparent transparent transparent;
     -fx-padding: 14 30;
 }
+
+/* Panel con desplazamiento sin fondo propio */
+
+.panel-desplazable {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.panel-desplazable > .viewport {
+    -fx-background-color: transparent;
+}
