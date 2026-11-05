@@ -70,10 +70,57 @@ public final class PresentacionSolicitud {
                 || "NO_SELECCIONADA".equalsIgnoreCase(estadoPropuesta);
     }
 
+    /** Solo una propuesta recién enviada puede elegirse para contratar. */
+    public static boolean puedeSeleccionar(String estadoPropuesta) {
+        return "ENVIADA".equalsIgnoreCase(estadoPropuesta);
+    }
+
+    /** Se contrata únicamente la propuesta que el organizador ya seleccionó. */
+    public static boolean puedeContratar(String estadoPropuesta) {
+        return "SELECCIONADA".equalsIgnoreCase(estadoPropuesta);
+    }
+
+    /** El ajuste se pide sobre una versión no seleccionada (CU-12, A2). */
+    public static boolean puedeAjustar(String estadoPropuesta) {
+        return "ENVIADA".equalsIgnoreCase(estadoPropuesta);
+    }
+
+    public static boolean puedeRechazarPropuesta(String estadoPropuesta) {
+        return "ENVIADA".equalsIgnoreCase(estadoPropuesta)
+                || "SELECCIONADA".equalsIgnoreCase(estadoPropuesta);
+    }
+
+    /** Explica por qué una propuesta cerrada ya no admite cambios. */
+    public static String mensajeCerrada(String estadoPropuesta) {
+        return "CONTRATADA".equalsIgnoreCase(estadoPropuesta)
+                ? "Esta propuesta ya fue contratada y no admite cambios."
+                : "Otra propuesta cubrió esta necesidad; esta quedó como "
+                + "no seleccionada y no admite cambios.";
+    }
+
     public static String nombreEvento(ContextoSolicitud contexto, int idEvento) {
         return vacio(contexto.nombreEvento())
                 ? "Evento #" + idEvento
                 : contexto.nombreEvento();
+    }
+
+    /** Nombre del evento o "—" cuando la propuesta no trae el dato. */
+    public static String nombreEvento(ContextoSolicitud contexto) {
+        return vacio(contexto.nombreEvento())
+                ? FormatoUi.SIN_DATO
+                : contexto.nombreEvento();
+    }
+
+    public static String nombreServicio(ContextoSolicitud contexto) {
+        return vacio(contexto.nombreServicio())
+                ? FormatoUi.SIN_DATO
+                : contexto.nombreServicio();
+    }
+
+    public static String nombreProveedor(ContextoSolicitud contexto) {
+        return vacio(contexto.nombreProveedor())
+                ? FormatoUi.SIN_DATO
+                : contexto.nombreProveedor();
     }
 
     public static String nombreServicio(ContextoSolicitud contexto, int idServicio) {

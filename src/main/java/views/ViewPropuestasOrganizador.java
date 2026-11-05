@@ -7,28 +7,31 @@ import controllers.ControllerSolicitudes;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;
 import entities.SesionUsuario;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import views.components.ComponentesUi;
 import views.components.MenuCompartido;
+import views.solicitudes.DetallePropuesta;
+import views.solicitudes.PresentacionSolicitud;
+import views.solicitudes.TarjetaPropuesta;
 
 public class ViewPropuestasOrganizador {
 
     private final ControllerSolicitudes controller;
     private final int idOrganizador;
     private final int idUsuario;
-    private final Runnable volverEventos;
     private final SesionUsuario sesion;
     private final Runnable abrirEventos;
     private final Runnable abrirInvitados;
@@ -39,6 +42,8 @@ public class ViewPropuestasOrganizador {
 
     private final ListView<PropuestaServicio> lista
             = new ListView<>();
+    private final VBox detalle = new VBox(16);
+    private final VBox zona = new VBox(16);
 
     // CU-13: la aplicacion abre la pantalla de contratacion de la propuesta
     private Consumer<PropuestaServicio> abrirContratacion;
@@ -54,17 +59,6 @@ public class ViewPropuestasOrganizador {
             ControllerSolicitudes controller,
             int idOrganizador,
             int idUsuario,
-            Runnable volverEventos) {
-
-        this(controller, idOrganizador, idUsuario, volverEventos, null,
-                volverEventos, null, null, null, null, null);
-    }
-
-    public ViewPropuestasOrganizador(
-            ControllerSolicitudes controller,
-            int idOrganizador,
-            int idUsuario,
-            Runnable volverEventos,
             SesionUsuario sesion,
             Runnable abrirEventos,
             Runnable abrirInvitados,
@@ -76,7 +70,6 @@ public class ViewPropuestasOrganizador {
         this.controller = controller;
         this.idOrganizador = idOrganizador;
         this.idUsuario = idUsuario;
-        this.volverEventos = volverEventos;
         this.sesion = sesion;
         this.abrirEventos = abrirEventos;
         this.abrirInvitados = abrirInvitados;
@@ -89,7 +82,6 @@ public class ViewPropuestasOrganizador {
     public Parent crearPantalla() {
 
         BorderPane raiz = new BorderPane();
-
         raiz.getStyleClass().add("app");
 
         VBox menu = crearMenu();
@@ -97,82 +89,33 @@ public class ViewPropuestasOrganizador {
 
         BorderPane principal = new BorderPane();
         principal.setTop(crearBarraSuperior());
+        principal.setCenter(crearContenido());
+        raiz.setCenter(principal);
 
         raiz.widthProperty().addListener(
                 (observable, anterior, actual) -> {
-
-                    boolean mostrarMenu
-                    = actual.doubleValue() >= 1000;
-
+                    boolean mostrarMenu = actual.doubleValue() >= 1000;
                     menu.setVisible(mostrarMenu);
                     menu.setManaged(mostrarMenu);
                 });
 
-        Label titulo = new Label("Propuestas recibidas");
+        lista.getSelectionModel().selectedItemProperty().addListener(
+                (observable, anterior, actual) -> mostrarDetalle(actual));
 
-        titulo.setStyle(
-                "-fx-font-size: 26px; -fx-font-weight: bold;");
+        recargarPropuestas();
 
-        Label ayuda = new Label(
-                "Consulta las propuestas vigentes enviadas "
-                + "por los proveedores para tus eventos.");
+        return raiz;
+    }
 
-        ayuda.setWrapText(true);
-
-        Button volver = new Button("Volver a eventos");
-
-        volver.setOnAction(
-                event -> volverEventos.run());
-
-        Button actualizar = new Button("Actualizar");
-
-        actualizar.setOnAction(
-                event -> recargarPropuestas());
-
-        Button rechazarPropuesta = new Button("Rechazar propuesta");
-
-        rechazarPropuesta.setOnAction(
-                event -> rechazarPropuestaSeleccionada());
-
-        Button solicitarAjuste = new Button("Solicitar ajuste");
-
-        solicitarAjuste.setOnAction(
-                event -> solicitarAjusteSeleccionado());
-
-        Button enviarMensaje = new Button("Enviar mensaje");
-
-        enviarMensaje.setOnAction(
-                event -> enviarMensajeSeleccionado());
-
-        Button verMensajes = new Button("Ver conversación");
-
-        verMensajes.setOnAction(
-                event -> verMensajesSeleccionados());
-
-        Button seleccionar = new Button("Seleccionar propuesta");
-        seleccionar.getStyleClass().add("btn-primary");
-
-        seleccionar.setOnAction(
-                event -> seleccionarPropuesta());
-
-        Button contratar = new Button("Contratar servicio");
-        contratar.getStyleClass().add("btn-primary");
-
-        contratar.setOnAction(
-                event -> contratarPropuestaSeleccionada());
-
-        HBox encabezado = new HBox(
-                20,
-                titulo,
-                volver);
-
-        encabezado.setAlignment(Pos.CENTER_LEFT);
-
-        lista.setPlaceholder(
-                new Label("Todavia no tienes propuestas recibidas."));
+    /** Lista de propuestas a la izquierda y detalle de la elegida a la derecha. */
+    private HBox crearContenido() {
 
         lista.getStyleClass().add("cu12-list");
-
+        lista.setPrefWidth(380);
+        lista.setMinWidth(320);
+        lista.setPlaceholder(ComponentesUi.texto(
+                "Todavía no tienes propuestas. Aparecerán aquí cuando "
+                + "un proveedor responda tus solicitudes."));
         lista.setCellFactory(vista -> new ListCell<>() {
 
             @Override
@@ -182,112 +125,89 @@ public class ViewPropuestasOrganizador {
 
                 super.updateItem(propuesta, vacia);
 
-                if (vacia || propuesta == null) {
-                    setText(null);
-                    setGraphic(null);
-                    return;
-                }
-
-                Label tituloTarjeta = new Label(
-                        "Propuesta #" + propuesta.getIdPropuesta());
-
-                tituloTarjeta.getStyleClass().add("cu12-card-title");
-
-                Label estado = new Label(
-                        propuesta.getEstado().replace("_", " "));
-
-                estado.getStyleClass().add("cu12-state");
-
-                if ("SELECCIONADA".equalsIgnoreCase(propuesta.getEstado())
-                        || "CONTRATADA".equalsIgnoreCase(propuesta.getEstado())) {
-                    estado.getStyleClass().add("cu12-selected");
-                } else if ("NO_SELECCIONADA".equalsIgnoreCase(propuesta.getEstado())) {
-                    estado.getStyleClass().add("cu12-neutral");
-                } else {
-                    estado.getStyleClass().add("cu12-negotiating");
-                }
-
-                HBox cabecera = new HBox(15, tituloTarjeta, estado);
-                cabecera.setAlignment(Pos.CENTER_LEFT);
-
-                String precio = java.text.NumberFormat
-                        .getCurrencyInstance(
-                                java.util.Locale.forLanguageTag("es-CO"))
-                        .format(propuesta.getValor());
-
-                Label valor = new Label(precio);
-                valor.getStyleClass().add("cu12-price");
-
-                Label detalle = new Label(
-                        "Solicitud #" + propuesta.getIdSolicitud()
-                        + "  •  Versión " + propuesta.getNumeroVersion());
-
-                detalle.getStyleClass().add("cu12-card-detail");
-
-                Label alcance = new Label(
-                        "Alcance: " + propuesta.getDescripcion());
-
-                alcance.setWrapText(true);
-                alcance.getStyleClass().add("cu12-card-detail");
-
-                Label condiciones = new Label(
-                        "Condiciones: " + propuesta.getCondiciones());
-
-                condiciones.setWrapText(true);
-                condiciones.getStyleClass().add("cu12-card-detail");
-
-                VBox tarjeta = new VBox(
-                        9, cabecera, valor, detalle, alcance, condiciones);
-
-                tarjeta.setMinWidth(0);
-                tarjeta.prefWidthProperty().bind(widthProperty().subtract(48));
-
-                alcance.setMinWidth(0);
-                alcance.setMaxWidth(Double.MAX_VALUE);
-
-                condiciones.setMinWidth(0);
-                condiciones.setMaxWidth(Double.MAX_VALUE);
-
                 setText(null);
-                setGraphic(tarjeta);
+                setGraphic(vacia || propuesta == null
+                        ? null
+                        : TarjetaPropuesta.crear(propuesta));
             }
         });
 
-        FlowPane acciones = new FlowPane(
-                12,
-                12,
-                actualizar,
-                seleccionar,
-                contratar,
-                solicitarAjuste,
-                rechazarPropuesta,
-                enviarMensaje,
-                verMensajes);
+        ScrollPane desplazable = new ScrollPane(detalle);
+        desplazable.setFitToWidth(true);
+        desplazable.getStyleClass().add("panel-desplazable");
+        HBox.setHgrow(desplazable, Priority.ALWAYS);
 
-        acciones.setAlignment(Pos.CENTER_LEFT);
-
-        VBox contenido = new VBox(
-                20,
-                encabezado,
-                ayuda,
-                lista,
-                acciones);
-
-        contenido.getStyleClass().addAll(
-                "content",
-                "cu12-content");
-        contenido.setMaxWidth(1320);
-
-        lista.setPrefHeight(500);
-
+        VBox izquierda = new VBox(14,
+                ComponentesUi.titulo("Propuestas recibidas"),
+                lista);
         VBox.setVgrow(lista, Priority.ALWAYS);
 
-        principal.setCenter(contenido);
-        raiz.setCenter(principal);
+        HBox contenido = new HBox(24, izquierda, desplazable);
+        contenido.getStyleClass().add("cu12-content");
+        contenido.setPadding(new Insets(30));
 
-        recargarPropuestas();
+        mostrarDetalle(null);
+        return contenido;
+    }
 
-        return raiz;
+    private void mostrarDetalle(PropuestaServicio propuesta) {
+
+        detalle.getChildren().clear();
+        zona.getChildren().clear();
+
+        if (propuesta == null) {
+            detalle.getChildren().add(ComponentesUi.texto(
+                    "Selecciona una propuesta para ver sus datos."));
+            return;
+        }
+
+        detalle.getChildren().addAll(
+                DetallePropuesta.crear(propuesta),
+                crearAcciones(propuesta),
+                zona);
+
+        if (PresentacionSolicitud.propuestaCerrada(propuesta.getEstado())) {
+            mostrarAviso(PresentacionSolicitud.mensajeCerrada(
+                    propuesta.getEstado()), "banner-info");
+        }
+    }
+
+    /** Una acción principal según el estado; las demás son discretas. */
+    private FlowPane crearAcciones(PropuestaServicio propuesta) {
+
+        String estado = propuesta.getEstado();
+        FlowPane acciones = new FlowPane(12, 12);
+        acciones.setAlignment(Pos.CENTER_LEFT);
+
+        if (PresentacionSolicitud.puedeSeleccionar(estado)) {
+            acciones.getChildren().add(ComponentesUi.boton(
+                    "Seleccionar propuesta", "btn-primary",
+                    () -> seleccionar(propuesta)));
+        }
+        if (PresentacionSolicitud.puedeContratar(estado)) {
+            acciones.getChildren().add(ComponentesUi.boton(
+                    "Contratar servicio", "btn-primary",
+                    () -> contratar(propuesta)));
+        }
+        if (PresentacionSolicitud.puedeAjustar(estado)) {
+            acciones.getChildren().add(ComponentesUi.boton(
+                    "Solicitar ajuste", "btn-ghost",
+                    this::solicitarAjusteSeleccionado));
+        }
+
+        acciones.getChildren().addAll(
+                ComponentesUi.boton("Ver conversación", "btn-ghost",
+                        this::verMensajesSeleccionados),
+                ComponentesUi.boton("Enviar mensaje", "btn-ghost",
+                        this::enviarMensajeSeleccionado));
+
+        if (PresentacionSolicitud.puedeRechazarPropuesta(estado)) {
+            acciones.getChildren().add(ComponentesUi.boton(
+                    "Rechazar propuesta", "btn-danger-ghost",
+                    () -> pedirConfirmacionDeRechazo(propuesta)));
+        }
+
+        return acciones;
     }
 
     private VBox crearMenu() {
@@ -310,164 +230,59 @@ public class ViewPropuestasOrganizador {
                 "Propuestas recibidas");
     }
 
-    private void seleccionarPropuesta() {
-
-        PropuestaServicio seleccionada
-                = lista.getSelectionModel().getSelectedItem();
-
-        if (seleccionada == null) {
-
-            Alert alerta = new Alert(
-                    Alert.AlertType.WARNING,
-                    "Selecciona una propuesta de la lista.",
-                    ButtonType.OK);
-
-            alerta.showAndWait();
-            return;
-        }
-
-        if (estaCerrada(seleccionada)) {
-            mostrarError(mensajeCerrada(seleccionada));
-            return;
-        }
-
-        Alert confirmacion = new Alert(
-                Alert.AlertType.CONFIRMATION,
-                "¿Deseas seleccionar la propuesta #"
-                + seleccionada.getIdPropuesta()
-                + " por un valor de $"
-                + seleccionada.getValor()
-                + "?",
-                ButtonType.YES,
-                ButtonType.NO);
-
-        confirmacion.setHeaderText(
-                "Confirmar seleccion");
-
-        if (confirmacion.showAndWait().orElse(
-                ButtonType.NO) != ButtonType.YES) {
-            return;
-        }
-
+    private void seleccionar(PropuestaServicio propuesta) {
         try {
             controller.seleccionarPropuesta(
-                    idOrganizador,
-                    seleccionada.getIdPropuesta());
-
-            Alert resultado = new Alert(
-                    Alert.AlertType.INFORMATION,
-                    "La propuesta fue seleccionada correctamente.",
-                    ButtonType.OK);
-
-            resultado.showAndWait();
+                    idOrganizador, propuesta.getIdPropuesta());
 
             recargarPropuestas();
+            mostrarAviso("Propuesta seleccionada. Ahora puedes contratar "
+                    + "el servicio.", "banner-ok");
 
         } catch (RuntimeException e) {
-
-            Alert alerta = new Alert(
-                    Alert.AlertType.ERROR,
-                    e.getMessage(),
-                    ButtonType.OK);
-
-            alerta.setHeaderText(
-                    "No se pudo seleccionar la propuesta");
-
-            alerta.showAndWait();
+            mostrarAviso(e.getMessage(), "banner-error");
         }
     }
 
-    // CU-13: una propuesta contratada o no seleccionada ya no admite cambios
-    private boolean estaCerrada(PropuestaServicio propuesta) {
-        return "CONTRATADA".equalsIgnoreCase(propuesta.getEstado())
-                || "NO_SELECCIONADA".equalsIgnoreCase(propuesta.getEstado());
-    }
-
-    private String mensajeCerrada(PropuestaServicio propuesta) {
-        return "CONTRATADA".equalsIgnoreCase(propuesta.getEstado())
-                ? "Esta propuesta ya fue contratada y no admite cambios."
-                : "Otra propuesta cubrió esta necesidad; esta quedó como "
-                + "no seleccionada y no admite cambios.";
-    }
-
-    private void contratarPropuestaSeleccionada() {
-
-        PropuestaServicio propuesta
-                = lista.getSelectionModel().getSelectedItem();
-
-        if (propuesta == null) {
-            mostrarError("Selecciona una propuesta.");
-            return;
-        }
-
-        if (estaCerrada(propuesta)) {
-            mostrarError(mensajeCerrada(propuesta));
-            return;
-        }
-
-        if (!"SELECCIONADA".equalsIgnoreCase(propuesta.getEstado())) {
-            mostrarError(
-                    "Primero selecciona la propuesta para contratación "
-                    + "y luego contrátala.");
-            return;
-        }
-
+    private void contratar(PropuestaServicio propuesta) {
         if (abrirContratacion == null) {
-            mostrarError("La contratación de servicios no está habilitada.");
+            mostrarAviso("La contratación de servicios no está habilitada.",
+                    "banner-error");
             return;
         }
 
         abrirContratacion.accept(propuesta);
     }
 
-    private void rechazarPropuestaSeleccionada() {
+    private void pedirConfirmacionDeRechazo(PropuestaServicio propuesta) {
+        zona.getChildren().setAll(ComponentesUi.confirmacion(
+                "Rechazar propuesta",
+                "La negociación de esta solicitud se cerrará. "
+                + "Esta acción no se puede deshacer.",
+                "Rechazar propuesta",
+                () -> rechazar(propuesta),
+                () -> zona.getChildren().clear()));
+    }
 
-        PropuestaServicio propuesta
-                = lista.getSelectionModel().getSelectedItem();
-
-        if (propuesta == null) {
-            mostrarError("Selecciona una propuesta.");
-            return;
-        }
-
-        if (estaCerrada(propuesta)) {
-            mostrarError(mensajeCerrada(propuesta));
-            return;
-        }
-
-        Alert confirmacion = new Alert(
-                Alert.AlertType.CONFIRMATION,
-                "¿Seguro que deseas rechazar la propuesta #"
-                + propuesta.getIdPropuesta()
-                + "? Esta accion cerrara la negociacion.",
-                ButtonType.YES,
-                ButtonType.NO);
-
-        confirmacion.setHeaderText(
-                "Confirmar rechazo de propuesta");
-
-        if (confirmacion.showAndWait().orElse(
-                ButtonType.NO) != ButtonType.YES) {
-            return;
-        }
-
+    private void rechazar(PropuestaServicio propuesta) {
         try {
             controller.rechazarPropuesta(
-                    idOrganizador,
-                    propuesta.getIdPropuesta());
-
-            Alert resultado = new Alert(
-                    Alert.AlertType.INFORMATION,
-                    "La propuesta fue rechazada correctamente.",
-                    ButtonType.OK);
-
-            resultado.showAndWait();
+                    idOrganizador, propuesta.getIdPropuesta());
 
             recargarPropuestas();
+            mostrarAviso("Propuesta rechazada.", "banner-ok");
 
         } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+            mostrarAviso(e.getMessage(), "banner-error");
         }
+    }
+
+    /** Muestra un aviso bajo las acciones, o solo si no hay propuesta elegida. */
+    private void mostrarAviso(String mensaje, String estilo) {
+        if (!detalle.getChildren().contains(zona)) {
+            detalle.getChildren().add(zona);
+        }
+        zona.getChildren().setAll(ComponentesUi.banner(mensaje, estilo));
     }
 
     private void solicitarAjusteSeleccionado() {
@@ -477,21 +292,6 @@ public class ViewPropuestasOrganizador {
 
         if (propuesta == null) {
             mostrarError("Selecciona una propuesta.");
-            return;
-        }
-
-        if (estaCerrada(propuesta)) {
-            mostrarError(mensajeCerrada(propuesta));
-            return;
-        }
-
-        if ("SELECCIONADA".equalsIgnoreCase(
-                propuesta.getEstado())) {
-
-            mostrarError(
-                    "No puedes solicitar ajustes sobre una propuesta "
-                    + "que ya esta seleccionada. Cambia la seleccion "
-                    + "antes de continuar la negociacion.");
             return;
         }
 
@@ -670,23 +470,25 @@ public class ViewPropuestasOrganizador {
     private void recargarPropuestas() {
 
         try {
+            PropuestaServicio elegida
+                    = lista.getSelectionModel().getSelectedItem();
+
             List<PropuestaServicio> propuestas
                     = controller.listarPropuestasOrganizador(
                             idOrganizador);
 
             lista.getItems().setAll(propuestas);
 
+            if (elegida != null) {
+                propuestas.stream()
+                        .filter(item -> item.getIdPropuesta()
+                                == elegida.getIdPropuesta())
+                        .findFirst()
+                        .ifPresent(lista.getSelectionModel()::select);
+            }
+
         } catch (RuntimeException e) {
-
-            Alert alerta = new Alert(
-                    Alert.AlertType.ERROR,
-                    e.getMessage(),
-                    ButtonType.OK);
-
-            alerta.setHeaderText(
-                    "No se pudieron consultar las propuestas");
-
-            alerta.showAndWait();
+            mostrarAviso(e.getMessage(), "banner-error");
         }
     }
 }

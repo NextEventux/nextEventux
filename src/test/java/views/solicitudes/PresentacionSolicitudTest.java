@@ -128,4 +128,48 @@ class PresentacionSolicitudTest {
         assertEquals("Ajuste solicitado",
                 PresentacionSolicitud.textoAjuste(mensaje(8, 40, null)));
     }
+
+    @Test
+    void cadaEstadoDePropuestaHabilitaSusAcciones() {
+        assertTrue(PresentacionSolicitud.puedeSeleccionar("ENVIADA"));
+        assertFalse(PresentacionSolicitud.puedeSeleccionar("SELECCIONADA"));
+
+        assertTrue(PresentacionSolicitud.puedeContratar("SELECCIONADA"));
+        assertFalse(PresentacionSolicitud.puedeContratar("ENVIADA"));
+
+        assertTrue(PresentacionSolicitud.puedeAjustar("ENVIADA"));
+        assertFalse(PresentacionSolicitud.puedeAjustar("SELECCIONADA"));
+
+        assertTrue(PresentacionSolicitud.puedeRechazarPropuesta("ENVIADA"));
+        assertTrue(PresentacionSolicitud.puedeRechazarPropuesta("SELECCIONADA"));
+        assertFalse(PresentacionSolicitud.puedeRechazarPropuesta("CONTRATADA"));
+        assertFalse(PresentacionSolicitud.puedeRechazarPropuesta("NO_SELECCIONADA"));
+    }
+
+    @Test
+    void laPropuestaCerradaExplicaPorQueNoSeModifica() {
+        assertEquals(
+                "Esta propuesta ya fue contratada y no admite cambios.",
+                PresentacionSolicitud.mensajeCerrada("CONTRATADA"));
+        assertTrue(PresentacionSolicitud.mensajeCerrada("NO_SELECCIONADA")
+                .contains("no seleccionada"));
+    }
+
+    @Test
+    void sinNombreDeEventoOServicioSeMuestraGuion() {
+        assertEquals("—", PresentacionSolicitud.nombreEvento(
+                ContextoSolicitud.vacio()));
+        assertEquals("—", PresentacionSolicitud.nombreServicio(
+                ContextoSolicitud.vacio()));
+        assertEquals("Decoración", PresentacionSolicitud.nombreServicio(
+                contexto("Boda", "Decoración", 80)));
+    }
+
+    @Test
+    void sinProveedorSeMuestraGuion() {
+        assertEquals("—", PresentacionSolicitud.nombreProveedor(
+                ContextoSolicitud.vacio()));
+        assertEquals("Luna Decoraciones", PresentacionSolicitud.nombreProveedor(
+                contexto("Boda", "Decoración", 80)));
+    }
 }

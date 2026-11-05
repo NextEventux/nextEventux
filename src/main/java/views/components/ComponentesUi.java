@@ -98,6 +98,22 @@ public final class ComponentesUi {
         return fila;
     }
 
+    /** Pregunta de confirmación dentro de la pantalla, sin ventana emergente. */
+    public static VBox confirmacion(
+            String titulo,
+            String explicacion,
+            String textoBoton,
+            Runnable aceptar,
+            Runnable cancelar) {
+
+        return tarjeta(
+                subtitulo(titulo),
+                texto(explicacion),
+                acciones(
+                        boton(textoBoton, "btn-danger", aceptar),
+                        boton("Cancelar", "btn-ghost", cancelar)));
+    }
+
     private static Label etiqueta(String texto, String... estilos) {
         Label etiqueta = new Label(texto);
         etiqueta.getStyleClass().addAll(estilos);
