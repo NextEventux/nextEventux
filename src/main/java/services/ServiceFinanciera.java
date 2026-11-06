@@ -157,6 +157,10 @@ public class ServiceFinanciera {
         estado.put("Balance", ingresos.subtract(egresos));
         estado.put("Pagado", pagado);
         estado.put("Pagos_Programados", programados);
+        // Por pagar: lo comprometido en contrataciones que aún no se ha pagado.
+        BigDecimal porPagar = comprometido.subtract(pagado);
+        estado.put("Por_Pagar", porPagar);
+        estado.put("Pagado_De_Mas", porPagar.signum() < 0);
 
         estado.put("Presupuesto_Registrado", hayPresupuesto);
         estado.put("Presupuesto", presupuesto);
