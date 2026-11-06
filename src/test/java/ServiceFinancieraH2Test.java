@@ -269,6 +269,39 @@ public class ServiceFinancieraH2Test {
                 () -> service.consultarPresupuestoDisponible(2, sesionLaura()));
     }
 
+    @Test
+    void porPagarEsComprometidoMenosPagado() {
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        // Comprometido 4.000.000 − pagado 2.000.000.
+        assertEquals(2_000_000, numero(estado, "Por_Pagar"), DELTA);
+        assertEquals(false, estado.get("Pagado_De_Mas"));
+    }
+
+    @Test
+    void registrarUnPagoPendienteReduceElSaldoPorPagar() throws Exception {
+        ejecutar("UPDATE Movimiento_financiero SET estado = 'REGISTRADO' "
+                + "WHERE id_evento = 1 AND valor = 900000.00 AND estado = 'PENDIENTE'");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        assertEquals(2_900_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(1_100_000, numero(estado, "Pagos_Programados"), DELTA);
+        assertEquals(1_100_000, numero(estado, "Por_Pagar"), DELTA);
+    }
+
+    @Test
+    void cancelarUnaContratacionConPagosMarcaPagadoDeMas() throws Exception {
+        ejecutar("UPDATE Contratacion SET estado = 'CANCELADA' WHERE id_contratacion = 2");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        // Queda comprometido 1.800.000, pero ya se pagaron 2.000.000.
+        assertEquals(1_800_000, numero(estado, "Comprometido"), DELTA);
+        assertEquals(-200_000, numero(estado, "Por_Pagar"), DELTA);
+        assertEquals(true, estado.get("Pagado_De_Mas"));
+    }
+
     private static SesionUsuario sesionLaura() {
         return sesion(1, 1, "ORGANIZADOR");
     }
