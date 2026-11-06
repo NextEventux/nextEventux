@@ -190,9 +190,11 @@ public class ViewFinanciera {
         String estadoPlan = estado.containsKey("Planificacion_Estado")
                 ? estado.get("Planificacion_Estado").toString()
                 : "Desconocido";
-        String ingresos = dinero(estado.get("Ingresos"));
-        String egresos = dinero(estado.get("Egresos"));
-        String balance = dinero(estado.get("Balance"));
+        String pagado = dinero(estado.get("Pagado"));
+        String porPagar = dinero(estado.get("Por_Pagar"));
+        BigDecimal programados = estado.get("Pagos_Programados") instanceof BigDecimal
+                ? (BigDecimal) estado.get("Pagos_Programados") : BigDecimal.ZERO;
+        boolean pagadoDeMas = Boolean.TRUE.equals(estado.get("Pagado_De_Mas"));
 
         List<CompromisoFinanciero> compromisos = estado.containsKey("Compromisos")
                 ? (List<CompromisoFinanciero>) estado.get("Compromisos")
@@ -217,7 +219,7 @@ public class ViewFinanciera {
         HBox tituloTarjeta = new HBox(13, etiqueta("$", "heading-icon"), etiqueta("Resumen financiero", "card-title"));
         tituloTarjeta.setAlignment(Pos.CENTER_LEFT);
 
-        Label ayuda = etiqueta("Consulta el presupuesto, lo comprometido, los ingresos, egresos y el balance de tu evento.", "muted");
+        Label ayuda = etiqueta("Consulta el presupuesto, lo comprometido, lo pagado y lo que falta por pagar de tu evento.", "muted");
         ayuda.setWrapText(true);
 
         // ---------- Presupuesto del evento ----------
@@ -291,14 +293,27 @@ public class ViewFinanciera {
             tarjeta.getChildren().add(barras);
         }
 
-        // ---------- Movimientos: ingresos, egresos y balance ----------
+        // ---------- Pagos a proveedores: solo movimientos REGISTRADO ----------
         GridPane datos = grilla();
-        datos.add(grupo("Total ingresos", valor("ingresos", ingresos)), 0, 0);
-        datos.add(grupo("Total egresos", valor("egresos", egresos)), 1, 0);
-        datos.add(grupo("Balance final", valor("balance", balance)), 0, 1);
-        datos.add(grupo("Estado del plan", valor("estadoPlan", estadoPlan)), 1, 1);
+        datos.add(grupo("Pagado", valor("pagado", pagado)), 0, 0);
+        datos.add(grupo("Por pagar", valor("porPagar", porPagar)), 1, 0);
 
-        tarjeta.getChildren().addAll(new Separator(), etiqueta("Balance de movimientos", "section-title"), datos);
+        tarjeta.getChildren().addAll(new Separator(), etiqueta("Pagos", "section-title"), datos);
+
+        if (programados.signum() > 0) {
+            Label avisoProgramados = etiqueta("Hay " + dinero(programados)
+                    + " en pagos programados (pendientes). Aún no cuentan como pagados.", "hint");
+            avisoProgramados.setWrapText(true);
+            tarjeta.getChildren().add(avisoProgramados);
+        }
+
+        if (pagadoDeMas) {
+            Label alertaPagos = etiqueta("⚠ Se ha pagado " + dinero(((BigDecimal) estado.get("Por_Pagar")).negate())
+                    + " más de lo comprometido en contrataciones.", "field-label");
+            alertaPagos.setStyle("-fx-text-fill: #BA2424;");
+            alertaPagos.setWrapText(true);
+            tarjeta.getChildren().add(alertaPagos);
+        }
 
         // ---------- Movimientos ----------
         tarjeta.getChildren().addAll(new Separator(), etiqueta("Últimos movimientos", "section-title"));
