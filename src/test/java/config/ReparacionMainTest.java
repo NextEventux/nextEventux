@@ -8,8 +8,8 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReparacionMainTest {
-    /** Migraciones que DatabaseConnection registra en Esquema_version mediante ejecutarUnaVez (010, 011 y 012). */
-    private static final int MIGRACIONES_REGISTRADAS = 3;
+    /** Migraciones registradas mediante ejecutarUnaVez (010, 011, 012 y 013 de Marketing). */
+    private static final int MIGRACIONES_REGISTRADAS = 4;
 
     @TempDir Path carpeta;
 

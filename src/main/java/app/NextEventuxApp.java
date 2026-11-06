@@ -234,7 +234,8 @@ public class NextEventuxApp extends Application {
                             null, null, null,
                             this::mostrarSancionesProveedor,
                             null,
-                            this::mostrarPublicacion));
+                            this::mostrarPublicacion,
+                            this::mostrarMarketing));
                     BorderPane principal = new BorderPane();
 
                     principal.setTop(
@@ -250,6 +251,22 @@ public class NextEventuxApp extends Application {
 
         if ("ORGANIZADOR".equalsIgnoreCase(tipo) || "ADMINISTRADOR".equalsIgnoreCase(tipo)) {
             registrarRutasOrganizador();
+
+            // CU-21: registrar Marketing solamente para administradores
+            if ("ADMINISTRADOR".equalsIgnoreCase(tipo)) {
+                navegacion.registrarDinamica(
+                        Navegacion.Pantalla.MARKETING,
+                        () -> new views.ViewMarketing(
+                                new controllers.ControllerMarketing(
+                                        new services.ServiceMarketing(
+                                                new repositories.RepositoryMarketing())),
+                                sesionActual.getIdUsuario(),
+                                sesionActual,
+                                this::mostrarPublicacion,
+                                this::mostrarLogin)
+                                .conNavegacion(this::mostrarSancionesProveedor, this::mostrarMarketing)
+                                .crearPantalla());
+            }
             if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
                 mostrarEventos();
             } else {
@@ -423,6 +440,7 @@ public class NextEventuxApp extends Application {
                                 this::mostrarSancionesProveedor,
                                 this::mostrarPublicacion)
                                 .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .conMarketing(this::mostrarMarketing)
                                 .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
@@ -490,6 +508,16 @@ public class NextEventuxApp extends Application {
         }
         eventoSeleccionado = evento.getIdEvento();
         navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
+    }
+
+    // CU-21: el acceso a Marketing es exclusivo del administrador
+    private void mostrarMarketing() {
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.mostrarEn(contenedor, Navegacion.Pantalla.MARKETING);
     }
 
     /**
