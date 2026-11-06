@@ -35,6 +35,7 @@ public class ViewPublicacion {
     private final Runnable cerrarSesion;
     private final Runnable abrirSanciones;
     private Runnable abrirPropuestas;
+    private Runnable abrirMarketing;
     private final Runnable abrirPublicacion;
     private boolean esAdministrador;
     private final Label usuario = new Label();
@@ -107,6 +108,11 @@ public class ViewPublicacion {
         return this;
     }
 
+    public ViewPublicacion conMarketing(Runnable accion) {
+        this.abrirMarketing = accion;
+        return this;
+    }
+
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().addAll("app", "publicacion");
@@ -127,7 +133,8 @@ public class ViewPublicacion {
                 organizadorActivo ? abrirPropuestas : null,
                 abrirSanciones,
                 null,
-                abrirPublicacion));
+                abrirPublicacion,
+                abrirMarketing));
         Button actualizar = boton("Actualizar", "actualizarPublicacion", this::actualizar, false);
         VBox contenido = new VBox(22);
         contenido.getStyleClass().add("content");

@@ -64,6 +64,8 @@ public class ViewMarketing {
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().add("app");
+        raiz.getStylesheets().add(
+                getClass().getResource("/styles/marketing.css").toExternalForm());
         raiz.setLeft(sesion == null ? crearMenu() : crearMenuIntegrado());
 
         BorderPane principal = new BorderPane();
