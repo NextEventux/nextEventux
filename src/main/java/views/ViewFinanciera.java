@@ -263,17 +263,8 @@ public class ViewFinanciera {
             tarjeta.getChildren().add(aviso);
         }
 
-        // ---------- Movimientos: ingresos, egresos y balance ----------
-        GridPane datos = grilla();
-        datos.add(grupo("Total ingresos", valor("ingresos", ingresos)), 0, 0);
-        datos.add(grupo("Total egresos", valor("egresos", egresos)), 1, 0);
-        datos.add(grupo("Balance final", valor("balance", balance)), 0, 1);
-        datos.add(grupo("Estado del plan", valor("estadoPlan", estadoPlan)), 1, 1);
-
-        tarjeta.getChildren().addAll(new Separator(), etiqueta("Balance de movimientos", "section-title"),
-                datos, new Separator(), etiqueta("Presupuesto por categoría", "section-title"));
-
-        // ---------- Categorías ----------
+        // ---------- Comprometido por categoría (parte del presupuesto) ----------
+        tarjeta.getChildren().add(etiqueta("Comprometido por categoría", "section-title"));
         if (compromisos.isEmpty()) {
             tarjeta.getChildren().add(etiqueta("No hay servicios contratados para este evento.", "hint"));
         } else {
@@ -299,6 +290,15 @@ public class ViewFinanciera {
             }
             tarjeta.getChildren().add(barras);
         }
+
+        // ---------- Movimientos: ingresos, egresos y balance ----------
+        GridPane datos = grilla();
+        datos.add(grupo("Total ingresos", valor("ingresos", ingresos)), 0, 0);
+        datos.add(grupo("Total egresos", valor("egresos", egresos)), 1, 0);
+        datos.add(grupo("Balance final", valor("balance", balance)), 0, 1);
+        datos.add(grupo("Estado del plan", valor("estadoPlan", estadoPlan)), 1, 1);
+
+        tarjeta.getChildren().addAll(new Separator(), etiqueta("Balance de movimientos", "section-title"), datos);
 
         // ---------- Movimientos ----------
         tarjeta.getChildren().addAll(new Separator(), etiqueta("Últimos movimientos", "section-title"));
