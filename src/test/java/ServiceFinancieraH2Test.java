@@ -80,6 +80,27 @@ public class ServiceFinancieraH2Test {
     }
 
     @Test
+    void pagadoSoloCuentaEgresosRegistrados() {
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        // Los dos anticipos están REGISTRADO; los dos pagos finales siguen PENDIENTE.
+        assertEquals(2_000_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(2_000_000, numero(estado, "Pagos_Programados"), DELTA);
+    }
+
+    @Test
+    void movimientoAnuladoNoCuentaComoPagadoNiProgramado() throws Exception {
+        ejecutar("INSERT INTO Movimiento_financiero "
+                + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
+                + "VALUES (1, 1, 1, 500000.00, CURRENT_TIMESTAMP, 'Pago duplicado', 'EGRESO', 'ANULADO')");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        assertEquals(2_000_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(2_000_000, numero(estado, "Pagos_Programados"), DELTA);
+    }
+
+    @Test
     void comprometidoExcluyeContratacionesCanceladas() throws Exception {
         ejecutar("UPDATE Contratacion SET estado = 'CANCELADA' WHERE id_contratacion = 2");
 
