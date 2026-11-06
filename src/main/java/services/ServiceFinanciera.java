@@ -112,18 +112,23 @@ public class ServiceFinanciera {
                                                       List<MovimientoFinanciero> movimientos,
                                                       Planificacion planificacion,
                                                       List<CompromisoFinanciero> compromisos) {
-        // Balance de movimientos, tolerando mayúsculas y minúsculas en el tipo.
-        BigDecimal ingresos = BigDecimal.ZERO;
-        BigDecimal egresos = BigDecimal.ZERO;
+        // Pagado: egresos ya hechos (REGISTRADO). Programados: egresos aún pendientes.
+        // Tipo y estado se comparan sin importar mayúsculas. Los INGRESO no se usan:
+        // ningún caso de uso los registra todavía.
+        BigDecimal pagado = BigDecimal.ZERO;
+        BigDecimal programados = BigDecimal.ZERO;
         for (MovimientoFinanciero mov : movimientos) {
             if (mov.getTipo() == null || mov.getValor() == null) {
                 continue;
             }
-            String tipo = mov.getTipo().trim().toUpperCase();
-            if ("INGRESO".equals(tipo)) {
-                ingresos = ingresos.add(mov.getValor());
-            } else if ("EGRESO".equals(tipo)) {
-                egresos = egresos.add(mov.getValor());
+            if (!"EGRESO".equals(mov.getTipo().trim().toUpperCase())) {
+                continue;
+            }
+            String estadoMov = mov.getEstado() == null ? "" : mov.getEstado().trim().toUpperCase();
+            if ("REGISTRADO".equals(estadoMov)) {
+                pagado = pagado.add(mov.getValor());
+            } else if ("PENDIENTE".equals(estadoMov)) {
+                programados = programados.add(mov.getValor());
             }
         }
 
@@ -143,9 +148,12 @@ public class ServiceFinanciera {
                 : 0.0;
 
         Map<String, Object> estado = new HashMap<>();
-        estado.put("Ingresos", ingresos);
-        estado.put("Egresos", egresos);
-        estado.put("Balance", ingresos.subtract(egresos));
+        estado.put("Pagado", pagado);
+        estado.put("Pagos_Programados", programados);
+        // Por pagar: lo comprometido en contrataciones que aún no se ha pagado.
+        BigDecimal porPagar = comprometido.subtract(pagado);
+        estado.put("Por_Pagar", porPagar);
+        estado.put("Pagado_De_Mas", porPagar.signum() < 0);
 
         estado.put("Presupuesto_Registrado", hayPresupuesto);
         estado.put("Presupuesto", presupuesto);

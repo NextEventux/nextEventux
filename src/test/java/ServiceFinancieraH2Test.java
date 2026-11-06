@@ -66,17 +66,47 @@ public class ServiceFinancieraH2Test {
     }
 
     @Test
-    void balanceEsIngresosMenosEgresos() throws Exception {
+    void egresoEnMinusculasCuentaComoPagado() throws Exception {
         ejecutar("INSERT INTO Movimiento_financiero "
                 + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
-                + "VALUES (1, 1, 1, 1000000.00, CURRENT_TIMESTAMP, 'Abono del cliente', 'ingreso', 'REGISTRADO')");
+                + "VALUES (1, 1, 1, 100000.00, CURRENT_TIMESTAMP, 'Ajuste', 'egreso', 'registrado')");
 
         Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
 
-        // El tipo en minúsculas también cuenta como ingreso.
-        assertEquals(1_000_000, numero(estado, "Ingresos"), DELTA);
-        assertEquals(4_000_000, numero(estado, "Egresos"), DELTA);
-        assertEquals(-3_000_000, numero(estado, "Balance"), DELTA);
+        assertEquals(2_100_000, numero(estado, "Pagado"), DELTA);
+    }
+
+    @Test
+    void ingresoNoCuentaComoPagado() throws Exception {
+        ejecutar("INSERT INTO Movimiento_financiero "
+                + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
+                + "VALUES (1, 1, 1, 1000000.00, CURRENT_TIMESTAMP, 'Abono del cliente', 'INGRESO', 'REGISTRADO')");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        assertEquals(2_000_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(2_000_000, numero(estado, "Por_Pagar"), DELTA);
+    }
+
+    @Test
+    void pagadoSoloCuentaEgresosRegistrados() {
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        // Los dos anticipos están REGISTRADO; los dos pagos finales siguen PENDIENTE.
+        assertEquals(2_000_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(2_000_000, numero(estado, "Pagos_Programados"), DELTA);
+    }
+
+    @Test
+    void movimientoAnuladoNoCuentaComoPagadoNiProgramado() throws Exception {
+        ejecutar("INSERT INTO Movimiento_financiero "
+                + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
+                + "VALUES (1, 1, 1, 500000.00, CURRENT_TIMESTAMP, 'Pago duplicado', 'EGRESO', 'ANULADO')");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        assertEquals(2_000_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(2_000_000, numero(estado, "Pagos_Programados"), DELTA);
     }
 
     @Test
@@ -131,7 +161,8 @@ public class ServiceFinancieraH2Test {
 
         assertEquals(5_000_000, numero(estado, "Presupuesto"), DELTA);
         assertEquals(0, numero(estado, "Comprometido"), DELTA);
-        assertEquals(0, numero(estado, "Balance"), DELTA);
+        assertEquals(0, numero(estado, "Pagado"), DELTA);
+        assertEquals(0, numero(estado, "Por_Pagar"), DELTA);
         assertTrue(((List<?>) estado.get("Compromisos")).isEmpty());
         assertTrue(((List<?>) estado.get("Movimientos")).isEmpty());
     }
@@ -165,13 +196,13 @@ public class ServiceFinancieraH2Test {
         // Con double, 0.10 + 0.20 da 0.30000000000000004; con BigDecimal es exacto.
         ejecutar("INSERT INTO Movimiento_financiero "
                 + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
-                + "VALUES (1, 1, 1, 0.10, CURRENT_TIMESTAMP, 'Ingreso A', 'INGRESO', 'REGISTRADO'), "
-                + "(1, 1, 1, 0.20, CURRENT_TIMESTAMP, 'Ingreso B', 'INGRESO', 'REGISTRADO')");
+                + "VALUES (1, 1, 1, 0.10, CURRENT_TIMESTAMP, 'Pago A', 'EGRESO', 'REGISTRADO'), "
+                + "(1, 1, 1, 0.20, CURRENT_TIMESTAMP, 'Pago B', 'EGRESO', 'REGISTRADO')");
 
         Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
 
-        assertTrue(estado.get("Ingresos") instanceof BigDecimal);
-        assertEquals(0, new BigDecimal("0.30").compareTo((BigDecimal) estado.get("Ingresos")));
+        assertTrue(estado.get("Pagado") instanceof BigDecimal);
+        assertEquals(0, new BigDecimal("2000000.30").compareTo((BigDecimal) estado.get("Pagado")));
         assertEquals(0, new BigDecimal("11000000").compareTo((BigDecimal) estado.get("Disponible")));
     }
 
@@ -246,6 +277,39 @@ public class ServiceFinancieraH2Test {
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.consultarPresupuestoDisponible(2, sesionLaura()));
+    }
+
+    @Test
+    void porPagarEsComprometidoMenosPagado() {
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        // Comprometido 4.000.000 − pagado 2.000.000.
+        assertEquals(2_000_000, numero(estado, "Por_Pagar"), DELTA);
+        assertEquals(false, estado.get("Pagado_De_Mas"));
+    }
+
+    @Test
+    void registrarUnPagoPendienteReduceElSaldoPorPagar() throws Exception {
+        ejecutar("UPDATE Movimiento_financiero SET estado = 'REGISTRADO' "
+                + "WHERE id_evento = 1 AND valor = 900000.00 AND estado = 'PENDIENTE'");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        assertEquals(2_900_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(1_100_000, numero(estado, "Pagos_Programados"), DELTA);
+        assertEquals(1_100_000, numero(estado, "Por_Pagar"), DELTA);
+    }
+
+    @Test
+    void cancelarUnaContratacionConPagosMarcaPagadoDeMas() throws Exception {
+        ejecutar("UPDATE Contratacion SET estado = 'CANCELADA' WHERE id_contratacion = 2");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        // Queda comprometido 1.800.000, pero ya se pagaron 2.000.000.
+        assertEquals(1_800_000, numero(estado, "Comprometido"), DELTA);
+        assertEquals(-200_000, numero(estado, "Por_Pagar"), DELTA);
+        assertEquals(true, estado.get("Pagado_De_Mas"));
     }
 
     private static SesionUsuario sesionLaura() {

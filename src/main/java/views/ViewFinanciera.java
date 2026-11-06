@@ -190,9 +190,11 @@ public class ViewFinanciera {
         String estadoPlan = estado.containsKey("Planificacion_Estado")
                 ? estado.get("Planificacion_Estado").toString()
                 : "Desconocido";
-        String ingresos = dinero(estado.get("Ingresos"));
-        String egresos = dinero(estado.get("Egresos"));
-        String balance = dinero(estado.get("Balance"));
+        String pagado = dinero(estado.get("Pagado"));
+        String porPagar = dinero(estado.get("Por_Pagar"));
+        BigDecimal programados = estado.get("Pagos_Programados") instanceof BigDecimal
+                ? (BigDecimal) estado.get("Pagos_Programados") : BigDecimal.ZERO;
+        boolean pagadoDeMas = Boolean.TRUE.equals(estado.get("Pagado_De_Mas"));
 
         List<CompromisoFinanciero> compromisos = estado.containsKey("Compromisos")
                 ? (List<CompromisoFinanciero>) estado.get("Compromisos")
@@ -217,7 +219,7 @@ public class ViewFinanciera {
         HBox tituloTarjeta = new HBox(13, etiqueta("$", "heading-icon"), etiqueta("Resumen financiero", "card-title"));
         tituloTarjeta.setAlignment(Pos.CENTER_LEFT);
 
-        Label ayuda = etiqueta("Consulta el presupuesto, lo comprometido, los ingresos, egresos y el balance de tu evento.", "muted");
+        Label ayuda = etiqueta("Consulta el presupuesto, lo comprometido, lo pagado y lo que falta por pagar de tu evento.", "muted");
         ayuda.setWrapText(true);
 
         // ---------- Presupuesto del evento ----------
@@ -263,30 +265,13 @@ public class ViewFinanciera {
             tarjeta.getChildren().add(aviso);
         }
 
-        // ---------- Movimientos: ingresos, egresos y balance ----------
-        GridPane datos = grilla();
-        datos.add(grupo("Total ingresos", valor("ingresos", ingresos)), 0, 0);
-        datos.add(grupo("Total egresos", valor("egresos", egresos)), 1, 0);
-        datos.add(grupo("Balance final", valor("balance", balance)), 0, 1);
-        datos.add(grupo("Estado del plan", valor("estadoPlan", estadoPlan)), 1, 1);
-
-        tarjeta.getChildren().addAll(new Separator(), etiqueta("Balance de movimientos", "section-title"),
-                datos, new Separator(), etiqueta("Presupuesto por categoría", "section-title"));
-
-        // ---------- Categorías ----------
+        // ---------- Comprometido por categoría (parte del presupuesto) ----------
+        tarjeta.getChildren().add(etiqueta("Comprometido por categoría", "section-title"));
         if (compromisos.isEmpty()) {
             tarjeta.getChildren().add(etiqueta("No hay servicios contratados para este evento.", "hint"));
         } else {
-            Map<String, BigDecimal> costosPorCategoria = new LinkedHashMap<>();
-            for (CompromisoFinanciero c : compromisos) {
-                if (!c.tieneValor()) {
-                    continue;
-                }
-                String cat = c.getCategoria() != null ? c.getCategoria() : "Otros";
-                costosPorCategoria.merge(cat, c.getValor(), BigDecimal::add);
-            }
-            // Cada categoría se mide contra el presupuesto del evento; sin presupuesto, contra lo comprometido.
-            double base = hayPresupuesto && numero(presupuesto) > 0 ? numero(presupuesto) : numero(comprometido);
+            Map<String, BigDecimal> costosPorCategoria = comprometidoPorCategoria(compromisos);
+            double base = baseCategorias(estado);
             String[] colores = {"#D71920", "#2563EB", "#059669", "#D97706", "#7C3AED"};
             int idx = 0;
             VBox barras = new VBox(16);
@@ -298,6 +283,28 @@ public class ViewFinanciera {
                 idx++;
             }
             tarjeta.getChildren().add(barras);
+        }
+
+        // ---------- Pagos a proveedores: solo movimientos REGISTRADO ----------
+        GridPane datos = grilla();
+        datos.add(grupo("Pagado", valor("pagado", pagado)), 0, 0);
+        datos.add(grupo("Por pagar", valor("porPagar", porPagar)), 1, 0);
+
+        tarjeta.getChildren().addAll(new Separator(), etiqueta("Pagos", "section-title"), datos);
+
+        if (programados.signum() > 0) {
+            Label avisoProgramados = etiqueta("Hay " + dinero(programados)
+                    + " en pagos programados (pendientes). Aún no cuentan como pagados.", "hint");
+            avisoProgramados.setWrapText(true);
+            tarjeta.getChildren().add(avisoProgramados);
+        }
+
+        if (pagadoDeMas) {
+            Label alertaPagos = etiqueta("⚠ Se ha pagado " + dinero(((BigDecimal) estado.get("Por_Pagar")).negate())
+                    + " más de lo comprometido en contrataciones.", "field-label");
+            alertaPagos.setStyle("-fx-text-fill: #BA2424;");
+            alertaPagos.setWrapText(true);
+            tarjeta.getChildren().add(alertaPagos);
         }
 
         // ---------- Movimientos ----------
@@ -521,12 +528,49 @@ public class ViewFinanciera {
 
             writer.println("REPORTE FINANCIERO;" + textoCsv(estado.get("Planificacion_Descripcion")));
             writer.println("Estado del plan;" + textoCsv(estado.get("Planificacion_Estado")));
-            writer.println("Presupuesto total;" + dinero(estado.get("Presupuesto")));
-            writer.println("Comprometido;" + dinero(estado.get("Comprometido")));
-            writer.println("Disponible;" + dinero(estado.get("Disponible")));
-            writer.println("Ingresos totales;" + dinero(estado.get("Ingresos")));
-            writer.println("Egresos totales;" + dinero(estado.get("Egresos")));
-            writer.println("Balance final;" + dinero(estado.get("Balance")));
+            writer.println();
+
+            // Mismas secciones y valores que el resumen de la pantalla.
+            writer.println("--- PRESUPUESTO DEL EVENTO ---");
+            if (Boolean.TRUE.equals(estado.get("Presupuesto_Registrado"))) {
+                writer.println("Presupuesto total;" + dinero(estado.get("Presupuesto")));
+                writer.println("Comprometido en contrataciones;" + dinero(estado.get("Comprometido")));
+                writer.println("Disponible;" + dinero(estado.get("Disponible")));
+                writer.println("Uso del presupuesto;" + Math.round(numero(estado.get("Porcentaje_Usado")) * 100) + "%");
+                if (Boolean.TRUE.equals(estado.get("Excede_Presupuesto"))) {
+                    writer.println("Alerta;Las contrataciones superan el presupuesto en "
+                            + dinero(((BigDecimal) estado.get("Disponible")).negate()));
+                }
+            } else {
+                writer.println("Presupuesto total;Sin registrar");
+            }
+            if (numero(estado.get("Contrataciones_Sin_Valor")) > 0) {
+                writer.println("Contrataciones sin valor acordado;"
+                        + Math.round(numero(estado.get("Contrataciones_Sin_Valor"))));
+            }
+            writer.println();
+
+            writer.println("--- COMPROMETIDO POR CATEGORIA ---");
+            writer.println("Categoria;Valor;Porcentaje");
+            List<CompromisoFinanciero> compromisos = (List<CompromisoFinanciero>) estado.get("Compromisos");
+            Map<String, BigDecimal> porCategoria = comprometidoPorCategoria(
+                    compromisos != null ? compromisos : new ArrayList<>());
+            double base = baseCategorias(estado);
+            for (Map.Entry<String, BigDecimal> entry : porCategoria.entrySet()) {
+                double fraccion = base > 0 ? entry.getValue().doubleValue() / base : 0;
+                writer.println(textoCsv(entry.getKey()) + ";" + dinero(entry.getValue())
+                        + ";" + Math.round(fraccion * 100) + "%");
+            }
+            writer.println();
+
+            writer.println("--- PAGOS ---");
+            writer.println("Pagado;" + dinero(estado.get("Pagado")));
+            writer.println("Por pagar;" + dinero(estado.get("Por_Pagar")));
+            writer.println("Pagos programados (pendientes);" + dinero(estado.get("Pagos_Programados")));
+            if (Boolean.TRUE.equals(estado.get("Pagado_De_Mas"))) {
+                writer.println("Alerta;Se ha pagado " + dinero(((BigDecimal) estado.get("Por_Pagar")).negate())
+                        + " más de lo comprometido en contrataciones");
+            }
             writer.println();
 
             writer.println("--- DETALLE DE MOVIMIENTOS ---");
@@ -554,6 +598,25 @@ public class ViewFinanciera {
                     "Revisa que el archivo no est\u00e9 abierto en otro programa y que tengas permiso "
                             + "para guardar en esa carpeta.");
         }
+    }
+
+    /** Suma lo comprometido por categoría; lo usan la pantalla y el CSV. */
+    private Map<String, BigDecimal> comprometidoPorCategoria(List<CompromisoFinanciero> compromisos) {
+        Map<String, BigDecimal> porCategoria = new LinkedHashMap<>();
+        for (CompromisoFinanciero c : compromisos) {
+            if (c.tieneValor()) {
+                String cat = c.getCategoria() != null ? c.getCategoria() : "Otros";
+                porCategoria.merge(cat, c.getValor(), BigDecimal::add);
+            }
+        }
+        return porCategoria;
+    }
+
+    /** Cada categoría se mide contra el presupuesto del evento; sin presupuesto, contra lo comprometido. */
+    private double baseCategorias(Map<String, Object> estado) {
+        double presupuesto = numero(estado.get("Presupuesto"));
+        boolean hayPresupuesto = Boolean.TRUE.equals(estado.get("Presupuesto_Registrado"));
+        return hayPresupuesto && presupuesto > 0 ? presupuesto : numero(estado.get("Comprometido"));
     }
 
     /** Evita que un ';' o un salto de l\u00ednea en el texto descuadre las columnas del CSV. */
