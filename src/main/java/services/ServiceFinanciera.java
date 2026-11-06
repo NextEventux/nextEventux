@@ -112,7 +112,7 @@ public class ServiceFinanciera {
                                                       List<MovimientoFinanciero> movimientos,
                                                       Planificacion planificacion,
                                                       List<CompromisoFinanciero> compromisos) {
-        // Balance de movimientos, tolerando mayúsculas y minúsculas en el tipo.
+        // Balance: ingresos recibidos menos pagos hechos (ambos REGISTRADO), sin importar mayúsculas.
         BigDecimal ingresos = BigDecimal.ZERO;
         BigDecimal egresos = BigDecimal.ZERO;
         // Pagado: egresos ya hechos (REGISTRADO). Programados: egresos aún pendientes.
@@ -123,11 +123,13 @@ public class ServiceFinanciera {
                 continue;
             }
             String tipo = mov.getTipo().trim().toUpperCase();
+            String estadoMov = mov.getEstado() == null ? "" : mov.getEstado().trim().toUpperCase();
             if ("INGRESO".equals(tipo)) {
-                ingresos = ingresos.add(mov.getValor());
+                if ("REGISTRADO".equals(estadoMov)) {
+                    ingresos = ingresos.add(mov.getValor());
+                }
             } else if ("EGRESO".equals(tipo)) {
                 egresos = egresos.add(mov.getValor());
-                String estadoMov = mov.getEstado() == null ? "" : mov.getEstado().trim().toUpperCase();
                 if ("REGISTRADO".equals(estadoMov)) {
                     pagado = pagado.add(mov.getValor());
                 } else if ("PENDIENTE".equals(estadoMov)) {
@@ -154,7 +156,7 @@ public class ServiceFinanciera {
         Map<String, Object> estado = new HashMap<>();
         estado.put("Ingresos", ingresos);
         estado.put("Egresos", egresos);
-        estado.put("Balance", ingresos.subtract(egresos));
+        estado.put("Balance", ingresos.subtract(pagado));
         estado.put("Pagado", pagado);
         estado.put("Pagos_Programados", programados);
         // Por pagar: lo comprometido en contrataciones que aún no se ha pagado.

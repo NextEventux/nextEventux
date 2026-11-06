@@ -66,7 +66,7 @@ public class ServiceFinancieraH2Test {
     }
 
     @Test
-    void balanceEsIngresosMenosEgresos() throws Exception {
+    void balanceEsIngresosMenosPagado() throws Exception {
         ejecutar("INSERT INTO Movimiento_financiero "
                 + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
                 + "VALUES (1, 1, 1, 1000000.00, CURRENT_TIMESTAMP, 'Abono del cliente', 'ingreso', 'REGISTRADO')");
@@ -75,8 +75,21 @@ public class ServiceFinancieraH2Test {
 
         // El tipo en minúsculas también cuenta como ingreso.
         assertEquals(1_000_000, numero(estado, "Ingresos"), DELTA);
-        assertEquals(4_000_000, numero(estado, "Egresos"), DELTA);
-        assertEquals(-3_000_000, numero(estado, "Balance"), DELTA);
+        // Los pagos PENDIENTE no restan: solo los 2.000.000 ya pagados.
+        assertEquals(2_000_000, numero(estado, "Pagado"), DELTA);
+        assertEquals(-1_000_000, numero(estado, "Balance"), DELTA);
+    }
+
+    @Test
+    void ingresoPendienteNoCuentaEnElBalance() throws Exception {
+        ejecutar("INSERT INTO Movimiento_financiero "
+                + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
+                + "VALUES (1, 1, 1, 500000.00, CURRENT_TIMESTAMP, 'Abono por recibir', 'INGRESO', 'PENDIENTE')");
+
+        Map<String, Object> estado = service.consultarEstadoFinanciero(1, sesionLaura());
+
+        assertEquals(0, numero(estado, "Ingresos"), DELTA);
+        assertEquals(-2_000_000, numero(estado, "Balance"), DELTA);
     }
 
     @Test
