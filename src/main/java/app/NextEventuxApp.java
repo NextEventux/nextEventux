@@ -234,7 +234,8 @@ public class NextEventuxApp extends Application {
                             null, null, null,
                             this::mostrarSancionesProveedor,
                             null,
-                            this::mostrarPublicacion));
+                            this::mostrarPublicacion,
+                            this::mostrarMarketing));
                     BorderPane principal = new BorderPane();
 
                     principal.setTop(
@@ -263,6 +264,7 @@ public class NextEventuxApp extends Application {
                                 sesionActual,
                                 this::mostrarPublicacion,
                                 this::mostrarLogin)
+                                .conNavegacion(this::mostrarSancionesProveedor, this::mostrarMarketing)
                                 .crearPantalla());
             }
             if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {

@@ -25,6 +25,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import services.ServiceMarketing;
+import views.components.MenuCompartido;
 
 public class ViewMarketing {
     private final ControllerMarketing controller;
@@ -32,6 +33,8 @@ public class ViewMarketing {
     private final SesionUsuario sesion;
     private final Runnable volver;
     private final Runnable cerrarSesion;
+    private Runnable abrirSanciones;
+    private Runnable abrirMarketing;
     private final TableView<Segmentacion> tabla = new TableView<>();
     private final Label resumenSegmentos = new Label("0");
     private final Label resumenClientes = new Label("0");
@@ -59,6 +62,12 @@ public class ViewMarketing {
     resumenSegmentos.setId("resumenSegmentos");
     resumenClientes.setId("resumenClientes");
     configurarTabla();
+    }
+
+    public ViewMarketing conNavegacion(Runnable sanciones, Runnable marketing) {
+        this.abrirSanciones = sanciones;
+        this.abrirMarketing = marketing;
+        return this;
     }
 
     public Parent crearPantalla() {
@@ -252,34 +261,21 @@ public class ViewMarketing {
     }
 
     private VBox crearMenuIntegrado() {
-        VBox menu = new VBox(7);
-        menu.getStyleClass().add("sidebar");
-        menu.setPrefWidth(250);
-        menu.setMinWidth(250);
-        VBox marca = new VBox(5, etiqueta("🎪", "brand-icon"),
-                etiqueta("nextEventux", "brand"),
-                etiqueta("GESTIÓN DE EVENTOS", "brand-caption"));
-        marca.setAlignment(Pos.CENTER);
-        VBox.setMargin(marca, new Insets(0, 0, 38, 0));
-        Label segmento = etiqueta("♙  Segmentos", "menu-item");
-        segmento.getStyleClass().add("active");
-        menu.getChildren().addAll(marca, etiqueta("MARKETING", "menu-title"), segmento);
-        Region espacio = new Region();
-        VBox.setVgrow(espacio, Priority.ALWAYS);
-        VBox datosPerfil = new VBox(4,
-                etiqueta(sesion.getNombre(), "profile-name"),
-                etiqueta("Administrador", "hint"));
-        if (cerrarSesion != null) {
-            Label salir = etiqueta("Cerrar sesión", "logout-link");
-            salir.setOnMouseClicked(event -> cerrarSesion.run());
-            salir.setStyle("-fx-cursor: hand;");
-            datosPerfil.getChildren().add(salir);
-        }
-        HBox cuenta = new HBox(12, etiqueta("AD", "avatar"), datosPerfil);
-        cuenta.setAlignment(Pos.CENTER_LEFT);
-        cuenta.getStyleClass().add("sidebar-bottom");
-        menu.getChildren().addAll(espacio, cuenta);
-        return menu;
+        return MenuCompartido.crear(
+                sesion,
+                MenuCompartido.Pagina.MARKETING,
+                null,
+                null,
+                null,
+                null,
+                cerrarSesion,
+                null,
+                null,
+                null,
+                abrirSanciones,
+                null,
+                volver,
+                abrirMarketing);
     }
 
     private Label etiqueta(String texto, String estilo) {
