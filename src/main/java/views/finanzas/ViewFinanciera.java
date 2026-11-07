@@ -1,4 +1,4 @@
-package views;
+package views.finanzas;
 
 import views.eventos.ViewEventos;
 
