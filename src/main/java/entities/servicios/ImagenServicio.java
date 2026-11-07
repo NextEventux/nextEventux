@@ -1,4 +1,4 @@
-package entities;
+package entities.servicios;
 
 public class ImagenServicio {
 

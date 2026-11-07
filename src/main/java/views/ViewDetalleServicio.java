@@ -6,9 +6,9 @@ import java.util.Locale;
 
 import controllers.ControllerProveedores;
 import controllers.ControllerSolicitudes;
-import entities.ImagenServicio;
-import entities.PreguntaServicio;
-import entities.Servicio;
+import entities.servicios.ImagenServicio;
+import entities.servicios.PreguntaServicio;
+import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;

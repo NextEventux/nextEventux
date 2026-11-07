@@ -8,7 +8,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 
 import controllers.ControllerProveedores;
-import entities.Servicio;
+import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;

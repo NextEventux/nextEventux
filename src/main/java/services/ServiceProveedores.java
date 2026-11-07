@@ -3,10 +3,10 @@ package services;
 import java.util.Date;
 import java.util.List;
 
-import entities.DisponibilidadServicio;
-import entities.ImagenServicio;
-import entities.PreguntaServicio;
-import entities.Servicio;
+import entities.servicios.DisponibilidadServicio;
+import entities.servicios.ImagenServicio;
+import entities.servicios.PreguntaServicio;
+import entities.servicios.Servicio;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryImagenServicio;
 import repositories.RepositoryPreguntaServicio;

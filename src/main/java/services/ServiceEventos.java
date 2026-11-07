@@ -9,7 +9,7 @@ import repositories.RepositoryEvento;
 import repositories.RepositoryCancelacion;
 import repositories.RepositoryFinalizacion;
 import entities.eventos.Fotografia;
-import entities.ServicioSolicitable;
+import entities.servicios.ServicioSolicitable;
 import entities.PresupuestoEvento;
 import entities.SolicitudServicioEvento;
 import java.math.BigDecimal;

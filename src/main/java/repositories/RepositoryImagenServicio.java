@@ -1,7 +1,7 @@
 package repositories;
 
 import persistencia.DatabaseConnection;
-import entities.ImagenServicio;
+import entities.servicios.ImagenServicio;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

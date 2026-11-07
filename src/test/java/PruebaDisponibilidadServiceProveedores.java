@@ -1,7 +1,7 @@
 
 import java.util.Date;
 
-import entities.DisponibilidadServicio;
+import entities.servicios.DisponibilidadServicio;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryServicio;
 import services.ServiceProveedores;

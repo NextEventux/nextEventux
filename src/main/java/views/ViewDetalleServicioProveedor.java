@@ -3,11 +3,11 @@ package views;
 import entities.eventos.Fotografia;
 
 import controllers.ControllerProveedores;
-import entities.DisponibilidadServicio;
-import entities.Servicio;
+import entities.servicios.DisponibilidadServicio;
+import entities.servicios.Servicio;
 import entities.SesionUsuario;
-import entities.ImagenServicio;
-import entities.PreguntaServicio;
+import entities.servicios.ImagenServicio;
+import entities.servicios.PreguntaServicio;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;

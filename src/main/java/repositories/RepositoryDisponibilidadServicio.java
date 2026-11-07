@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 import persistencia.DatabaseConnection;
-import entities.DisponibilidadServicio;
+import entities.servicios.DisponibilidadServicio;
 
 // Se encarga de guardar y consultar disponibilidades en H2
 public class RepositoryDisponibilidadServicio {

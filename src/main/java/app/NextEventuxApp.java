@@ -12,7 +12,7 @@ import controllers.ControllerSancionesProveedor;
 import controllers.ControllerSolicitudes;
 import entities.eventos.Evento;
 import entities.PropuestaServicio;
-import entities.Servicio;
+import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
 import javafx.geometry.Rectangle2D;

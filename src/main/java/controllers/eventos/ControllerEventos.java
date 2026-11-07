@@ -32,7 +32,7 @@ public class ControllerEventos {
     public void finalizarEvento(int evento, List<Fotografia> fotos) { serviceEventos.finalizarEvento(evento,sesion,fotos); }
     public List<String> proveedoresParaCalificar(int evento) { return serviceEventos.proveedoresParaCalificar(evento,sesion); }
     public boolean galeriaPendiente(int evento) { return serviceEventos.galeriaPendiente(evento,sesion); }
-    public List<entities.ServicioSolicitable> listarServiciosSolicitables() { return serviceEventos.listarServiciosSolicitables(sesion); }
+    public List<entities.servicios.ServicioSolicitable> listarServiciosSolicitables() { return serviceEventos.listarServiciosSolicitables(sesion); }
     public entities.PresupuestoEvento consultarPresupuesto(int evento) { return serviceEventos.consultarPresupuesto(evento,sesion); }
     public List<entities.SolicitudServicioEvento> listarSolicitudesServicio(int evento) { return serviceEventos.listarSolicitudesServicio(evento,sesion); }
     public int solicitarServicio(int evento, int servicio) { return serviceEventos.solicitarServicio(evento,servicio,sesion); }

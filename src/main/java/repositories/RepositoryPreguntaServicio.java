@@ -1,7 +1,7 @@
 package repositories;
 
 import persistencia.DatabaseConnection;
-import entities.PreguntaServicio;
+import entities.servicios.PreguntaServicio;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

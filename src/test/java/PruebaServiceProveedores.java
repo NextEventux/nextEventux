@@ -1,4 +1,4 @@
-import entities.Servicio;
+import entities.servicios.Servicio;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryServicio;
 import services.ServiceProveedores;

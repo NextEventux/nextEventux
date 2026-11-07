@@ -1,6 +1,6 @@
 import entities.eventos.Fotografia;
 
-import entities.Servicio;
+import entities.servicios.Servicio;
 import repositories.RepositoryServicio;
 
 // Prueba sencilla para comprobar que podemos guardar y volver a buscar un servicio

@@ -3,10 +3,10 @@ package controllers;
 import java.util.Date;
 import java.util.List;
 
-import entities.DisponibilidadServicio;
-import entities.ImagenServicio;
-import entities.PreguntaServicio;
-import entities.Servicio;
+import entities.servicios.DisponibilidadServicio;
+import entities.servicios.ImagenServicio;
+import entities.servicios.PreguntaServicio;
+import entities.servicios.Servicio;
 import services.ServiceProveedores;
 
 // Recibe las acciones relacionadas con proveedores y las envia al service

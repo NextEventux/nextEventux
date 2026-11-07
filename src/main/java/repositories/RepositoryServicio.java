@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import persistencia.DatabaseConnection;
-import entities.Servicio;
+import entities.servicios.Servicio;
 
 // Se encarga de guardar y consultar los servicios en H2
 public class RepositoryServicio {

@@ -9,9 +9,9 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 import controllers.ControllerProveedores;
-import entities.ImagenServicio;
-import entities.PreguntaServicio;
-import entities.Servicio;
+import entities.servicios.ImagenServicio;
+import entities.servicios.PreguntaServicio;
+import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

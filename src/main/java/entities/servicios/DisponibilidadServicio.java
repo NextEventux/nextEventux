@@ -1,5 +1,5 @@
 
-package entities;
+package entities.servicios;
 
 import java.util.Date;
 

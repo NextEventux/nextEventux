@@ -1,4 +1,4 @@
-package entities;
+package entities.servicios;
 
 // Representa uno de los servicios que un proveedor puede ofrecer en la plataforma
 public class Servicio {
