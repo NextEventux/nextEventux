@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Evento;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;

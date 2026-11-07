@@ -71,7 +71,7 @@ class ContextoSolicitudH2Test {
 
     @Test
     void laSolicitudSigueVisibleSiFaltanDatosRelacionados() throws Exception {
-        try (var connection = config.DatabaseConnection.getConnection();
+        try (var connection = persistencia.DatabaseConnection.getConnection();
                 var statement = connection.createStatement()) {
             statement.execute("SET REFERENTIAL_INTEGRITY FALSE");
             statement.executeUpdate("""

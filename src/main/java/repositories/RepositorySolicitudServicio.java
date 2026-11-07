@@ -1,6 +1,6 @@
 package repositories;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.*;
 import java.sql.*;
 import java.math.BigDecimal;

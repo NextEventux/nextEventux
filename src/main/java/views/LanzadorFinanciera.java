@@ -1,7 +1,7 @@
 package views;
 
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import controllers.ControllerFinanciera;
 import entities.SesionUsuario;
 import java.sql.Connection;
@@ -64,4 +64,4 @@ public class LanzadorFinanciera extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-}
+}

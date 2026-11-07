@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Evento;
 import repositories.RepositoryEvento;
 import services.ServiceEventos;
@@ -71,8 +71,8 @@ class RepositoryEventoTest {
     void cargaEjemplosSinSobrescribirUnaBaseExistente() throws Exception {
         String url = "jdbc:h2:" + directorio.resolve("ejemplos");
         try (Connection connection = DatabaseConnection.getConnection(url)) {
-            config.CargarDatosEjemplo.cargar(connection);
-            assertThrows(SQLException.class, () -> config.CargarDatosEjemplo.cargar(connection));
+            inicializacion.CargarDatosEjemplo.cargar(connection);
+            assertThrows(SQLException.class, () -> inicializacion.CargarDatosEjemplo.cargar(connection));
         }
         RepositoryEvento repository = new RepositoryEvento(url);
         assertEquals(4, repository.listarEventos().size());

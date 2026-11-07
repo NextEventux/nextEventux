@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Servicio;
 import repositories.RepositoryDisponibilidadServicio;
 import repositories.RepositoryServicio;

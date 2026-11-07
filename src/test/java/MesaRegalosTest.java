@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import controllers.ControllerInvitados;
 import entities.Invitacion;
 import entities.Invitado;

@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Evento;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;

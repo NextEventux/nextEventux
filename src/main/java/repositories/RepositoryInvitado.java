@@ -1,6 +1,6 @@
 package repositories;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Invitacion;
 import entities.InvitacionRecibida;
 import entities.Invitado;

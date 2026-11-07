@@ -1,4 +1,6 @@
-package config;
+package inicializacion;
+
+import persistencia.DatabaseConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

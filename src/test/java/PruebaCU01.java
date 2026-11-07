@@ -10,7 +10,7 @@ public class PruebaCU01 {
     public static void main(String[] args) throws Exception {
 
         String url = "jdbc:h2:" + java.nio.file.Files.createTempDirectory("cu01-ejemplo-").resolve("eventos");
-        try (var c=config.DatabaseConnection.getConnection(url)) { config.CargarDatosEjemplo.cargar(c); }
+        try (var c=persistencia.DatabaseConnection.getConnection(url)) { inicializacion.CargarDatosEjemplo.cargar(c); }
         RepositoryEvento repositoryEvento = new RepositoryEvento(url);
 
         ServiceEventos serviceEventos =

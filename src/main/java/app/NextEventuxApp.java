@@ -92,11 +92,11 @@ public class NextEventuxApp extends Application {
 
         // Una base recién creada no tiene usuarios: se cargan los ejemplos una sola vez.
         // Si ya tiene datos no se toca, así lo que se crea se conserva entre sesiones.
-        try (java.sql.Connection conexion = config.DatabaseConnection.getConnection()) {
-            if (config.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
+        try (java.sql.Connection conexion = persistencia.DatabaseConnection.getConnection()) {
+            if (inicializacion.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
                 System.out.println("[BD] Base vacía: se cargaron los datos de ejemplo.");
             }
-            config.CargarDatosEjemplo.actualizarCuentasDemostracion(conexion);
+            inicializacion.CargarDatosEjemplo.actualizarCuentasDemostracion(conexion);
         } catch (Exception e) {
             System.err.println("[BD] No se pudieron cargar los datos de ejemplo: " + e.getMessage());
         }

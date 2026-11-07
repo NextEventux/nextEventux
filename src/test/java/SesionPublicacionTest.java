@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import controllers.ControllerPublicacion;
 import entities.*;
 import org.junit.jupiter.api.BeforeEach;

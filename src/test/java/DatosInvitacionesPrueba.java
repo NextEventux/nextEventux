@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.Statement;
 

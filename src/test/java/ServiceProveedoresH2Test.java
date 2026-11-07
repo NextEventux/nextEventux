@@ -1,5 +1,5 @@
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import controllers.ControllerProveedores;
 import entities.Servicio;
 import org.junit.jupiter.api.AfterEach;

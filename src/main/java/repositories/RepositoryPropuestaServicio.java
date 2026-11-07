@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.PropuestaServicio;
 
 public class RepositoryPropuestaServicio {

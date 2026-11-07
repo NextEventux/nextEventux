@@ -1,6 +1,6 @@
 package repositories;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Planificacion;
 
 import java.sql.Connection;
@@ -118,4 +118,4 @@ public class RepositoryPlanificacion {
         plan.setEstado(rs.getString("estado"));
         return plan;
     }
-}
+}

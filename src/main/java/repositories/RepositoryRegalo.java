@@ -1,6 +1,6 @@
 package repositories;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Regalo;
 import entities.ReservaRegalo;
 import java.sql.Connection;

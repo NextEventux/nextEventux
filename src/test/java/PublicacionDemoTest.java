@@ -1,5 +1,5 @@
-import config.CargarDemoPublicacion;
-import config.DatabaseConnection;
+import inicializacion.CargarDemoPublicacion;
+import persistencia.DatabaseConnection;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import repositories.RepositoryEvento;

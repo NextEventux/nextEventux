@@ -10,7 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.EventoSolicitable;
 import entities.NecesidadAbierta;
 import services.ServiceSolicitudes;

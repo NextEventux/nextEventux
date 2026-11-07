@@ -1,4 +1,4 @@
-package config;
+package persistencia;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

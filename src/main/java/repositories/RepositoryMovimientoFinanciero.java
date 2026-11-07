@@ -1,6 +1,6 @@
 package repositories;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.CompromisoFinanciero;
 import entities.MovimientoFinanciero;
 
@@ -127,4 +127,4 @@ public class RepositoryMovimientoFinanciero {
         mov.setEstado(rs.getString("estado"));
         return mov;
     }
-}
+}

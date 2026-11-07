@@ -2,7 +2,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
 import repositories.RepositoryPropuestaServicio;
 import repositories.RepositorySolicitudEjecucion;

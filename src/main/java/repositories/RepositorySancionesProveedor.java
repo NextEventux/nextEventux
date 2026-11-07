@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 
 /**
  * Acceso a datos de CU-09 (aplicar sanciones a proveedores).

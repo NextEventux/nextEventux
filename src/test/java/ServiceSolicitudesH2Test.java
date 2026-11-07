@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.PropuestaServicio;
 import entities.SesionUsuario;
 import entities.SolicitudEjecucion;

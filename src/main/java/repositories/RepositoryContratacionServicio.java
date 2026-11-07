@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.ConfirmacionContratacion;
 import entities.DisponibilidadContratacion;
 import entities.PresupuestoContratacion;

@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import controllers.ControllerEventos;
 import entities.EdicionEvento;
 import entities.Evento;

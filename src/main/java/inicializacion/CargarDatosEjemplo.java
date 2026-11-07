@@ -1,4 +1,6 @@
-package config;
+package inicializacion;
+
+import persistencia.DatabaseConnection;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;

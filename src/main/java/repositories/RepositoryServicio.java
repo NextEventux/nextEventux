@@ -8,7 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Servicio;
 
 // Se encarga de guardar y consultar los servicios en H2

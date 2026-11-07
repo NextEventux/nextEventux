@@ -1,6 +1,6 @@
 package repositories;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Administrador;
 import entities.PlantillaEvento;
 import entities.SolicitudPublicacion;

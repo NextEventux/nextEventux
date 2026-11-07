@@ -78,7 +78,7 @@ class ServiceInvitadosTest {
         assertThrows(IllegalStateException.class,
                 () -> new ControllerInvitados(service, forjada).listarEventos());
 
-        try (Connection connection = config.DatabaseConnection.getConnection(url);
+        try (Connection connection = persistencia.DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE Usuario SET estado = 'INACTIVO' WHERE id_usuario = 1");
         }
@@ -288,7 +288,7 @@ class ServiceInvitadosTest {
 
     // ---------------------------------------------------------------- utilidades
     private void cambiarEstadoEvento(int evento, String estado) throws Exception {
-        try (java.sql.Connection c = config.DatabaseConnection.getConnection(url);
+        try (java.sql.Connection c = persistencia.DatabaseConnection.getConnection(url);
              java.sql.Statement s = c.createStatement()) {
             s.executeUpdate("UPDATE Evento SET estado = '" + estado + "' WHERE id_evento = " + evento);
         }

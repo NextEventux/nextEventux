@@ -1,6 +1,6 @@
 package repositories;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Evento;
 import entities.EdicionEvento;
 import entities.Organizador;

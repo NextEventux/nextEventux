@@ -6,7 +6,7 @@ import services.ServiceAutenticacion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import repositories.RepositoryEvento;
 import services.ServiceEventos;
 import java.math.BigDecimal;

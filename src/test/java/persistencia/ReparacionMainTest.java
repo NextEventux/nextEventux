@@ -1,4 +1,6 @@
-package config;
+package persistencia;
+
+import inicializacion.CargarDatosEjemplo;
 
 import java.sql.*;
 import java.nio.file.Path;

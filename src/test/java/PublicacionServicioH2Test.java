@@ -1,5 +1,5 @@
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.ImagenServicio;
 import entities.PreguntaServicio;
 import entities.Servicio;
