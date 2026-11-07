@@ -118,18 +118,6 @@ VALUES
  900000.00, 'VERIFICADO');
 
 -- ---------------------------------------------------------
--- RESENAS DE ORGANIZADORES PARA CU-026
--- ---------------------------------------------------------
-
-INSERT INTO Resena_Organizador
-(id_organizador, id_cliente, calificacion, comentario)
-VALUES
-(1, 5, 5, 'Buena organizacion y comunicacion durante el evento.'),
-(2, 6, 4, 'La celebracion estuvo bien organizada.'),
-(3, 5, 5, 'Excelente atencion y organizacion.'),
-(3, 7, 5, 'Una celebracion muy bien organizada.');
-
--- ---------------------------------------------------------
 -- PROVEEDORES
 -- ---------------------------------------------------------
 
