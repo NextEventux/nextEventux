@@ -1,4 +1,4 @@
-package views;
+package views.proveedores;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package views;
+package views.proveedores;
 
 import entities.SesionUsuario;
 import services.ServiceAvisosProveedor;

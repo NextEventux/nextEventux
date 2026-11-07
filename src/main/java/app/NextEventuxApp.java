@@ -47,7 +47,7 @@ import services.ServicePublicacion;
 import services.ServiceSancionesProveedor;
 import services.ServiceSolicitudes;
 import views.ViewAdministracion;
-import views.ViewAvisosProveedor;
+import views.proveedores.ViewAvisosProveedor;
 import views.eventos.ViewCancelacion;
 import views.servicios.ViewCatalogoServicios;
 import views.ViewContratarServicio;
@@ -63,8 +63,8 @@ import views.ViewLogin;
 import views.eventos.ViewMisEventos;
 import views.ViewPropuestasOrganizador;
 import views.ViewPublicacion;
-import views.ViewSancionesProveedor;
-import views.ViewSolicitudesProveedor;
+import views.proveedores.ViewSancionesProveedor;
+import views.proveedores.ViewSolicitudesProveedor;
 
 public class NextEventuxApp extends Application {
 

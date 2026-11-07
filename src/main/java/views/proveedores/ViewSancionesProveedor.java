@@ -1,4 +1,4 @@
-package views;
+package views.proveedores;
 
 import entities.eventos.Evento;
 
