@@ -9,6 +9,8 @@ import inicializacion.*;
 import controllers.eventos.ControllerEventos;
 import entities.*;
 import repositories.*;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import services.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

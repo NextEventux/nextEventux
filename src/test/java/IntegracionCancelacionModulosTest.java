@@ -6,6 +6,8 @@ import entities.*;
 import entities.servicios.DisponibilidadServicio;
 import org.junit.jupiter.api.*;
 import repositories.*;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import services.*;
 import java.sql.*;
 import java.util.UUID;

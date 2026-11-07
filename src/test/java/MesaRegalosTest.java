@@ -17,11 +17,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import repositories.RepositoryEvento;
-import repositories.RepositoryInvitacion;
-import repositories.RepositoryInvitado;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;
-import repositories.RepositoryRegalo;
-import repositories.RepositoryReservaRegalo;
+import repositories.invitaciones.RepositoryRegalo;
+import repositories.invitaciones.RepositoryReservaRegalo;
 import services.ServiceInvitados;
 import static org.junit.jupiter.api.Assertions.*;
 

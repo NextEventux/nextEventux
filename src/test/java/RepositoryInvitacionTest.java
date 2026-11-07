@@ -5,7 +5,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import repositories.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitacion;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Reemplaza la prueba manual TestRepositoryInvitados con JUnit y una base aislada. */

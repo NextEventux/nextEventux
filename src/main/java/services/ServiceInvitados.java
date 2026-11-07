@@ -17,11 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import repositories.RepositoryEvento;
-import repositories.RepositoryInvitacion;
-import repositories.RepositoryInvitado;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;
-import repositories.RepositoryRegalo;
-import repositories.RepositoryReservaRegalo;
+import repositories.invitaciones.RepositoryRegalo;
+import repositories.invitaciones.RepositoryReservaRegalo;
 
 /**
  * Reglas de negocio del módulo de invitados.

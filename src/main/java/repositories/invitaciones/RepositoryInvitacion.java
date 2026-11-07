@@ -1,4 +1,4 @@
-package repositories;
+package repositories.invitaciones;
 
 import persistencia.DatabaseConnection;
 import entities.invitaciones.Invitacion;
