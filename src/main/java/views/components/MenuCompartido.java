@@ -31,6 +31,7 @@ public final class MenuCompartido {
         PROPUESTAS("M4 4h16v13H8l-4 4z M8 9h8 M8 13h5"),
         PUBLICACION("M6 3h9l4 4v14H6z M15 3v5h4 M9 12h7 M9 16h7"),
         SANCIONES("M12 3v18 M5 7h14 M6 7l-4 7h8L6 7z M18 7l-4 7h8l-4-7z M8 21h8"),
+        USUARIOS("M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2 M17 8l2 2 4-4"),
         MESA_REGALOS("M20 12v9H4v-9 M2 7h20v5H2z M12 7v14 M12 7H8a2.5 2.5 0 1 1 2.5-2.5C10.5 6 12 7 12 7 M12 7h4a2.5 2.5 0 1 0-2.5-2.5C13.5 6 12 7 12 7");
 
         private final String trazado;
@@ -52,7 +53,8 @@ public final class MenuCompartido {
         AVISOS_PROVEEDOR,
         PROPUESTAS_ORGANIZADOR,
         PUBLICACION_EVENTOS,
-        SANCIONES_PROVEEDOR
+        SANCIONES_PROVEEDOR,
+        USUARIOS_ADMINISTRACION
     }
 
     private MenuCompartido() {
@@ -181,6 +183,30 @@ public final class MenuCompartido {
             Runnable abrirSanciones,
             Runnable abrirAvisos,
             Runnable abrirPublicacion) {
+        return crear(sesion, paginaActiva, abrirEventos, abrirInvitados, abrirCatalogo,
+                abrirServicios, cerrarSesion, abrirMisEventos, abrirSolicitudes,
+                abrirPropuestas, abrirSanciones, abrirAvisos, abrirPublicacion, null);
+    }
+
+    /**
+     * Igual que el anterior; agrega la opción de gestión de usuarios
+     * (CU-029, solo administrador).
+     */
+    public static VBox crear(
+            SesionUsuario sesion,
+            Pagina paginaActiva,
+            Runnable abrirEventos,
+            Runnable abrirInvitados,
+            Runnable abrirCatalogo,
+            Runnable abrirServicios,
+            Runnable cerrarSesion,
+            Runnable abrirMisEventos,
+            Runnable abrirSolicitudes,
+            Runnable abrirPropuestas,
+            Runnable abrirSanciones,
+            Runnable abrirAvisos,
+            Runnable abrirPublicacion,
+            Runnable abrirUsuarios) {
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
@@ -242,6 +268,10 @@ public final class MenuCompartido {
             agregarOpcion(menu, Icono.SANCIONES, "Sanciones",
                     paginaActiva == Pagina.SANCIONES_PROVEEDOR,
                     abrirSanciones);
+
+            agregarOpcion(menu, Icono.USUARIOS, "Usuarios",
+                    paginaActiva == Pagina.USUARIOS_ADMINISTRACION,
+                    abrirUsuarios);
         }
 
         Region espacio = new Region();

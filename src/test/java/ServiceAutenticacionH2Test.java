@@ -250,4 +250,78 @@ public class ServiceAutenticacionH2Test {
                         "admin.prueba",
                         "claveadmin"));
     }
+
+    // ------------------------------------------------------------------
+    // CU-029: cuentas suspendidas
+    // ------------------------------------------------------------------
+
+    private void cambiarEstado(int idUsuario, String estado) throws Exception {
+        try (Connection connection = DatabaseConnection.getConnection(TEST_URL);
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("UPDATE Usuario SET estado = '" + estado
+                    + "' WHERE id_usuario = " + idUsuario);
+        }
+    }
+
+    @Test
+    void usuarioSuspendidoConCredencialesCorrectasRecibeMensajeDeSuspension() throws Exception {
+        cambiarEstado(8002, "SUSPENDIDO");
+
+        IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> service.iniciarSesion("organizador.prueba", "clave2"));
+
+        assertEquals(
+                "Tu cuenta se encuentra suspendida. Comunícate con el administrador "
+                + "para obtener más información.",
+                error.getMessage());
+    }
+
+    @Test
+    void usuarioSuspendidoConClaveIncorrectaNoConoceSuEstado() throws Exception {
+        cambiarEstado(8002, "SUSPENDIDO");
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.iniciarSesion("organizador.prueba", "incorrecta"));
+
+        assertEquals("Usuario o contrasena incorrectos.", error.getMessage());
+    }
+
+    @Test
+    void sesionAbiertaDeUnaCuentaSuspendidaDejaDeSerVigente() throws Exception {
+        SesionUsuario sesion = service.iniciarSesion("organizador.prueba", "clave2");
+        assertTrue(service.verificarSesionVigente(sesion).isEmpty());
+
+        cambiarEstado(8002, "SUSPENDIDO");
+
+        assertEquals(
+                ServiceAutenticacion.MENSAJE_CUENTA_SUSPENDIDA,
+                service.verificarSesionVigente(sesion).orElseThrow());
+    }
+
+    @Test
+    void sesionDeCuentaActivaSigueVigente() {
+        SesionUsuario sesion = service.iniciarSesion("admin.prueba", "claveadmin");
+
+        assertTrue(service.verificarSesionVigente(sesion).isEmpty());
+    }
+
+    @Test
+    void sesionDeCuentaInexistenteOInactivaNoEsVigente() throws Exception {
+        SesionUsuario inexistente = new SesionUsuario();
+        inexistente.setIdUsuario(999999);
+        assertEquals(
+                ServiceAutenticacion.MENSAJE_SESION_INVALIDA,
+                service.verificarSesionVigente(inexistente).orElseThrow());
+        assertEquals(
+                ServiceAutenticacion.MENSAJE_SESION_INVALIDA,
+                service.verificarSesionVigente(null).orElseThrow());
+
+        SesionUsuario sesion = service.iniciarSesion("admin.prueba", "claveadmin");
+        cambiarEstado(8004, "INACTIVO");
+        assertEquals(
+                ServiceAutenticacion.MENSAJE_SESION_INVALIDA,
+                service.verificarSesionVigente(sesion).orElseThrow());
+    }
 }

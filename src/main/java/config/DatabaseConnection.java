@@ -96,6 +96,9 @@ public class DatabaseConnection {
         ejecutarScript(connection, "/migrations/008_finalizacion_eventos.sql");
         ejecutarScript(connection, "/migrations/009_solicitudes_evento.sql");
         ejecutarScript(connection, "/migrations/013_cu12_material_y_ajuste.sql");
+        // CU-029: historial de suspensiones de usuarios. Script idempotente sin
+        // registro en Esquema_version: se ejecuta en cada arranque, nunca se omite.
+        ejecutarScript(connection, "/migrations/014_cu29_historial_suspension_usuario.sql");
         // La restricción de unicidad se valida y registra sin modificar datos repetidos.
         ejecutarUnaVez(connection, "010_organizador_usuario_unico.sql",
                 c -> verificarSinDuplicados(c, "Organizador", "id_usuario"));

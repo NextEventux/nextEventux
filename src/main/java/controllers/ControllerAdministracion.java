@@ -4,6 +4,7 @@ package controllers;
 import entities.Contratacion;
 import entities.Organizador;
 import entities.SesionUsuario;
+import repositories.RepositoryAdministracion.UsuarioAdministrable;
 import services.ServiceAdministracion;
 
 import java.time.LocalDate;
@@ -15,7 +16,7 @@ import java.util.Map;
  * Controlador del modulo de administracion.
  * Conecta las acciones de la vista con el servicio.
  *
- * En esta rama se implementan las operaciones de CU-026.
+ * Operaciones de CU-026 (cliente) y CU-029 (administrador).
  */
 public class ControllerAdministracion {
 
@@ -109,6 +110,36 @@ public class ControllerAdministracion {
 
         return serviceAdministracion
                 .consultarContrataciones(filtrosSeguros);
+    }
+
+    // ------------------------------------------------------------------
+    // CU-029: suspender usuario y ampliacion: reactivar usuario.
+    // La autorizacion del administrador la verifica el servicio en la
+    // base de datos; el controlador solo entrega la sesion autenticada.
+    // ------------------------------------------------------------------
+
+    public List<UsuarioAdministrable> consultarUsuarios(String filtro) {
+        return serviceAdministracion.consultarUsuarios(sesion, filtro);
+    }
+
+    public UsuarioAdministrable consultarUsuario(int idUsuario) {
+        return serviceAdministracion.consultarUsuario(sesion, idUsuario);
+    }
+
+    public boolean validarSuspension(int idUsuario, String motivo) {
+        return serviceAdministracion.validarSuspension(sesion, idUsuario, motivo);
+    }
+
+    public void suspenderUsuario(int idUsuario, String motivo) {
+        serviceAdministracion.suspenderUsuario(sesion, idUsuario, motivo);
+    }
+
+    public String validarReactivacion(int idUsuario) {
+        return serviceAdministracion.validarReactivacion(sesion, idUsuario);
+    }
+
+    public void reactivarUsuario(int idUsuario) {
+        serviceAdministracion.reactivarUsuario(sesion, idUsuario);
     }
 
     /**
