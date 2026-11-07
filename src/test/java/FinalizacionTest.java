@@ -1,3 +1,6 @@
+import repositories.eventos.RepositoryEvento;
+import repositories.eventos.RepositoryCancelacion;
+import repositories.eventos.RepositoryFinalizacion;
 import entities.eventos.Evento;
 import entities.eventos.Fotografia;
 

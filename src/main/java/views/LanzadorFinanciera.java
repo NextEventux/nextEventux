@@ -10,9 +10,9 @@ import java.sql.Connection;
 import java.sql.Statement;
 import javafx.application.Application;
 import javafx.stage.Stage;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
-import repositories.RepositoryPlanificacion;
+import repositories.eventos.RepositoryPlanificacion;
 import services.ServiceFinanciera;
 
 /**

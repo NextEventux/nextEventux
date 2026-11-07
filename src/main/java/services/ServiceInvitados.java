@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import repositories.invitaciones.RepositoryInvitacion;
 import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;

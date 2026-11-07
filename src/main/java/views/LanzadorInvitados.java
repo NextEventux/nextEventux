@@ -8,7 +8,7 @@ import controllers.eventos.ControllerInvitados;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 import services.ServiceInvitados;
 

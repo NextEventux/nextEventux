@@ -1,4 +1,4 @@
-package repositories;
+package repositories.eventos;
 
 import persistencia.DatabaseConnection;
 import entities.eventos.Evento;

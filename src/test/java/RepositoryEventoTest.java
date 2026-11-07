@@ -1,6 +1,6 @@
 import persistencia.DatabaseConnection;
 import entities.eventos.Evento;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

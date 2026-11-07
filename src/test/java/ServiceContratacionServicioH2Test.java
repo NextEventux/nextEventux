@@ -1,3 +1,4 @@
+import repositories.eventos.RepositoryCancelacion;
 import entities.eventos.Evento;
 import entities.eventos.Fotografia;
 
@@ -542,7 +543,7 @@ public class ServiceContratacionServicioH2Test {
                 new BigDecimal("2000000"), "Alcance", "Condiciones");
         contratacion.contratar(ORG, propuesta);
 
-        new repositories.RepositoryCancelacion().cancelar(EVENTO, ORG);
+        new repositories.eventos.RepositoryCancelacion().cancelar(EVENTO, ORG);
 
         assertEquals("CANCELADA", texto("SELECT estado FROM Contratacion"));
         assertEquals("DISPONIBLE", texto("SELECT estado FROM Disponibilidad_Servicio WHERE id_servicio=" + SERVICIO_A));

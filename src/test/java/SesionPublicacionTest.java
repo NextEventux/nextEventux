@@ -1,3 +1,4 @@
+import repositories.eventos.RepositoryEvento;
 import entities.eventos.Evento;
 
 import persistencia.DatabaseConnection;

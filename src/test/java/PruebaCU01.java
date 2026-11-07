@@ -1,8 +1,10 @@
+import repositories.eventos.RepositoryCancelacion;
+import repositories.eventos.RepositoryFinalizacion;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import controllers.eventos.ControllerEventos;
 import entities.eventos.Evento;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 
 public class PruebaCU01 {
@@ -14,8 +16,8 @@ public class PruebaCU01 {
         RepositoryEvento repositoryEvento = new RepositoryEvento(url);
 
         ServiceEventos serviceEventos =
-                new ServiceEventos(repositoryEvento, new repositories.RepositoryCancelacion(url),
-                        new repositories.RepositoryFinalizacion(url, java.time.Clock.systemDefaultZone()),
+                new ServiceEventos(repositoryEvento, new repositories.eventos.RepositoryCancelacion(url),
+                        new repositories.eventos.RepositoryFinalizacion(url, java.time.Clock.systemDefaultZone()),
                         new repositories.RepositorySolicitudServicio(url));
 
         ControllerEventos controllerEventos =

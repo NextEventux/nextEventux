@@ -4,7 +4,7 @@ import entities.eventos.Evento;
 import entities.eventos.PlantillaEvento;
 
 import entities.*;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryPublicacion;
 import java.util.List;
 

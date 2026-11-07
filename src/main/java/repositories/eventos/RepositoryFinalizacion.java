@@ -1,4 +1,4 @@
-package repositories;
+package repositories.eventos;
 
 import entities.eventos.Evento;
 
