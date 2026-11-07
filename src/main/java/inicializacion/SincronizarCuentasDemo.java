@@ -214,7 +214,7 @@ public final class SincronizarCuentasDemo {
         validarContador(conexion, "Proveedor", "id_proveedor");
     }
 
-    private static void actualizarContador(
+    static void actualizarContador(
             Connection conexion,
             String tabla,
             String columna) throws SQLException {
@@ -231,7 +231,7 @@ public final class SincronizarCuentasDemo {
         }
     }
 
-    private static void validarContador(
+    static void validarContador(
             Connection conexion,
             String tabla,
             String columna) throws SQLException {

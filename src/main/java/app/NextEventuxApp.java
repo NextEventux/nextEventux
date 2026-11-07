@@ -92,7 +92,8 @@ public class NextEventuxApp extends Application {
 
         // Una base recién creada no tiene usuarios: se cargan los ejemplos una sola vez.
         // Si ya tiene datos no se toca, así lo que se crea se conserva entre sesiones.
-        try (java.sql.Connection conexion = persistencia.DatabaseConnection.getConnection()) {
+        try (java.sql.Connection conexion
+                = persistencia.DatabaseConnection.getConnectionParaSincronizarDemo()) {
             if (inicializacion.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
                 System.out.println("[BD] Base vacía: se cargaron los datos de ejemplo.");
             }
@@ -101,9 +102,16 @@ public class NextEventuxApp extends Application {
                 System.out.println("[BD] Se sincronizaron " + cuentasCreadas
                         + " cuentas de demostración faltantes.");
             }
+            inicializacion.SincronizarCatalogoDemo.Resultado catalogo
+                    = inicializacion.SincronizarCatalogoDemo.sincronizar(conexion);
+            if (catalogo.eventosCreados() > 0 || catalogo.serviciosCreados() > 0) {
+                System.out.println("[BD] Se sincronizaron " + catalogo.eventosCreados()
+                        + " eventos y " + catalogo.serviciosCreados()
+                        + " servicios de demostración faltantes.");
+            }
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "[BD] No se pudieron sincronizar las cuentas de demostración.", e);
+                    "[BD] No se pudieron sincronizar los datos de demostración.", e);
         }
 
         controllerAutenticacion = new ControllerAutenticacion(

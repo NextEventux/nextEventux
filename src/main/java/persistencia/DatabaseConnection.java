@@ -37,13 +37,27 @@ public class DatabaseConnection {
 
     public static Connection getConnection() throws SQLException {
         return getConnection(
-                System.getProperty("nexteventux.db.url", urlPorDefecto()));
+                System.getProperty("nexteventux.db.url", urlPorDefecto()), true);
     }
 
     public static Connection getConnection(String url) throws SQLException {
+        return getConnection(url, true);
+    }
+
+    public static Connection getConnectionParaSincronizarDemo() throws SQLException {
+        return getConnection(
+                System.getProperty("nexteventux.db.url", urlPorDefecto()), false);
+    }
+
+    public static Connection getConnectionParaSincronizarDemo(String url) throws SQLException {
+        return getConnection(url, false);
+    }
+
+    private static Connection getConnection(String url, boolean repararContadorEventos)
+            throws SQLException {
         Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
         try {
-            inicializarSiHaceFalta(url, connection);
+            inicializarSiHaceFalta(url, connection, repararContadorEventos);
             return connection;
         } catch (SQLException | RuntimeException e) {
             try {
@@ -67,14 +81,19 @@ public class DatabaseConnection {
         INICIALIZADAS.clear();
     }
 
-    private static synchronized void inicializarSiHaceFalta(String url, Connection connection)
-            throws SQLException {
+    private static synchronized void inicializarSiHaceFalta(
+            String url,
+            Connection connection,
+            boolean repararContadorEventos) throws SQLException {
         // La tabla centinela detecta bases recreadas con la misma URL (por ejemplo, en memoria).
         if (INICIALIZADAS.contains(url) && existeTabla(connection, "ESQUEMA_INICIALIZADO")) {
-            actualizarContadorEventos(connection);
+            ejecutarUnaVez(connection, "015_catalogo_demostracion.sql", null);
+            if (repararContadorEventos) {
+                actualizarContadorEventos(connection);
+            }
             return;
         }
-        inicializarEsquema(connection);
+        inicializarEsquema(connection, repararContadorEventos);
         try (java.sql.Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS Esquema_inicializado (id INT PRIMARY KEY)");
         }
@@ -82,6 +101,12 @@ public class DatabaseConnection {
     }
 
     public static synchronized void inicializarEsquema(Connection connection) throws SQLException {
+        inicializarEsquema(connection, true);
+    }
+
+    private static synchronized void inicializarEsquema(
+            Connection connection,
+            boolean repararContadorEventos) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
         try (java.sql.Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS Esquema_version ("
@@ -105,7 +130,10 @@ public class DatabaseConnection {
         // CU-13: una propuesta solo puede contratarse una vez
         ejecutarUnaVez(connection, "012_cu13_contratar_servicio.sql",
                 c -> verificarSinDuplicados(c, "Contratacion", "id_propuesta"));
-        actualizarContadorEventos(connection);
+        ejecutarUnaVez(connection, "015_catalogo_demostracion.sql", null);
+        if (repararContadorEventos) {
+            actualizarContadorEventos(connection);
+        }
     }
 
     @FunctionalInterface

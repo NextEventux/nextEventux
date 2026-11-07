@@ -12,8 +12,8 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReparacionMainTest {
-    /** Migraciones que DatabaseConnection registra en Esquema_version mediante ejecutarUnaVez (010, 011 y 012). */
-    private static final int MIGRACIONES_REGISTRADAS = 3;
+    /** Migraciones versionadas de organizador, contratación y catálogo demo. */
+    private static final int MIGRACIONES_REGISTRADAS = 4;
 
     @TempDir Path carpeta;
 

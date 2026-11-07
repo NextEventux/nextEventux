@@ -7,12 +7,16 @@ Cada integrante utiliza su propia base H2 local.
 - En una base vacía, NextEventux carga los ejemplos de `seed.sql`.
 - En una base existente, los registros se conservan. No se ejecuta nuevamente todo `seed.sql`.
 - Al iniciar, NextEventux agrega cuentas oficiales faltantes y sus roles y perfiles sin reemplazar contraseñas ni datos existentes.
+- También agrega los cuatro eventos y quince servicios oficiales faltantes. Sus propietarios se resuelven desde las cuentas y perfiles actuales, no desde los IDs de `seed.sql`.
+- El catálogo registra la procedencia de los ejemplos para que las siguientes sincronizaciones reconozcan los registros aunque se hayan editado. Nunca reemplaza sus precios, estados, fechas ni otros valores.
+- Los registros existentes sin procedencia solo se adoptan si coinciden sus campos descriptivos de identidad y propietario. Un homónimo incompatible o una identidad ambigua detiene la sincronización sin crear registros parciales; si esos campos ya se editaron antes de la primera sincronización, se requiere resolver el conflicto manualmente.
+- Esta etapa no sincroniza solicitudes, propuestas, contrataciones, invitaciones ni otras tablas dependientes.
 - Las cuentas oficiales nuevas usan la contraseña inicial `1234`; las contraseñas de cuentas ya existentes se conservan.
 - `014_cuentas_demostracion.sql` se conserva como migración histórica, pero no se aplica ni restablece contraseñas.
-- Los eventos, servicios y solicitudes creados localmente no se comparten mediante `git pull`.
+- Los datos locales no identificados como ejemplos oficiales no se comparten mediante `git pull`.
 - Cuando se agreguen ejemplos oficiales para nuevos casos de uso, deberán incluirse actualizaciones versionadas y pruebas para bases existentes.
 
-Después de actualizar el repositorio, cada integrante debe iniciar la aplicación para que se sincronicen las cuentas oficiales pendientes.
+Después de actualizar el repositorio, cada integrante debe iniciar la aplicación para que se sincronicen las cuentas, eventos y servicios oficiales pendientes.
 
 
 Los datos de ejemplo se cargan automáticamente cuando la base está vacía.
