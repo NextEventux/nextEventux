@@ -1,5 +1,9 @@
 package repositories;
 
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.Invitado;
+
+
 import persistencia.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;

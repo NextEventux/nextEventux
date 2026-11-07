@@ -1,4 +1,4 @@
-package entities;
+package entities.invitaciones;
 
 /** Persona invitada a través de una invitación (tabla Invitado). */
 public class Invitado {

@@ -1,3 +1,5 @@
+import entities.invitaciones.Invitacion;
+
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
 import org.junit.jupiter.api.BeforeEach;

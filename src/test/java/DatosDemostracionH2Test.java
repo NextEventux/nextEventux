@@ -1,3 +1,6 @@
+import entities.invitaciones.Invitado;
+import entities.invitaciones.Regalo;
+
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

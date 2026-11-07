@@ -15,10 +15,10 @@ import java.util.function.Function;
 
 import controllers.eventos.ControllerInvitados;
 import entities.Evento;
-import entities.Invitacion;
-import entities.Invitado;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.Invitado;
 import entities.Lugar;
-import entities.Regalo;
+import entities.invitaciones.Regalo;
 import entities.SesionUsuario;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;

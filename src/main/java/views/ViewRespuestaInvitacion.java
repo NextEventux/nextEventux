@@ -3,8 +3,8 @@ package views;
 import views.eventos.ViewEventos;
 
 import controllers.eventos.ControllerInvitados;
-import entities.InvitacionRecibida;
-import entities.Invitado;
+import entities.invitaciones.InvitacionRecibida;
+import entities.invitaciones.Invitado;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

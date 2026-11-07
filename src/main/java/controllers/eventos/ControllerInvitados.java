@@ -1,11 +1,11 @@
 package controllers.eventos;
 
 import entities.Evento;
-import entities.Invitacion;
-import entities.InvitacionRecibida;
-import entities.Invitado;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.InvitacionRecibida;
+import entities.invitaciones.Invitado;
 import entities.Lugar;
-import entities.Regalo;
+import entities.invitaciones.Regalo;
 import entities.SesionUsuario;
 import java.util.List;
 import java.util.Map;

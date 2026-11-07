@@ -1,8 +1,11 @@
 package views;
 
+import entities.invitaciones.Invitado;
+
+
 import controllers.eventos.ControllerInvitados;
-import entities.InvitacionRecibida;
-import entities.Regalo;
+import entities.invitaciones.InvitacionRecibida;
+import entities.invitaciones.Regalo;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.text.NumberFormat;

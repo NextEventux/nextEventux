@@ -1,12 +1,12 @@
 package services;
 
 import entities.Evento;
-import entities.Invitacion;
-import entities.InvitacionRecibida;
-import entities.Invitado;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.InvitacionRecibida;
+import entities.invitaciones.Invitado;
 import entities.Lugar;
-import entities.Regalo;
-import entities.ReservaRegalo;
+import entities.invitaciones.Regalo;
+import entities.invitaciones.ReservaRegalo;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;

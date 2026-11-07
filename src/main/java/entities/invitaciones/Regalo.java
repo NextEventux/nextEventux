@@ -1,4 +1,4 @@
-package entities;
+package entities.invitaciones;
 
 import java.math.BigDecimal;
 

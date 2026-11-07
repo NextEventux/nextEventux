@@ -1,5 +1,8 @@
 package repositories;
 
+import entities.invitaciones.Invitacion;
+
+
 import java.sql.*;
 
 /** Reservas compartidas por cancelación y finalización; no modifica invitaciones. */

@@ -1,3 +1,6 @@
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.Invitado;
+
 import persistencia.*;
 import inicializacion.*;
 import controllers.eventos.ControllerEventos;

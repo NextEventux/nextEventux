@@ -1,9 +1,9 @@
 package repositories;
 
 import persistencia.DatabaseConnection;
-import entities.Invitacion;
-import entities.InvitacionRecibida;
-import entities.Invitado;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.InvitacionRecibida;
+import entities.invitaciones.Invitado;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

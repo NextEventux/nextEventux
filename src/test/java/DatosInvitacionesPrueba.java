@@ -1,3 +1,5 @@
+import entities.invitaciones.Invitacion;
+
 import persistencia.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.Statement;

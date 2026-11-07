@@ -1,6 +1,6 @@
 import controllers.eventos.ControllerInvitados;
-import entities.Invitacion;
-import entities.Invitado;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.Invitado;
 import entities.SesionUsuario;
 import java.nio.file.Path;
 import java.sql.Connection;

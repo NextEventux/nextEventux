@@ -1,7 +1,7 @@
 import controllers.eventos.ControllerInvitados;
-import entities.Invitacion;
-import entities.InvitacionRecibida;
-import entities.Invitado;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.InvitacionRecibida;
+import entities.invitaciones.Invitado;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
