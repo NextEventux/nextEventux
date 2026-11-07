@@ -96,6 +96,7 @@ public class NextEventuxApp extends Application {
             if (config.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
                 System.out.println("[BD] Base vacía: se cargaron los datos de ejemplo.");
             }
+            config.CargarDatosEjemplo.actualizarCuentasDemostracion(conexion);
         } catch (Exception e) {
             System.err.println("[BD] No se pudieron cargar los datos de ejemplo: " + e.getMessage());
         }

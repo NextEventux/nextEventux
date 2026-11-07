@@ -3,6 +3,7 @@ package config;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -10,6 +11,44 @@ import org.h2.tools.RunScript;
 
 /** Carga de ejemplos: explícita con main, o al abrir la aplicación solo si la base está vacía. */
 public class CargarDatosEjemplo {
+
+    public static void actualizarCuentasDemostracion(Connection connection) throws Exception {
+        String nombre = "014_cuentas_demostracion.sql";
+
+        try (PreparedStatement consulta = connection.prepareStatement(
+                "SELECT 1 FROM Esquema_version WHERE nombre = ?")) {
+            consulta.setString(1, nombre);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                if (resultado.next()) {
+                    return;
+                }
+            }
+        }
+
+        boolean autoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            try (InputStreamReader reader = new InputStreamReader(
+                    CargarDatosEjemplo.class.getResourceAsStream(
+                            "/migrations/" + nombre), StandardCharsets.UTF_8)) {
+                RunScript.execute(connection, reader);
+            }
+
+            try (PreparedStatement registro = connection.prepareStatement(
+                    "INSERT INTO Esquema_version (nombre) VALUES (?)")) {
+                registro.setString(1, nombre);
+                registro.executeUpdate();
+            }
+
+            connection.commit();
+        } catch (Exception e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(autoCommit);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         try (Connection connection = DatabaseConnection.getConnection()) {
             cargar(connection);
