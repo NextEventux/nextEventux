@@ -1,5 +1,5 @@
 import persistencia.DatabaseConnection;
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.*;
 import java.math.BigDecimal;
 import java.sql.*;

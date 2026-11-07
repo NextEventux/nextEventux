@@ -1,5 +1,5 @@
 import persistencia.DatabaseConnection;
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

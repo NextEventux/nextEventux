@@ -1,6 +1,6 @@
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.Evento;
 import repositories.RepositoryEvento;
 import services.ServiceEventos;

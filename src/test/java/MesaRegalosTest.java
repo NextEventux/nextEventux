@@ -1,5 +1,5 @@
 import persistencia.DatabaseConnection;
-import controllers.ControllerInvitados;
+import controllers.eventos.ControllerInvitados;
 import entities.Invitacion;
 import entities.Invitado;
 import entities.Evento;

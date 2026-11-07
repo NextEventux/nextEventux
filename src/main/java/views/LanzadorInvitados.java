@@ -3,8 +3,8 @@ package views;
 import views.eventos.ViewEventos;
 
 import app.Navegacion;
-import controllers.ControllerEventos;
-import controllers.ControllerInvitados;
+import controllers.eventos.ControllerEventos;
+import controllers.eventos.ControllerInvitados;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;

@@ -1,6 +1,6 @@
 package views.eventos;
 
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.EdicionEvento;
 import entities.Evento;
 import entities.SesionUsuario;

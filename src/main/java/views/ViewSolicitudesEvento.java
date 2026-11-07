@@ -1,6 +1,6 @@
 package views;
 
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.Evento;
 import entities.ServicioSolicitable;
 import entities.SolicitudServicioEvento;

@@ -2,7 +2,7 @@ package views;
 
 import app.AccesoInvitado;
 import app.Navegacion;
-import controllers.ControllerInvitados;
+import controllers.eventos.ControllerInvitados;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;

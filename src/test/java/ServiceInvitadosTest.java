@@ -1,4 +1,4 @@
-import controllers.ControllerInvitados;
+import controllers.eventos.ControllerInvitados;
 import entities.Invitacion;
 import entities.Invitado;
 import entities.SesionUsuario;

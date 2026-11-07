@@ -1,6 +1,6 @@
 package views.eventos;
 
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.Evento;
 import entities.SesionUsuario;
 import javafx.geometry.Pos;

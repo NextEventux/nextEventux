@@ -1,4 +1,4 @@
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.Evento;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;

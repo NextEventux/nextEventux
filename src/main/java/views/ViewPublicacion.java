@@ -2,7 +2,7 @@ package views;
 
 import java.util.function.Function;
 
-import controllers.ControllerPublicacion;
+import controllers.eventos.ControllerPublicacion;
 import entities.Evento;
 import entities.PlantillaEvento;
 import entities.SesionUsuario;

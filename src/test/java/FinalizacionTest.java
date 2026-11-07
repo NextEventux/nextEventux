@@ -1,6 +1,6 @@
 import persistencia.*;
 import inicializacion.*;
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.*;
 import repositories.*;
 import services.*;

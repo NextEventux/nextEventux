@@ -2,7 +2,7 @@ package views;
 
 import views.eventos.ViewEventos;
 
-import controllers.ControllerInvitados;
+import controllers.eventos.ControllerInvitados;
 import entities.InvitacionRecibida;
 import entities.Invitado;
 import java.net.URL;

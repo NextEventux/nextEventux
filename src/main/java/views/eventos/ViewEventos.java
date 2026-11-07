@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
-import controllers.ControllerEventos;
+import controllers.eventos.ControllerEventos;
 import entities.Evento;
 import entities.Organizador;
 import entities.SesionUsuario;

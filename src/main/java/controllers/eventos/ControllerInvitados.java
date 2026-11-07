@@ -1,4 +1,4 @@
-package controllers;
+package controllers.eventos;
 
 import entities.Evento;
 import entities.Invitacion;

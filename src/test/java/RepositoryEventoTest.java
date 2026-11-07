@@ -100,7 +100,7 @@ class RepositoryEventoTest {
                     + "VALUES (2,'Ana Pérez','ana','prueba','ACTIVO',CURRENT_TIMESTAMP,FALSE,'ORGANIZADOR')");
             statement.executeUpdate("INSERT INTO Organizador (id_organizador,id_usuario,estado) VALUES (7,2,'ACTIVO')");
         }
-        var organizadores = new controllers.ControllerEventos(new ServiceEventos(new RepositoryEvento(url)))
+        var organizadores = new controllers.eventos.ControllerEventos(new ServiceEventos(new RepositoryEvento(url)))
                 .listarOrganizadores();
         assertEquals(2, organizadores.size());
         assertEquals("Ana Pérez", organizadores.get(0).nombre());

@@ -13,7 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
-import controllers.ControllerInvitados;
+import controllers.eventos.ControllerInvitados;
 import entities.Evento;
 import entities.Invitacion;
 import entities.Invitado;

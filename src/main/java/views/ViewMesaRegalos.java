@@ -1,6 +1,6 @@
 package views;
 
-import controllers.ControllerInvitados;
+import controllers.eventos.ControllerInvitados;
 import entities.InvitacionRecibida;
 import entities.Regalo;
 import java.math.BigDecimal;
