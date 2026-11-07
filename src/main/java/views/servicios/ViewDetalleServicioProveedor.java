@@ -1,4 +1,4 @@
-package views;
+package views.servicios;
 
 import entities.eventos.Fotografia;
 
