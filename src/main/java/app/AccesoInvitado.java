@@ -3,8 +3,8 @@ package app;
 import controllers.eventos.ControllerInvitados;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
-import views.ViewMesaRegalos;
-import views.ViewRespuestaInvitacion;
+import views.invitaciones.ViewMesaRegalos;
+import views.invitaciones.ViewRespuestaInvitacion;
 
 /**
  * Pantallas del invitado sin cuenta (CU-16 y CU-20) sobre la navegación

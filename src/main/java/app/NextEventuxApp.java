@@ -57,7 +57,7 @@ import views.eventos.ViewEdicion;
 import views.eventos.ViewEventos;
 import views.eventos.ViewFinalizacion;
 import views.ViewFinanciera;
-import views.ViewInvitados;
+import views.invitaciones.ViewInvitados;
 import views.servicios.ViewListaServiciosProveedor;
 import views.ViewLogin;
 import views.eventos.ViewMisEventos;

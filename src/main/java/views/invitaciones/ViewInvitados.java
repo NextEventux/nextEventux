@@ -1,4 +1,4 @@
-package views;
+package views.invitaciones;
 
 import views.eventos.ViewEventos;
 
@@ -55,7 +55,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
-import views.ViewInvitados.FilaInvitacion;
+import views.invitaciones.ViewInvitados.FilaInvitacion;
 import views.components.MenuCompartido;
 
 /**

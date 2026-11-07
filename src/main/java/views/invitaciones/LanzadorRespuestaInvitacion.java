@@ -1,4 +1,4 @@
-package views;
+package views.invitaciones;
 
 import app.AccesoInvitado;
 import app.Navegacion;
@@ -10,16 +10,16 @@ import javafx.stage.Stage;
 import services.ServiceInvitados;
 
 /**
- * Abre el acceso del invitado directamente en la pantalla del CU-20 (Mesa de regalos virtual).
+ * Abre el acceso del invitado directamente en la pantalla del CU-16 (Gestionar respuesta a la invitación).
  * Usa el mismo menú y la misma navegación que la aplicación completa.
  */
-public class LanzadorMesaRegalos extends Application {
+public class LanzadorRespuestaInvitacion extends Application {
     @Override
     public void start(Stage stage) {
         AccesoInvitado acceso = new AccesoInvitado(
                 new ControllerInvitados(new ServiceInvitados()), Platform::exit);
-        Scene scene = acceso.crearEscena(Navegacion.Pantalla.MESA_REGALOS, 1440, 900);
-        stage.setTitle("NextEventux | Mesa de regalos");
+        Scene scene = acceso.crearEscena(Navegacion.Pantalla.MIS_INVITACIONES, 1440, 900);
+        stage.setTitle("NextEventux | Mis invitaciones");
         stage.setMinWidth(1100);
         stage.setMinHeight(700);
         stage.setScene(scene);
