@@ -63,19 +63,67 @@ public class ServiceAdministracion {
 
         if (!repositoryOrganizador.organizadorActivoVerificado(
                 idOrganizador)) {
-            throw new IllegalStateException(
-                    "El organizador no esta activo o no se encuentra verificado.");
+            throw new OrganizadorNoDisponibleException(
+                    OrganizadorNoDisponibleException.NO_ACTIVO_VERIFICADO);
         }
 
         Organizador organizador =
                 repositoryOrganizador.buscarOrganizador(idOrganizador);
 
         if (organizador == null) {
-            throw new IllegalStateException(
-                    "No se encontro el perfil del organizador seleccionado.");
+            throw new OrganizadorNoDisponibleException(
+                    OrganizadorNoDisponibleException.NO_ACTIVO_VERIFICADO);
         }
 
         return organizador;
+    }
+
+    /**
+     * Reseñas disponibles del organizador para su perfil (paso 3).
+     */
+    public List<entities.ResenaOrganizador> consultarResenas(
+            int idOrganizador) {
+
+        if (idOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "Selecciona un organizador válido.");
+        }
+
+        return repositoryOrganizador.listarResenas(idOrganizador);
+    }
+
+    // ------------------------------------------------------------------
+    // Ampliación de CU-026: el organizador consulta y responde las
+    // solicitudes de contratación que recibe. Estados:
+    // PENDIENTE -> ACEPTADA | RECHAZADA (ambos finales).
+    // ------------------------------------------------------------------
+
+    /**
+     * Solicitudes dirigidas al organizador de la cuenta indicada.
+     */
+    public List<Contratacion> consultarSolicitudesRecibidas(
+            int idUsuarioOrganizador) {
+
+        return repositoryContratacion
+                .listarSolicitudesRecibidas(idUsuarioOrganizador);
+    }
+
+    /**
+     * Acepta o rechaza una solicitud pendiente y notifica al cliente
+     * en la misma transacción.
+     */
+    public Contratacion responderSolicitud(
+            int idUsuarioOrganizador, int idSolicitud, boolean aceptar) {
+
+        if (idSolicitud <= 0) {
+            throw new IllegalArgumentException(
+                    "Selecciona una solicitud válida.");
+        }
+
+        return repositoryContratacion.responderSolicitud(
+                idSolicitud,
+                idUsuarioOrganizador,
+                aceptar ? "ACEPTADA" : "RECHAZADA");
     }
 
     /**
@@ -118,20 +166,16 @@ public class ServiceAdministracion {
                     "Los datos de la solicitud son obligatorios.");
         }
 
-        // Verificar el estado actual antes de continuar.
-        seleccionarOrganizador(idOrganizador);
+        validarFechaAproximada(datos.getFechaAproximada());
 
-        // La disponibilidad se comprueba nuevamente al enviar.
-        if (!verificarDisponibilidadOrganizador(
-                idOrganizador, datos.getFechaAproximada())) {
-            throw new IllegalStateException(
-                    "El organizador seleccionado no esta disponible "
-                    + "para la fecha indicada. Busca otra opcion.");
-        }
+        // E2: se informa de inmediato si el organizador ya no esta disponible.
+        seleccionarOrganizador(idOrganizador);
 
         datos.setIdOrganizador(idOrganizador);
         datos.setEstado("PENDIENTE");
 
+        // El repositorio vuelve a comprobar estado, disponibilidad por fecha
+        // y duplicados dentro de la misma transaccion del registro.
         repositoryContratacion.guardarContratacion(datos);
     }
 
@@ -184,10 +228,36 @@ public class ServiceAdministracion {
                     "La fecha aproximada no tiene un formato valido.");
         }
 
+        validarFechaAproximada((LocalDate) fecha);
+
         if (ciudad.toString().trim().length() > 150
                 || tipoEvento.toString().trim().length() > 100) {
             throw new IllegalArgumentException(
                     "La ciudad o el tipo de evento son demasiado largos.");
+        }
+
+        Object criterios = filtros.get("criterios");
+
+        if (criterios != null && criterios.toString().trim().length()
+                > RepositoryOrganizador.LONGITUD_MAXIMA_CRITERIOS) {
+            throw new IllegalArgumentException(
+                    "Los criterios adicionales no pueden superar "
+                    + RepositoryOrganizador.LONGITUD_MAXIMA_CRITERIOS
+                    + " caracteres.");
+        }
+    }
+
+    /** CU-026: la fecha aproximada del evento no puede estar en el pasado. */
+    private void validarFechaAproximada(LocalDate fecha) {
+
+        if (fecha == null) {
+            throw new IllegalArgumentException(
+                    "Ingresa la fecha aproximada del evento.");
+        }
+
+        if (fecha.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException(
+                    "La fecha aproximada no puede ser anterior a hoy.");
         }
     }
 }

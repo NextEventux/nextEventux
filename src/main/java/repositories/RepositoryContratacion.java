@@ -2,6 +2,7 @@ package repositories;
 
 import config.DatabaseConnection;
 import entities.Contratacion;
+import services.OrganizadorNoDisponibleException;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -22,6 +23,40 @@ import java.util.Map;
  */
 public class RepositoryContratacion {
 
+    /** E1: no se guardó nada y el cliente puede volver a intentarlo. */
+    public static final String ERROR_REGISTRO =
+            "No fue posible registrar la solicitud de contratación. "
+            + "No se guardaron cambios. Puedes intentarlo nuevamente.";
+
+    /** Ya existe la misma solicitud pendiente (cliente, organizador y fecha). */
+    public static final String SOLICITUD_DUPLICADA =
+            "Ya enviaste a este organizador una solicitud para esa fecha "
+            + "y sigue pendiente. Consulta su estado en «Mis solicitudes».";
+
+    /** La solicitud ya fue aceptada o rechazada y no puede procesarse otra vez. */
+    public static final String SOLICITUD_YA_RESPONDIDA =
+            "Esta solicitud ya fue respondida y no puede procesarse nuevamente.";
+
+    /** La solicitud no existe o no está dirigida al organizador de la sesión. */
+    public static final String SOLICITUD_NO_ENCONTRADA =
+            "La solicitud seleccionada no existe o no está dirigida a tu cuenta.";
+
+    /** La cuenta del organizador no está activa (por ejemplo, suspendida). */
+    public static final String ORGANIZADOR_NO_ACTIVO =
+            "Tu cuenta de organizador no está activa. No es posible responder la solicitud.";
+
+    /** E1 de la respuesta: no se guardó nada y se puede reintentar. */
+    public static final String ERROR_RESPUESTA =
+            "No fue posible registrar la respuesta. La solicitud conserva su estado. "
+            + "Puedes intentarlo nuevamente.";
+
+    private static final String CONSULTA_SOLICITUDES =
+            "SELECT s.*, u.nombre AS nombre_organizador, c.nombre AS nombre_cliente "
+            + "FROM Solicitud_Contratacion_Organizador s "
+            + "JOIN Organizador o ON o.id_organizador = s.id_organizador "
+            + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
+            + "JOIN Usuario c ON c.id_usuario = s.id_cliente ";
+
     private final String url;
 
     public RepositoryContratacion() {
@@ -39,8 +74,11 @@ public class RepositoryContratacion {
     }
 
     /**
-     * Registra la solicitud y notifica al organizador
-     * dentro de la misma transaccion.
+     * Registra la solicitud y notifica al organizador en una sola
+     * transacción. Dentro de ella se vuelven a comprobar el cliente,
+     * el estado del organizador (E2), su disponibilidad para la fecha
+     * y que no exista la misma solicitud pendiente. Si algo falla no
+     * queda ningún cambio (E1).
      */
     public void guardarContratacion(Contratacion contratacion) {
 
@@ -50,65 +88,22 @@ public class RepositoryContratacion {
             connection.setAutoCommit(false);
 
             try {
-                validarCliente(connection, contratacion.getIdCliente());
+                // Bloquear primero al cliente serializa sus envíos simultáneos.
+                String nombreCliente = validarCliente(
+                        connection, contratacion.getIdCliente());
 
-                String nombreOrganizador = validarOrganizadorDisponible(
-                        connection,
-                        contratacion.getIdOrganizador());
+                validarOrganizadorDisponible(
+                        connection, contratacion.getIdOrganizador());
 
-                String sql =
-                        "INSERT INTO Solicitud_Contratacion_Organizador "
-                        + "(id_cliente, id_organizador, tipo_evento, ciudad, "
-                        + "fecha_aproximada, presupuesto_estimado, "
-                        + "criterios_busqueda, estado) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')";
+                validarDisponibilidadFecha(connection, contratacion);
+                validarSinDuplicado(connection, contratacion);
 
-                int idGenerado;
-
-                try (PreparedStatement statement = connection.prepareStatement(
-                        sql, Statement.RETURN_GENERATED_KEYS)) {
-
-                    statement.setInt(1, contratacion.getIdCliente());
-                    statement.setInt(2, contratacion.getIdOrganizador());
-                    statement.setString(3, contratacion.getTipoEvento().trim());
-                    statement.setString(4, contratacion.getCiudad().trim());
-                    statement.setDate(
-                            5, Date.valueOf(contratacion.getFechaAproximada()));
-                    statement.setBigDecimal(
-                            6, contratacion.getPresupuestoEstimado());
-
-                    String criterios = contratacion.getCriteriosBusqueda();
-
-                    if (criterios == null || criterios.isBlank()) {
-                        statement.setNull(7, java.sql.Types.VARCHAR);
-                    } else {
-                        statement.setString(7, criterios.trim());
-                    }
-
-                    statement.executeUpdate();
-
-                    try (ResultSet generated = statement.getGeneratedKeys()) {
-                        if (!generated.next()) {
-                            throw new SQLException(
-                                    "No se genero el identificador de la solicitud.");
-                        }
-
-                        idGenerado = generated.getInt(1);
-                    }
-                }
-
-                String mensaje =
-                        "Nueva solicitud de contratacion de organizador. "
-                        + "Tipo de evento: "
-                        + contratacion.getTipoEvento().trim()
-                        + ". Ciudad: "
-                        + contratacion.getCiudad().trim()
-                        + ". Revisa las solicitudes pendientes.";
+                int idGenerado = insertarSolicitud(connection, contratacion);
 
                 notificar(
                         connection,
                         contratacion.getIdOrganizador(),
-                        mensaje);
+                        mensajeNotificacion(nombreCliente, contratacion));
 
                 contratacion.setIdContratacion(idGenerado);
                 contratacion.setEstado("PENDIENTE");
@@ -128,12 +123,7 @@ public class RepositoryContratacion {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            
-            throw new IllegalStateException(
-                    "No fue posible registrar la solicitud de contratacion. "
-                    + "No se guardaron cambios parciales. Puedes intentarlo nuevamente.",
-                    e);
+            throw new IllegalStateException(ERROR_REGISTRO, e);
         }
     }
 
@@ -142,9 +132,7 @@ public class RepositoryContratacion {
      */
     public Contratacion buscarContratacion(int idContratacion) {
 
-        String sql =
-                "SELECT * FROM Solicitud_Contratacion_Organizador "
-                + "WHERE id_solicitud = ?";
+        String sql = CONSULTA_SOLICITUDES + "WHERE s.id_solicitud = ?";
 
         try (Connection connection = conectar();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -157,7 +145,7 @@ public class RepositoryContratacion {
 
         } catch (SQLException e) {
             throw new IllegalStateException(
-                    "No se pudo consultar la solicitud de contratacion.", e);
+                    "No se pudo consultar la solicitud de contratación.", e);
         }
     }
 
@@ -171,9 +159,9 @@ public class RepositoryContratacion {
                     "El identificador del cliente no es valido.");
         }
 
-        String sql =
-                "SELECT * FROM Solicitud_Contratacion_Organizador "
-                + "WHERE id_cliente = ? ORDER BY fecha_solicitud DESC";
+        String sql = CONSULTA_SOLICITUDES
+                + "WHERE s.id_cliente = ? "
+                + "ORDER BY s.fecha_solicitud DESC, s.id_solicitud DESC";
 
         try (Connection connection = conectar();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -207,32 +195,31 @@ public class RepositoryContratacion {
             Map<String, Object> filtros) {
 
         StringBuilder sql = new StringBuilder(
-                "SELECT * FROM Solicitud_Contratacion_Organizador "
-                + "WHERE 1 = 1");
+                CONSULTA_SOLICITUDES + "WHERE 1 = 1");
 
         List<Object> parametros = new ArrayList<>();
 
         if (filtros != null) {
 
             agregarFiltroNumerico(
-                    sql, parametros, filtros, "idCliente", "id_cliente");
+                    sql, parametros, filtros, "idCliente", "s.id_cliente");
 
             agregarFiltroNumerico(
                     sql, parametros, filtros,
-                    "idOrganizador", "id_organizador");
+                    "idOrganizador", "s.id_organizador");
 
             agregarFiltroTexto(
-                    sql, parametros, filtros, "estado", "estado");
+                    sql, parametros, filtros, "estado", "s.estado");
 
             agregarFiltroTexto(
-                    sql, parametros, filtros, "ciudad", "ciudad");
+                    sql, parametros, filtros, "ciudad", "s.ciudad");
 
             agregarFiltroTexto(
                     sql, parametros, filtros,
-                    "tipoEvento", "tipo_evento");
+                    "tipoEvento", "s.tipo_evento");
         }
 
-        sql.append(" ORDER BY fecha_solicitud DESC");
+        sql.append(" ORDER BY s.fecha_solicitud DESC, s.id_solicitud DESC");
 
         try (Connection connection = conectar();
              PreparedStatement statement =
@@ -254,7 +241,240 @@ public class RepositoryContratacion {
 
         } catch (SQLException e) {
             throw new IllegalStateException(
-                    "No se pudieron consultar las solicitudes de contratacion.", e);
+                    "No se pudieron consultar las solicitudes de contratación.", e);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Ampliación de CU-026: el organizador responde las solicitudes
+    // ------------------------------------------------------------------
+
+    /**
+     * Solicitudes dirigidas al organizador de la cuenta indicada: primero
+     * las pendientes y luego las ya respondidas, de la más reciente a la
+     * más antigua.
+     */
+    public List<Contratacion> listarSolicitudesRecibidas(int idUsuarioOrganizador) {
+
+        if (idUsuarioOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del organizador no es valido.");
+        }
+
+        String sql = CONSULTA_SOLICITUDES
+                + "WHERE o.id_usuario = ? "
+                + "ORDER BY CASE WHEN UPPER(s.estado) = 'PENDIENTE' THEN 0 ELSE 1 END, "
+                + "s.fecha_solicitud DESC, s.id_solicitud DESC";
+
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idUsuarioOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+                List<Contratacion> lista = new ArrayList<>();
+
+                while (result.next()) {
+                    lista.add(convertir(result));
+                }
+
+                return lista;
+            }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "No se pudieron consultar las solicitudes recibidas.", e);
+        }
+    }
+
+    /**
+     * Registra la decisión del organizador y notifica al cliente en una
+     * sola transacción. Solo una solicitud PENDIENTE dirigida al organizador
+     * de la cuenta puede pasar a ACEPTADA o RECHAZADA; si algo falla, la
+     * solicitud conserva su estado y no queda notificación.
+     *
+     * @return la solicitud con su nuevo estado
+     */
+    public Contratacion responderSolicitud(
+            int idSolicitud, int idUsuarioOrganizador, String nuevoEstado) {
+
+        if (idSolicitud <= 0 || idUsuarioOrganizador <= 0) {
+            throw new IllegalArgumentException(SOLICITUD_NO_ENCONTRADA);
+        }
+
+        if (!"ACEPTADA".equals(nuevoEstado) && !"RECHAZADA".equals(nuevoEstado)) {
+            throw new IllegalArgumentException(
+                    "La respuesta debe ser aceptar o rechazar la solicitud.");
+        }
+
+        try (Connection connection = conectar()) {
+            connection.setAutoCommit(false);
+
+            try {
+                // Mismo orden que el envío del cliente: primero el organizador.
+                OrganizadorResponde organizador =
+                        validarOrganizadorResponde(connection, idUsuarioOrganizador);
+
+                SolicitudBloqueada solicitud = bloquearSolicitud(
+                        connection, idSolicitud, organizador.idOrganizador());
+
+                if (!"PENDIENTE".equalsIgnoreCase(solicitud.estado())) {
+                    throw new IllegalStateException(SOLICITUD_YA_RESPONDIDA);
+                }
+
+                actualizarEstado(connection, idSolicitud, nuevoEstado);
+
+                insertarNotificacion(
+                        connection,
+                        solicitud.idCliente(),
+                        mensajeRespuesta(organizador.nombre(), idSolicitud,
+                                solicitud, nuevoEstado));
+
+                Contratacion respondida = buscarContratacion(connection, idSolicitud);
+
+                connection.commit();
+                return respondida;
+
+            } catch (SQLException | RuntimeException e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollback) {
+                    e.addSuppressed(rollback);
+                }
+
+                throw e;
+            }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(ERROR_RESPUESTA, e);
+        }
+    }
+
+    private record OrganizadorResponde(int idOrganizador, String nombre) {
+    }
+
+    private record SolicitudBloqueada(
+            int idCliente, String estado, String tipoEvento,
+            String ciudad, java.time.LocalDate fechaAproximada) {
+    }
+
+    /**
+     * Bloquea al organizador de la cuenta y comprueba que la cuenta y el
+     * perfil sigan activos (una cuenta suspendida por CU-029 no responde).
+     */
+    private OrganizadorResponde validarOrganizadorResponde(
+            Connection connection, int idUsuarioOrganizador) throws SQLException {
+
+        String sql =
+                "SELECT o.id_organizador, u.nombre, u.estado AS estado_usuario, "
+                + "o.estado AS estado_organizador "
+                + "FROM Organizador o "
+                + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
+                + "WHERE o.id_usuario = ? "
+                + "AND UPPER(u.tipo_usuario) = 'ORGANIZADOR' "
+                + "FOR UPDATE";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, idUsuarioOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    throw new IllegalArgumentException(SOLICITUD_NO_ENCONTRADA);
+                }
+
+                if (!"ACTIVO".equalsIgnoreCase(result.getString("estado_usuario"))
+                        || !"ACTIVO".equalsIgnoreCase(
+                                result.getString("estado_organizador"))) {
+                    throw new IllegalStateException(ORGANIZADOR_NO_ACTIVO);
+                }
+
+                return new OrganizadorResponde(
+                        result.getInt("id_organizador"),
+                        result.getString("nombre"));
+            }
+        }
+    }
+
+    /** Bloquea la solicitud solo si está dirigida a ese organizador. */
+    private SolicitudBloqueada bloquearSolicitud(
+            Connection connection, int idSolicitud, int idOrganizador)
+            throws SQLException {
+
+        String sql =
+                "SELECT id_cliente, estado, tipo_evento, ciudad, fecha_aproximada "
+                + "FROM Solicitud_Contratacion_Organizador "
+                + "WHERE id_solicitud = ? AND id_organizador = ? "
+                + "FOR UPDATE";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, idSolicitud);
+            statement.setInt(2, idOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    throw new IllegalArgumentException(SOLICITUD_NO_ENCONTRADA);
+                }
+
+                Date fecha = result.getDate("fecha_aproximada");
+
+                return new SolicitudBloqueada(
+                        result.getInt("id_cliente"),
+                        result.getString("estado"),
+                        result.getString("tipo_evento"),
+                        result.getString("ciudad"),
+                        fecha == null ? null : fecha.toLocalDate());
+            }
+        }
+    }
+
+    private void actualizarEstado(
+            Connection connection, int idSolicitud, String nuevoEstado)
+            throws SQLException {
+
+        String sql =
+                "UPDATE Solicitud_Contratacion_Organizador SET estado = ? "
+                + "WHERE id_solicitud = ? AND UPPER(estado) = 'PENDIENTE'";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, nuevoEstado);
+            statement.setInt(2, idSolicitud);
+
+            if (statement.executeUpdate() != 1) {
+                throw new IllegalStateException(SOLICITUD_YA_RESPONDIDA);
+            }
+        }
+    }
+
+    private String mensajeRespuesta(
+            String nombreOrganizador,
+            int idSolicitud,
+            SolicitudBloqueada solicitud,
+            String nuevoEstado) {
+
+        return nombreOrganizador
+                + ("ACEPTADA".equals(nuevoEstado) ? " aceptó" : " rechazó")
+                + " tu solicitud de contratación #" + idSolicitud
+                + ". Tipo de evento: " + solicitud.tipoEvento()
+                + ". Ciudad: " + solicitud.ciudad()
+                + ". Fecha aproximada: " + solicitud.fechaAproximada()
+                + ". Estado: " + ("ACEPTADA".equals(nuevoEstado) ? "Aceptada" : "Rechazada")
+                + ". Consulta el detalle en «Mis solicitudes».";
+    }
+
+    private Contratacion buscarContratacion(Connection connection, int idSolicitud)
+            throws SQLException {
+
+        try (PreparedStatement statement = connection.prepareStatement(
+                CONSULTA_SOLICITUDES + "WHERE s.id_solicitud = ?")) {
+
+            statement.setInt(1, idSolicitud);
+
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    throw new SQLException("No se encontró la solicitud respondida.");
+                }
+                return convertir(result);
+            }
         }
     }
 
@@ -262,14 +482,14 @@ public class RepositoryContratacion {
 
         if (contratacion == null) {
             throw new IllegalArgumentException(
-                    "La solicitud de contratacion es obligatoria.");
+                    "La solicitud de contratación es obligatoria.");
         }
 
         if (contratacion.getIdCliente() <= 0
                 || contratacion.getIdOrganizador() <= 0) {
 
             throw new IllegalArgumentException(
-                    "Selecciona un cliente y un organizador validos.");
+                    "Selecciona un cliente y un organizador válidos.");
         }
 
         if (contratacion.getTipoEvento() == null
@@ -280,13 +500,14 @@ public class RepositoryContratacion {
                 || contratacion.getPresupuestoEstimado() == null) {
 
             throw new IllegalArgumentException(
-                    "Completa el tipo de evento, ciudad, fecha y presupuesto.");
+                    "Completa el tipo de evento, la ciudad, la fecha y el presupuesto.");
         }
 
         if (contratacion.getTipoEvento().trim().length() > 100
                 || contratacion.getCiudad().trim().length() > 150
                 || (contratacion.getCriteriosBusqueda() != null
-                && contratacion.getCriteriosBusqueda().length() > 500)) {
+                && contratacion.getCriteriosBusqueda().trim().length()
+                        > RepositoryOrganizador.LONGITUD_MAXIMA_CRITERIOS)) {
 
             throw new IllegalArgumentException(
                     "Uno de los datos supera la longitud permitida.");
@@ -298,11 +519,17 @@ public class RepositoryContratacion {
         }
     }
 
-    private void validarCliente(Connection connection, int idCliente)
+    /**
+     * Bloquea y comprueba la cuenta del cliente en la base de datos.
+     * Una sesión abierta de una cuenta suspendida no puede registrar.
+     *
+     * @return el nombre del cliente, para la notificación
+     */
+    private String validarCliente(Connection connection, int idCliente)
             throws SQLException {
 
         String sql =
-                "SELECT tipo_usuario, estado FROM Usuario "
+                "SELECT nombre, tipo_usuario, estado FROM Usuario "
                 + "WHERE id_usuario = ? FOR UPDATE";
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -323,24 +550,30 @@ public class RepositoryContratacion {
 
                 if (!"ACTIVO".equalsIgnoreCase(result.getString("estado"))) {
                     throw new IllegalArgumentException(
-                            "El cliente no tiene una cuenta activa.");
+                            "Tu cuenta de cliente no está activa. "
+                            + "No es posible enviar la solicitud.");
                 }
+
+                return result.getString("nombre");
             }
         }
     }
 
-    private String validarOrganizadorDisponible(
+    /**
+     * E2: bloquea al organizador y comprueba que siga activo y verificado.
+     */
+    private void validarOrganizadorDisponible(
             Connection connection, int idOrganizador) throws SQLException {
 
         String sql =
-                "SELECT u.id_usuario, u.nombre, o.empresa "
+                "SELECT o.id_organizador "
                 + "FROM Organizador o "
                 + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
                 + "WHERE o.id_organizador = ? "
-                + "AND u.tipo_usuario = 'ORGANIZADOR' "
-                + "AND u.estado = 'ACTIVO' "
-                + "AND o.estado = 'ACTIVO' "
-                + "AND o.estado_verificacion = 'VERIFICADO' "
+                + "AND UPPER(u.tipo_usuario) = 'ORGANIZADOR' "
+                + "AND UPPER(u.estado) = 'ACTIVO' "
+                + "AND UPPER(o.estado) = 'ACTIVO' "
+                + "AND UPPER(o.estado_verificacion) = 'VERIFICADO' "
                 + "FOR UPDATE";
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -348,82 +581,181 @@ public class RepositoryContratacion {
 
             try (ResultSet result = statement.executeQuery()) {
                 if (!result.next()) {
-                    throw new IllegalArgumentException(
-                            "El organizador seleccionado ya no esta activo "
-                            + "o no se encuentra verificado. Actualiza la lista.");
+                    throw new OrganizadorNoDisponibleException(
+                            OrganizadorNoDisponibleException.NO_ACTIVO_VERIFICADO);
                 }
-
-                String empresa = result.getString("empresa");
-
-                return empresa == null || empresa.isBlank()
-                        ? result.getString("nombre")
-                        : empresa;
             }
         }
     }
 
-    
-private void notificar(
-        Connection connection,
-        int idOrganizador,
-        String mensaje) throws SQLException {
+    /**
+     * El organizador no debe tener un evento propio (no cancelado) en la
+     * fecha aproximada. Es la misma regla que aplica la búsqueda.
+     */
+    private void validarDisponibilidadFecha(
+            Connection connection, Contratacion contratacion) throws SQLException {
 
-    // Detectar si la base local conserva la columna antigua.
-    boolean tieneColumnaAntigua;
+        String sql =
+                "SELECT COUNT(*) FROM Evento e "
+                + "WHERE e.id_organizador = ? "
+                + "AND CAST(e.fecha_inicio AS DATE) <= ? "
+                + "AND CAST(e.fecha_fin AS DATE) >= ? "
+                + "AND UPPER(e.estado) <> 'CANCELADO'";
 
-    String consultaColumna =
-            "SELECT COUNT(*) "
-            + "FROM INFORMATION_SCHEMA.COLUMNS "
-            + "WHERE TABLE_SCHEMA = 'PUBLIC' "
-            + "AND TABLE_NAME = 'NOTIFICACION_INTERNA' "
-            + "AND COLUMN_NAME = 'ID_USUARIO_DESTINATARIO'";
+        Date fecha = Date.valueOf(contratacion.getFechaAproximada());
 
-    try (PreparedStatement consulta =
-                 connection.prepareStatement(consultaColumna);
-         ResultSet resultado = consulta.executeQuery()) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, contratacion.getIdOrganizador());
+            statement.setDate(2, fecha);
+            statement.setDate(3, fecha);
 
-        resultado.next();
-        tieneColumnaAntigua = resultado.getInt(1) > 0;
-    }
-
-    String sql;
-
-    if (tieneColumnaAntigua) {
-
-        // Compatibilidad con la base local que conserva el campo antiguo.
-        sql =
-                "INSERT INTO Notificacion_interna "
-                + "(id_usuario, id_usuario_destinatario, mensaje) "
-                + "SELECT u.id_usuario, u.id_usuario, ? "
-                + "FROM Organizador o "
-                + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
-                + "WHERE o.id_organizador = ?";
-
-    } else {
-
-        // Esquema actual de una base de datos limpia.
-        sql =
-                "INSERT INTO Notificacion_interna "
-                + "(id_usuario, mensaje) "
-                + "SELECT u.id_usuario, ? "
-                + "FROM Organizador o "
-                + "JOIN Usuario u ON u.id_usuario = o.id_usuario "
-                + "WHERE o.id_organizador = ?";
-    }
-
-    try (PreparedStatement statement =
-                 connection.prepareStatement(sql)) {
-
-        statement.setString(1, mensaje);
-        statement.setInt(2, idOrganizador);
-
-        if (statement.executeUpdate() != 1) {
-            throw new SQLException(
-                    "No se pudo generar la notificación "
-                    + "para el organizador seleccionado.");
+            try (ResultSet result = statement.executeQuery()) {
+                if (result.next() && result.getInt(1) > 0) {
+                    throw new OrganizadorNoDisponibleException(
+                            OrganizadorNoDisponibleException.SIN_DISPONIBILIDAD_FECHA);
+                }
+            }
         }
     }
-}
+
+    /**
+     * Evita registrar dos veces la misma solicitud pendiente, por ejemplo
+     * al reintentar después de un error. Se ejecuta con el cliente ya
+     * bloqueado, así que dos envíos simultáneos no pasan ambos.
+     */
+    private void validarSinDuplicado(
+            Connection connection, Contratacion contratacion) throws SQLException {
+
+        String sql =
+                "SELECT COUNT(*) FROM Solicitud_Contratacion_Organizador "
+                + "WHERE id_cliente = ? AND id_organizador = ? "
+                + "AND fecha_aproximada = ? AND UPPER(estado) = 'PENDIENTE'";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, contratacion.getIdCliente());
+            statement.setInt(2, contratacion.getIdOrganizador());
+            statement.setDate(3, Date.valueOf(contratacion.getFechaAproximada()));
+
+            try (ResultSet result = statement.executeQuery()) {
+                if (result.next() && result.getInt(1) > 0) {
+                    throw new IllegalStateException(SOLICITUD_DUPLICADA);
+                }
+            }
+        }
+    }
+
+    private int insertarSolicitud(
+            Connection connection, Contratacion contratacion) throws SQLException {
+
+        String sql =
+                "INSERT INTO Solicitud_Contratacion_Organizador "
+                + "(id_cliente, id_organizador, tipo_evento, ciudad, "
+                + "fecha_aproximada, presupuesto_estimado, "
+                + "criterios_busqueda, estado) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')";
+
+        try (PreparedStatement statement = connection.prepareStatement(
+                sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            statement.setInt(1, contratacion.getIdCliente());
+            statement.setInt(2, contratacion.getIdOrganizador());
+            statement.setString(3, contratacion.getTipoEvento().trim());
+            statement.setString(4, contratacion.getCiudad().trim());
+            statement.setDate(
+                    5, Date.valueOf(contratacion.getFechaAproximada()));
+            statement.setBigDecimal(
+                    6, contratacion.getPresupuestoEstimado());
+
+            String criterios = contratacion.getCriteriosBusqueda();
+
+            if (criterios == null || criterios.isBlank()) {
+                statement.setNull(7, java.sql.Types.VARCHAR);
+            } else {
+                statement.setString(7, criterios.trim());
+            }
+
+            statement.executeUpdate();
+
+            try (ResultSet generated = statement.getGeneratedKeys()) {
+                if (!generated.next()) {
+                    throw new SQLException(
+                            "No se generó el identificador de la solicitud.");
+                }
+
+                return generated.getInt(1);
+            }
+        }
+    }
+
+    private String mensajeNotificacion(
+            String nombreCliente, Contratacion contratacion) {
+
+        return "Nueva solicitud de contratación de "
+                + nombreCliente
+                + ". Tipo de evento: "
+                + contratacion.getTipoEvento().trim()
+                + ". Ciudad: "
+                + contratacion.getCiudad().trim()
+                + ". Fecha aproximada: "
+                + contratacion.getFechaAproximada()
+                + ". Estado: Pendiente.";
+    }
+
+    /**
+     * Notificación interna para la cuenta del organizador. Se guarda en
+     * id_usuario, la columna que leen los avisos del organizador, y en
+     * id_usuario_destinatario, que agregó la migración 011.
+     */
+    private void notificar(
+            Connection connection,
+            int idOrganizador,
+            String mensaje) throws SQLException {
+
+        String sql = "SELECT id_usuario FROM Organizador WHERE id_organizador = ?";
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    throw new SQLException(
+                            "No se pudo generar la notificación "
+                            + "para el organizador seleccionado.");
+                }
+
+                insertarNotificacion(connection, result.getInt(1), mensaje);
+            }
+        }
+    }
+
+    /**
+     * Notificación interna para una cuenta: id_usuario es la columna que
+     * leen los avisos existentes; id_usuario_destinatario la agregó la 011.
+     */
+    private void insertarNotificacion(
+            Connection connection,
+            int idUsuario,
+            String mensaje) throws SQLException {
+
+        String sql =
+                "INSERT INTO Notificacion_interna "
+                + "(id_usuario, id_usuario_destinatario, mensaje) "
+                + "VALUES (?, ?, ?)";
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idUsuario);
+            statement.setInt(2, idUsuario);
+            statement.setString(3, mensaje);
+
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("No se pudo generar la notificación.");
+            }
+        }
+    }
 
     private void cargarFechaSolicitud(
             Connection connection, Contratacion contratacion)
@@ -475,6 +807,12 @@ private void notificar(
         if (fechaSolicitud != null) {
             contratacion.setFechaSolicitud(fechaSolicitud.toLocalDateTime());
         }
+
+        contratacion.setNombreOrganizador(
+                result.getString("nombre_organizador"));
+
+        contratacion.setNombreCliente(
+                result.getString("nombre_cliente"));
 
         return contratacion;
     }

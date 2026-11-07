@@ -20,6 +20,8 @@ public class Contratacion {
     private String criteriosBusqueda;
     private String estado;
     private LocalDateTime fechaSolicitud;
+    private String nombreOrganizador;
+    private String nombreCliente;
 
     public Contratacion() {
         this.estado = "PENDIENTE";
@@ -122,5 +124,23 @@ public class Contratacion {
 
     public void setFechaSolicitud(LocalDateTime fechaSolicitud) {
         this.fechaSolicitud = fechaSolicitud;
+    }
+
+    /** Nombre del organizador; solo se carga al consultar la solicitud. */
+    public String getNombreOrganizador() {
+        return nombreOrganizador;
+    }
+
+    public void setNombreOrganizador(String nombreOrganizador) {
+        this.nombreOrganizador = nombreOrganizador;
+    }
+
+    /** Nombre del cliente; solo se carga al consultar la solicitud. */
+    public String getNombreCliente() {
+        return nombreCliente;
+    }
+
+    public void setNombreCliente(String nombreCliente) {
+        this.nombreCliente = nombreCliente;
     }
 }

@@ -307,7 +307,13 @@ public class NextEventuxApp extends Application {
     }
 
     private void registrarRutasOrganizador() {
+        // Ampliación de CU-026: solo la cuenta ORGANIZADOR ve sus solicitudes de clientes.
+        views.components.MenuCompartido.registrarSolicitudesContratacion(
+                esOrganizador() ? this::mostrarSolicitudesContratacion : null);
         navegacion
+                .registrarDinamica(
+                        Navegacion.Pantalla.SOLICITUDES_CONTRATACION,
+                        this::crearVistaSolicitudesContratacion)
                 .registrar(
                         Navegacion.Pantalla.EVENTOS,
                         () -> new ViewEventos(
@@ -601,6 +607,33 @@ public class NextEventuxApp extends Application {
                 .crearPantalla();
     }
 
+    /** Ampliación de CU-026: solicitudes de contratación recibidas por el organizador. */
+    private void mostrarSolicitudesContratacion() {
+
+        if (!esOrganizador()) {
+            mostrarLogin();
+            return;
+        }
+
+        navegacion.ir(Navegacion.Pantalla.SOLICITUDES_CONTRATACION);
+    }
+
+    private javafx.scene.Parent crearVistaSolicitudesContratacion() {
+        return new views.ViewSolicitudesContratacion(
+                new ControllerAdministracion(
+                        new ServiceAdministracion(
+                                new RepositoryContratacion(), new RepositoryOrganizador()),
+                        sesionActual),
+                sesionActual,
+                this::mostrarEventos,
+                this::mostrarInvitados,
+                this::mostrarCatalogoServicios,
+                this::mostrarMisEventos,
+                this::mostrarPropuestasOrganizador,
+                this::mostrarLogin)
+                .crearPantalla();
+    }
+
     private void mostrarContratarServicio(PropuestaServicio propuesta) {
 
         if (!esOrganizador()) {
@@ -740,7 +773,7 @@ public class NextEventuxApp extends Application {
         ControllerAdministracion controlador = new ControllerAdministracion(
                 new ServiceAdministracion(new RepositoryContratacion(), new RepositoryOrganizador()),
                 sesionActual);
-        contenedor.setCenter(new ViewAdministracion(controlador, sesionActual).crearPantalla());
+        contenedor.setCenter(new ViewAdministracion(controlador, sesionActual, this::mostrarLogin).crearPantalla());
         stage.setTitle("NextEventux | Contratar organizador");
     }
 

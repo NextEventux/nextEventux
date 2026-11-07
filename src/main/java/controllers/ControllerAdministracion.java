@@ -61,6 +61,51 @@ public class ControllerAdministracion {
     }
 
     /**
+     * Consulta las reseñas disponibles del organizador seleccionado.
+     */
+    public List<entities.ResenaOrganizador> consultarResenas(
+            int idOrganizador) {
+
+        validarSesionCliente();
+        return serviceAdministracion.consultarResenas(idOrganizador);
+    }
+
+    // ------------------------------------------------------------------
+    // Ampliación de CU-026: el organizador responde las solicitudes.
+    // La cuenta se toma de la sesión; nunca de la vista.
+    // ------------------------------------------------------------------
+
+    /**
+     * Solicitudes de contratación dirigidas al organizador autenticado.
+     */
+    public List<Contratacion> consultarSolicitudesRecibidas() {
+
+        validarSesionOrganizador();
+        return serviceAdministracion.consultarSolicitudesRecibidas(
+                sesion.getIdUsuario());
+    }
+
+    /**
+     * Acepta una solicitud pendiente dirigida al organizador autenticado.
+     */
+    public Contratacion aceptarSolicitud(int idSolicitud) {
+
+        validarSesionOrganizador();
+        return serviceAdministracion.responderSolicitud(
+                sesion.getIdUsuario(), idSolicitud, true);
+    }
+
+    /**
+     * Rechaza una solicitud pendiente dirigida al organizador autenticado.
+     */
+    public Contratacion rechazarSolicitud(int idSolicitud) {
+
+        validarSesionOrganizador();
+        return serviceAdministracion.responderSolicitud(
+                sesion.getIdUsuario(), idSolicitud, false);
+    }
+
+    /**
      * Consulta si el organizador esta disponible para la fecha indicada.
      */
     public boolean verificarDisponibilidadOrganizador(
@@ -124,6 +169,23 @@ public class ControllerAdministracion {
             throw new IllegalStateException(
                     "Inicia sesion con una cuenta de cliente activa "
                     + "para contratar un organizador.");
+        }
+    }
+
+    /**
+     * Verifica que exista una sesión válida de organizador. La base de
+     * datos vuelve a comprobar el estado de la cuenta al responder.
+     */
+    private void validarSesionOrganizador() {
+
+        if (sesion == null
+                || sesion.getIdUsuario() <= 0
+                || !"ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())
+                || !"ACTIVO".equalsIgnoreCase(sesion.getEstadoUsuario())) {
+
+            throw new IllegalStateException(
+                    "Inicia sesión con una cuenta de organizador activa "
+                    + "para consultar las solicitudes de contratación.");
         }
     }
 }

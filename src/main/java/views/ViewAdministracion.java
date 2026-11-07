@@ -4,7 +4,9 @@ package views;
 import controllers.ControllerAdministracion;
 import entities.Contratacion;
 import entities.Organizador;
+import entities.ResenaOrganizador;
 import entities.SesionUsuario;
+import services.OrganizadorNoDisponibleException;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -26,7 +28,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -35,7 +36,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -46,13 +46,27 @@ import java.util.Optional;
 /**
  * Vista del caso de uso CU-026: Contratar organizador.
  *
- * Permite al cliente consultar perfiles disponibles, comparar
- * organizadores, revisar su disponibilidad y enviar una solicitud.
+ * El cliente busca organizadores verificados, compara sus perfiles y
+ * reseñas, y envía una solicitud que queda Pendiente. También consulta
+ * el estado de las solicitudes que ya envió.
  */
 public class ViewAdministracion {
 
+    /**
+     * Criterios con los que se obtuvo la lista actual. La solicitud usa
+     * estos valores, no los que el cliente haya editado después sin buscar.
+     */
+    private record BusquedaVigente(
+            String tipoEvento,
+            String ciudad,
+            LocalDate fecha,
+            BigDecimal presupuesto,
+            String criterios) {
+    }
+
     private final ControllerAdministracion controller;
     private final SesionUsuario sesion;
+    private final Runnable cerrarSesion;
     private TabPane pestanasPrincipal;
     private Tab pestanaMisSolicitudes;
 
@@ -76,6 +90,8 @@ public class ViewAdministracion {
     private final Label detalleEspecialidad = new Label();
     private final Label detallePortafolio = new Label();
     private final Label detalleTarifa = new Label();
+    private final Label detalleCalificacion = new Label();
+    private final Label tituloResenas = new Label("Reseñas");
     private final Label detalleResenas = new Label();
 
     private final Label disponibilidad = new Label(
@@ -84,23 +100,30 @@ public class ViewAdministracion {
     private final Button solicitarContratacion =
             new Button("Solicitar contratación");
 
-    private final NumberFormat formatoMoneda =
-            NumberFormat.getCurrencyInstance(
-                    Locale.forLanguageTag("es-CO"));
-
     private Organizador organizadorSeleccionado;
+    private BusquedaVigente busquedaVigente;
 
     private Label menuBuscar;
     private Label menuSolicitudes;
 
     public ViewAdministracion(
             ControllerAdministracion controller) {
-        this(controller, null);
+        this(controller, null, null);
     }
 
     public ViewAdministracion(
             ControllerAdministracion controller,
             SesionUsuario sesion) {
+        this(controller, sesion, null);
+    }
+
+    /**
+     * @param cerrarSesion acción de «Cerrar sesión»; si es null no se muestra
+     */
+    public ViewAdministracion(
+            ControllerAdministracion controller,
+            SesionUsuario sesion,
+            Runnable cerrarSesion) {
 
         if (controller == null) {
             throw new IllegalArgumentException(
@@ -109,8 +132,7 @@ public class ViewAdministracion {
 
         this.controller = controller;
         this.sesion = sesion;
-
-        formatoMoneda.setMaximumFractionDigits(0);
+        this.cerrarSesion = cerrarSesion;
 
         configurarFormulario();
     }
@@ -141,7 +163,7 @@ public class ViewAdministracion {
 
         criterios.setId("criteriosBusqueda");
         criterios.setPromptText(
-                "Características adicionales (opcional)");
+                "Palabra clave opcional, por ejemplo: bodas, empresarial");
 
         listaOrganizadores.setId("listaOrganizadores");
         listaOrganizadores.setPlaceholder(
@@ -160,6 +182,11 @@ public class ViewAdministracion {
         detallePortafolio.setWrapText(true);
         disponibilidad.setWrapText(true);
 
+        tituloResenas.getStyleClass().add("section-title");
+        detalleResenas.setId("resenasOrganizador");
+        detalleResenas.getStyleClass().add("muted");
+        detalleResenas.setWrapText(true);
+
         solicitarContratacion.setId("solicitarContratacion");
         solicitarContratacion.getStyleClass().add("btn-primary");
         solicitarContratacion.setDisable(true);
@@ -169,6 +196,7 @@ public class ViewAdministracion {
 
         configurarListaOrganizadores();
         configurarListaContrataciones();
+        limpiarPerfil();
     }
 
     public Parent crearPantalla() {
@@ -182,14 +210,14 @@ public class ViewAdministracion {
         buscar.setClosable(false);
 
         Tab solicitudes = new Tab(
-        "Mis solicitudes",
-        crearVistaContrataciones());
-solicitudes.setClosable(false);
+                "Mis solicitudes",
+                crearVistaContrataciones());
+        solicitudes.setClosable(false);
 
-this.pestanaMisSolicitudes = solicitudes;
+        this.pestanaMisSolicitudes = solicitudes;
 
-TabPane pestanas = new TabPane(buscar, solicitudes);
-this.pestanasPrincipal = pestanas;
+        TabPane pestanas = new TabPane(buscar, solicitudes);
+        this.pestanasPrincipal = pestanas;
 
         pestanas.getStyleClass().add("publicacion");
         pestanas.setTabClosingPolicy(
@@ -295,13 +323,6 @@ this.pestanasPrincipal = pestanas;
         Label tituloMenu = etiqueta(
                 "MENÚ PRINCIPAL", "menu-title");
 
-        Label inicio = etiqueta(
-                "⌂  Inicio", "menu-item");
-
-        inicio.setMaxWidth(Double.MAX_VALUE);
-        inicio.setOnMouseClicked(
-                event -> seleccionarPestana(buscar));
-
         menuBuscar = etiqueta(
                 "♧  Buscar organizadores", "menu-item");
 
@@ -320,11 +341,7 @@ this.pestanasPrincipal = pestanas;
         Region espacio = new Region();
         VBox.setVgrow(espacio, Priority.ALWAYS);
 
-        String nombre = sesion == null
-                || sesion.getNombre() == null
-                || sesion.getNombre().isBlank()
-                ? "Cliente"
-                : sesion.getNombre();
+        String nombre = nombreCliente();
 
         String inicial = nombre.substring(0, 1)
                 .toUpperCase(Locale.ROOT);
@@ -334,7 +351,16 @@ this.pestanasPrincipal = pestanas;
         VBox perfil = new VBox(
                 4,
                 etiqueta(nombre, "profile-name"),
-                etiqueta("Mi cuenta", "hint"));
+                etiqueta(PresentacionContratacionOrganizador.rol(sesion), "hint"));
+
+        // Mismo enlace que usa MenuCompartido en las demás pantallas.
+        if (cerrarSesion != null) {
+            Label salir = etiqueta("Cerrar sesión", "logout-link");
+            salir.setId("cerrarSesionCliente");
+            salir.setStyle("-fx-cursor: hand;");
+            salir.setOnMouseClicked(event -> cerrarSesion.run());
+            perfil.getChildren().add(salir);
+        }
 
         HBox cuenta = new HBox(12, avatar, perfil);
         cuenta.setAlignment(Pos.CENTER_LEFT);
@@ -343,7 +369,6 @@ this.pestanasPrincipal = pestanas;
         menu.getChildren().addAll(
                 marca,
                 tituloMenu,
-                inicio,
                 menuBuscar,
                 menuSolicitudes,
                 espacio,
@@ -363,13 +388,8 @@ this.pestanasPrincipal = pestanas;
         Region espacio = new Region();
         HBox.setHgrow(espacio, Priority.ALWAYS);
 
-        String nombre = sesion == null
-                || sesion.getNombre() == null
-                ? "Cliente"
-                : sesion.getNombre();
-
         Label usuario = etiqueta(
-                nombre + " · CLIENTE", "user-badge");
+                nombreCliente() + " · CLIENTE", "user-badge");
 
         HBox barra = new HBox(
                 18, ruta, actual, espacio, usuario);
@@ -378,6 +398,15 @@ this.pestanasPrincipal = pestanas;
         barra.getStyleClass().add("topbar");
 
         return barra;
+    }
+
+    private String nombreCliente() {
+
+        return sesion == null
+                || sesion.getNombre() == null
+                || sesion.getNombre().isBlank()
+                ? "Cliente"
+                : sesion.getNombre();
     }
 
     private void seleccionarPestana(Tab pestana) {
@@ -447,7 +476,7 @@ this.pestanasPrincipal = pestanas;
                 0, 1);
 
         formulario.add(
-                grupo("Presupuesto máximo (COP) *", presupuesto),
+                grupo("Presupuesto estimado (COP) *", presupuesto),
                 1, 1);
 
         formulario.add(
@@ -522,6 +551,9 @@ this.pestanasPrincipal = pestanas;
                 detalleEspecialidad,
                 detallePortafolio,
                 detalleTarifa,
+                detalleCalificacion,
+                new Separator(),
+                tituloResenas,
                 detalleResenas,
                 new Separator(),
                 disponibilidad,
@@ -535,7 +567,7 @@ this.pestanasPrincipal = pestanas;
         detalleCiudad.setWrapText(true);
         detalleEspecialidad.setWrapText(true);
         detalleTarifa.setWrapText(true);
-        detalleResenas.setWrapText(true);
+        detalleCalificacion.setWrapText(true);
 
         return panel;
     }
@@ -551,43 +583,13 @@ this.pestanasPrincipal = pestanas;
 
                         super.updateItem(item, empty);
 
-                        if (empty || item == null) {
-                            setText(null);
-                            return;
-                        }
-
-                        String empresa = texto(
-                                item.empresa(), "Empresa no registrada");
-
-                        String ciudadOrganizador = texto(
-                                item.ciudad(), "Ciudad no registrada");
-
-                        String tarifa = formatoMoneda.format(
-                                item.tarifaBase() == null
-                                        ? BigDecimal.ZERO
-                                        : item.tarifaBase());
-
-                        BigDecimal promedio =
-                                item.calificacionPromedio() == null
-                                        ? BigDecimal.ZERO
-                                        : item.calificacionPromedio();
-
-                        setText(
-                                item.nombre()
-                                + "\n" + empresa
-                                + " · " + ciudadOrganizador
-                                + "\nEspecialidad: "
-                                + texto(item.especialidad(), "No registrada")
-                                + "\nTarifa base: " + tarifa
-                                + "\nCalificación: "
-                                + promedio.setScale(
-                                        1,
-                                        java.math.RoundingMode.HALF_UP)
-                                + " / 5 · "
-                                + item.totalResenas() + " reseñas");
+                        setText(empty || item == null
+                                ? null
+                                : PresentacionContratacionOrganizador.tarjeta(item));
                     }
                 });
 
+        // A2: elegir otro organizador de la lista muestra su perfil.
         listaOrganizadores.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((observable, anterior, actual) ->
@@ -595,8 +597,7 @@ this.pestanasPrincipal = pestanas;
     }
 
     /**
-     * Valida los campos antes de convertir el presupuesto
-     * y consultar los organizadores.
+     * Pasos 1 y 2 (y A1): valida los campos y busca organizadores.
      */
     public void mostrarOrganizadores() {
 
@@ -615,7 +616,7 @@ this.pestanasPrincipal = pestanas;
                     + "- Tipo de evento\n"
                     + "- Ciudad\n"
                     + "- Fecha aproximada\n"
-                    + "- Presupuesto máximo");
+                    + "- Presupuesto estimado");
 
             return;
         }
@@ -637,32 +638,18 @@ this.pestanasPrincipal = pestanas;
             return;
         }
 
+        BusquedaVigente busqueda = new BusquedaVigente(
+                tipo,
+                ciudadBusqueda,
+                fecha,
+                valorPresupuesto,
+                criterios.getText().trim());
+
         try {
-            Map<String, Object> filtros = new HashMap<>();
-
-            filtros.put("tipoEvento", tipo);
-            filtros.put("ciudad", ciudadBusqueda);
-            filtros.put("fechaAproximada", fecha);
-            filtros.put("presupuestoEstimado", valorPresupuesto);
-
-            if (!criterios.getText().trim().isEmpty()) {
-                filtros.put(
-                        "criterios",
-                        criterios.getText().trim());
-            }
-
-            listaOrganizadores.getItems().clear();
-            limpiarPerfil();
-
-            List<Organizador> coincidencias =
-                    controller.consultarOrganizadores(filtros);
-
-            listaOrganizadores.getItems().setAll(coincidencias);
+            List<Organizador> coincidencias = buscar(busqueda);
 
             if (coincidencias.isEmpty()) {
-                mostrarMensaje(
-                        "No encontramos organizadores para esos criterios. "
-                        + "Prueba con otra ciudad, fecha o presupuesto.");
+                mostrarMensaje(PresentacionContratacionOrganizador.SIN_RESULTADOS);
             }
 
         } catch (RuntimeException e) {
@@ -673,8 +660,59 @@ this.pestanasPrincipal = pestanas;
         }
     }
 
+    /** Ejecuta la búsqueda y deja la lista y el perfil listos. */
+    private List<Organizador> buscar(BusquedaVigente busqueda) {
+
+        Map<String, Object> filtros = new HashMap<>();
+
+        filtros.put("tipoEvento", busqueda.tipoEvento());
+        filtros.put("ciudad", busqueda.ciudad());
+        filtros.put("fechaAproximada", busqueda.fecha());
+        filtros.put("presupuestoEstimado", busqueda.presupuesto());
+
+        if (!busqueda.criterios().isEmpty()) {
+            filtros.put("criterios", busqueda.criterios());
+        }
+
+        busquedaVigente = null;
+        listaOrganizadores.getItems().clear();
+        limpiarPerfil();
+
+        List<Organizador> coincidencias =
+                controller.consultarOrganizadores(filtros);
+
+        busquedaVigente = busqueda;
+        listaOrganizadores.getItems().setAll(coincidencias);
+
+        return coincidencias;
+    }
+
     /**
-     * Consulta y presenta los datos del perfil seleccionado.
+     * E2: el organizador ya no puede recibir la solicitud. Se vuelve a
+     * consultar la lista con los mismos criterios para que el cliente
+     * seleccione otro.
+     */
+    private void volverALaLista(String mensaje) {
+
+        BusquedaVigente busqueda = busquedaVigente;
+
+        organizadorSeleccionado = null;
+        listaOrganizadores.getSelectionModel().clearSelection();
+        limpiarPerfil();
+
+        if (busqueda != null) {
+            try {
+                buscar(busqueda);
+            } catch (RuntimeException e) {
+                listaOrganizadores.getItems().clear();
+            }
+        }
+
+        mostrarMensaje(mensaje);
+    }
+
+    /**
+     * Paso 3: consulta y presenta el perfil seleccionado.
      */
     private void mostrarPerfil(Organizador organizador) {
 
@@ -690,71 +728,69 @@ this.pestanasPrincipal = pestanas;
             Organizador perfil =
                     controller.seleccionarOrganizador(
                             organizador.id());
-            
-        organizadorSeleccionado = perfil;
+
+            List<ResenaOrganizador> resenas =
+                    controller.consultarResenas(perfil.id());
 
             detalleNombre.setText(perfil.nombre());
 
             detalleEmpresa.setText(
                     "Empresa: "
-                    + texto(perfil.empresa(), "No registrada"));
+                    + PresentacionContratacionOrganizador.texto(
+                            perfil.empresa(), "No registrada"));
 
             detalleCiudad.setText(
                     "Ciudad: "
-                    + texto(perfil.ciudad(), "No registrada"));
+                    + PresentacionContratacionOrganizador.texto(
+                            perfil.ciudad(), "No registrada"));
 
             detalleEspecialidad.setText(
                     "Especialidad: "
-                    + texto(perfil.especialidad(), "No registrada"));
+                    + PresentacionContratacionOrganizador.texto(
+                            perfil.especialidad(), "No registrada"));
 
             detallePortafolio.setText(
                     "Portafolio: "
-                    + texto(perfil.portafolio(), "No registrado"));
+                    + PresentacionContratacionOrganizador.texto(
+                            perfil.portafolio(), "No registrado"));
 
             detalleTarifa.setText(
-                    "Tarifa base: "
-                    + formatoMoneda.format(
-                            perfil.tarifaBase() == null
-                                    ? BigDecimal.ZERO
-                                    : perfil.tarifaBase()));
+                    "Tarifa base: " + FormatoUi.moneda(perfil.tarifaBase()));
 
-            BigDecimal promedio =
-                    perfil.calificacionPromedio() == null
-                            ? BigDecimal.ZERO
-                            : perfil.calificacionPromedio();
+            detalleCalificacion.setText(
+                    "Calificación: "
+                    + PresentacionContratacionOrganizador.calificacion(perfil));
 
             detalleResenas.setText(
-                    "Calificación: "
-                    + promedio.setScale(
-                            1,
-                            java.math.RoundingMode.HALF_UP)
-                    + " / 5 · "
-                    + perfil.totalResenas() + " reseñas");
+                    PresentacionContratacionOrganizador.resenas(resenas));
 
-            LocalDate fecha = fechaAproximada.getValue();
-
-            if (fecha == null) {
+            if (busquedaVigente == null) {
                 disponibilidad.setText(
-                        "Selecciona una fecha para comprobar "
-                        + "la disponibilidad.");
+                        "Busca nuevamente para comprobar la disponibilidad.");
                 return;
             }
 
             boolean disponible =
                     controller.verificarDisponibilidadOrganizador(
-                            perfil.id(), fecha);
+                            perfil.id(), busquedaVigente.fecha());
 
-            if (disponible) {
+            if (!disponible) {
                 disponibilidad.setText(
-                        "Disponible para la fecha indicada.");
-
-                solicitarContratacion.setDisable(false);
-
-            } else {
-                disponibilidad.setText(
-                        "No está disponible o no cumple las condiciones "
-                        + "para la fecha indicada. Selecciona otro organizador.");
+                        "No está disponible para la fecha indicada. "
+                        + "Selecciona otro organizador.");
+                return;
             }
+
+            organizadorSeleccionado = perfil;
+            disponibilidad.setText(
+                    "Disponible para el "
+                    + FormatoUi.fecha(busquedaVigente.fecha()) + ".");
+            solicitarContratacion.setDisable(false);
+
+        } catch (OrganizadorNoDisponibleException e) {
+            // Se difiere para no modificar la lista durante su propio evento.
+            javafx.application.Platform.runLater(
+                    () -> volverALaLista(e.getMessage()));
 
         } catch (RuntimeException e) {
             limpiarPerfil();
@@ -770,113 +806,81 @@ this.pestanasPrincipal = pestanas;
     // CONFIRMACIÓN Y ENVÍO
     // ---------------------------------------------------------
 
+    /**
+     * Pasos 4 y 5: muestra el resumen, pide confirmar y registra.
+     */
     private void enviarSolicitud() {
 
-        if (organizadorSeleccionado == null) {
-            mostrarMensaje("Selecciona un organizador.");
+        Organizador organizador = organizadorSeleccionado;
+        BusquedaVigente busqueda = busquedaVigente;
+
+        if (organizador == null || busqueda == null) {
+            mostrarMensaje("Busca y selecciona un organizador.");
+            return;
+        }
+
+        Alert confirmacion = new Alert(
+                Alert.AlertType.CONFIRMATION);
+
+        confirmacion.setTitle("Confirmar solicitud de contratación");
+        confirmacion.setHeaderText(
+                "Revisa la información antes de enviar la solicitud");
+        confirmacion.setContentText(
+                PresentacionContratacionOrganizador.resumen(
+                        organizador,
+                        busqueda.tipoEvento(),
+                        busqueda.ciudad(),
+                        busqueda.fecha(),
+                        busqueda.presupuesto(),
+                        busqueda.criterios()));
+
+        Optional<ButtonType> respuesta =
+                confirmacion.showAndWait();
+
+        if (respuesta.isEmpty()
+                || respuesta.get() != ButtonType.OK) {
             return;
         }
 
         try {
-            LocalDate fecha = fechaAproximada.getValue();
-
-            if (fecha == null) {
-                mostrarMensaje(
-                        "Ingresa la fecha aproximada del evento.");
-                return;
-            }
-
-            BigDecimal valorPresupuesto =
-                    leerPresupuesto(presupuesto.getText());
-
-            boolean disponible =
-                    controller.verificarDisponibilidadOrganizador(
-                            organizadorSeleccionado.id(), fecha);
-
-            if (!disponible) {
-                solicitarContratacion.setDisable(true);
-
-                mostrarMensaje(
-                        "El organizador ya no está disponible. "
-                        + "Busca nuevamente y selecciona otra opción.");
-
-                return;
-            }
-
-            Alert confirmacion = new Alert(
-                    Alert.AlertType.CONFIRMATION);
-
-            confirmacion.setTitle("Confirmar contratación");
-
-            confirmacion.setHeaderText(
-                    "Enviar solicitud a "
-                    + organizadorSeleccionado.nombre());
-
-            confirmacion.setContentText(
-                    "Tipo de evento: " + tipoEvento.getText().trim()
-                    + "\nCiudad: " + ciudad.getText().trim()
-                    + "\nFecha aproximada: " + fecha
-                    + "\nPresupuesto máximo: "
-                    + formatoMoneda.format(valorPresupuesto)
-                    + "\n\nLa solicitud quedará en estado Pendiente.");
-
-            Optional<ButtonType> respuesta =
-                    confirmacion.showAndWait();
-
-            if (respuesta.isEmpty()
-                    || respuesta.get() != ButtonType.OK) {
-                return;
-            }
-
             Contratacion datos = new Contratacion(
                     0,
-                    organizadorSeleccionado.id(),
-                    tipoEvento.getText().trim(),
-                    ciudad.getText().trim(),
-                    fecha,
-                    valorPresupuesto,
-                    criterios.getText().trim());
+                    organizador.id(),
+                    busqueda.tipoEvento(),
+                    busqueda.ciudad(),
+                    busqueda.fecha(),
+                    busqueda.presupuesto(),
+                    busqueda.criterios());
 
             controller.contratarOrganizador(
-                    organizadorSeleccionado.id(),
+                    organizador.id(),
                     datos);
 
-            // La solicitud ya fue guardada correctamente.
-int idSolicitud = datos.getIdContratacion();
-
-organizadorSeleccionado = null;
-
-listaOrganizadores.getSelectionModel().clearSelection();
-solicitarContratacion.setDisable(true);
-
-limpiarPerfil();
-
-// Actualizar las solicitudes del cliente.
-mostrarContrataciones();
-
-// Navegar directamente a "Mis solicitudes".
-if (pestanasPrincipal != null
-        && pestanaMisSolicitudes != null) {
-
-    pestanasPrincipal.getSelectionModel()
-            .select(pestanaMisSolicitudes);
-}
-
-// Confirmar el resultado al cliente.
-mostrarMensaje(
-        "Solicitud #" + idSolicitud
-        + " registrada correctamente con estado PENDIENTE. "
-        + "Se envió una notificación interna al organizador.");
-
             organizadorSeleccionado = null;
-
-            listaOrganizadores.getSelectionModel()
-                    .clearSelection();
-
-            solicitarContratacion.setDisable(true);
+            listaOrganizadores.getSelectionModel().clearSelection();
             limpiarPerfil();
 
+            // Mostrar la solicitud registrada con su estado.
+            mostrarContrataciones();
+
+            if (pestanasPrincipal != null
+                    && pestanaMisSolicitudes != null) {
+
+                pestanasPrincipal.getSelectionModel()
+                        .select(pestanaMisSolicitudes);
+            }
+
+            mostrarMensaje(
+                    PresentacionContratacionOrganizador.confirmacion(
+                            datos, organizador.nombre()));
+
+        } catch (OrganizadorNoDisponibleException e) {
+            // E2: no se registró nada; el cliente elige otro organizador.
+            volverALaLista(e.getMessage());
+
         } catch (RuntimeException e) {
+            // E1 y validaciones: los datos y la selección se conservan
+            // para que el cliente pueda intentarlo nuevamente.
             mostrarMensaje(
                     mensajeDeError(
                             e,
@@ -932,24 +936,9 @@ mostrarMensaje(
 
                         super.updateItem(item, empty);
 
-                        if (empty || item == null) {
-                            setText(null);
-                            return;
-                        }
-
-                        setText(
-                                "Solicitud #"
-                                + item.getIdContratacion()
-                                + "\nOrganizador #"
-                                + item.getIdOrganizador()
-                                + " · Estado: " + item.getEstado()
-                                + "\nEvento: " + item.getTipoEvento()
-                                + " · Ciudad: " + item.getCiudad()
-                                + "\nFecha aproximada: "
-                                + item.getFechaAproximada()
-                                + "\nPresupuesto: "
-                                + formatoMoneda.format(
-                                        item.getPresupuestoEstimado()));
+                        setText(empty || item == null
+                                ? null
+                                : PresentacionContratacionOrganizador.solicitud(item));
                     }
                 });
     }
@@ -998,12 +987,10 @@ mostrarMensaje(
     private VBox grupo(
             String titulo, javafx.scene.Node control) {
 
-        VBox grupo = new VBox(
+        return new VBox(
                 9,
                 etiqueta(titulo, "field-label"),
                 control);
-
-        return grupo;
     }
 
     private Label etiqueta(
@@ -1032,14 +1019,6 @@ mostrarMensaje(
         return new BigDecimal(normalizado);
     }
 
-    private String texto(
-            String valor, String predeterminado) {
-
-        return valor == null || valor.isBlank()
-                ? predeterminado
-                : valor;
-    }
-
     private String mensajeDeError(
             RuntimeException e, String predeterminado) {
 
@@ -1059,6 +1038,7 @@ mostrarMensaje(
         detalleEspecialidad.setText("");
         detallePortafolio.setText("");
         detalleTarifa.setText("");
+        detalleCalificacion.setText("");
         detalleResenas.setText("");
 
         disponibilidad.setText(

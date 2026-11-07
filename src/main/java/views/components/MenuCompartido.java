@@ -26,6 +26,7 @@ public final class MenuCompartido {
         PROVEEDORES("M3 10l1-6h16l1 6 M5 10v10h14V10 M9 20v-6h6v6"),
         INVITADOS("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75"),
         MENSAJES("M3 5h18v14H3z M3 7l9 7 9-7"),
+        SOLICITUDES_CONTRATACION("M9 4h6v3H9z M7 5H5v16h14V5h-2 M8 12l3 3 5-5"),
         AVISOS("M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z M10 21h4"),
         SERVICIOS("M3 8h18v13H3z M8 8V5h8v3 M3 13h18 M10 13v2h4v-2"),
         PROPUESTAS("M4 4h16v13H8l-4 4z M8 9h8 M8 13h5"),
@@ -50,12 +51,26 @@ public final class MenuCompartido {
         MESA_REGALOS,
         SOLICITUDES_PROVEEDOR,
         AVISOS_PROVEEDOR,
+        SOLICITUDES_CONTRATACION,
         PROPUESTAS_ORGANIZADOR,
         PUBLICACION_EVENTOS,
         SANCIONES_PROVEEDOR
     }
 
     private MenuCompartido() {
+    }
+
+    /*
+     * Ampliación de CU-026: acceso a las solicitudes de contratación que
+     * recibe el organizador. Cada pantalla del organizador arma su propio
+     * menú, así que la aplicación registra esta acción una sola vez al
+     * iniciar sesión y el menú la muestra solo a cuentas ORGANIZADOR.
+     */
+    private static Runnable abrirSolicitudesContratacion;
+
+    /** null retira la opción del menú (por ejemplo, para otra cuenta). */
+    public static void registrarSolicitudesContratacion(Runnable abrir) {
+        abrirSolicitudesContratacion = abrir;
     }
 
     public static VBox crear(
@@ -232,6 +247,14 @@ public final class MenuCompartido {
             agregarOpcion(menu, Icono.PROPUESTAS, "Propuestas recibidas",
                     paginaActiva == Pagina.PROPUESTAS_ORGANIZADOR,
                     abrirPropuestas);
+
+            Runnable abrirContratacionesRecibidas = abrirSolicitudesContratacion;
+            if (abrirContratacionesRecibidas != null && sesion != null
+                    && "ORGANIZADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {
+                agregarOpcion(menu, Icono.SOLICITUDES_CONTRATACION, "Solicitudes de clientes",
+                        paginaActiva == Pagina.SOLICITUDES_CONTRATACION,
+                        abrirContratacionesRecibidas);
+            }
         }
 
         if (sesion != null && "ADMINISTRADOR".equalsIgnoreCase(sesion.getTipoUsuario())) {

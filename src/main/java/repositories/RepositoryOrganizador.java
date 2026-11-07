@@ -3,6 +3,7 @@ package repositories;
 
 import config.DatabaseConnection;
 import entities.Organizador;
+import entities.ResenaOrganizador;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -20,6 +21,9 @@ import java.util.Map;
  * de consulta y actualizacion requeridas por el diagrama.
  */
 public class RepositoryOrganizador {
+
+    /** Longitud de la columna criterios_busqueda de la solicitud. */
+    public static final int LONGITUD_MAXIMA_CRITERIOS = 500;
 
     private final String url;
 
@@ -132,6 +136,7 @@ public class RepositoryOrganizador {
             agregarFiltroTipoEvento(sql, parametros, filtros);
             agregarFiltroPresupuesto(sql, parametros, filtros);
             agregarFiltroFecha(sql, parametros, filtros);
+            agregarFiltroCriterios(sql, parametros, filtros);
         }
 
         sql.append(
@@ -412,6 +417,90 @@ public class RepositoryOrganizador {
 
         parametros.add(fechaSQL);
         parametros.add(fechaSQL);
+    }
+
+    /**
+     * Criterios adicionales del cliente: palabra clave opcional que se busca
+     * en la especialidad, el portafolio, la empresa o el nombre. Los
+     * comodines % y _ escritos por el cliente se tratan como texto.
+     */
+    private void agregarFiltroCriterios(
+            StringBuilder sql,
+            List<Object> parametros,
+            Map<String, Object> filtros) {
+
+        Object criterios = filtros.get("criterios");
+
+        if (criterios == null || criterios.toString().isBlank()) {
+            return;
+        }
+
+        String texto = criterios.toString().trim();
+
+        if (texto.length() > LONGITUD_MAXIMA_CRITERIOS) {
+            throw new IllegalArgumentException(
+                    "Los criterios adicionales no pueden superar "
+                    + LONGITUD_MAXIMA_CRITERIOS + " caracteres.");
+        }
+
+        String patron = "%" + texto.toLowerCase(java.util.Locale.ROOT)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_") + "%";
+
+        sql.append(
+                "AND (LOWER(COALESCE(o.especialidad, '')) LIKE ? ESCAPE '\\' "
+                + "OR LOWER(COALESCE(o.portafolio, '')) LIKE ? ESCAPE '\\' "
+                + "OR LOWER(COALESCE(o.empresa, '')) LIKE ? ESCAPE '\\' "
+                + "OR LOWER(u.nombre) LIKE ? ESCAPE '\\') ");
+
+        for (int i = 0; i < 4; i++) {
+            parametros.add(patron);
+        }
+    }
+
+    /**
+     * Reseñas registradas para el organizador, de la más reciente
+     * a la más antigua.
+     */
+    public List<ResenaOrganizador> listarResenas(int idOrganizador) {
+
+        if (idOrganizador <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del organizador no es valido.");
+        }
+
+        String sql =
+                "SELECT calificacion, comentario, fecha "
+                + "FROM Resena_Organizador "
+                + "WHERE id_organizador = ? "
+                + "ORDER BY fecha DESC, id_resena_organizador DESC";
+
+        try (Connection connection = conectar();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idOrganizador);
+
+            try (ResultSet result = statement.executeQuery()) {
+                List<ResenaOrganizador> resenas = new ArrayList<>();
+
+                while (result.next()) {
+                    java.sql.Timestamp fecha = result.getTimestamp("fecha");
+
+                    resenas.add(new ResenaOrganizador(
+                            result.getInt("calificacion"),
+                            result.getString("comentario"),
+                            fecha == null ? null : fecha.toLocalDateTime()));
+                }
+
+                return resenas;
+            }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "No se pudieron consultar las reseñas del organizador.", e);
+        }
     }
 
     private void asignarParametros(

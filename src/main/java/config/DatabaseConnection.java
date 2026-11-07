@@ -103,6 +103,8 @@ public class DatabaseConnection {
         // CU-13: una propuesta solo puede contratarse una vez
         ejecutarUnaVez(connection, "012_cu13_contratar_servicio.sql",
                 c -> verificarSinDuplicados(c, "Contratacion", "id_propuesta"));
+        // CU-26: retira solo las reseñas de demostración identificadas por su firma exacta
+        ejecutarUnaVez(connection, "015_cu26_retirar_resenas_demostracion.sql", null);
         actualizarContadorEventos(connection);
     }
 
