@@ -21,6 +21,7 @@ public class Navegacion {
         AVISOS_PROVEEDOR("NextEventux | Mis avisos"),
         DETALLE_SERVICIO_PROVEEDOR("NextEventux | Administración del servicio"),
         MIS_EVENTOS("NextEventux | Mis eventos"),
+        SOLICITUDES_CONTRATACION("NextEventux | Solicitudes de clientes"),
         EDICION_EVENTO("NextEventux | Editar evento"),
         CANCELACION_EVENTO("NextEventux | Cancelar evento"),
         FINALIZACION_EVENTO("NextEventux | Finalizar evento"),
