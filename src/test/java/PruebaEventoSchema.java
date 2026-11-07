@@ -1,5 +1,5 @@
 import persistencia.DatabaseConnection;
-import entities.Evento;
+import entities.eventos.Evento;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;

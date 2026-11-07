@@ -1,7 +1,7 @@
 package repositories;
 
 import persistencia.DatabaseConnection;
-import entities.Planificacion;
+import entities.eventos.Planificacion;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

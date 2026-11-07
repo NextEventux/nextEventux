@@ -1,5 +1,5 @@
 import controllers.eventos.ControllerEventos;
-import entities.Evento;
+import entities.eventos.Evento;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;

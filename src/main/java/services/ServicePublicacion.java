@@ -1,5 +1,8 @@
 package services;
 
+import entities.eventos.Evento;
+import entities.eventos.PlantillaEvento;
+
 import entities.*;
 import repositories.RepositoryEvento;
 import repositories.RepositoryPublicacion;

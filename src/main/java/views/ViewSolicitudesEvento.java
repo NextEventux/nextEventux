@@ -1,7 +1,7 @@
 package views;
 
 import controllers.eventos.ControllerEventos;
-import entities.Evento;
+import entities.eventos.Evento;
 import entities.ServicioSolicitable;
 import entities.SolicitudServicioEvento;
 import java.math.BigDecimal;

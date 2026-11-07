@@ -1,5 +1,7 @@
 package views;
 
+import entities.eventos.Fotografia;
+
 import controllers.ControllerProveedores;
 import entities.DisponibilidadServicio;
 import entities.Servicio;

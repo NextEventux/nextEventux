@@ -1,5 +1,5 @@
 import persistencia.DatabaseConnection;
-import entities.Evento;
+import entities.eventos.Evento;
 import repositories.RepositoryEvento;
 import services.ServiceEventos;
 import org.junit.jupiter.api.Test;

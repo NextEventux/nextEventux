@@ -1,3 +1,5 @@
+import entities.eventos.Evento;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,7 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import persistencia.DatabaseConnection;
-import entities.EventoSolicitable;
+import entities.eventos.EventoSolicitable;
 import entities.NecesidadAbierta;
 import services.ServiceSolicitudes;
 

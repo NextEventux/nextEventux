@@ -1,10 +1,10 @@
 package controllers.eventos;
 
-import entities.Evento;
-import entities.EdicionEvento;
+import entities.eventos.Evento;
+import entities.eventos.EdicionEvento;
 import entities.Organizador;
 import entities.SesionUsuario;
-import entities.Fotografia;
+import entities.eventos.Fotografia;
 import java.util.List;
 import services.ServiceEventos;
 

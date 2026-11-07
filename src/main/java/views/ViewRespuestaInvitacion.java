@@ -1,5 +1,8 @@
 package views;
 
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
 import views.eventos.ViewEventos;
 
 import controllers.eventos.ControllerInvitados;
@@ -393,7 +396,7 @@ public final class ViewRespuestaInvitacion {
         correoVerificado = null;
         telefonoVerificado = null;
         try {
-            for (entities.Fotografia foto:controller.consultarGaleria(texto,tel)) {
+            for (entities.eventos.Fotografia foto:controller.consultarGaleria(texto,tel)) {
                 Image imagen=new Image(new java.io.ByteArrayInputStream(foto.contenido()));
                 ImageView miniatura=new ImageView(imagen); miniatura.setFitWidth(180); miniatura.setFitHeight(120); miniatura.setPreserveRatio(true);
                 Button abrir=new Button("Ver fotografía",miniatura); abrir.setContentDisplay(ContentDisplay.TOP);

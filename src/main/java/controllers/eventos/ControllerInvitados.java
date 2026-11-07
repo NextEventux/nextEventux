@@ -1,6 +1,8 @@
 package controllers.eventos;
 
-import entities.Evento;
+import entities.eventos.Fotografia;
+
+import entities.eventos.Evento;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.InvitacionRecibida;
 import entities.invitaciones.Invitado;
@@ -31,7 +33,7 @@ public class ControllerInvitados {
         return serviceInvitados.consultarAvisosPorCorreo(correo);
     }
 
-    public List<entities.Fotografia> consultarGaleria(String correo, String telefono) {
+    public List<entities.eventos.Fotografia> consultarGaleria(String correo, String telefono) {
         return serviceInvitados.consultarGaleria(correo,telefono);
     }
 

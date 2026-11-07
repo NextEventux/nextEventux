@@ -1,5 +1,7 @@
 package repositories;
 
+import entities.eventos.Evento;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import persistencia.DatabaseConnection;
-import entities.EventoSolicitable;
+import entities.eventos.EventoSolicitable;
 import entities.NecesidadAbierta;
 import entities.SolicitudEjecucion;
 

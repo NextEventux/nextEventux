@@ -1,4 +1,4 @@
-package entities;
+package entities.eventos;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

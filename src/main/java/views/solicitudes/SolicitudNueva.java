@@ -1,6 +1,6 @@
 package views.solicitudes;
 
-import entities.EventoSolicitable;
+import entities.eventos.EventoSolicitable;
 import entities.NecesidadAbierta;
 
 /**

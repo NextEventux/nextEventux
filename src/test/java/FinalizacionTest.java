@@ -1,3 +1,6 @@
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.Invitado;
 

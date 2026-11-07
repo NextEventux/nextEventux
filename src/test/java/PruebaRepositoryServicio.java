@@ -1,3 +1,5 @@
+import entities.eventos.Fotografia;
+
 import entities.Servicio;
 import repositories.RepositoryServicio;
 

@@ -1,7 +1,7 @@
 package views.eventos;
 
 import controllers.eventos.ControllerEventos;
-import entities.Evento;
+import entities.eventos.Evento;
 import entities.SesionUsuario;
 import views.components.MenuCompartido;
 import javafx.geometry.Pos;

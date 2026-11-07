@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import controllers.eventos.ControllerInvitados;
-import entities.Evento;
+import entities.eventos.Evento;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.Invitado;
 import entities.Lugar;

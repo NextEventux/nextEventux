@@ -1,5 +1,7 @@
 package views;
 
+import entities.eventos.Evento;
+
 import controllers.ControllerContratacionServicio;
 import entities.ConfirmacionContratacion;
 import entities.DisponibilidadContratacion;

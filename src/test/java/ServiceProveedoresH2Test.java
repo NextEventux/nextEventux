@@ -1,3 +1,5 @@
+import entities.eventos.Fotografia;
+
 
 import persistencia.DatabaseConnection;
 import controllers.ControllerProveedores;

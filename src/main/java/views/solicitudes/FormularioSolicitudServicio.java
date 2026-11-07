@@ -1,10 +1,12 @@
 package views.solicitudes;
 
+import entities.eventos.Evento;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import entities.EventoSolicitable;
+import entities.eventos.EventoSolicitable;
 import entities.NecesidadAbierta;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;

@@ -1,8 +1,8 @@
 package repositories;
 
 import persistencia.DatabaseConnection;
-import entities.Evento;
-import entities.EdicionEvento;
+import entities.eventos.Evento;
+import entities.eventos.EdicionEvento;
 import entities.Organizador;
 import java.sql.*;
 import java.util.ArrayList;

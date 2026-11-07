@@ -1,3 +1,5 @@
+import entities.eventos.Evento;
+
 import persistencia.*;
 import inicializacion.*;
 import entities.*;

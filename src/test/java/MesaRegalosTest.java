@@ -4,7 +4,7 @@ import persistencia.DatabaseConnection;
 import controllers.eventos.ControllerInvitados;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.Invitado;
-import entities.Evento;
+import entities.eventos.Evento;
 import entities.invitaciones.Regalo;
 import entities.SesionUsuario;
 import java.math.BigDecimal;

@@ -1,11 +1,13 @@
 package repositories;
 
+import entities.eventos.Evento;
+
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.Invitado;
 
 
 import persistencia.DatabaseConnection;
-import entities.Fotografia;
+import entities.eventos.Fotografia;
 import java.sql.*;
 import java.time.Clock;
 import java.time.LocalDateTime;

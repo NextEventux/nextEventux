@@ -1,5 +1,7 @@
 package repositories;
 
+import entities.eventos.Evento;
+
 import persistencia.DatabaseConnection;
 import entities.*;
 import java.sql.*;

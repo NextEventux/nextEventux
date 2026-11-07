@@ -1,3 +1,6 @@
+import entities.eventos.Evento;
+import entities.eventos.Planificacion;
+
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
 import entities.SesionUsuario;

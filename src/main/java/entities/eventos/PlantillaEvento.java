@@ -1,4 +1,4 @@
-package entities;
+package entities.eventos;
 
 /** Proyección pública: no contiene datos del organizador, invitados ni presupuesto. */
 public record PlantillaEvento(int id, String nombre, String tipo, long duracionMinutos) {

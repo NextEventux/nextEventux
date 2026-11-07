@@ -1,3 +1,6 @@
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
 
 import java.math.BigDecimal;
 import java.sql.Connection;

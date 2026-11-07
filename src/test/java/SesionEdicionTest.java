@@ -1,7 +1,7 @@
 import persistencia.DatabaseConnection;
 import controllers.eventos.ControllerEventos;
-import entities.EdicionEvento;
-import entities.Evento;
+import entities.eventos.EdicionEvento;
+import entities.eventos.Evento;
 import entities.SesionUsuario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

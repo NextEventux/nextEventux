@@ -3,8 +3,8 @@ package views;
 import java.util.function.Function;
 
 import controllers.eventos.ControllerPublicacion;
-import entities.Evento;
-import entities.PlantillaEvento;
+import entities.eventos.Evento;
+import entities.eventos.PlantillaEvento;
 import entities.SesionUsuario;
 import entities.SolicitudPublicacion;
 import javafx.scene.Parent;

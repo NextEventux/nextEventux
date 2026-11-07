@@ -1,5 +1,5 @@
 import persistencia.DatabaseConnection;
-import entities.Evento;
+import entities.eventos.Evento;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;

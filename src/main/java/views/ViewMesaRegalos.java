@@ -1,5 +1,7 @@
 package views;
 
+import entities.eventos.Evento;
+
 import entities.invitaciones.Invitado;
 
 

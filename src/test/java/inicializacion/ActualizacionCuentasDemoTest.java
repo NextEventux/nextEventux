@@ -1,5 +1,7 @@
 package inicializacion;
 
+import entities.eventos.Evento;
+
 import persistencia.DatabaseConnection;
 
 import java.sql.Connection;

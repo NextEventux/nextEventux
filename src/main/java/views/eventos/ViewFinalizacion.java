@@ -1,8 +1,8 @@
 package views.eventos;
 
 import controllers.eventos.ControllerEventos;
-import entities.Evento;
-import entities.Fotografia;
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
 import entities.SesionUsuario;
 import views.components.MenuCompartido;
 import java.io.File;

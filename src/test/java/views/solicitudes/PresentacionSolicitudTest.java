@@ -1,5 +1,7 @@
 package views.solicitudes;
 
+import entities.eventos.Evento;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

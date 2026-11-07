@@ -1,6 +1,8 @@
 package services;
 
-import entities.Evento;
+import entities.eventos.Fotografia;
+
+import entities.eventos.Evento;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.InvitacionRecibida;
 import entities.invitaciones.Invitado;
@@ -37,7 +39,7 @@ public class ServiceInvitados {
     private static final String MENSAJE_MESA_AJENA =
             "Solo el invitado puede usar su mesa de regalos. Verifica tu correo y tu teléfono.";
 
-    public List<entities.Fotografia> consultarGaleria(String correo, String telefono) {
+    public List<entities.eventos.Fotografia> consultarGaleria(String correo, String telefono) {
         String limpio=limpiar(correo);
         if(limpio==null || limpio.length()>150 || !CORREO.matcher(limpio).matches())
             throw new IllegalArgumentException("Ingresa un correo válido para consultar tu galería.");

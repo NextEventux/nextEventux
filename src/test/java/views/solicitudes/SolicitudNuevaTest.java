@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
-import entities.EventoSolicitable;
+import entities.eventos.EventoSolicitable;
 import entities.NecesidadAbierta;
 
 class SolicitudNuevaTest {

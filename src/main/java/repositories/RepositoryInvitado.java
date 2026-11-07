@@ -1,5 +1,8 @@
 package repositories;
 
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
 import persistencia.DatabaseConnection;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.InvitacionRecibida;
@@ -16,8 +19,8 @@ import java.util.Map;
 
 /** Acceso a la tabla Invitado y consultas de cupo para el CU-17. */
 public class RepositoryInvitado {
-    public List<entities.Fotografia> listarGaleria(String correo, String telefono) {
-        List<entities.Fotografia> fotos=new ArrayList<>();
+    public List<entities.eventos.Fotografia> listarGaleria(String correo, String telefono) {
+        List<entities.eventos.Fotografia> fotos=new ArrayList<>();
         String sql="SELECT e.nombre AS evento,f.nombre,f.contenido FROM Fotografia_evento f "
                 + "JOIN Evento e ON e.id_evento=f.id_evento JOIN Finalizacion_evento fin ON fin.id_evento=e.id_evento "
                 + "WHERE fin.enviada=TRUE AND EXISTS (SELECT 1 FROM Entrega_galeria d JOIN Invitado g ON g.id_invitado=d.id_invitado "
@@ -26,7 +29,7 @@ public class RepositoryInvitado {
         try(Connection c=conectar(); PreparedStatement s=c.prepareStatement(sql)) {
             s.setString(1,correo); s.setString(2,telefono);
             try(ResultSet r=s.executeQuery()) {
-                while(r.next()) fotos.add(new entities.Fotografia(r.getString("evento")+" · "+r.getString("nombre"),r.getBytes("contenido")));
+                while(r.next()) fotos.add(new entities.eventos.Fotografia(r.getString("evento")+" · "+r.getString("nombre"),r.getBytes("contenido")));
             }
             return fotos;
         } catch(SQLException e) { throw new IllegalStateException("No se pudo consultar la galería. Vuelve a intentarlo.",e); }

@@ -1,4 +1,4 @@
-package entities;
+package entities.eventos;
 
 public record Fotografia(String nombre, byte[] contenido) {
     public Fotografia {

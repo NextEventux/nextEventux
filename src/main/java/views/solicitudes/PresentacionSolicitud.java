@@ -1,5 +1,7 @@
 package views.solicitudes;
 
+import entities.eventos.Evento;
+
 import entities.ContextoSolicitud;
 import entities.MensajeSolicitud;
 import views.FormatoUi;

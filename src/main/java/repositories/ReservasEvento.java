@@ -1,5 +1,7 @@
 package repositories;
 
+import entities.eventos.Evento;
+
 import entities.invitaciones.Invitacion;
 
 

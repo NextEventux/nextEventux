@@ -1,5 +1,7 @@
 package persistencia;
 
+import entities.eventos.Evento;
+
 import inicializacion.CargarDatosEjemplo;
 
 import java.sql.*;

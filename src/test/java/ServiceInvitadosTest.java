@@ -1,3 +1,5 @@
+import entities.eventos.Evento;
+
 import controllers.eventos.ControllerInvitados;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.Invitado;

@@ -1,3 +1,5 @@
+import entities.eventos.Evento;
+
 import entities.invitaciones.Invitacion;
 
 import persistencia.DatabaseConnection;

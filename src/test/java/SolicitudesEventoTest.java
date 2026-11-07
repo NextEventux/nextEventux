@@ -1,3 +1,5 @@
+import entities.eventos.Evento;
+
 import persistencia.DatabaseConnection;
 import controllers.eventos.ControllerEventos;
 import entities.*;

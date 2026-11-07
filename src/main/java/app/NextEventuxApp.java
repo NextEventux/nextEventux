@@ -10,7 +10,7 @@ import controllers.ControllerProveedores;
 import controllers.eventos.ControllerPublicacion;
 import controllers.ControllerSancionesProveedor;
 import controllers.ControllerSolicitudes;
-import entities.Evento;
+import entities.eventos.Evento;
 import entities.PropuestaServicio;
 import entities.Servicio;
 import entities.SesionUsuario;

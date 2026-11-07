@@ -1,5 +1,7 @@
 package repositories;
 
+import entities.eventos.Evento;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

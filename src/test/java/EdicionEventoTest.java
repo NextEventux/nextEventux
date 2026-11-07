@@ -1,5 +1,5 @@
-import entities.EdicionEvento;
-import entities.Evento;
+import entities.eventos.EdicionEvento;
+import entities.eventos.Evento;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;

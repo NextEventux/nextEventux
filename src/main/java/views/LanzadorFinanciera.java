@@ -1,5 +1,7 @@
 package views;
 
+import entities.eventos.Evento;
+
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
 import controllers.ControllerFinanciera;

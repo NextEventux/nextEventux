@@ -3,7 +3,7 @@ package controllers;
 import java.math.BigDecimal;
 import java.util.List;
 
-import entities.EventoSolicitable;
+import entities.eventos.EventoSolicitable;
 import entities.NecesidadAbierta;
 import entities.MensajeSolicitud;
 import entities.PropuestaServicio;

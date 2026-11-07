@@ -1,5 +1,7 @@
 package entities.invitaciones;
 
+import entities.eventos.Evento;
+
 import java.time.LocalDateTime;
 
 /**
