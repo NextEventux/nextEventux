@@ -1,8 +1,24 @@
 # Guion de demostración
 
-Los datos de ejemplo se cargan solos cuando la base está vacía. Si ya tienes una
-base anterior, haz una copia de `~/.nexteventux` y bórrala para que se creen de
-nuevo.
+## Actualización de los datos de demostración
+
+Cada integrante utiliza su propia base H2 local.
+
+- En una base vacía, NextEventux carga los ejemplos de `seed.sql`.
+- En una base existente, los registros se conservan. No se ejecuta nuevamente todo `seed.sql`.
+- La migración `014_cuentas_demostracion.sql` normaliza una sola vez la contraseña `1234` de las cuentas oficiales que reconoce por ID, usuario y tipo de actor.
+- Esta normalización está destinada exclusivamente a cuentas reservadas para demostración. No debe utilizarse para cuentas reales.
+- Los eventos, servicios y solicitudes creados localmente no se comparten mediante `git pull`.
+- Cuando se agreguen ejemplos oficiales para nuevos casos de uso, deberán incluirse actualizaciones versionadas y pruebas para bases existentes.
+
+Después de actualizar el repositorio, cada integrante debe iniciar la aplicación para que se ejecuten las actualizaciones pendientes.
+
+
+Los datos de ejemplo se cargan automáticamente cuando la base está vacía.
+Si ya existe una base local, NextEventux conserva sus registros y aplica
+las actualizaciones de demostración que estén implementadas y pendientes.
+Esto no significa que todo cambio posterior en `seed.sql` se copie
+automáticamente a las bases existentes.
 
 ## Cuentas
 
