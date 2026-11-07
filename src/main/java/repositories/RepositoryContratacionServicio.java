@@ -15,10 +15,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import persistencia.DatabaseConnection;
-import entities.ConfirmacionContratacion;
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
-import entities.ResumenContratacionServicio;
+import entities.contrataciones.ConfirmacionContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
+import entities.contrataciones.ResumenContratacionServicio;
 
 /**
  * CU-13: contratación de un servicio a partir de la propuesta seleccionada en CU-12.

@@ -1,4 +1,4 @@
-package entities;
+package entities.contrataciones;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

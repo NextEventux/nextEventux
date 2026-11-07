@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
-import entities.ConfirmacionContratacion;
+import entities.contrataciones.ConfirmacionContratacion;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryContratacionServicio;

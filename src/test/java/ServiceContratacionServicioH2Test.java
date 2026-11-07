@@ -23,10 +23,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import persistencia.DatabaseConnection;
-import entities.ConfirmacionContratacion;
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
-import entities.ResumenContratacionServicio;
+import entities.contrataciones.ConfirmacionContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
+import entities.contrataciones.ResumenContratacionServicio;
 import entities.SesionUsuario;
 import repositories.RepositoryContratacionServicio;
 import repositories.RepositoryMovimientoFinanciero;

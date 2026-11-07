@@ -3,8 +3,8 @@ package views;
 import views.eventos.ViewEventos;
 
 import controllers.ControllerFinanciera;
-import entities.MovimientoFinanciero;
-import entities.CompromisoFinanciero;
+import entities.finanzas.MovimientoFinanciero;
+import entities.finanzas.CompromisoFinanciero;
 import entities.SesionUsuario;
 import views.components.MenuCompartido;
 import javafx.geometry.Insets;

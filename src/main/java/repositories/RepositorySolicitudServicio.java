@@ -6,6 +6,7 @@ import persistencia.DatabaseConnection;
 import entities.*;
 import entities.solicitudes.SolicitudServicioEvento;
 import entities.servicios.ServicioSolicitable;
+import entities.finanzas.PresupuestoEvento;
 import java.sql.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;

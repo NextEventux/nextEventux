@@ -3,11 +3,11 @@ package views;
 import entities.eventos.Evento;
 
 import controllers.ControllerContratacionServicio;
-import entities.ConfirmacionContratacion;
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
+import entities.contrataciones.ConfirmacionContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
 import entities.solicitudes.PropuestaServicio;
-import entities.ResumenContratacionServicio;
+import entities.contrataciones.ResumenContratacionServicio;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

@@ -1,4 +1,4 @@
-package entities;
+package entities.contrataciones;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

@@ -1,9 +1,9 @@
 package controllers;
 
-import entities.ConfirmacionContratacion;
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
-import entities.ResumenContratacionServicio;
+import entities.contrataciones.ConfirmacionContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
+import entities.contrataciones.ResumenContratacionServicio;
 import services.ServiceContratacionServicio;
 
 // Recibe las acciones de CU-13 (contratar servicio) y las envia al service

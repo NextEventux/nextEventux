@@ -1,4 +1,4 @@
-package entities;
+package entities.finanzas;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
