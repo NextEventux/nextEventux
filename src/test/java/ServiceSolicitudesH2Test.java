@@ -20,9 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import persistencia.DatabaseConnection;
-import entities.PropuestaServicio;
+import entities.solicitudes.PropuestaServicio;
 import entities.SesionUsuario;
-import entities.SolicitudEjecucion;
+import entities.solicitudes.SolicitudEjecucion;
 import repositories.RepositorySolicitudEjecucion;
 import repositories.RepositoryPropuestaServicio;
 import services.ServiceSolicitudes;

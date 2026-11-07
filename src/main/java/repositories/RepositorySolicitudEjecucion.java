@@ -13,8 +13,8 @@ import java.util.List;
 
 import persistencia.DatabaseConnection;
 import entities.eventos.EventoSolicitable;
-import entities.NecesidadAbierta;
-import entities.SolicitudEjecucion;
+import entities.solicitudes.NecesidadAbierta;
+import entities.solicitudes.SolicitudEjecucion;
 
 public class RepositorySolicitudEjecucion {
 

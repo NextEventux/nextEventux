@@ -1,7 +1,7 @@
 package views.solicitudes;
 
 import entities.eventos.EventoSolicitable;
-import entities.NecesidadAbierta;
+import entities.solicitudes.NecesidadAbierta;
 
 /**
  * Lo que el organizador eligió al pedir un servicio (CU-12): el evento y

@@ -34,7 +34,7 @@ public class ControllerEventos {
     public boolean galeriaPendiente(int evento) { return serviceEventos.galeriaPendiente(evento,sesion); }
     public List<entities.servicios.ServicioSolicitable> listarServiciosSolicitables() { return serviceEventos.listarServiciosSolicitables(sesion); }
     public entities.PresupuestoEvento consultarPresupuesto(int evento) { return serviceEventos.consultarPresupuesto(evento,sesion); }
-    public List<entities.SolicitudServicioEvento> listarSolicitudesServicio(int evento) { return serviceEventos.listarSolicitudesServicio(evento,sesion); }
+    public List<entities.solicitudes.SolicitudServicioEvento> listarSolicitudesServicio(int evento) { return serviceEventos.listarSolicitudesServicio(evento,sesion); }
     public int solicitarServicio(int evento, int servicio) { return serviceEventos.solicitarServicio(evento,servicio,sesion); }
     public void retirarSolicitudServicio(int evento, int solicitud) { serviceEventos.retirarSolicitudServicio(evento,solicitud,sesion); }
     public void ajustarPresupuesto(int evento, java.math.BigDecimal total) { serviceEventos.ajustarPresupuesto(evento,total,sesion); }

@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import persistencia.DatabaseConnection;
-import entities.MensajeSolicitud;
+import entities.solicitudes.MensajeSolicitud;
 
 public class RepositoryMensajesSolicitud {
 

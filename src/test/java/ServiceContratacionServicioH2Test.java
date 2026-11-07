@@ -601,11 +601,11 @@ public class ServiceContratacionServicioH2Test {
     }
 
     private String estadoVisible(int propuesta) {
-        List<entities.PropuestaServicio> propuestas = solicitudesOrg.listarPropuestasOrganizador(ORG);
+        List<entities.solicitudes.PropuestaServicio> propuestas = solicitudesOrg.listarPropuestasOrganizador(ORG);
         return propuestas.stream()
                 .filter(p -> p.getIdPropuesta() == propuesta)
                 .findFirst()
-                .map(entities.PropuestaServicio::getEstado)
+                .map(entities.solicitudes.PropuestaServicio::getEstado)
                 .orElse(null);
     }
 

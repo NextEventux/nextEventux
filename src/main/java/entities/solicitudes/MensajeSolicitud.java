@@ -1,4 +1,4 @@
-package entities;
+package entities.solicitudes;
 
 import java.time.LocalDateTime;
 

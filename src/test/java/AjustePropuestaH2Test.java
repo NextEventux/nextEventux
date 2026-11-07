@@ -11,7 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import entities.MensajeSolicitud;
+import entities.solicitudes.MensajeSolicitud;
 import services.ServiceSolicitudes;
 
 /** CU-12 (A2): la solicitud de ajuste queda vinculada a la versión vigente. */

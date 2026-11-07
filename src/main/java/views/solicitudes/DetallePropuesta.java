@@ -2,8 +2,8 @@ package views.solicitudes;
 
 import entities.eventos.Evento;
 
-import entities.ContextoSolicitud;
-import entities.PropuestaServicio;
+import entities.solicitudes.ContextoSolicitud;
+import entities.solicitudes.PropuestaServicio;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import views.FormatoUi;

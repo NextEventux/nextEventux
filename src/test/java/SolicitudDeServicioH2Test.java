@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import persistencia.DatabaseConnection;
 import entities.eventos.EventoSolicitable;
-import entities.NecesidadAbierta;
+import entities.solicitudes.NecesidadAbierta;
 import services.ServiceSolicitudes;
 
 /** CU-12: el organizador elige su evento y su necesidad por nombre. */

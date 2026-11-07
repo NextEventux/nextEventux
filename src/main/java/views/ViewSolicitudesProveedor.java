@@ -3,7 +3,7 @@ package views;
 import java.util.List;
 
 import controllers.ControllerSolicitudes;
-import entities.SolicitudEjecucion;
+import entities.solicitudes.SolicitudEjecucion;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

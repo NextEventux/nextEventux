@@ -9,7 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import entities.PropuestaServicio;
+import entities.solicitudes.PropuestaServicio;
 import services.ServiceSolicitudes;
 
 /** CU-12: el material de apoyo de una propuesta es opcional y queda en su versión. */

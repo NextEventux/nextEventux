@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import persistencia.DatabaseConnection;
-import entities.PropuestaServicio;
+import entities.solicitudes.PropuestaServicio;
 
 public class RepositoryPropuestaServicio {
 

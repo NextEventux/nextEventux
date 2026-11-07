@@ -6,7 +6,7 @@ import controllers.ControllerContratacionServicio;
 import entities.ConfirmacionContratacion;
 import entities.DisponibilidadContratacion;
 import entities.PresupuestoContratacion;
-import entities.PropuestaServicio;
+import entities.solicitudes.PropuestaServicio;
 import entities.ResumenContratacionServicio;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;

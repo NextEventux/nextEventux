@@ -8,9 +8,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import entities.ContextoSolicitud;
-import entities.PropuestaServicio;
-import entities.SolicitudEjecucion;
+import entities.solicitudes.ContextoSolicitud;
+import entities.solicitudes.PropuestaServicio;
+import entities.solicitudes.SolicitudEjecucion;
 
 /** CU-12: el proveedor ve nombres, fechas y lugar en vez de identificadores. */
 class ContextoSolicitudH2Test {

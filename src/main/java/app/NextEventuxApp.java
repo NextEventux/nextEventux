@@ -11,7 +11,7 @@ import controllers.eventos.ControllerPublicacion;
 import controllers.ControllerSancionesProveedor;
 import controllers.ControllerSolicitudes;
 import entities.eventos.Evento;
-import entities.PropuestaServicio;
+import entities.solicitudes.PropuestaServicio;
 import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;

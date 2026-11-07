@@ -11,7 +11,7 @@ import repositories.RepositoryFinalizacion;
 import entities.eventos.Fotografia;
 import entities.servicios.ServicioSolicitable;
 import entities.PresupuestoEvento;
-import entities.SolicitudServicioEvento;
+import entities.solicitudes.SolicitudServicioEvento;
 import java.math.BigDecimal;
 import repositories.RepositorySolicitudServicio;
 

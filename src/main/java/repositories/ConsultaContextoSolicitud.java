@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
-import entities.ContextoSolicitud;
+import entities.solicitudes.ContextoSolicitud;
 
 /**
  * Fragmentos de SQL compartidos para leer el contexto de una solicitud (CU-12).

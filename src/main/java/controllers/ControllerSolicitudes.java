@@ -4,10 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import entities.eventos.EventoSolicitable;
-import entities.NecesidadAbierta;
-import entities.MensajeSolicitud;
-import entities.PropuestaServicio;
-import entities.SolicitudEjecucion;
+import entities.solicitudes.NecesidadAbierta;
+import entities.solicitudes.MensajeSolicitud;
+import entities.solicitudes.PropuestaServicio;
+import entities.solicitudes.SolicitudEjecucion;
 import services.ServiceSolicitudes;
 
 public class ControllerSolicitudes {

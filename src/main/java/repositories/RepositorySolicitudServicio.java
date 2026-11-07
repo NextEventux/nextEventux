@@ -4,6 +4,7 @@ import entities.eventos.Evento;
 
 import persistencia.DatabaseConnection;
 import entities.*;
+import entities.solicitudes.SolicitudServicioEvento;
 import entities.servicios.ServicioSolicitable;
 import java.sql.*;
 import java.math.BigDecimal;
