@@ -1,5 +1,7 @@
 package views;
 
+import views.eventos.ViewEventos;
+
 import java.math.BigDecimal;
 import java.net.URL;
 import java.text.Normalizer;

@@ -1,4 +1,4 @@
-package views;
+package views.eventos;
 
 import controllers.ControllerEventos;
 import entities.Evento;

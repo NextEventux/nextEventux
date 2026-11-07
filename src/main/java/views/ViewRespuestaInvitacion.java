@@ -1,5 +1,7 @@
 package views;
 
+import views.eventos.ViewEventos;
+
 import controllers.ControllerInvitados;
 import entities.InvitacionRecibida;
 import entities.Invitado;

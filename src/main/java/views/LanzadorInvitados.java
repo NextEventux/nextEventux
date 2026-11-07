@@ -1,5 +1,7 @@
 package views;
 
+import views.eventos.ViewEventos;
+
 import app.Navegacion;
 import controllers.ControllerEventos;
 import controllers.ControllerInvitados;

@@ -1,4 +1,4 @@
-package views;
+package views.eventos;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;

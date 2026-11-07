@@ -1,5 +1,7 @@
 package views;
 
+import views.eventos.ViewEventos;
+
 import controllers.ControllerFinanciera;
 import entities.MovimientoFinanciero;
 import entities.CompromisoFinanciero;
@@ -144,7 +146,7 @@ public class ViewFinanciera {
 
             Label tituloAviso = etiqueta("No se ha seleccionado ningún evento", "card-title");
             Label descAviso = etiqueta("Por favor, selecciona un evento de la lista para consultar su estado financiero.", "muted");
-            
+
             aviso.getChildren().addAll(tituloAviso, descAviso);
             contenido.getChildren().add(aviso);
 
@@ -154,7 +156,7 @@ public class ViewFinanciera {
             raiz.setCenter(principal);
             return raiz;
         }
-        
+
         Map<String, Object> estado;
         try {
             estado = controller.consultarEstadoFinanciero(idEvento);
