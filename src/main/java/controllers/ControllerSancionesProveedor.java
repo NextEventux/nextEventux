@@ -3,12 +3,12 @@ package controllers;
 import java.util.List;
 
 import entities.SesionUsuario;
-import repositories.RepositorySancionesProveedor.ContratoSancionable;
-import repositories.RepositorySancionesProveedor.EventoProveedor;
-import repositories.RepositorySancionesProveedor.ResumenProveedor;
-import services.ServiceSancionesProveedor;
-import services.ServiceSancionesProveedor.ResultadoSancion;
-import services.ServiceSancionesProveedor.SolicitudSancion;
+import repositories.proveedores.RepositorySancionesProveedor.ContratoSancionable;
+import repositories.proveedores.RepositorySancionesProveedor.EventoProveedor;
+import repositories.proveedores.RepositorySancionesProveedor.ResumenProveedor;
+import services.proveedores.ServiceSancionesProveedor;
+import services.proveedores.ServiceSancionesProveedor.ResultadoSancion;
+import services.proveedores.ServiceSancionesProveedor.SolicitudSancion;
 
 /**
  * Controlador de CU-09 (aplicar sanciones). Conecta la vista con el servicio.

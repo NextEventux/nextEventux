@@ -1,3 +1,5 @@
+import repositories.proveedores.RepositoryAvisosProveedor;
+import services.proveedores.ServiceAvisosProveedor;
 import repositories.eventos.RepositoryEvento;
 import repositories.eventos.RepositoryCancelacion;
 import entities.eventos.Evento;

@@ -10,7 +10,7 @@ import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.servicios.RepositoryImagenServicio;
 import repositories.servicios.RepositoryPreguntaServicio;
 import repositories.servicios.RepositoryServicio;
-import services.ServiceProveedores;
+import services.proveedores.ServiceProveedores;
 
 import java.sql.Connection;
 import java.sql.Statement;

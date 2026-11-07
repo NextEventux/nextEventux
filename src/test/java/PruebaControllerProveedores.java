@@ -5,7 +5,7 @@ import entities.servicios.DisponibilidadServicio;
 import entities.servicios.Servicio;
 import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.servicios.RepositoryServicio;
-import services.ServiceProveedores;
+import services.proveedores.ServiceProveedores;
 
 // Comprueba el flujo desde el controller hasta el repositorio
 public class PruebaControllerProveedores {

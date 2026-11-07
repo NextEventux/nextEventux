@@ -15,7 +15,7 @@ import persistencia.DatabaseConnection;
 import entities.servicios.Servicio;
 import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.servicios.RepositoryServicio;
-import services.ServiceProveedores;
+import services.proveedores.ServiceProveedores;
 
 /**
  * CU-11: validaciones al guardar y editar un servicio.

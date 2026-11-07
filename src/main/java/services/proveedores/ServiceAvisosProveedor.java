@@ -1,7 +1,7 @@
-package services;
+package services.proveedores;
 
 import entities.SesionUsuario;
-import repositories.RepositoryAvisosProveedor;
+import repositories.proveedores.RepositoryAvisosProveedor;
 import java.util.List;
 
 public class ServiceAvisosProveedor {

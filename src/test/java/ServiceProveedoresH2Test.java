@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.servicios.RepositoryServicio;
-import services.ServiceProveedores;
+import services.proveedores.ServiceProveedores;
 
 import java.sql.Connection;
 import java.sql.Statement;

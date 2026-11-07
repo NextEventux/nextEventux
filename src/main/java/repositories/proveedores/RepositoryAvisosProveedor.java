@@ -1,4 +1,4 @@
-package repositories;
+package repositories.proveedores;
 
 import persistencia.DatabaseConnection;
 import entities.SesionUsuario;

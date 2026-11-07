@@ -7,7 +7,7 @@ import entities.servicios.DisponibilidadServicio;
 import entities.servicios.ImagenServicio;
 import entities.servicios.PreguntaServicio;
 import entities.servicios.Servicio;
-import services.ServiceProveedores;
+import services.proveedores.ServiceProveedores;
 
 // Recibe las acciones relacionadas con proveedores y las envia al service
 public class ControllerProveedores {

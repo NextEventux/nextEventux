@@ -1,7 +1,7 @@
 package views.proveedores;
 
 import entities.SesionUsuario;
-import services.ServiceAvisosProveedor;
+import services.proveedores.ServiceAvisosProveedor;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;

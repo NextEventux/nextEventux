@@ -25,12 +25,12 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
-import repositories.RepositorySancionesProveedor.ContratoSancionable;
-import repositories.RepositorySancionesProveedor.EventoProveedor;
-import repositories.RepositorySancionesProveedor.ResumenProveedor;
-import services.ServiceSancionesProveedor;
-import services.ServiceSancionesProveedor.ResultadoSancion;
-import services.ServiceSancionesProveedor.SolicitudSancion;
+import repositories.proveedores.RepositorySancionesProveedor.ContratoSancionable;
+import repositories.proveedores.RepositorySancionesProveedor.EventoProveedor;
+import repositories.proveedores.RepositorySancionesProveedor.ResumenProveedor;
+import services.proveedores.ServiceSancionesProveedor;
+import services.proveedores.ServiceSancionesProveedor.ResultadoSancion;
+import services.proveedores.ServiceSancionesProveedor.SolicitudSancion;
 
 /**
  * Vista de CU-09: aplicar sanciones a un proveedor. Flujo: buscar proveedor ->

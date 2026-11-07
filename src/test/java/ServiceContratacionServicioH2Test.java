@@ -527,7 +527,7 @@ public class ServiceContratacionServicioH2Test {
                 new BigDecimal("2000000"), "Alcance", "Condiciones");
         contratacion.contratar(ORG, propuesta);
 
-        services.ServiceProveedores proveedores = new services.ServiceProveedores(
+        services.proveedores.ServiceProveedores proveedores = new services.proveedores.ServiceProveedores(
                 new RepositoryServicio(), new repositories.servicios.RepositoryDisponibilidadServicio());
 
         IllegalStateException error = assertThrows(IllegalStateException.class,

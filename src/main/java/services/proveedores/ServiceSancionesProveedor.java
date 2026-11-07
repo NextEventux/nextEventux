@@ -1,4 +1,4 @@
-package services;
+package services.proveedores;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -9,11 +9,11 @@ import java.util.Locale;
 import java.util.Set;
 
 import entities.SesionUsuario;
-import repositories.RepositorySancionesProveedor;
-import repositories.RepositorySancionesProveedor.ContratoSancionable;
-import repositories.RepositorySancionesProveedor.EventoProveedor;
-import repositories.RepositorySancionesProveedor.ProveedorSancionable;
-import repositories.RepositorySancionesProveedor.ResumenProveedor;
+import repositories.proveedores.RepositorySancionesProveedor;
+import repositories.proveedores.RepositorySancionesProveedor.ContratoSancionable;
+import repositories.proveedores.RepositorySancionesProveedor.EventoProveedor;
+import repositories.proveedores.RepositorySancionesProveedor.ProveedorSancionable;
+import repositories.proveedores.RepositorySancionesProveedor.ResumenProveedor;
 
 /**
  * Logica de negocio de CU-09: aplicar sanciones a proveedores.
