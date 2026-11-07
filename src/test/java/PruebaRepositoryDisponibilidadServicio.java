@@ -1,7 +1,7 @@
 import java.util.Date;
 
 import entities.servicios.DisponibilidadServicio;
-import repositories.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
 
 // Prueba sencilla para comprobar el guardado de disponibilidades
 public class PruebaRepositoryDisponibilidadServicio {

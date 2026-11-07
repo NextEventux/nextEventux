@@ -8,6 +8,7 @@ import entities.*;
 import entities.servicios.DisponibilidadServicio;
 import org.junit.jupiter.api.*;
 import repositories.*;
+import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.invitaciones.RepositoryInvitacion;
 import repositories.invitaciones.RepositoryInvitado;
 import services.*;

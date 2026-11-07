@@ -32,7 +32,7 @@ import entities.SesionUsuario;
 import repositories.RepositoryContratacionServicio;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.RepositoryPropuestaServicio;
-import repositories.RepositoryServicio;
+import repositories.servicios.RepositoryServicio;
 import repositories.RepositorySolicitudEjecucion;
 import repositories.RepositorySolicitudServicio;
 import services.ServiceContratacionServicio;
@@ -528,7 +528,7 @@ public class ServiceContratacionServicioH2Test {
         contratacion.contratar(ORG, propuesta);
 
         services.ServiceProveedores proveedores = new services.ServiceProveedores(
-                new RepositoryServicio(), new repositories.RepositoryDisponibilidadServicio());
+                new RepositoryServicio(), new repositories.servicios.RepositoryDisponibilidadServicio());
 
         IllegalStateException error = assertThrows(IllegalStateException.class,
                 () -> proveedores.retirarServicio(PROV_A, SERVICIO_A));

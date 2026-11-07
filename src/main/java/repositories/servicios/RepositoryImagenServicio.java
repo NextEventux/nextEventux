@@ -1,4 +1,4 @@
-package repositories;
+package repositories.servicios;
 
 import persistencia.DatabaseConnection;
 import entities.servicios.ImagenServicio;

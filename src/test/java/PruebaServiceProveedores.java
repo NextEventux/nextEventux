@@ -1,6 +1,6 @@
 import entities.servicios.Servicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
 import services.ServiceProveedores;
 
 // Comprueba que el service pueda enviar un servicio al repositorio

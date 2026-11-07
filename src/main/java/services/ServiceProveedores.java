@@ -7,10 +7,10 @@ import entities.servicios.DisponibilidadServicio;
 import entities.servicios.ImagenServicio;
 import entities.servicios.PreguntaServicio;
 import entities.servicios.Servicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryImagenServicio;
-import repositories.RepositoryPreguntaServicio;
-import repositories.RepositoryServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryImagenServicio;
+import repositories.servicios.RepositoryPreguntaServicio;
+import repositories.servicios.RepositoryServicio;
 
 // Aqui va la logica relacionada con las acciones del modulo de proveedores
 public class ServiceProveedores {

@@ -3,8 +3,8 @@ import java.util.Date;
 import controllers.ControllerProveedores;
 import entities.servicios.DisponibilidadServicio;
 import entities.servicios.Servicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
 import services.ServiceProveedores;
 
 // Comprueba el flujo desde el controller hasta el repositorio

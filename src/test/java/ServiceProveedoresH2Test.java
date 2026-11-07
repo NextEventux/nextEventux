@@ -7,8 +7,8 @@ import entities.servicios.Servicio;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
 import services.ServiceProveedores;
 
 import java.sql.Connection;

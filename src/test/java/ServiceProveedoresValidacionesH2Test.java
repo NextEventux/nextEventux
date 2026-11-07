@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 
 import persistencia.DatabaseConnection;
 import entities.servicios.Servicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
 import services.ServiceProveedores;
 
 /**

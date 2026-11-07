@@ -1,4 +1,4 @@
-package repositories;
+package repositories.servicios;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
