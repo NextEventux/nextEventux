@@ -82,6 +82,40 @@ class ActualizacionCuentasDemoTest {
         }
     }
 
+
+    @Test
+    void normalizaLaClaveDeUnaCuentaOficialUnaSolaVez() throws Exception {
+        try (Connection conexion = DatabaseConnection.getConnection(nuevaBase())) {
+            CargarDatosEjemplo.cargar(conexion);
+
+            // Esta cuenta está reservada para las demostraciones del proyecto
+            try (Statement statement = conexion.createStatement()) {
+                statement.executeUpdate(
+                        "UPDATE Usuario SET contraseña = 'clave_anterior' "
+                        + "WHERE usuario = 'laura.gomez'");
+            }
+
+            CargarDatosEjemplo.actualizarCuentasDemostracion(conexion);
+
+            assertEquals("1234", consultar(conexion,
+                    "SELECT contraseña FROM Usuario "
+                    + "WHERE usuario = 'laura.gomez'"));
+
+            // Una vez registrada la migración, no restablece la clave otra vez
+            try (Statement statement = conexion.createStatement()) {
+                statement.executeUpdate(
+                        "UPDATE Usuario SET contraseña = 'clave_nueva' "
+                        + "WHERE usuario = 'laura.gomez'");
+            }
+
+            CargarDatosEjemplo.actualizarCuentasDemostracion(conexion);
+
+            assertEquals("clave_nueva", consultar(conexion,
+                    "SELECT contraseña FROM Usuario "
+                    + "WHERE usuario = 'laura.gomez'"));
+        }
+    }
+
     @Test
     void funcionaConDatosInicialesActuales() throws Exception {
         try (Connection conexion = DatabaseConnection.getConnection(nuevaBase())) {
