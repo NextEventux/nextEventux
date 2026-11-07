@@ -3,6 +3,7 @@ package app;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import javafx.scene.Parent;
@@ -31,7 +32,8 @@ public class Navegacion {
         PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas"),
         CONTRATAR_SERVICIO("NextEventux | Contratar servicio"),
         ESTADO_FINANCIERO("NextEventux | Estado financiero"),
-        SANCIONES_PROVEEDOR("NextEventux | Sanciones a proveedores");
+        SANCIONES_PROVEEDOR("NextEventux | Sanciones a proveedores"),
+        USUARIOS_ADMINISTRACION("NextEventux | Usuarios");
 
         private final String titulo;
 
@@ -45,6 +47,17 @@ public class Navegacion {
     private final Map<Pantalla, Boolean> dinamicas = new EnumMap<>(Pantalla.class);
     private Scene scene;
     private BorderPane contenedor;
+    private BooleanSupplier guardia = () -> true;
+
+    /**
+     * CU-029: condición que se evalúa antes de cada cambio de pantalla.
+     * Si devuelve false no se navega (por ejemplo, la cuenta fue suspendida
+     * y la aplicación ya volvió al inicio de sesión).
+     */
+    public Navegacion conGuardia(BooleanSupplier guardia) {
+        this.guardia = Objects.requireNonNull(guardia, "guardia");
+        return this;
+    }
 
     public Navegacion registrar(Pantalla pantalla, Supplier<Parent> fabrica) {
         registrar(pantalla, fabrica, false);
@@ -93,6 +106,9 @@ public class Navegacion {
         if (!fabricas.containsKey(pantalla)) {
             throw new IllegalArgumentException(
                     "No se registró la pantalla " + pantalla);
+        }
+        if (!guardia.getAsBoolean()) {
+            return;
         }
         Scene actual;
         if (contenedor != null) {

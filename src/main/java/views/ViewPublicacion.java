@@ -35,6 +35,7 @@ public class ViewPublicacion {
     private final Runnable cerrarSesion;
     private final Runnable abrirSanciones;
     private Runnable abrirPropuestas;
+    private Runnable abrirUsuarios;
     private final Runnable abrirPublicacion;
     private boolean esAdministrador;
     private final Label usuario = new Label();
@@ -107,6 +108,12 @@ public class ViewPublicacion {
         return this;
     }
 
+    /** CU-029: opción "Usuarios" del menú del administrador. */
+    public ViewPublicacion conUsuarios(Runnable accion) {
+        this.abrirUsuarios = accion;
+        return this;
+    }
+
     public Parent crearPantalla() {
         BorderPane raiz = new BorderPane();
         raiz.getStyleClass().addAll("app", "publicacion");
@@ -127,7 +134,8 @@ public class ViewPublicacion {
                 organizadorActivo ? abrirPropuestas : null,
                 abrirSanciones,
                 null,
-                abrirPublicacion));
+                abrirPublicacion,
+                abrirUsuarios));
         Button actualizar = boton("Actualizar", "actualizarPublicacion", this::actualizar, false);
         VBox contenido = new VBox(22);
         contenido.getStyleClass().add("content");

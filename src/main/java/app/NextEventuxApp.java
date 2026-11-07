@@ -14,13 +14,20 @@ import entities.Evento;
 import entities.PropuestaServicio;
 import entities.Servicio;
 import entities.SesionUsuario;
+import java.util.Optional;
+
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryAvisosProveedor;
 import repositories.RepositoryContratacion;
@@ -65,6 +72,7 @@ import views.ViewPropuestasOrganizador;
 import views.ViewPublicacion;
 import views.ViewSancionesProveedor;
 import views.ViewSolicitudesProveedor;
+import views.ViewUsuariosAdministracion;
 
 public class NextEventuxApp extends Application {
 
@@ -75,6 +83,12 @@ public class NextEventuxApp extends Application {
     private ControllerSolicitudes controllerSolicitudes;
     private ControllerContratacionServicio controllerContratacion;
     private ControllerSancionesProveedor controllerSanciones;
+
+    // CU-029: revision del estado de la cuenta de la sesion abierta.
+    private static final long INTERVALO_VERIFICACION_MS = 15_000;
+    private ServiceAutenticacion serviceAutenticacion;
+    private Timeline verificacionSesion;
+    private long ultimaVerificacionMs;
 
     private SesionUsuario sesionActual;
     private Navegacion navegacion;
@@ -100,8 +114,8 @@ public class NextEventuxApp extends Application {
             System.err.println("[BD] No se pudieron cargar los datos de ejemplo: " + e.getMessage());
         }
 
-        controllerAutenticacion = new ControllerAutenticacion(
-                new ServiceAutenticacion(new RepositoryAutenticacion()));
+        serviceAutenticacion = new ServiceAutenticacion(new RepositoryAutenticacion());
+        controllerAutenticacion = new ControllerAutenticacion(serviceAutenticacion);
 
         controllerProveedores = new ControllerProveedores(
                 new ServiceProveedores(
@@ -139,6 +153,7 @@ public class NextEventuxApp extends Application {
 
     private void mostrarLogin() {
 
+        detenerVerificacionSesion();
         if (sesionActual != null) {
             sesionActual.cerrar();
         }
@@ -167,6 +182,7 @@ public class NextEventuxApp extends Application {
     // ------------------------------------------------------------------
     private void mostrarInvitado() {
 
+        detenerVerificacionSesion();
         sesionActual = null;
         contenedor.setTop(null);
         navegacion = null;
@@ -181,6 +197,8 @@ public class NextEventuxApp extends Application {
                 sesion.getTipoUsuario(),
                 sesion.getIdActor());
         sesionActual = sesion;
+        // CU-029: la cuenta se acaba de validar al iniciar sesion.
+        iniciarVerificacionSesion();
         publicaciones = new ControllerPublicacion(new ServicePublicacion(
                 new RepositoryPublicacion(), new RepositoryEvento()), sesion);
         controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
@@ -221,6 +239,8 @@ public class NextEventuxApp extends Application {
 
         contenedor.setTop(null);
         navegacion = new Navegacion();
+        // CU-029: antes de cambiar de pantalla se revisa que la cuenta siga activa.
+        navegacion.conGuardia(() -> sesionVigente(false));
         navegacion.registrarDinamica(
                 Navegacion.Pantalla.SANCIONES_PROVEEDOR,
                 () -> {
@@ -234,7 +254,8 @@ public class NextEventuxApp extends Application {
                             null, null, null,
                             this::mostrarSancionesProveedor,
                             null,
-                            this::mostrarPublicacion));
+                            this::mostrarPublicacion,
+                            this::mostrarUsuariosAdministracion));
                     BorderPane principal = new BorderPane();
 
                     principal.setTop(
@@ -243,6 +264,40 @@ public class NextEventuxApp extends Application {
 
                     principal.setCenter(
                             new ViewSancionesProveedor(controllerSanciones).crearPantalla());
+
+                    marco.setCenter(principal);
+                    return marco;
+                });
+
+        // CU-029: gestion de usuarios (solo administrador)
+        navegacion.registrarDinamica(
+                Navegacion.Pantalla.USUARIOS_ADMINISTRACION,
+                () -> {
+                    BorderPane marco = new BorderPane();
+                    marco.getStyleClass().addAll("app", "publicacion");
+                    marco.setLeft(views.components.MenuCompartido.crear(
+                            sesionActual,
+                            views.components.MenuCompartido.Pagina.USUARIOS_ADMINISTRACION,
+                            null, null, null, null,
+                            this::mostrarLogin,
+                            null, null, null,
+                            this::mostrarSancionesProveedor,
+                            null,
+                            this::mostrarPublicacion,
+                            this::mostrarUsuariosAdministracion));
+                    BorderPane principal = new BorderPane();
+
+                    principal.setTop(
+                            views.components.MenuCompartido.crearBarraSuperior(
+                                    sesionActual, "Usuarios"));
+
+                    ControllerAdministracion controlador = new ControllerAdministracion(
+                            new ServiceAdministracion(
+                                    new RepositoryContratacion(),
+                                    new RepositoryOrganizador()),
+                            sesionActual);
+                    principal.setCenter(
+                            new ViewUsuariosAdministracion(controlador).crearPantalla());
 
                     marco.setCenter(principal);
                     return marco;
@@ -423,6 +478,7 @@ public class NextEventuxApp extends Application {
                                 this::mostrarSancionesProveedor,
                                 this::mostrarPublicacion)
                                 .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .conUsuarios(this::mostrarUsuariosAdministracion)
                                 .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
@@ -501,7 +557,90 @@ public class NextEventuxApp extends Application {
             mostrarLogin();
             return;
         }
+        if (!sesionVigente(true)) {
+            return;
+        }
         navegacion.mostrarEn(contenedor, Navegacion.Pantalla.SANCIONES_PROVEEDOR);
+    }
+
+    /**
+     * CU-029: solo el administrador puede suspender y reactivar usuarios.
+     * Al ser una pantalla administrativa, la cuenta se revisa siempre.
+     */
+    private void mostrarUsuariosAdministracion() {
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        if (!sesionVigente(true)) {
+            return;
+        }
+        navegacion.mostrarEn(contenedor, Navegacion.Pantalla.USUARIOS_ADMINISTRACION);
+    }
+
+    // ------------------------------------------------------------------
+    // CU-029: sesiones abiertas de cuentas suspendidas.
+    // La cuenta se revisa cada 15 segundos y antes de cambiar de pantalla.
+    // Si ya se reviso en los ultimos 15 segundos, el cambio de pantalla
+    // reutiliza ese resultado y no consulta la base de datos.
+    // ------------------------------------------------------------------
+
+    private void iniciarVerificacionSesion() {
+        detenerVerificacionSesion();
+        ultimaVerificacionMs = System.currentTimeMillis();
+        verificacionSesion = new Timeline(new KeyFrame(
+                Duration.millis(INTERVALO_VERIFICACION_MS),
+                evento -> sesionVigente(true)));
+        verificacionSesion.setCycleCount(Animation.INDEFINITE);
+        verificacionSesion.play();
+    }
+
+    private void detenerVerificacionSesion() {
+        if (verificacionSesion != null) {
+            verificacionSesion.stop();
+            verificacionSesion = null;
+        }
+    }
+
+    /**
+     * Indica si la sesion abierta sigue siendo valida. Si la cuenta fue
+     * suspendida (o ya no esta activa) cierra la sesion, vuelve al inicio de
+     * sesion e informa el motivo. Un fallo tecnico al consultar no expulsa
+     * al usuario: se vuelve a intentar en la siguiente revision.
+     *
+     * @param forzar consulta aunque la ultima revision sea reciente
+     */
+    private boolean sesionVigente(boolean forzar) {
+        if (sesionActual == null) {
+            return true;
+        }
+        long ahora = System.currentTimeMillis();
+        if (!forzar && ahora - ultimaVerificacionMs < INTERVALO_VERIFICACION_MS) {
+            return true;
+        }
+
+        Optional<String> rechazo;
+        try {
+            rechazo = serviceAutenticacion.verificarSesionVigente(sesionActual);
+        } catch (RuntimeException e) {
+            System.err.println("[SESION] no se pudo verificar el estado de la cuenta: "
+                    + e.getMessage());
+            return true;
+        }
+        ultimaVerificacionMs = ahora;
+
+        if (rechazo.isEmpty()) {
+            return true;
+        }
+
+        mostrarLogin();
+        Alert aviso = new Alert(Alert.AlertType.WARNING, rechazo.get());
+        aviso.initOwner(stage);
+        aviso.setHeaderText("Tu sesión se cerró");
+        // show() y no showAndWait(): puede llamarse desde la animacion periodica.
+        aviso.show();
+        return false;
     }
 
     private void mostrarCancelacion(Evento evento) {
@@ -735,6 +874,9 @@ public class NextEventuxApp extends Application {
     private void mostrarContratarOrganizador() {
         if (sesionActual == null || !"CLIENTE".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
             mostrarLogin();
+            return;
+        }
+        if (!sesionVigente(false)) {
             return;
         }
         ControllerAdministracion controlador = new ControllerAdministracion(

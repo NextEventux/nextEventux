@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import config.DatabaseConnection;
 import entities.SesionUsuario;
@@ -92,6 +93,34 @@ public class RepositoryAutenticacion {
         } catch (SQLException e) {
             throw new IllegalStateException(
                     "No se pudo iniciar sesion.",
+                    e);
+        }
+    }
+
+    /**
+     * CU-029: estado actual de la cuenta, usado para revisar las sesiones
+     * abiertas. Vacio si la cuenta ya no existe.
+     */
+    public Optional<String> consultarEstadoCuenta(int idUsuario) {
+
+        String sql = "SELECT estado FROM Usuario WHERE id_usuario = ?";
+
+        try (Connection connection
+                = (url == null ? DatabaseConnection.getConnection() : DatabaseConnection.getConnection(url));
+             PreparedStatement statement
+                = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, idUsuario);
+
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next()
+                        ? Optional.ofNullable(result.getString(1))
+                        : Optional.empty();
+            }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "No se pudo verificar el estado de la sesion.",
                     e);
         }
     }
