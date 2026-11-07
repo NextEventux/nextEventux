@@ -38,6 +38,7 @@ public class DatosDemostracionH2Test {
                                 .startsWith("jdbc:h2:mem:datos_demostracion"));
 
                 CargarDatosEjemplo.cargar(connection);
+                assertEquals(0, inicializacion.SincronizarCuentasDemo.sincronizar(connection));
             }
 
             ServiceAutenticacion service
@@ -51,6 +52,10 @@ public class DatosDemostracionH2Test {
             comprobarUsuario(service, "decoraciones.arcoiris", "PROVEEDOR");
             comprobarUsuario(service, "sabores.eventos", "PROVEEDOR");
             comprobarUsuario(service, "flash", "PROVEEDOR");
+
+            comprobarUsuario(service, "ana.martinez", "CLIENTE");
+            comprobarUsuario(service, "diego.perez", "CLIENTE");
+            comprobarUsuario(service, "paula.rios", "CLIENTE");
 
             comprobarUsuario(service, "camila", "ADMINISTRADOR");
             comprobarUsuario(service, "mateo", "ADMINISTRADOR");

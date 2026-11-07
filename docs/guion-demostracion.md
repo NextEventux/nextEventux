@@ -6,12 +6,13 @@ Cada integrante utiliza su propia base H2 local.
 
 - En una base vacía, NextEventux carga los ejemplos de `seed.sql`.
 - En una base existente, los registros se conservan. No se ejecuta nuevamente todo `seed.sql`.
-- La migración `014_cuentas_demostracion.sql` normaliza una sola vez la contraseña `1234` de las cuentas oficiales que reconoce por ID, usuario y tipo de actor.
-- Esta normalización está destinada exclusivamente a cuentas reservadas para demostración. No debe utilizarse para cuentas reales.
+- Al iniciar, NextEventux agrega cuentas oficiales faltantes y sus roles y perfiles sin reemplazar contraseñas ni datos existentes.
+- Las cuentas oficiales nuevas usan la contraseña inicial `1234`; las contraseñas de cuentas ya existentes se conservan.
+- `014_cuentas_demostracion.sql` se conserva como migración histórica, pero no se aplica ni restablece contraseñas.
 - Los eventos, servicios y solicitudes creados localmente no se comparten mediante `git pull`.
 - Cuando se agreguen ejemplos oficiales para nuevos casos de uso, deberán incluirse actualizaciones versionadas y pruebas para bases existentes.
 
-Después de actualizar el repositorio, cada integrante debe iniciar la aplicación para que se ejecuten las actualizaciones pendientes.
+Después de actualizar el repositorio, cada integrante debe iniciar la aplicación para que se sincronicen las cuentas oficiales pendientes.
 
 
 Los datos de ejemplo se cargan automáticamente cuando la base está vacía.

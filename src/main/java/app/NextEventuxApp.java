@@ -96,9 +96,14 @@ public class NextEventuxApp extends Application {
             if (inicializacion.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
                 System.out.println("[BD] Base vacía: se cargaron los datos de ejemplo.");
             }
-            inicializacion.CargarDatosEjemplo.actualizarCuentasDemostracion(conexion);
+            int cuentasCreadas = inicializacion.SincronizarCuentasDemo.sincronizar(conexion);
+            if (cuentasCreadas > 0) {
+                System.out.println("[BD] Se sincronizaron " + cuentasCreadas
+                        + " cuentas de demostración faltantes.");
+            }
         } catch (Exception e) {
-            System.err.println("[BD] No se pudieron cargar los datos de ejemplo: " + e.getMessage());
+            throw new IllegalStateException(
+                    "[BD] No se pudieron sincronizar las cuentas de demostración.", e);
         }
 
         controllerAutenticacion = new ControllerAutenticacion(
