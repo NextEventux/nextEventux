@@ -86,6 +86,21 @@ Por defecto, H2 conserva la base en la carpeta del usuario del sistema:
 
 La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. Al abrir una base vacía se inicializan el esquema y las migraciones, y la aplicación carga datos de ejemplo solo si no encuentra registros de negocio. Una base con datos existentes no se reemplaza por los ejemplos. Cambiar la ubicación no copia la base anterior.
 
+### Actualizar el proyecto sin perder la H2
+
+Después de que el PR del equipo se integre en `main`, actualiza tu copia desde esa rama. Primero revisa `git status -sb` y conserva cualquier trabajo local antes de cambiar de rama o actualizar:
+
+```bash
+git switch main
+git pull --ff-only origin main
+mvn clean test
+mvn javafx:run
+```
+
+Cada integrante conserva su propia H2 en su computador; Git no comparte ni sincroniza físicamente los archivos de la base. Al iniciar, la aplicación carga `seed.sql` solo en una base sin datos de negocio. En una H2 existente agrega los datos oficiales faltantes que tienen sincronización implementada: cuentas y perfiles, cuatro eventos, quince servicios, necesidades, solicitudes, propuestas, contrataciones y el horario de fotografía requerido. No vuelve a copiar todo el seed. **No borres, reemplaces ni reinicies tu H2 personal para obtener esos ejemplos.**
+
+La sincronización conserva las contraseñas existentes; `1234` es la clave inicial de cuentas nuevas, no una garantía para cuentas que ya tenías. Los IDs personales no se reutilizan intencionalmente. Ante asociaciones incompatibles o ambiguas puede detenerse el inicio; un horario personal que se solape con el horario oficial se conserva, se omite la inserción y se muestra un aviso. Revisa el [guion de demostración](docs/guion-demostracion.md) para conocer los datos disponibles y sus límites.
+
 ### Consultar la base con la aplicación abierta
 
 La URL por defecto incluye `AUTO_SERVER=TRUE`, así que la base se puede consultar desde otra herramienta mientras la aplicación está abierta. En DBeaver, la consola de H2 o `org.h2.tools.Shell` se usa:
