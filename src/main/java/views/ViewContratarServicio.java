@@ -2,7 +2,7 @@ package views;
 
 import entities.eventos.Evento;
 
-import controllers.ControllerContratacionServicio;
+import controllers.solicitudes.ControllerContratacionServicio;
 import entities.contrataciones.ConfirmacionContratacion;
 import entities.contrataciones.DisponibilidadContratacion;
 import entities.contrataciones.PresupuestoContratacion;

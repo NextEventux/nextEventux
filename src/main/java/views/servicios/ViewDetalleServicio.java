@@ -4,8 +4,8 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
-import controllers.ControllerProveedores;
-import controllers.ControllerSolicitudes;
+import controllers.proveedores.ControllerProveedores;
+import controllers.solicitudes.ControllerSolicitudes;
 import entities.servicios.ImagenServicio;
 import entities.servicios.PreguntaServicio;
 import entities.servicios.Servicio;

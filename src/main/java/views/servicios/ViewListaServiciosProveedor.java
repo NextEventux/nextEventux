@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-import controllers.ControllerProveedores;
+import controllers.proveedores.ControllerProveedores;
 import entities.servicios.ImagenServicio;
 import entities.servicios.PreguntaServicio;
 import entities.servicios.Servicio;

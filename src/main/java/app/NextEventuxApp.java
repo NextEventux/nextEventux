@@ -2,14 +2,14 @@ package app;
 
 import controllers.ControllerAdministracion;
 import controllers.ControllerAutenticacion;
-import controllers.ControllerContratacionServicio;
+import controllers.solicitudes.ControllerContratacionServicio;
 import controllers.eventos.ControllerEventos;
 import controllers.ControllerFinanciera;
 import controllers.eventos.ControllerInvitados;
-import controllers.ControllerProveedores;
+import controllers.proveedores.ControllerProveedores;
 import controllers.eventos.ControllerPublicacion;
-import controllers.ControllerSancionesProveedor;
-import controllers.ControllerSolicitudes;
+import controllers.proveedores.ControllerSancionesProveedor;
+import controllers.solicitudes.ControllerSolicitudes;
 import entities.eventos.Evento;
 import entities.solicitudes.PropuestaServicio;
 import entities.servicios.Servicio;

@@ -1,4 +1,4 @@
-package controllers;
+package controllers.solicitudes;
 
 import entities.contrataciones.ConfirmacionContratacion;
 import entities.contrataciones.DisponibilidadContratacion;

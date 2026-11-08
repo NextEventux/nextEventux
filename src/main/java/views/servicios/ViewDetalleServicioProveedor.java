@@ -2,7 +2,7 @@ package views.servicios;
 
 import entities.eventos.Fotografia;
 
-import controllers.ControllerProveedores;
+import controllers.proveedores.ControllerProveedores;
 import entities.servicios.DisponibilidadServicio;
 import entities.servicios.Servicio;
 import entities.SesionUsuario;

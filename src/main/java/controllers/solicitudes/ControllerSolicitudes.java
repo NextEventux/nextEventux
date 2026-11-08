@@ -1,4 +1,4 @@
-package controllers;
+package controllers.solicitudes;
 
 import java.math.BigDecimal;
 import java.util.List;

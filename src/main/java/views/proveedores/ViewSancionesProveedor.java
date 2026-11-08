@@ -4,7 +4,7 @@ import entities.eventos.Evento;
 
 import java.util.Optional;
 
-import controllers.ControllerSancionesProveedor;
+import controllers.proveedores.ControllerSancionesProveedor;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;

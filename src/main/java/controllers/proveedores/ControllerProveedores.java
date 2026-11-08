@@ -1,4 +1,4 @@
-package controllers;
+package controllers.proveedores;
 
 import java.util.Date;
 import java.util.List;

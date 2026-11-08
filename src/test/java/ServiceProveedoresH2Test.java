@@ -2,7 +2,7 @@ import entities.eventos.Fotografia;
 
 
 import persistencia.DatabaseConnection;
-import controllers.ControllerProveedores;
+import controllers.proveedores.ControllerProveedores;
 import entities.servicios.Servicio;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

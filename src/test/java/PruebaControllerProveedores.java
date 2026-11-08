@@ -1,6 +1,6 @@
 import java.util.Date;
 
-import controllers.ControllerProveedores;
+import controllers.proveedores.ControllerProveedores;
 import entities.servicios.DisponibilidadServicio;
 import entities.servicios.Servicio;
 import repositories.servicios.RepositoryDisponibilidadServicio;

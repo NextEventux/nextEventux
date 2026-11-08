@@ -2,7 +2,7 @@ package views.proveedores;
 
 import java.util.List;
 
-import controllers.ControllerSolicitudes;
+import controllers.solicitudes.ControllerSolicitudes;
 import entities.solicitudes.SolicitudEjecucion;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;

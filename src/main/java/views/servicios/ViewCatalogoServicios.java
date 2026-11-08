@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-import controllers.ControllerProveedores;
+import controllers.proveedores.ControllerProveedores;
 import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import javafx.geometry.Pos;
