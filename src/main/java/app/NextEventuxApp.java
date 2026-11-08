@@ -109,6 +109,11 @@ public class NextEventuxApp extends Application {
                         + " eventos y " + catalogo.serviciosCreados()
                         + " servicios de demostración faltantes.");
             }
+            inicializacion.SincronizarDisponibilidadDemo.Resultado disponibilidad
+                    = inicializacion.SincronizarDisponibilidadDemo.sincronizar(conexion);
+            if (disponibilidad.advertencia() != null) {
+                System.out.println("[BD] Aviso: " + disponibilidad.advertencia());
+            }
             inicializacion.SincronizarHistoriaDemo.Resultado historia
                     = inicializacion.SincronizarHistoriaDemo.sincronizar(conexion);
             if (historia.necesidadesCreadas() > 0 || historia.solicitudesCreadas() > 0

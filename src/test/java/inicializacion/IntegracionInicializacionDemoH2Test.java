@@ -154,6 +154,7 @@ class IntegracionInicializacionDemoH2Test {
             boolean seedCargado = CargarDatosEjemplo.cargarSiEstaVacia(conexion);
             SincronizarCuentasDemo.sincronizar(conexion);
             SincronizarCatalogoDemo.sincronizar(conexion);
+            SincronizarDisponibilidadDemo.sincronizar(conexion);
             SincronizarHistoriaDemo.sincronizar(conexion);
             return seedCargado;
         }
