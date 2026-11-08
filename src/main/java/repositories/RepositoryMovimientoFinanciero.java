@@ -127,4 +127,4 @@ public class RepositoryMovimientoFinanciero {
         mov.setEstado(rs.getString("estado"));
         return mov;
     }
-}
+}

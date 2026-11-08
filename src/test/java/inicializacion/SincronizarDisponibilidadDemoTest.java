@@ -131,6 +131,39 @@ class SincronizarDisponibilidadDemoTest {
     }
 
     @Test
+    void detectaProcedenciaInesperadaEnHorarioExactoSinModificarlo()
+            throws Exception {
+        prepararCatalogoSinSeed();
+
+        try (Connection conexion = DatabaseConnection.getConnection(url)) {
+            int idServicio = idServicioOficial(conexion);
+            insertarDisponibilidad(conexion, null, idServicio,
+                    Date.valueOf("2027-02-20"), "14:00:00", "23:59:00", "RESERVADA");
+            int idDisponibilidad = entero(conexion,
+                    "SELECT id_disponibilidad FROM Disponibilidad_Servicio");
+            ejecutar(conexion, """
+                    INSERT INTO Registro_demo_catalogo (tipo, clave, id_registro)
+                    VALUES ('DISPONIBILIDAD', 'clave-inesperada', %d)
+                    """.formatted(idDisponibilidad));
+
+            SQLException error = assertThrows(SQLException.class,
+                    () -> SincronizarDisponibilidadDemo.sincronizar(conexion));
+
+            assertTrue(error.getMessage().contains("procedencia inesperada"));
+            assertEquals(1, contar(conexion,
+                    "SELECT COUNT(*) FROM Disponibilidad_Servicio"));
+            assertEquals(1, contar(conexion, """
+                    SELECT COUNT(*) FROM Registro_demo_catalogo
+                    WHERE tipo = 'DISPONIBILIDAD'
+                      AND clave = 'clave-inesperada'
+                    """));
+            assertEquals("RESERVADA", texto(conexion,
+                    "SELECT estado FROM Disponibilidad_Servicio "
+                    + "WHERE id_disponibilidad = " + idDisponibilidad));
+        }
+    }
+
+    @Test
     void informaSolapamientoSinCambiosYPermiteContinuarLaInicializacion()
             throws Exception {
         prepararCuentasYCatalogo();

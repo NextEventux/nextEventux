@@ -32,7 +32,10 @@ public final class SincronizarDisponibilidadDemo {
             return new Resultado(false, null);
         }
 
-        if (existeDisponibilidadExacta(conexion, idServicio)) {
+        Integer idDisponibilidadExacta
+                = buscarDisponibilidadExacta(conexion, idServicio);
+        if (idDisponibilidadExacta != null) {
+            validarSinProcedenciaInesperada(conexion, idDisponibilidadExacta);
             return new Resultado(false, null);
         }
 
@@ -162,7 +165,7 @@ public final class SincronizarDisponibilidadDemo {
         }
     }
 
-    private static boolean existeDisponibilidadExacta(
+    private static Integer buscarDisponibilidadExacta(
             Connection conexion,
             int idServicio) throws SQLException {
         try (PreparedStatement consulta = conexion.prepareStatement("""
@@ -177,14 +180,34 @@ public final class SincronizarDisponibilidadDemo {
             consulta.setTime(4, HORA_FIN);
             try (ResultSet resultado = consulta.executeQuery()) {
                 if (!resultado.next()) {
-                    return false;
+                    return null;
                 }
+                int id = resultado.getInt(1);
                 if (resultado.next()) {
                     throw new SQLException(
                             "Hay disponibilidades duplicadas para el horario oficial "
                             + "de fotografía.");
                 }
-                return true;
+                return id;
+            }
+        }
+    }
+
+    private static void validarSinProcedenciaInesperada(
+            Connection conexion,
+            int idDisponibilidad) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(
+                "SELECT clave FROM Registro_demo_catalogo "
+                + "WHERE tipo = ? AND id_registro = ?")) {
+            consulta.setString(1, TIPO);
+            consulta.setInt(2, idDisponibilidad);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                if (resultado.next()) {
+                    throw new SQLException(
+                            "La disponibilidad exacta ya tiene una procedencia "
+                            + "inesperada: " + resultado.getString("clave")
+                            + ". No se modificó ningún horario.");
+                }
             }
         }
     }
