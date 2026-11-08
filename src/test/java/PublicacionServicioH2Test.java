@@ -1,16 +1,16 @@
 
-import config.DatabaseConnection;
-import entities.ImagenServicio;
-import entities.PreguntaServicio;
-import entities.Servicio;
+import persistencia.DatabaseConnection;
+import entities.servicios.ImagenServicio;
+import entities.servicios.PreguntaServicio;
+import entities.servicios.Servicio;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryImagenServicio;
-import repositories.RepositoryPreguntaServicio;
-import repositories.RepositoryServicio;
-import services.ServiceProveedores;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryImagenServicio;
+import repositories.servicios.RepositoryPreguntaServicio;
+import repositories.servicios.RepositoryServicio;
+import services.proveedores.ServiceProveedores;
 
 import java.sql.Connection;
 import java.sql.Statement;

@@ -1,7 +1,8 @@
-
 package repositories;
 
-import config.DatabaseConnection;
+import entities.eventos.Evento;
+
+import persistencia.DatabaseConnection;
 import entities.Organizador;
 
 import java.math.BigDecimal;

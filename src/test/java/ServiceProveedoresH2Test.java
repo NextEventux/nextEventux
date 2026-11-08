@@ -1,13 +1,15 @@
+import entities.eventos.Fotografia;
 
-import config.DatabaseConnection;
-import controllers.ControllerProveedores;
-import entities.Servicio;
+
+import persistencia.DatabaseConnection;
+import controllers.proveedores.ControllerProveedores;
+import entities.servicios.Servicio;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
-import services.ServiceProveedores;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
+import services.proveedores.ServiceProveedores;
 
 import java.sql.Connection;
 import java.sql.Statement;

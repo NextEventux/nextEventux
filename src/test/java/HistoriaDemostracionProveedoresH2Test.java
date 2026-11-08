@@ -13,17 +13,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
-import entities.ConfirmacionContratacion;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
+import entities.contrataciones.ConfirmacionContratacion;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
-import repositories.RepositoryContratacionServicio;
-import repositories.RepositoryPropuestaServicio;
-import repositories.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryContratacionServicio;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
 import services.ServiceAutenticacion;
-import services.ServiceContratacionServicio;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceContratacionServicio;
+import services.solicitudes.ServiceSolicitudes;
 
 /**
  * Comprueba que los datos de demostración cuentan una historia completa de

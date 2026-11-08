@@ -1,8 +1,8 @@
 package repositories;
 
-import config.DatabaseConnection;
-import entities.CompromisoFinanciero;
-import entities.MovimientoFinanciero;
+import persistencia.DatabaseConnection;
+import entities.finanzas.CompromisoFinanciero;
+import entities.finanzas.MovimientoFinanciero;
 
 import java.math.BigDecimal;
 import java.sql.Connection;

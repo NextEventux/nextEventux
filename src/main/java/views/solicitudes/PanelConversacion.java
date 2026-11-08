@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-import entities.MensajeSolicitud;
+import entities.solicitudes.MensajeSolicitud;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;

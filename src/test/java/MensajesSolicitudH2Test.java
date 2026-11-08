@@ -1,3 +1,6 @@
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,12 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
-import entities.MensajeSolicitud;
+import persistencia.DatabaseConnection;
+import entities.solicitudes.MensajeSolicitud;
 import entities.SesionUsuario;
-import repositories.RepositorySolicitudEjecucion;
-import repositories.RepositoryPropuestaServicio;
-import services.ServiceSolicitudes;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import services.solicitudes.ServiceSolicitudes;
 
 public class MensajesSolicitudH2Test {
 

@@ -2,7 +2,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.ClienteMarketing;
 import entities.Segmentacion;
 import entities.SolicitudEvento;

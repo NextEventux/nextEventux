@@ -1,10 +1,14 @@
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import entities.eventos.Evento;
+
+import entities.invitaciones.Invitacion;
+
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import repositories.RepositoryCancelacion;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryCancelacion;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 import services.ServiceAutenticacion;
 import repositories.RepositoryAutenticacion;

@@ -1,5 +1,5 @@
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import controllers.ControllerAdministracion;
 import entities.Contratacion;
 import entities.Organizador;

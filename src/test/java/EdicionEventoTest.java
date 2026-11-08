@@ -1,13 +1,13 @@
-import entities.EdicionEvento;
-import entities.Evento;
+import entities.eventos.EdicionEvento;
+import entities.eventos.Evento;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import config.DatabaseConnection;
-import repositories.RepositoryEvento;
+import persistencia.DatabaseConnection;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 import java.math.BigDecimal;
 import java.nio.file.Path;
