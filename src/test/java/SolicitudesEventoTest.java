@@ -17,6 +17,7 @@ import repositories.*;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
 import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.solicitudes.RepositorySolicitudServicio;
+import services.solicitudes.ServiceSolicitudes;
 import services.*;
 import static org.junit.jupiter.api.Assertions.*;
 

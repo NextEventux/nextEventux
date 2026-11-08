@@ -35,8 +35,8 @@ import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.servicios.RepositoryServicio;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
 import repositories.solicitudes.RepositorySolicitudServicio;
-import services.ServiceContratacionServicio;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceContratacionServicio;
+import services.solicitudes.ServiceSolicitudes;
 
 /**
  * CU-13 (contratar servicio) sobre H2 en memoria, recorriendo el flujo real:

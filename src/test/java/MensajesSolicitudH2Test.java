@@ -19,7 +19,7 @@ import entities.solicitudes.MensajeSolicitud;
 import entities.SesionUsuario;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
 import repositories.solicitudes.RepositoryPropuestaServicio;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceSolicitudes;
 
 public class MensajesSolicitudH2Test {
 

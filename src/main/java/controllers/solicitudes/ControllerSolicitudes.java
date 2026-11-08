@@ -8,7 +8,7 @@ import entities.solicitudes.NecesidadAbierta;
 import entities.solicitudes.MensajeSolicitud;
 import entities.solicitudes.PropuestaServicio;
 import entities.solicitudes.SolicitudEjecucion;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceSolicitudes;
 
 public class ControllerSolicitudes {
 

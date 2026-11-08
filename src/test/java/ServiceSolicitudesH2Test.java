@@ -25,7 +25,7 @@ import entities.SesionUsuario;
 import entities.solicitudes.SolicitudEjecucion;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
 import repositories.solicitudes.RepositoryPropuestaServicio;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceSolicitudes;
 
 public class ServiceSolicitudesH2Test {
 

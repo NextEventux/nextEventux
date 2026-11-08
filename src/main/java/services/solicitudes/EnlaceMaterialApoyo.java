@@ -1,4 +1,4 @@
-package services;
+package services.solicitudes;
 
 import java.net.URI;
 import java.net.URISyntaxException;

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import entities.solicitudes.PropuestaServicio;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceSolicitudes;
 
 /** CU-12: el material de apoyo de una propuesta es opcional y queda en su versión. */
 class MaterialApoyoPropuestaH2Test {

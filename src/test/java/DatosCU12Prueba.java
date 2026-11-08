@@ -8,7 +8,7 @@ import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
 import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceSolicitudes;
 
 /**
  * Datos mínimos de CU-12 para las pruebas en H2 en memoria: un organizador con

@@ -1,4 +1,4 @@
-package services;
+package services.solicitudes;
 
 import entities.contrataciones.ConfirmacionContratacion;
 import entities.contrataciones.DisponibilidadContratacion;

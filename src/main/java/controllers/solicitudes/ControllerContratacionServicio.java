@@ -4,7 +4,7 @@ import entities.contrataciones.ConfirmacionContratacion;
 import entities.contrataciones.DisponibilidadContratacion;
 import entities.contrataciones.PresupuestoContratacion;
 import entities.contrataciones.ResumenContratacionServicio;
-import services.ServiceContratacionServicio;
+import services.solicitudes.ServiceContratacionServicio;
 
 // Recibe las acciones de CU-13 (contratar servicio) y las envia al service
 public class ControllerContratacionServicio {

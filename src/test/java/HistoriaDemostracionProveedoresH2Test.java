@@ -22,8 +22,8 @@ import repositories.solicitudes.RepositoryContratacionServicio;
 import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
 import services.ServiceAutenticacion;
-import services.ServiceContratacionServicio;
-import services.ServiceSolicitudes;
+import services.solicitudes.ServiceContratacionServicio;
+import services.solicitudes.ServiceSolicitudes;
 
 /**
  * Comprueba que los datos de demostración cuentan una historia completa de
