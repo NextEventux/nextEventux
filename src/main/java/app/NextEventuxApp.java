@@ -109,6 +109,17 @@ public class NextEventuxApp extends Application {
                         + " eventos y " + catalogo.serviciosCreados()
                         + " servicios de demostración faltantes.");
             }
+            inicializacion.SincronizarHistoriaDemo.Resultado historia
+                    = inicializacion.SincronizarHistoriaDemo.sincronizar(conexion);
+            if (historia.necesidadesCreadas() > 0 || historia.solicitudesCreadas() > 0
+                    || historia.propuestasCreadas() > 0
+                    || historia.contratacionesCreadas() > 0) {
+                System.out.println("[BD] Se sincronizaron " + historia.necesidadesCreadas()
+                        + " necesidades, " + historia.solicitudesCreadas()
+                        + " solicitudes, " + historia.propuestasCreadas()
+                        + " propuestas y " + historia.contratacionesCreadas()
+                        + " contrataciones de demostración faltantes.");
+            }
         } catch (Exception e) {
             throw new IllegalStateException(
                     "[BD] No se pudieron sincronizar los datos de demostración.", e);
