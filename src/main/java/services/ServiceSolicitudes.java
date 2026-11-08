@@ -9,9 +9,9 @@ import entities.solicitudes.MensajeSolicitud;
 import entities.solicitudes.PropuestaServicio;
 import entities.SesionUsuario;
 import entities.solicitudes.SolicitudEjecucion;
-import repositories.RepositoryMensajesSolicitud;
-import repositories.RepositoryPropuestaServicio;
-import repositories.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryMensajesSolicitud;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
 
 public class ServiceSolicitudes {
 

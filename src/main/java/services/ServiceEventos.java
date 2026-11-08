@@ -13,7 +13,7 @@ import entities.servicios.ServicioSolicitable;
 import entities.finanzas.PresupuestoEvento;
 import entities.solicitudes.SolicitudServicioEvento;
 import java.math.BigDecimal;
-import repositories.RepositorySolicitudServicio;
+import repositories.solicitudes.RepositorySolicitudServicio;
 
 public class ServiceEventos {
     private final RepositoryEvento repositoryEvento;

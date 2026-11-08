@@ -18,7 +18,7 @@ public class PruebaCU01 {
         ServiceEventos serviceEventos =
                 new ServiceEventos(repositoryEvento, new repositories.eventos.RepositoryCancelacion(url),
                         new repositories.eventos.RepositoryFinalizacion(url, java.time.Clock.systemDefaultZone()),
-                        new repositories.RepositorySolicitudServicio(url));
+                        new repositories.solicitudes.RepositorySolicitudServicio(url));
 
         ControllerEventos controllerEventos =
                 new ControllerEventos(serviceEventos, new services.ServiceAutenticacion(

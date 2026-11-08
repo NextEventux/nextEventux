@@ -14,6 +14,9 @@ import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import repositories.*;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudServicio;
 import services.*;
 import static org.junit.jupiter.api.Assertions.*;
 

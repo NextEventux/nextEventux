@@ -29,12 +29,12 @@ import entities.contrataciones.DisponibilidadContratacion;
 import entities.contrataciones.PresupuestoContratacion;
 import entities.contrataciones.ResumenContratacionServicio;
 import entities.SesionUsuario;
-import repositories.RepositoryContratacionServicio;
+import repositories.solicitudes.RepositoryContratacionServicio;
 import repositories.RepositoryMovimientoFinanciero;
-import repositories.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.servicios.RepositoryServicio;
-import repositories.RepositorySolicitudEjecucion;
-import repositories.RepositorySolicitudServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositorySolicitudServicio;
 import services.ServiceContratacionServicio;
 import services.ServiceSolicitudes;
 

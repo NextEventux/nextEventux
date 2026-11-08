@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 import persistencia.DatabaseConnection;
 import entities.solicitudes.MensajeSolicitud;
 import entities.SesionUsuario;
-import repositories.RepositorySolicitudEjecucion;
-import repositories.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
 import services.ServiceSolicitudes;
 
 public class MensajesSolicitudH2Test {

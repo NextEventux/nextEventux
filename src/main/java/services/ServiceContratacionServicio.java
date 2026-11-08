@@ -5,7 +5,7 @@ import entities.contrataciones.DisponibilidadContratacion;
 import entities.contrataciones.PresupuestoContratacion;
 import entities.contrataciones.ResumenContratacionServicio;
 import entities.SesionUsuario;
-import repositories.RepositoryContratacionServicio;
+import repositories.solicitudes.RepositoryContratacionServicio;
 
 /**
  * CU-13: contratar un servicio a partir de la propuesta seleccionada en CU-12.

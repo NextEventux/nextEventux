@@ -6,8 +6,8 @@ import java.sql.Statement;
 
 import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
-import repositories.RepositoryPropuestaServicio;
-import repositories.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
 import services.ServiceSolicitudes;
 
 /**

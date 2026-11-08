@@ -1,4 +1,4 @@
-package repositories;
+package repositories.solicitudes;
 
 import entities.eventos.Evento;
 

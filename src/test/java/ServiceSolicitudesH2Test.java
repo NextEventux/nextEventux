@@ -23,8 +23,8 @@ import persistencia.DatabaseConnection;
 import entities.solicitudes.PropuestaServicio;
 import entities.SesionUsuario;
 import entities.solicitudes.SolicitudEjecucion;
-import repositories.RepositorySolicitudEjecucion;
-import repositories.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
 import services.ServiceSolicitudes;
 
 public class ServiceSolicitudesH2Test {
