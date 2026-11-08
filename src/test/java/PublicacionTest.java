@@ -1,12 +1,12 @@
-import config.DatabaseConnection;
-import entities.Evento;
+import persistencia.DatabaseConnection;
+import entities.eventos.Evento;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryPublicacion;
 import services.ServicePublicacion;
 import java.math.BigDecimal;

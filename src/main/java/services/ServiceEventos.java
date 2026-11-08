@@ -1,19 +1,19 @@
 package services;
 
-import entities.Evento;
-import entities.EdicionEvento;
+import entities.eventos.Evento;
+import entities.eventos.EdicionEvento;
 import entities.Organizador;
 import entities.SesionUsuario;
 import java.util.List;
-import repositories.RepositoryEvento;
-import repositories.RepositoryCancelacion;
-import repositories.RepositoryFinalizacion;
-import entities.Fotografia;
-import entities.ServicioSolicitable;
-import entities.PresupuestoEvento;
-import entities.SolicitudServicioEvento;
+import repositories.eventos.RepositoryEvento;
+import repositories.eventos.RepositoryCancelacion;
+import repositories.eventos.RepositoryFinalizacion;
+import entities.eventos.Fotografia;
+import entities.servicios.ServicioSolicitable;
+import entities.finanzas.PresupuestoEvento;
+import entities.solicitudes.SolicitudServicioEvento;
 import java.math.BigDecimal;
-import repositories.RepositorySolicitudServicio;
+import repositories.solicitudes.RepositorySolicitudServicio;
 
 public class ServiceEventos {
     private final RepositoryEvento repositoryEvento;

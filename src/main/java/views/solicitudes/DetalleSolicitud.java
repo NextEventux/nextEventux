@@ -1,7 +1,7 @@
 package views.solicitudes;
 
-import entities.ContextoSolicitud;
-import entities.SolicitudEjecucion;
+import entities.solicitudes.ContextoSolicitud;
+import entities.solicitudes.SolicitudEjecucion;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import views.FormatoUi;

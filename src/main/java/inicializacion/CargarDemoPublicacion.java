@@ -1,0 +1,27 @@
+package inicializacion;
+
+import entities.eventos.Evento;
+
+import persistencia.DatabaseConnection;
+
+import java.sql.Connection;
+import java.sql.Statement;
+
+/** Demostración explícita de CU03 en una base vacía; no ejecuta CU05. */
+public class CargarDemoPublicacion {
+    public static void main(String[] args) throws Exception {
+        try (Connection connection = DatabaseConnection.getConnection()) { cargar(connection); }
+        System.out.println("Demostración CU03 cargada: inicia sesión como laura.gomez y abre Publicaciones.");
+    }
+
+    public static void cargar(Connection connection) throws Exception {
+        // Esta operación se rechaza antes de escribir si la base ya contiene registros.
+        CargarDatosEjemplo.cargar(connection);
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("INSERT INTO Evento (id_organizador,nombre,tipo,fecha_inicio,fecha_fin,ubicacion,estado,"
+                    + "fecha_creacion,presupuesto,invitados_iniciales) VALUES "
+                    + "(1,'Evento finalizado de demostración','Social',TIMESTAMP '2026-09-01 09:00:00',"
+                    + "TIMESTAMP '2026-09-01 18:00:00','Bogotá','FINALIZADO',CURRENT_TIMESTAMP,1000000,25)");
+        }
+    }
+}

@@ -1,5 +1,8 @@
-import config.DatabaseConnection;
-import controllers.ControllerPublicacion;
+import repositories.eventos.RepositoryEvento;
+import entities.eventos.Evento;
+
+import persistencia.DatabaseConnection;
+import controllers.eventos.ControllerPublicacion;
 import entities.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,10 +1,10 @@
 
 import java.util.Date;
 
-import entities.DisponibilidadServicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
-import services.ServiceProveedores;
+import entities.servicios.DisponibilidadServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
+import services.proveedores.ServiceProveedores;
 
 // Comprueba que el service pueda registrar una disponibilidad
 public class PruebaDisponibilidadServiceProveedores {

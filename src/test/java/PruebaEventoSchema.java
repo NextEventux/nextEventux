@@ -1,5 +1,5 @@
-import config.DatabaseConnection;
-import entities.Evento;
+import persistencia.DatabaseConnection;
+import entities.eventos.Evento;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;

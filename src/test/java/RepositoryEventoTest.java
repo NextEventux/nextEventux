@@ -1,6 +1,6 @@
-import config.DatabaseConnection;
-import entities.Evento;
-import repositories.RepositoryEvento;
+import persistencia.DatabaseConnection;
+import entities.eventos.Evento;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -71,8 +71,8 @@ class RepositoryEventoTest {
     void cargaEjemplosSinSobrescribirUnaBaseExistente() throws Exception {
         String url = "jdbc:h2:" + directorio.resolve("ejemplos");
         try (Connection connection = DatabaseConnection.getConnection(url)) {
-            config.CargarDatosEjemplo.cargar(connection);
-            assertThrows(SQLException.class, () -> config.CargarDatosEjemplo.cargar(connection));
+            inicializacion.CargarDatosEjemplo.cargar(connection);
+            assertThrows(SQLException.class, () -> inicializacion.CargarDatosEjemplo.cargar(connection));
         }
         RepositoryEvento repository = new RepositoryEvento(url);
         assertEquals(4, repository.listarEventos().size());
@@ -100,7 +100,7 @@ class RepositoryEventoTest {
                     + "VALUES (2,'Ana Pérez','ana','prueba','ACTIVO',CURRENT_TIMESTAMP,FALSE,'ORGANIZADOR')");
             statement.executeUpdate("INSERT INTO Organizador (id_organizador,id_usuario,estado) VALUES (7,2,'ACTIVO')");
         }
-        var organizadores = new controllers.ControllerEventos(new ServiceEventos(new RepositoryEvento(url)))
+        var organizadores = new controllers.eventos.ControllerEventos(new ServiceEventos(new RepositoryEvento(url)))
                 .listarOrganizadores();
         assertEquals(2, organizadores.size());
         assertEquals("Ana Pérez", organizadores.get(0).nombre());

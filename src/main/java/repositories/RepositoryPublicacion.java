@@ -1,8 +1,10 @@
 package repositories;
 
-import config.DatabaseConnection;
+import entities.eventos.Evento;
+
+import persistencia.DatabaseConnection;
 import entities.Administrador;
-import entities.PlantillaEvento;
+import entities.eventos.PlantillaEvento;
 import entities.SolicitudPublicacion;
 import java.sql.*;
 import java.util.ArrayList;
