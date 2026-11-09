@@ -1,5 +1,8 @@
 package views.components;
 
+import entities.invitaciones.Invitado;
+
+
 import java.util.Locale;
 import java.util.Objects;
 

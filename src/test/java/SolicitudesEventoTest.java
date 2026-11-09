@@ -1,5 +1,10 @@
-import config.DatabaseConnection;
-import controllers.ControllerEventos;
+import repositories.eventos.RepositoryEvento;
+import repositories.eventos.RepositoryCancelacion;
+import repositories.eventos.RepositoryFinalizacion;
+import entities.eventos.Evento;
+
+import persistencia.DatabaseConnection;
+import controllers.eventos.ControllerEventos;
 import entities.*;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -9,6 +14,10 @@ import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import repositories.*;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudServicio;
+import services.solicitudes.ServiceSolicitudes;
 import services.*;
 import static org.junit.jupiter.api.Assertions.*;
 

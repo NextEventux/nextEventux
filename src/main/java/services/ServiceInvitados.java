@@ -1,12 +1,14 @@
 package services;
 
-import entities.Evento;
-import entities.Invitacion;
-import entities.InvitacionRecibida;
-import entities.Invitado;
+import entities.eventos.Fotografia;
+
+import entities.eventos.Evento;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.InvitacionRecibida;
+import entities.invitaciones.Invitado;
 import entities.Lugar;
-import entities.Regalo;
-import entities.ReservaRegalo;
+import entities.invitaciones.Regalo;
+import entities.invitaciones.ReservaRegalo;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -14,12 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import repositories.RepositoryEvento;
-import repositories.RepositoryInvitacion;
-import repositories.RepositoryInvitado;
+import repositories.eventos.RepositoryEvento;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;
-import repositories.RepositoryRegalo;
-import repositories.RepositoryReservaRegalo;
+import repositories.invitaciones.RepositoryRegalo;
+import repositories.invitaciones.RepositoryReservaRegalo;
 
 /**
  * Reglas de negocio del módulo de invitados.
@@ -37,7 +39,7 @@ public class ServiceInvitados {
     private static final String MENSAJE_MESA_AJENA =
             "Solo el invitado puede usar su mesa de regalos. Verifica tu correo y tu teléfono.";
 
-    public List<entities.Fotografia> consultarGaleria(String correo, String telefono) {
+    public List<entities.eventos.Fotografia> consultarGaleria(String correo, String telefono) {
         String limpio=limpiar(correo);
         if(limpio==null || limpio.length()>150 || !CORREO.matcher(limpio).matches())
             throw new IllegalArgumentException("Ingresa un correo válido para consultar tu galería.");

@@ -1,7 +1,7 @@
-import entities.Servicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
-import services.ServiceProveedores;
+import entities.servicios.Servicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
+import services.proveedores.ServiceProveedores;
 
 // Comprueba que el service pueda enviar un servicio al repositorio
 public class PruebaServiceProveedores {

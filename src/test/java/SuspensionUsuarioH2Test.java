@@ -16,19 +16,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
 
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
 import repositories.RepositoryAdministracion;
 import repositories.RepositoryAdministracion.UsuarioAdministrable;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryContratacion;
 import repositories.RepositoryOrganizador;
-import repositories.RepositorySancionesProveedor;
+import repositories.proveedores.RepositorySancionesProveedor;
 import services.ServiceAdministracion;
 import services.ServiceAutenticacion;
-import services.ServiceSancionesProveedor;
-import services.ServiceSancionesProveedor.SolicitudSancion;
+import services.proveedores.ServiceSancionesProveedor;
+import services.proveedores.ServiceSancionesProveedor.SolicitudSancion;
 
 /**
  * CU-029 (suspender usuario) y su ampliacion (reactivar usuario) sobre H2 en

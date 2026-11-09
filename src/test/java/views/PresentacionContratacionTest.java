@@ -11,8 +11,8 @@ import java.time.LocalTime;
 
 import org.junit.jupiter.api.Test;
 
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
 
 class PresentacionContratacionTest {
 

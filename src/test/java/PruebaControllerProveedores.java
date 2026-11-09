@@ -1,11 +1,11 @@
 import java.util.Date;
 
-import controllers.ControllerProveedores;
-import entities.DisponibilidadServicio;
-import entities.Servicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
-import services.ServiceProveedores;
+import controllers.proveedores.ControllerProveedores;
+import entities.servicios.DisponibilidadServicio;
+import entities.servicios.Servicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
+import services.proveedores.ServiceProveedores;
 
 // Comprueba el flujo desde el controller hasta el repositorio
 public class PruebaControllerProveedores {

@@ -1,4 +1,4 @@
-import config.TestSchema;
+import persistencia.TestSchema;
 import org.junit.jupiter.api.Test;
 
 class SchemaPersistenciaTest {

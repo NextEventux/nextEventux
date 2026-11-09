@@ -5,14 +5,14 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import entities.CompromisoFinanciero;
-import entities.Evento;
-import entities.MovimientoFinanciero;
-import entities.Planificacion;
+import entities.finanzas.CompromisoFinanciero;
+import entities.eventos.Evento;
+import entities.finanzas.MovimientoFinanciero;
+import entities.eventos.Planificacion;
 import entities.SesionUsuario;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
-import repositories.RepositoryPlanificacion;
+import repositories.eventos.RepositoryPlanificacion;
 
 /**
  * CU06: consultar el estado financiero de un evento del organizador en sesión.

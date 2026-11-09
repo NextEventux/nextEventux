@@ -1,5 +1,9 @@
-import config.DatabaseConnection;
-import controllers.ControllerEventos;
+import repositories.eventos.RepositoryEvento;
+import repositories.eventos.RepositoryCancelacion;
+import entities.eventos.Evento;
+
+import persistencia.DatabaseConnection;
+import controllers.eventos.ControllerEventos;
 import entities.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

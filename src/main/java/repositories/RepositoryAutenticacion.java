@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
 
 public class RepositoryAutenticacion {

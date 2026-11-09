@@ -1,12 +1,15 @@
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import entities.eventos.Evento;
+import entities.eventos.Planificacion;
+
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
-import repositories.RepositoryPlanificacion;
+import repositories.eventos.RepositoryPlanificacion;
 import services.ServiceFinanciera;
 
 import java.math.BigDecimal;

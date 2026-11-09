@@ -1,7 +1,19 @@
-import config.*;
-import controllers.ControllerEventos;
+import repositories.eventos.RepositoryEvento;
+import repositories.eventos.RepositoryCancelacion;
+import repositories.eventos.RepositoryFinalizacion;
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.Invitado;
+
+import persistencia.*;
+import inicializacion.*;
+import controllers.eventos.ControllerEventos;
 import entities.*;
 import repositories.*;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import services.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

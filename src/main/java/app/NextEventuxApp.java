@@ -2,17 +2,17 @@ package app;
 
 import controllers.ControllerAdministracion;
 import controllers.ControllerAutenticacion;
-import controllers.ControllerContratacionServicio;
-import controllers.ControllerEventos;
+import controllers.solicitudes.ControllerContratacionServicio;
+import controllers.eventos.ControllerEventos;
 import controllers.ControllerFinanciera;
-import controllers.ControllerInvitados;
-import controllers.ControllerProveedores;
-import controllers.ControllerPublicacion;
-import controllers.ControllerSancionesProveedor;
-import controllers.ControllerSolicitudes;
-import entities.Evento;
-import entities.PropuestaServicio;
-import entities.Servicio;
+import controllers.eventos.ControllerInvitados;
+import controllers.proveedores.ControllerProveedores;
+import controllers.eventos.ControllerPublicacion;
+import controllers.proveedores.ControllerSancionesProveedor;
+import controllers.solicitudes.ControllerSolicitudes;
+import entities.eventos.Evento;
+import entities.solicitudes.PropuestaServicio;
+import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import java.util.Optional;
 
@@ -29,50 +29,50 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import repositories.RepositoryAutenticacion;
-import repositories.RepositoryAvisosProveedor;
+import repositories.proveedores.RepositoryAvisosProveedor;
 import repositories.RepositoryContratacion;
-import repositories.RepositoryContratacionServicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryEvento;
+import repositories.solicitudes.RepositoryContratacionServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.RepositoryOrganizador;
-import repositories.RepositoryPlanificacion;
-import repositories.RepositoryPropuestaServicio;
+import repositories.eventos.RepositoryPlanificacion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.RepositoryPublicacion;
-import repositories.RepositorySancionesProveedor;
-import repositories.RepositoryServicio;
-import repositories.RepositorySolicitudEjecucion;
+import repositories.proveedores.RepositorySancionesProveedor;
+import repositories.servicios.RepositoryServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
 import services.ServiceAdministracion;
 import services.ServiceAutenticacion;
-import services.ServiceAvisosProveedor;
-import services.ServiceContratacionServicio;
+import services.proveedores.ServiceAvisosProveedor;
+import services.solicitudes.ServiceContratacionServicio;
 import services.ServiceEventos;
 import services.ServiceFinanciera;
 import services.ServiceInvitados;
-import services.ServiceProveedores;
+import services.proveedores.ServiceProveedores;
 import services.ServicePublicacion;
-import services.ServiceSancionesProveedor;
-import services.ServiceSolicitudes;
+import services.proveedores.ServiceSancionesProveedor;
+import services.solicitudes.ServiceSolicitudes;
 import views.ViewAdministracion;
-import views.ViewAvisosProveedor;
-import views.ViewCancelacion;
-import views.ViewCatalogoServicios;
+import views.proveedores.ViewAvisosProveedor;
+import views.eventos.ViewCancelacion;
+import views.servicios.ViewCatalogoServicios;
 import views.ViewContratarServicio;
-import views.ViewDetalleServicio;
-import views.ViewDetalleServicioProveedor;
-import views.ViewEdicion;
-import views.ViewEventos;
-import views.ViewFinalizacion;
-import views.ViewFinanciera;
-import views.ViewInvitados;
-import views.ViewListaServiciosProveedor;
+import views.servicios.ViewDetalleServicio;
+import views.servicios.ViewDetalleServicioProveedor;
+import views.eventos.ViewEdicion;
+import views.eventos.ViewEventos;
+import views.eventos.ViewFinalizacion;
+import views.finanzas.ViewFinanciera;
+import views.invitaciones.ViewInvitados;
+import views.servicios.ViewListaServiciosProveedor;
 import views.ViewLogin;
-import views.ViewMisEventos;
+import views.eventos.ViewMisEventos;
 import views.ViewPropuestasOrganizador;
 import views.ViewPublicacion;
-import views.ViewSancionesProveedor;
-import views.ViewSolicitudesProveedor;
 import views.ViewUsuariosAdministracion;
+import views.proveedores.ViewSancionesProveedor;
+import views.proveedores.ViewSolicitudesProveedor;
 
 public class NextEventuxApp extends Application {
 
@@ -106,12 +106,42 @@ public class NextEventuxApp extends Application {
 
         // Una base recién creada no tiene usuarios: se cargan los ejemplos una sola vez.
         // Si ya tiene datos no se toca, así lo que se crea se conserva entre sesiones.
-        try (java.sql.Connection conexion = config.DatabaseConnection.getConnection()) {
-            if (config.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
+        try (java.sql.Connection conexion
+                = persistencia.DatabaseConnection.getConnectionParaSincronizarDemo()) {
+            if (inicializacion.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
                 System.out.println("[BD] Base vacía: se cargaron los datos de ejemplo.");
             }
+            int cuentasCreadas = inicializacion.SincronizarCuentasDemo.sincronizar(conexion);
+            if (cuentasCreadas > 0) {
+                System.out.println("[BD] Se sincronizaron " + cuentasCreadas
+                        + " cuentas de demostración faltantes.");
+            }
+            inicializacion.SincronizarCatalogoDemo.Resultado catalogo
+                    = inicializacion.SincronizarCatalogoDemo.sincronizar(conexion);
+            if (catalogo.eventosCreados() > 0 || catalogo.serviciosCreados() > 0) {
+                System.out.println("[BD] Se sincronizaron " + catalogo.eventosCreados()
+                        + " eventos y " + catalogo.serviciosCreados()
+                        + " servicios de demostración faltantes.");
+            }
+            inicializacion.SincronizarDisponibilidadDemo.Resultado disponibilidad
+                    = inicializacion.SincronizarDisponibilidadDemo.sincronizar(conexion);
+            if (disponibilidad.advertencia() != null) {
+                System.out.println("[BD] Aviso: " + disponibilidad.advertencia());
+            }
+            inicializacion.SincronizarHistoriaDemo.Resultado historia
+                    = inicializacion.SincronizarHistoriaDemo.sincronizar(conexion);
+            if (historia.necesidadesCreadas() > 0 || historia.solicitudesCreadas() > 0
+                    || historia.propuestasCreadas() > 0
+                    || historia.contratacionesCreadas() > 0) {
+                System.out.println("[BD] Se sincronizaron " + historia.necesidadesCreadas()
+                        + " necesidades, " + historia.solicitudesCreadas()
+                        + " solicitudes, " + historia.propuestasCreadas()
+                        + " propuestas y " + historia.contratacionesCreadas()
+                        + " contrataciones de demostración faltantes.");
+            }
         } catch (Exception e) {
-            System.err.println("[BD] No se pudieron cargar los datos de ejemplo: " + e.getMessage());
+            throw new IllegalStateException(
+                    "[BD] No se pudieron sincronizar los datos de demostración.", e);
         }
 
         serviceAutenticacion = new ServiceAutenticacion(new RepositoryAutenticacion());

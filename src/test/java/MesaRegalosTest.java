@@ -1,9 +1,11 @@
-import config.DatabaseConnection;
-import controllers.ControllerInvitados;
-import entities.Invitacion;
-import entities.Invitado;
-import entities.Evento;
-import entities.Regalo;
+import entities.invitaciones.ReservaRegalo;
+
+import persistencia.DatabaseConnection;
+import controllers.eventos.ControllerInvitados;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.Invitado;
+import entities.eventos.Evento;
+import entities.invitaciones.Regalo;
 import entities.SesionUsuario;
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -14,12 +16,12 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import repositories.RepositoryEvento;
-import repositories.RepositoryInvitacion;
-import repositories.RepositoryInvitado;
+import repositories.eventos.RepositoryEvento;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;
-import repositories.RepositoryRegalo;
-import repositories.RepositoryReservaRegalo;
+import repositories.invitaciones.RepositoryRegalo;
+import repositories.invitaciones.RepositoryReservaRegalo;
 import services.ServiceInvitados;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -264,8 +266,8 @@ class MesaRegalosTest {
         // La invitación se revoca directamente en la BD, después de lo que el servicio ya validó.
         RepositoryReservaRegalo reservas = new RepositoryReservaRegalo(url);
         ejecutar("UPDATE Invitacion SET estado_respuesta = 'REVOCADA' WHERE id_invitacion = " + invitacion);
-        assertMensaje(() -> reservas.registrarReserva(new entities.ReservaRegalo(0, EVENTO, ana, cobija,
-                java.time.LocalDateTime.now(), entities.ReservaRegalo.ESTADO_RESERVADO)), "revocada");
+        assertMensaje(() -> reservas.registrarReserva(new entities.invitaciones.ReservaRegalo(0, EVENTO, ana, cobija,
+                java.time.LocalDateTime.now(), entities.invitaciones.ReservaRegalo.ESTADO_RESERVADO)), "revocada");
         assertEquals(0, contarReservasActivas(cobija));
     }
 

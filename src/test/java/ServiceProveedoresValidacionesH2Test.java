@@ -1,3 +1,5 @@
+import entities.eventos.Fotografia;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
@@ -9,11 +11,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
-import entities.Servicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryServicio;
-import services.ServiceProveedores;
+import persistencia.DatabaseConnection;
+import entities.servicios.Servicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.servicios.RepositoryServicio;
+import services.proveedores.ServiceProveedores;
 
 /**
  * CU-11: validaciones al guardar y editar un servicio.

@@ -1,12 +1,14 @@
+import entities.eventos.Evento;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
-import repositories.RepositoryPropuestaServicio;
-import repositories.RepositorySolicitudEjecucion;
-import services.ServiceSolicitudes;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import services.solicitudes.ServiceSolicitudes;
 
 /**
  * Datos mínimos de CU-12 para las pruebas en H2 en memoria: un organizador con

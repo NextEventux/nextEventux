@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 
 /**
  * Acceso a datos del modulo de administracion para CU-029

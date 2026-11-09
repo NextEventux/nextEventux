@@ -1,3 +1,6 @@
+import entities.invitaciones.Invitado;
+import entities.invitaciones.Regalo;
+
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,8 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;
@@ -35,6 +38,7 @@ public class DatosDemostracionH2Test {
                                 .startsWith("jdbc:h2:mem:datos_demostracion"));
 
                 CargarDatosEjemplo.cargar(connection);
+                assertEquals(0, inicializacion.SincronizarCuentasDemo.sincronizar(connection));
             }
 
             ServiceAutenticacion service
@@ -48,6 +52,10 @@ public class DatosDemostracionH2Test {
             comprobarUsuario(service, "decoraciones.arcoiris", "PROVEEDOR");
             comprobarUsuario(service, "sabores.eventos", "PROVEEDOR");
             comprobarUsuario(service, "flash", "PROVEEDOR");
+
+            comprobarUsuario(service, "ana.martinez", "CLIENTE");
+            comprobarUsuario(service, "diego.perez", "CLIENTE");
+            comprobarUsuario(service, "paula.rios", "CLIENTE");
 
             comprobarUsuario(service, "camila", "ADMINISTRADOR");
             comprobarUsuario(service, "mateo", "ADMINISTRADOR");

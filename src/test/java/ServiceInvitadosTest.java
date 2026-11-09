@@ -1,6 +1,8 @@
-import controllers.ControllerInvitados;
-import entities.Invitacion;
-import entities.Invitado;
+import entities.eventos.Evento;
+
+import controllers.eventos.ControllerInvitados;
+import entities.invitaciones.Invitacion;
+import entities.invitaciones.Invitado;
 import entities.SesionUsuario;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -8,9 +10,9 @@ import java.sql.Statement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import repositories.RepositoryEvento;
-import repositories.RepositoryInvitacion;
-import repositories.RepositoryInvitado;
+import repositories.eventos.RepositoryEvento;
+import repositories.invitaciones.RepositoryInvitacion;
+import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;
 import services.ServiceInvitados;
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,7 +80,7 @@ class ServiceInvitadosTest {
         assertThrows(IllegalStateException.class,
                 () -> new ControllerInvitados(service, forjada).listarEventos());
 
-        try (Connection connection = config.DatabaseConnection.getConnection(url);
+        try (Connection connection = persistencia.DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE Usuario SET estado = 'INACTIVO' WHERE id_usuario = 1");
         }
@@ -288,7 +290,7 @@ class ServiceInvitadosTest {
 
     // ---------------------------------------------------------------- utilidades
     private void cambiarEstadoEvento(int evento, String estado) throws Exception {
-        try (java.sql.Connection c = config.DatabaseConnection.getConnection(url);
+        try (java.sql.Connection c = persistencia.DatabaseConnection.getConnection(url);
              java.sql.Statement s = c.createStatement()) {
             s.executeUpdate("UPDATE Evento SET estado = '" + estado + "' WHERE id_evento = " + evento);
         }

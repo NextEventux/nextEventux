@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
 import repositories.RepositoryAdministracion;
 import repositories.RepositoryContratacion;

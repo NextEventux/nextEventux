@@ -1,3 +1,7 @@
+import repositories.eventos.RepositoryCancelacion;
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -19,20 +23,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
-import entities.ConfirmacionContratacion;
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
-import entities.ResumenContratacionServicio;
+import persistencia.DatabaseConnection;
+import entities.contrataciones.ConfirmacionContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
+import entities.contrataciones.ResumenContratacionServicio;
 import entities.SesionUsuario;
-import repositories.RepositoryContratacionServicio;
+import repositories.solicitudes.RepositoryContratacionServicio;
 import repositories.RepositoryMovimientoFinanciero;
-import repositories.RepositoryPropuestaServicio;
-import repositories.RepositoryServicio;
-import repositories.RepositorySolicitudEjecucion;
-import repositories.RepositorySolicitudServicio;
-import services.ServiceContratacionServicio;
-import services.ServiceSolicitudes;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import repositories.servicios.RepositoryServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositorySolicitudServicio;
+import services.solicitudes.ServiceContratacionServicio;
+import services.solicitudes.ServiceSolicitudes;
 
 /**
  * CU-13 (contratar servicio) sobre H2 en memoria, recorriendo el flujo real:
@@ -523,8 +527,8 @@ public class ServiceContratacionServicioH2Test {
                 new BigDecimal("2000000"), "Alcance", "Condiciones");
         contratacion.contratar(ORG, propuesta);
 
-        services.ServiceProveedores proveedores = new services.ServiceProveedores(
-                new RepositoryServicio(), new repositories.RepositoryDisponibilidadServicio());
+        services.proveedores.ServiceProveedores proveedores = new services.proveedores.ServiceProveedores(
+                new RepositoryServicio(), new repositories.servicios.RepositoryDisponibilidadServicio());
 
         IllegalStateException error = assertThrows(IllegalStateException.class,
                 () -> proveedores.retirarServicio(PROV_A, SERVICIO_A));
@@ -539,7 +543,7 @@ public class ServiceContratacionServicioH2Test {
                 new BigDecimal("2000000"), "Alcance", "Condiciones");
         contratacion.contratar(ORG, propuesta);
 
-        new repositories.RepositoryCancelacion().cancelar(EVENTO, ORG);
+        new repositories.eventos.RepositoryCancelacion().cancelar(EVENTO, ORG);
 
         assertEquals("CANCELADA", texto("SELECT estado FROM Contratacion"));
         assertEquals("DISPONIBLE", texto("SELECT estado FROM Disponibilidad_Servicio WHERE id_servicio=" + SERVICIO_A));
@@ -598,11 +602,11 @@ public class ServiceContratacionServicioH2Test {
     }
 
     private String estadoVisible(int propuesta) {
-        List<entities.PropuestaServicio> propuestas = solicitudesOrg.listarPropuestasOrganizador(ORG);
+        List<entities.solicitudes.PropuestaServicio> propuestas = solicitudesOrg.listarPropuestasOrganizador(ORG);
         return propuestas.stream()
                 .filter(p -> p.getIdPropuesta() == propuesta)
                 .findFirst()
-                .map(entities.PropuestaServicio::getEstado)
+                .map(entities.solicitudes.PropuestaServicio::getEstado)
                 .orElse(null);
     }
 
