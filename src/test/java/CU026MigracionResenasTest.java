@@ -1,5 +1,5 @@
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import controllers.ControllerAdministracion;
 import entities.Organizador;
 import entities.SesionUsuario;

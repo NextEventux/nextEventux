@@ -1,3 +1,6 @@
+import entities.eventos.Evento;
+import entities.eventos.Fotografia;
+
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -16,13 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
-import entities.PropuestaServicio;
+import persistencia.DatabaseConnection;
+import entities.solicitudes.PropuestaServicio;
 import entities.SesionUsuario;
-import entities.SolicitudEjecucion;
-import repositories.RepositorySolicitudEjecucion;
-import repositories.RepositoryPropuestaServicio;
-import services.ServiceSolicitudes;
+import entities.solicitudes.SolicitudEjecucion;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
+import services.solicitudes.ServiceSolicitudes;
 
 public class ServiceSolicitudesH2Test {
 

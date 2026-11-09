@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import controllers.ControllerAdministracion;
 import entities.Contratacion;
 import entities.Organizador;
@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryContratacion;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryOrganizador;
 import repositories.RepositoryPublicacion;
 import services.OrganizadorNoDisponibleException;

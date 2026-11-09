@@ -1,3 +1,5 @@
+import entities.eventos.Evento;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,10 +12,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.DatabaseConnection;
-import entities.EventoSolicitable;
-import entities.NecesidadAbierta;
-import services.ServiceSolicitudes;
+import persistencia.DatabaseConnection;
+import entities.eventos.EventoSolicitable;
+import entities.solicitudes.NecesidadAbierta;
+import services.solicitudes.ServiceSolicitudes;
 
 /** CU-12: el organizador elige su evento y su necesidad por nombre. */
 class SolicitudDeServicioH2Test {

@@ -11,13 +11,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 import entities.SesionUsuario;
-import repositories.RepositorySancionesProveedor;
-import services.ServiceSancionesProveedor;
-import services.ServiceSancionesProveedor.ResultadoSancion;
-import services.ServiceSancionesProveedor.SolicitudSancion;
+import repositories.proveedores.RepositorySancionesProveedor;
+import services.proveedores.ServiceSancionesProveedor;
+import services.proveedores.ServiceSancionesProveedor.ResultadoSancion;
+import services.proveedores.ServiceSancionesProveedor.SolicitudSancion;
 
 /**
  * CU-09 (aplicar sanciones) sobre H2 en memoria, con los datos del seed:

@@ -1,10 +1,10 @@
-import controllers.ControllerEventos;
-import entities.Evento;
+import controllers.eventos.ControllerEventos;
+import entities.eventos.Evento;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
-import repositories.RepositoryEvento;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

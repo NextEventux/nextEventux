@@ -1,11 +1,13 @@
 package views;
 
-import controllers.ControllerContratacionServicio;
-import entities.ConfirmacionContratacion;
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
-import entities.PropuestaServicio;
-import entities.ResumenContratacionServicio;
+import entities.eventos.Evento;
+
+import controllers.solicitudes.ControllerContratacionServicio;
+import entities.contrataciones.ConfirmacionContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
+import entities.solicitudes.PropuestaServicio;
+import entities.contrataciones.ResumenContratacionServicio;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

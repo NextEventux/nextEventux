@@ -1,8 +1,10 @@
+import repositories.eventos.RepositoryCancelacion;
+import repositories.eventos.RepositoryFinalizacion;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import controllers.ControllerEventos;
-import entities.Evento;
-import repositories.RepositoryEvento;
+import controllers.eventos.ControllerEventos;
+import entities.eventos.Evento;
+import repositories.eventos.RepositoryEvento;
 import services.ServiceEventos;
 
 public class PruebaCU01 {
@@ -10,13 +12,13 @@ public class PruebaCU01 {
     public static void main(String[] args) throws Exception {
 
         String url = "jdbc:h2:" + java.nio.file.Files.createTempDirectory("cu01-ejemplo-").resolve("eventos");
-        try (var c=config.DatabaseConnection.getConnection(url)) { config.CargarDatosEjemplo.cargar(c); }
+        try (var c=persistencia.DatabaseConnection.getConnection(url)) { inicializacion.CargarDatosEjemplo.cargar(c); }
         RepositoryEvento repositoryEvento = new RepositoryEvento(url);
 
         ServiceEventos serviceEventos =
-                new ServiceEventos(repositoryEvento, new repositories.RepositoryCancelacion(url),
-                        new repositories.RepositoryFinalizacion(url, java.time.Clock.systemDefaultZone()),
-                        new repositories.RepositorySolicitudServicio(url));
+                new ServiceEventos(repositoryEvento, new repositories.eventos.RepositoryCancelacion(url),
+                        new repositories.eventos.RepositoryFinalizacion(url, java.time.Clock.systemDefaultZone()),
+                        new repositories.solicitudes.RepositorySolicitudServicio(url));
 
         ControllerEventos controllerEventos =
                 new ControllerEventos(serviceEventos, new services.ServiceAutenticacion(

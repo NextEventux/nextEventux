@@ -1,4 +1,4 @@
-import config.DatabaseConnection;
+import persistencia.DatabaseConnection;
 import entities.Contratacion;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

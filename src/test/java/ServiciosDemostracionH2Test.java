@@ -12,8 +12,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import config.CargarDatosEjemplo;
-import config.DatabaseConnection;
+import inicializacion.CargarDatosEjemplo;
+import persistencia.DatabaseConnection;
 
 /** Datos de demostración de CU-11: cada proveedor tiene servicios en varios estados. */
 public class ServiciosDemostracionH2Test {

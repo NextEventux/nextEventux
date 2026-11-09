@@ -1,7 +1,7 @@
 package views.solicitudes;
 
-import entities.ContextoSolicitud;
-import entities.PropuestaServicio;
+import entities.solicitudes.ContextoSolicitud;
+import entities.solicitudes.PropuestaServicio;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
