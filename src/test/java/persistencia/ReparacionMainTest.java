@@ -12,8 +12,9 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReparacionMainTest {
-    /** Migraciones versionadas de organizador, contratación y catálogo demo. */
-    private static final int MIGRACIONES_REGISTRADAS = 4;
+    // Migraciones registradas: 010, 011, 012, 013 de Marketing y 015 del catálogo demo.
+
+    private static final int MIGRACIONES_REGISTRADAS = 5;
 
     @TempDir Path carpeta;
 
