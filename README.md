@@ -30,24 +30,17 @@ Las pruebas automatizadas cubren reglas de negocio y persistencia en H2 para los
 - Los avisos son internos a la aplicación. No se envían correos ni se procesan pagos bancarios.
 - Los invitados consultan información con datos de contacto registrados, no con una cuenta autenticada.
 - El sistema permite consultar reseñas de organizadores asociadas a su contratación. El flujo de calificación de proveedores (CU14) todavía no está verificado como una funcionalidad integrada. La existencia de la tabla `Resena` no demuestra por sí sola que ese caso de uso esté completo.
-- La integración de reservas de lugares requiere verificar el flujo que persiste la reserva y su vínculo con el evento; consulta la [nota de integración de CU04](docs/integracion-cu04.md).
-- La especificación y los incrementos están sujetos a revisión e integración con los módulos relacionados. Consulta las fichas técnicas enlazadas más abajo; no extrapoles el estado de un módulo a los 30 casos de uso.
+- La consulta de invitaciones mediante correo y teléfono registrados no autentica la propiedad de esos datos.
+- La integración de reservas de lugares requiere verificar que el flujo que asigna un lugar persista `Evento.id_lugar`; no se debe inferir la reserva a partir del texto de ubicación.
+- La especificación y los incrementos están sujetos a revisión e integración con los módulos relacionados; no extrapoles el estado de un módulo a los 30 casos de uso.
 
-## Capturas de funcionalidades
+### Invariantes técnicos relevantes
 
-Las siguientes capturas están incluidas en el repositorio como evidencia de incrementos funcionales. Documentan pantallas reales, pero pueden diferir de la interfaz más reciente.
-
-**Solicitudes de servicios y presupuesto**
-
-![Pantalla de solicitudes y presupuesto de un evento](docs/evidencias/cu01-servicios-presupuesto.png)
-
-**Avisos internos para proveedores**
-
-![Bandeja de avisos de un proveedor](docs/evidencias/cu04-avisos-proveedor.png)
-
-**Finalización de evento y entrega de galería**
-
-![Pantalla de finalización de evento](docs/evidencias/cu05-finalizacion.png)
+- Las solicitudes conservan el precio al crearse y su costo cuenta una sola vez cuando se contrata. Si una solicitud histórica activa no tiene costo registrado, requiere conciliación; no se debe inferir el precio actual del catálogo. Las propuestas pueden tener versiones y los ajustes corresponden a una versión concreta.
+- Cancelar o finalizar solo libera reservas que no tengan otro compromiso activo. Una asociación incoherente de una contratación con su disponibilidad bloquea la operación.
+- La finalización guarda fotografías y libera recursos antes de enviar avisos internos. Si falla el envío, se puede reintentar sin volver a cargar fotos; no se deben borrar esos datos ni reiniciar la base para resolverlo.
+- Publicar un servicio requiere disponibilidad; no se puede retirar si hay solicitudes pendientes o contrataciones activas.
+- `014_cuentas_demostracion.sql` no se ejecuta al iniciar la aplicación. Ejecutarlo manualmente restablece contraseñas coincidentes de cuentas oficiales a `1234`; no lo ejecutes sobre tu H2 sin verificar primero sus efectos.
 
 ## Tecnologías y arquitectura
 
@@ -111,7 +104,7 @@ La URL por defecto incluye `AUTO_SERVER=TRUE`, así que la base se puede consult
 
 Hay que escribir `AUTO_SERVER=TRUE` en la herramienta: sin esa opción H2 rechaza la segunda conexión porque el archivo ya está abierto. Si la aplicación se abrió con una versión anterior, se cierra una vez para que arranque con la URL nueva. Los cambios hechos desde la aplicación se ven desde la herramienta en cuanto se guardan, y viceversa.
 
-Los datos persisten entre ejecuciones. **No borres ni reemplaces el archivo de H2 para solucionar problemas si contiene información que quieras conservar.** Antes de cambiar la ubicación o manipular la base, cierra la aplicación y haz una copia de seguridad. La [documentación de persistencia y presupuesto](docs/cu01-solicitudes-presupuesto.md) explica reglas y limitaciones adicionales.
+Los datos persisten entre ejecuciones. **No borres ni reemplaces el archivo de H2 para solucionar problemas si contiene información que quieras conservar.** Antes de cambiar la ubicación o manipular la base, cierra la aplicación y haz una copia de seguridad.
 
 ## Módulos del alcance y equipo
 
@@ -128,12 +121,10 @@ Los módulos y rangos de casos de uso siguientes reflejan la organización acad�
 
 ## Documentación técnica
 
-- [Solicitudes de eventos y presupuesto](docs/cu01-solicitudes-presupuesto.md)
-- [Integración de cancelaciones con proveedores e invitados](docs/integracion-cu04.md)
-- [Finalización de eventos](docs/cu05-finalizar-evento.md)
-- [Navegación e interfaz compartidas](docs/navegacion-compartida.md)
-- [Guía de implementación y validación](GUIA_IMPLEMENTACION_Y_VALIDACION.md)
-- [Conciliación de Pull Requests](docs/conciliacion-prs.md) — referencia histórica de integración; no es el estado en tiempo real de GitHub.
+Guías para entender el código y los procesos actuales:
+
+- [Guía de implementación y validación](GUIA_IMPLEMENTACION_Y_VALIDACION.md) — principios académicos; el flujo de colaboración vigente está en CONTRIBUTING.
+- [Guion de demostración](docs/guion-demostracion.md)
 
 Los documentos académicos institucionales (por ejemplo, SRS, PMP y controles de alcance) se mantienen en la ubicación acordada por el equipo; no todos forman parte de este repositorio.
 
@@ -142,16 +133,3 @@ Los documentos académicos institucionales (por ejemplo, SRS, PMP y controles de
 Consulta [`CONTRIBUTING.md`](CONTRIBUTING.md) antes de trabajar. El flujo del equipo usa ramas temporales para tareas o casos de uso y Pull Requests hacia `main`; no se desarrollan funcionalidades directamente sobre `main`. Cada contribución debe incluir las pruebas aplicables y recibir la revisión de otro integrante antes de integrarse. La plantilla vigente del repositorio está en [`.github/pull_request_template.md`](.github/pull_request_template.md).
 
 GitHub Issues y el tablero Kanban son recursos opcionales; no sustituyen el control oficial de alcance acordado por el equipo. La guía de contribución contiene las convenciones, los criterios de revisión y el procedimiento detallado.
-
-## Registro histórico de iteraciones
-
-<details>
-<summary>README original, detalles técnicos y cifras de iteraciones anteriores</summary>
-
-La [versión original del README en el historial de Git](https://github.com/NextEventux/nextEventux/blob/6a43de7/README.md) conserva documentación de iteraciones anteriores. Es una referencia histórica, no una descripción vigente de todas las funcionalidades; para el estado y los detalles técnicos actuales consulta las fichas de `docs/` y el código.
-
-Como contexto técnico no repetido en las fichas actuales, aquella versión describía que CU02 limitaba la edición a los datos generales de eventos propios en planeación, y que CU03 separaba la solicitud de publicación del organizador de la revisión administrativa. La publicación guardaba una plantilla estructural —sin trasladar datos personales ni presupuesto del evento— y agrupaba decisión y avisos en transacciones. Son apuntes de una iteración anterior, no garantías sobre el estado actual; consulta [CU01 y presupuesto](docs/cu01-solicitudes-presupuesto.md), [integración de CU04](docs/integracion-cu04.md) y [finalización CU05](docs/cu05-finalizar-evento.md) para los detalles técnicos documentados.
-
-El README histórico registraba resultados de pruebas de distintas iteraciones: 16 pruebas para la primera implementación de CU01, 82 para una iteración de CU02, 91 para una iteración de CU03, 117 para una iteración de CU04 y 134 para una iteración de CU05. Son **datos históricos de estados distintos**: no describen la suite actual, no se deben sumar entre sí ni usar como métricas vigentes.
-
-</details>

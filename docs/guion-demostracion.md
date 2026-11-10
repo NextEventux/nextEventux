@@ -72,7 +72,7 @@ Cada proveedor tiene cinco servicios oficiales. Sus estados y la cantidad de sol
    La pantalla ya muestra la disponibilidad verificada y el presupuesto antes y
    después. Confirma la contratación.
 6. **Navegación.** Con cada rol revisa que el menú lateral se mantiene igual en
-   todas las pantallas (ver `navegacion-compartida.md`).
+   todas las pantallas.
 
 ## Límites del escenario
 

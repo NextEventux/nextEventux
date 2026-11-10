@@ -1,8 +1,18 @@
 # Guía de implementación y validación — NextEventux
 
+> **Vigencia:** esta guía reúne principios de análisis, implementación y validación.
+> Los listados de alcance y primera iteración que conserva son registros de una
+> etapa anterior, no el Product Backlog vigente. Para el proceso actual de ramas,
+> commits, Pull Requests, revisiones y seguimiento, consulta
+> [CONTRIBUTING.md](CONTRIBUTING.md). Los requisitos oficiales y el seguimiento
+> vigente se consultan en las fuentes acordadas por el equipo; el estado del
+> código se verifica con las pruebas del repositorio.
+
 ## 1. Propósito
 
-Esta guía define el flujo de trabajo que seguirá el equipo durante la etapa de implementación y validación de NextEventux.
+Esta guía apoya el análisis de requisitos, la implementación y la validación de
+NextEventux. El procedimiento vigente de colaboración está centralizado en
+`CONTRIBUTING.md`.
 
 Los diagramas desarrollados hasta este momento representan una primera iteración del diseño del sistema. La implementación de los casos de uso permitirá comprobar si las clases, métodos, relaciones, responsabilidades y estructuras de persistencia propuestas son suficientes para representar el comportamiento definido en los requisitos.
 
@@ -40,56 +50,28 @@ Primero debe identificarse si el problema corresponde al código, configuración
 
 ---
 
-# 2. Alcance de esta etapa
+# 2. Alcance y vigencia
 
-La documentación del sistema continúa describiendo el sistema completo.
+La documentación académica puede describir el sistema completo aunque el
+repositorio solo implemente una parte de los requisitos. La presencia de un
+caso de uso en un documento, una pantalla o una tabla no demuestra por sí sola
+que esté terminado, integrado o aceptado.
 
-Sin embargo, la implementación comprometida actualmente se concentra en los casos de uso definidos en el Product Backlog.
+El estado y compromiso vigentes se consultan en las fuentes oficiales del
+equipo, incluido el `Control_de_Alcance_NextEventux.xlsx` y los requisitos
+aprobados. Este repositorio no mantiene una copia vigente del Product Backlog.
+No se debe usar una lista histórica de esta guía para asignar trabajo ni
+determinar qué casos están comprometidos.
 
-Los casos de uso comprometidos actualmente son:
-
-## Gestión de Eventos — Sara Coy
-
-- CU01 — Crear evento
-- CU03 — Subir evento a la plataforma
-- CU05 — Finalizar evento
-
-## Gestión Financiera — Valeria Salgado
-
-- CU06 — Consultar estado financiero
-- CU08 — Gestionar paquetes de servicio
-- CU09 — Gestionar sanciones por incumplimiento
-
-## Gestión de Proveedores — Isabella Hermosa
-
-- CU11 — Gestionar servicio
-- CU12 — Aceptar/Rechazar solicitud de ejecución
-- CU13 — Contratar servicio
-
-## Gestión de Invitados — Sofía Cortés
-
-- CU17 — Gestionar invitaciones del evento
-- CU20 — Interactuar con la mesa de regalos virtual
-
-## Marketing — Saúl Cruz
-
-- CU21 — Segmentar clientes automáticamente
-- CU23 — Crear campaña de marketing
-
-## Administración — Juan Diego Rojas
-
-- CU28 — Aprobar proveedores
-- CU30 — Verificar, categorizar y aprobar organizador
-
-Los demás casos de uso pueden seguir apareciendo en los modelos y en la documentación general del sistema aunque no formen parte del compromiso actual de implementación.
-
-No deben eliminarse del diseño únicamente porque no estén siendo programados en esta etapa.
+No deben eliminarse requisitos o elementos de diseño únicamente porque no
+estén implementados en el incremento actual.
 
 ---
 
-# 3. Arquitectura utilizada
+# 3. Arquitectura y estructura del código
 
-La organización inicial del código está basada en las siguientes responsabilidades:
+El código separa responsabilidades entre interfaz, controladores, servicios,
+repositorios, entidades e inicialización/persistencia. El flujo conceptual es:
 
 ```text
 View
@@ -105,27 +87,39 @@ Entity
 Persistencia
 ```
 
-La estructura inicial del proyecto es:
+La estructura real incluye subpaquetes por área y ha evolucionado respecto de
+la organización inicial. Entre sus rutas principales están:
 
 ```text
 src/
 ├── main/
 │   ├── java/
-│   │   ├── controllers/
-│   │   ├── entities/
-│   │   ├── repositories/
-│   │   ├── services/
-│   │   └── views/
+│   │   ├── app/
+│   │   ├── controllers/   (por ejemplo: eventos, proveedores, solicitudes)
+│   │   ├── entities/      (incluye modelos agrupados por área)
+│   │   ├── inicializacion/
+│   │   ├── persistencia/
+│   │   ├── repositories/  (incluye módulos y repositorios por área)
+│   │   ├── services/      (incluye servicios agrupados por área)
+│   │   └── views/         (pantallas JavaFX y componentes)
 │   └── resources/
+│       ├── migrations/
+│       ├── schema.sql
+│       └── seed.sql
 └── test/
     └── java/
 ```
 
-Esta estructura representa una primera organización del código y podrá ajustarse si la implementación demuestra que existe una necesidad real.
+La lista es orientativa, no un inventario exhaustivo de paquetes. Antes de
+agregar capas o carpetas, identifica una responsabilidad y una necesidad reales.
 
 No se deben crear carpetas, capas o componentes únicamente por conveniencia o porque sean comunes en otros proyectos.
 
 Todo elemento nuevo debe tener una responsabilidad identificable dentro de NextEventux.
+
+La navegación reutiliza las pantallas registradas por defecto. Invalida una ruta
+antes de volver a ella si debe reconstruirse con datos actualizados; usa el
+registro dinámico solo cuando la pantalla deba crearse de nuevo en cada visita.
 
 ---
 
@@ -187,13 +181,18 @@ Debe registrarse como duda o hallazgo.
 
 ---
 
-# 5. Estrategia inicial de implementación
+# 5. Estrategia de implementación
 
-No se recomienda comenzar implementando simultáneamente todos los casos de uso asignados a un módulo.
+Para reducir riesgos, conviene validar primero un flujo pequeño y representativo
+antes de ampliar el alcance a otros flujos o módulos.
 
-Cada integrante comenzará validando un primer caso de uso.
+La tabla que sigue es un registro de una primera iteración descrita en una
+versión anterior de esta guía. **No representa la asignación ni el Product
+Backlog vigentes.** Se conserva como referencia histórica, no como instrucción
+de trabajo:
 
-Primera iteración seleccionada:
+<details>
+<summary>Registro histórico de primera iteración</summary>
 
 | Responsable | Caso de uso inicial |
 |---|---|
@@ -204,146 +203,18 @@ Primera iteración seleccionada:
 | Saúl Cruz | CU21 — Segmentar clientes automáticamente |
 | Juan Diego Rojas | CU28 — Aprobar proveedores |
 
-El objetivo de esta primera implementación es recorrer un flujo suficientemente representativo para comprobar el diseño.
+</details>
 
 Completar una parte del flujo no significa automáticamente que el caso de uso completo se encuentre terminado.
 
 ---
 
-# 6. Flujo de trabajo con Git
+# 6. Flujo de colaboración
 
-## 6.1. Rama principal
-
-La rama:
-
-```text
-main
-```
-
-representa la versión estable del proyecto.
-
-No se debe desarrollar directamente sobre `main`.
-
-Antes de iniciar un nuevo trabajo:
-
-```bash
-git switch main
-git pull
-```
-
-Después se crea una rama temporal para el requerimiento.
-
----
-
-## 6.2. Ramas por requerimiento
-
-Cada desarrollador debe trabajar en una rama separada asociada al requerimiento que está implementando.
-
-La convención utilizada por el equipo será:
-
-```text
-CUXX-descripcion-corta
-```
-
-Ejemplos:
-
-```text
-CU01-crear-evento
-CU06-consultar-estado-financiero
-CU11-gestionar-servicio
-CU17-gestionar-invitaciones
-CU21-segmentar-clientes
-CU28-aprobar-proveedores
-```
-
-Reglas:
-
-- utilizar el código del caso de uso;
-- utilizar una descripción corta y representativa;
-- no utilizar espacios;
-- crear la rama antes de comenzar a realizar cambios;
-- una rama debe tener un objetivo identificable;
-- evitar mezclar requerimientos diferentes dentro de la misma rama.
-
-Ejemplo:
-
-```bash
-git switch main
-git pull
-git switch -c CU11-gestionar-servicio
-```
-
-Para tareas que no pertenecen directamente a un CU puede utilizarse un nombre descriptivo.
-
-Ejemplo:
-
-```text
-documentar-guia-implementacion-validacion
-```
-
----
-
-## 6.3. Commits
-
-Antes de realizar un commit debe revisarse qué archivos serán incluidos.
-
-Comandos básicos:
-
-```bash
-git status
-git add <archivo>
-git commit -m "mensaje"
-```
-
-Los mensajes deben explicar qué se realizó.
-
-Ejemplos:
-
-```text
-feat: crear entidad Servicio
-feat: implementar creación de servicio
-fix: validar datos obligatorios del servicio
-docs: agregar guía de implementación y validación
-```
-
-No deben mezclarse cambios sin relación en un mismo commit cuando puedan separarse de forma razonable.
-
----
-
-## 6.4. Actualización antes de integrar
-
-Antes de integrar el trabajo se debe comprobar que la rama sigue siendo compatible con los cambios recientes del proyecto.
-
-También debe verificarse:
-
-```bash
-git status
-```
-
-y ejecutar las pruebas relacionadas con la funcionalidad.
-
-Si existen conflictos, deben resolverse antes de integrar.
-
-No debe elegirse automáticamente una versión durante un conflicto sin entender qué cambio debe conservarse.
-
----
-
-## 6.5. Pull Request
-
-Cuando el trabajo esté listo:
-
-1. realizar las pruebas;
-2. revisar los cambios;
-3. realizar los commits necesarios;
-4. hacer push de la rama;
-5. abrir un Pull Request;
-6. solicitar revisión de otro integrante;
-7. atender observaciones;
-8. integrar el trabajo cuando se encuentre validado.
-
-La revisión por Pull Request es el mecanismo utilizado por el equipo para revisar el trabajo antes de integrarlo a `main`.
-
-La rama puede eliminarse después de que su trabajo haya sido integrado correctamente.
+Las reglas vigentes de ramas, commits, Pull Requests, aprobación, integración y
+seguimiento están centralizadas en [CONTRIBUTING.md](CONTRIBUTING.md). Esta guía
+se concentra en analizar requisitos, implementar y validar casos de uso; no
+mantiene una segunda versión del procedimiento de Git.
 
 ---
 
@@ -792,17 +663,21 @@ Las pruebas pueden incluir:
 - persistencia;
 - interacción con otros componentes.
 
-El proyecto contempla el uso de JUnit para pruebas automatizadas.
-
-Sin embargo, mientras no exista una configuración común de dependencias/build dentro del repositorio oficial, no se debe inventar un comando Maven o Gradle que el equipo todavía no haya definido.
-
-Las primeras validaciones pueden apoyarse también en ejecución controlada y evidencia manual cuando sea necesario.
+El proyecto configura JUnit Jupiter y Maven en `pom.xml`. Para ejecutar la
+suite automatizada desde la raíz, usa `mvn clean test`, como se documenta en el
+README. Este comando no inicia JavaFX. Si un escenario requiere interacción con
+la interfaz, complementa las pruebas automatizadas con una comprobación manual
+controlada y registra qué se comprobó. No presentes una validación manual como
+prueba automatizada ni un resultado histórico como resultado de la versión actual.
 
 ---
 
 # 15. Reporte de validación
 
-Después de implementar una primera iteración, cada integrante debe poder registrar:
+Al reportar una validación, registra su contexto para que otra persona pueda
+interpretarla: rama o commit, escenarios, comandos ejecutados, resultados
+observados, límites y evidencias. No copies como resultado actual cifras de una
+entrega anterior.
 
 ```text
 Caso de uso:
@@ -1007,13 +882,8 @@ No es necesario implementar todas las integraciones inmediatamente si dependen d
 - [ ] Registré el resultado.
 - [ ] Conservé evidencia suficiente.
 
-## Git
-
-- [ ] No trabajé directamente en `main`.
-- [ ] La rama corresponde al requerimiento.
-- [ ] Revisé `git status`.
-- [ ] Los commits describen claramente los cambios.
-- [ ] No incluí archivos ajenos a la tarea.
+Para las comprobaciones de rama, commits y Pull Request, sigue
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Seguimiento
 
@@ -1047,13 +917,10 @@ Cada integrante debe poder responder:
 
 No deben asumirse sin coordinación decisiones que todavía no hayan sido definidas por el equipo o por el profesor.
 
-Entre ellas pueden encontrarse:
-
-- gestor de construcción o dependencias;
-- paquete base definitivo;
-- cambios arquitectónicos que afecten múltiples módulos;
-- modificaciones importantes del modelo de persistencia;
-- comportamientos no definidos por los requisitos.
+Entre ellas pueden encontrarse cambios arquitectónicos que afecten varios
+módulos, modificaciones importantes de persistencia o comportamientos que no
+estén definidos por los requisitos. Maven, JUnit y Java 17 ya están configurados
+en el repositorio; no deben tratarse como decisiones pendientes.
 
 Cuando una decisión pendiente bloquee realmente la implementación, debe registrarse como bloqueante.
 
