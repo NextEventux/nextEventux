@@ -185,7 +185,7 @@ Las plantillas existentes están en `.github/ISSUE_TEMPLATE/`; si se utilizan, d
 | `documentation.yml` | Corrección o actualización de documentación. |
 | `config.yml` | Configura el selector de plantillas y evita Issues vacíos sin estructura. |
 
-Los archivos `.yml` son formularios: GitHub convierte las respuestas en el cuerpo del Issue. Sus campos ayudan a describir objetivo, evidencia o criterios de aceptación. Los labels automáticos solo se aplican si esos labels ya fueron creados en el repositorio.
+Los archivos `.yml` son formularios: GitHub convierte las respuestas en el cuerpo del Issue. Sus campos ayudan a describir objetivo, evidencia o criterios de aceptación. Las plantillas solo asignan labels existentes en el repositorio; no asignan prioridades automáticamente. La lista vigente de labels disponibles y el estado de la propuesta de clasificación están en [`.github/LABELS.md`](.github/LABELS.md).
 
 **Pautas para crear un Issue, cuando se utilice**
 
@@ -193,13 +193,11 @@ El título debe describir una sola necesidad. Cuando sea pertinente, el cuerpo p
 
 Si el equipo utiliza un Issue, puede añadirle:
 
-- Un label de tipo.
-- Un label de módulo cuando corresponda.
-- Un label de prioridad.
+- Un label existente que ayude a clasificarlo.
 - Responsable asignado, cuando corresponda.
 - Ubicación en el tablero del proyecto, si se está utilizando.
 
-Cuando se utiliza el tablero, el estado puede administrarse mediante sus columnas o el campo `Status`. No se deben crear labels duplicados para `Por hacer`, `En progreso` y `Terminado`. El label `estado:bloqueado` se utiliza únicamente cuando existe un impedimento real.
+Cuando se utiliza el tablero, el estado puede administrarse mediante sus columnas o el campo `Status`. No se deben crear labels duplicados para `Por hacer`, `En progreso` y `Terminado`. Si el equipo decide crear un label de bloqueo, debe limitarlo a impedimentos reales.
 
 ### 6.2 Uso correcto de una tarea Kanban
 
@@ -246,11 +244,11 @@ Se cierra sin implementar porque ___. La decisión quedó acordada en ___. El tr
 
 No se deben borrar Issues para ocultar errores o decisiones descartadas: si se cierra uno, una explicación conserva la trazabilidad.
 
-## 7. Labels personalizados (uso opcional)
+## 7. Labels (uso opcional)
 
-La lista inicial y sus colores está documentada en [`.github/LABELS.md`](.github/LABELS.md). Si se utilizan labels, para evitar confusiones cada Issue debe utilizar como máximo uno de tipo, uno de módulo y uno de prioridad, además de `estado:bloqueado` cuando corresponda.
+Los labels disponibles se documentan en [`.github/LABELS.md`](.github/LABELS.md). Su uso es opcional; las categorías personalizadas que no existan en GitHub no deben asignarse ni configurarse en las plantillas. Si el equipo decide crear nuevas categorías, debe acordar primero sus nombres y usos y luego actualizar ese documento y las plantillas.
 
-Los labels no reemplazan la asignación de responsables ni el estado del tablero Kanban cuando estos recursos se utilizan.
+Los labels no reemplazan la asignación de responsables, la prioridad acordada ni el estado del tablero Kanban cuando estos recursos se utilizan. No se asigna prioridad automáticamente desde una plantilla.
 
 ## 8. Componentes compartidos
 
