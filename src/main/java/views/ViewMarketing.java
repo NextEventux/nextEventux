@@ -3,7 +3,9 @@ package views;
 import controllers.ControllerMarketing;
 import entities.Segmentacion;
 import entities.SesionUsuario;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -24,7 +26,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import services.ServiceMarketing;
 import views.components.MenuCompartido;
 
 public class ViewMarketing {
@@ -50,18 +51,18 @@ public class ViewMarketing {
             SesionUsuario sesion,
             Runnable volver,
             Runnable cerrarSesion) {
-    this.controller = controller;
-    this.idAdministrador = idAdministrador;
-    this.sesion = sesion;
-    this.volver = volver;
-    this.cerrarSesion = cerrarSesion;
-    mensaje.setId("mensaje");
-    mensaje.setWrapText(true);
-    mensaje.setVisible(false);
-    mensaje.setManaged(false);
-    resumenSegmentos.setId("resumenSegmentos");
-    resumenClientes.setId("resumenClientes");
-    configurarTabla();
+        this.controller = controller;
+        this.idAdministrador = idAdministrador;
+        this.sesion = sesion;
+        this.volver = volver;
+        this.cerrarSesion = cerrarSesion;
+        mensaje.setId("mensaje");
+        mensaje.setWrapText(true);
+        mensaje.setVisible(false);
+        mensaje.setManaged(false);
+        resumenSegmentos.setId("resumenSegmentos");
+        resumenClientes.setId("resumenClientes");
+        configurarTabla();
     }
 
     public ViewMarketing conNavegacion(Runnable sanciones, Runnable marketing) {
@@ -84,7 +85,9 @@ public class ViewMarketing {
         contenido.getStyleClass().add("content");
         contenido.setMaxWidth(1320);
         VBox titulo = new VBox(8, etiqueta("Segmentos de clientes", "page-title"),
-                etiqueta("Agrupa a los clientes por ciudad, rango de edad y tipo de evento que más solicitan.", "muted"));
+                etiqueta("Agrupa a los clientes según su ubicación y los tipos de eventos que buscan o solicitan.",
+                        "muted"));
+
         HBox encabezado = new HBox(20, titulo, espacioHorizontal(), etiqueta("● Segmentación automática", "status"));
         encabezado.setAlignment(Pos.CENTER_LEFT);
 
@@ -116,7 +119,7 @@ public class ViewMarketing {
         } catch (IllegalStateException e) {
             mostrarMensaje(e.getMessage(), "error");
         }
-    return raiz;
+        return raiz;
     }
 
     private void configurarTabla() {
@@ -125,11 +128,13 @@ public class ViewMarketing {
         tabla.setPrefHeight(350);
         tabla.getColumns().add(columnaTexto("Segmento", 0.30, false, Segmentacion::getNombre));
         tabla.getColumns().add(columnaTexto("Descripción", 0.405, false, Segmentacion::getDescripcion));
-        tabla.getColumns().add(columnaTexto("Clientes", 0.14, true, segmento -> String.valueOf(segmento.getCantidadClientes())));
+        tabla.getColumns()
+                .add(columnaTexto("Clientes", 0.14, true, segmento -> String.valueOf(segmento.getCantidadClientes())));
         tabla.getColumns().add(columnaTexto("Estado", 0.14, true, Segmentacion::getEstado));
     }
 
-    private TableColumn<Segmentacion, String> columnaTexto(String titulo, double proporcion, boolean centrada, Function<Segmentacion, String> valor) {
+    private TableColumn<Segmentacion, String> columnaTexto(String titulo, double proporcion, boolean centrada,
+            Function<Segmentacion, String> valor) {
         TableColumn<Segmentacion, String> columna = new TableColumn<>(titulo);
         columna.setCellValueFactory(datos -> new ReadOnlyStringWrapper(valor.apply(datos.getValue())));
         columna.prefWidthProperty().bind(tabla.widthProperty().multiply(proporcion));
@@ -145,7 +150,10 @@ public class ViewMarketing {
         tarjeta.getStyleClass().add("card");
         HBox titulo = new HBox(13, etiqueta("♙", "heading-icon"), etiqueta("Segmentos activos", "card-title"));
         titulo.setAlignment(Pos.CENTER_LEFT);
-        Label ayuda = etiqueta("Cada segmento reúne a los clientes de una misma ciudad y rango de edad " + "que más buscan o contratan un tipo de evento.", "muted");
+        Label ayuda = etiqueta("Cada segmento reúne clientes de una misma ubicación "
+                + "que han mostrado interés en un tipo de evento. "
+                + "Un cliente puede pertenecer a varios segmentos.", "muted");
+
         ayuda.setWrapText(true);
 
         Button generar = new Button("Generar segmentos");
@@ -168,27 +176,35 @@ public class ViewMarketing {
         inicio.getStyleClass().add("highlight");
         VBox resumen = new VBox(14, etiqueta("Resumen", "card-title"),
                 filaResumen("Segmentos activos", resumenSegmentos), new Separator(),
-                filaResumen("Clientes segmentados", resumenClientes), new Separator(),
-                filaResumen("Mínimo por segmento", new Label(String.valueOf(ServiceMarketing.MINIMO_CLIENTES_POR_SEGMENTO))));
+                filaResumen("Clientes segmentados", resumenClientes));
         resumen.getStyleClass().add("info-card");
-        panel.getChildren().addAll(inicio, resumen, informacion("ⓘ Información importante",
-        "La ciudad se toma del perfil o de la solicitud más reciente para contratar un organizador. "
-                + "Los clientes sin fecha de nacimiento o ciudad no se incluyen. "
-                + "Al generar de nuevo, los segmentos automáticos anteriores pasan a inactivos."));
-    return panel;
+
+       panel.getChildren().addAll(inicio, resumen, informacion("ⓘ Información importante",
+               "La ciudad se toma del perfil o de la solicitud más reciente para contratar un organizador. "
+                       + "Cada cliente se agrupa según los tipos de eventos que ha buscado o solicitado. "
+                       + "No se requiere fecha de nacimiento ni un número mínimo de clientes. "
+                       + "Los clientes sin ciudad o sin preferencias registradas no se incluyen. "
+                       + "El consentimiento de comunicaciones no filtra este cálculo interno; las futuras "
+                       + "campañas deben respetarlo y el equipo debe validar la política de tratamiento de datos. "
+                       + "Al generar de nuevo, los segmentos automáticos anteriores pasan a inactivos."));
+
+        return panel;
     }
 
     private void generarSegmentos() {
         try {
             List<Segmentacion> generados = controller.segmentarClientes(idAdministrador);
+            cargarSegmentos();
+
             if (generados.isEmpty()) {
-                mostrarMensaje("No hay datos suficientes para formar segmentos. Se necesitan al menos "
-                        + ServiceMarketing.MINIMO_CLIENTES_POR_SEGMENTO + " clientes con ciudad y fecha de "
-                        + "nacimiento en un mismo grupo, con solicitudes de eventos. Los segmentos actuales no cambiaron.",
+                mostrarMensaje(
+                        "No se encontraron clientes con ubicación y preferencias de eventos "
+                                + "suficientes para generar segmentos. "
+                                + "Los segmentos automáticos anteriores se desactivaron.",
                         "warning");
                 return;
             }
-            cargarSegmentos();
+
             mostrarMensaje(generados.size() == 1 ? "Se generó 1 segmento."
                     : "Se generaron " + generados.size() + " segmentos.", "success");
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -199,12 +215,12 @@ public class ViewMarketing {
     private void cargarSegmentos() {
         List<Segmentacion> activos = controller.listarSegmentosActivos();
         tabla.setItems(FXCollections.observableArrayList(activos));
-        int clientes = 0;
+        Set<Integer> clientes = new HashSet<>();
         for (Segmentacion segmento : activos) {
-            clientes += segmento.getCantidadClientes();
+            clientes.addAll(segmento.getIdsClientes());
         }
         resumenSegmentos.setText(String.valueOf(activos.size()));
-        resumenClientes.setText(String.valueOf(clientes));
+        resumenClientes.setText(String.valueOf(clientes.size()));
     }
 
     private void mostrarMensaje(String texto, String estilo) {
@@ -214,7 +230,7 @@ public class ViewMarketing {
         mensaje.setManaged(true);
     }
 
-        private VBox crearMenu() {
+    private VBox crearMenu() {
         VBox menu = new VBox(7);
         menu.getStyleClass().add("sidebar");
         menu.setPrefWidth(250);
@@ -224,7 +240,7 @@ public class ViewMarketing {
         marca.setAlignment(Pos.CENTER);
         VBox.setMargin(marca, new Insets(0, 0, 38, 0));
         menu.getChildren().addAll(marca, etiqueta("MARKETING", "menu-title"));
-        String[] opciones = {"⌂  Inicio", "♙  Segmentos", "▦  Campañas", "⚙  Configuración"};
+        String[] opciones = { "⌂  Inicio", "♙  Segmentos", "▦  Campañas", "⚙  Configuración" };
         for (String opcion : opciones) {
             Label item = etiqueta(opcion, "menu-item");
             item.setMaxWidth(Double.MAX_VALUE);

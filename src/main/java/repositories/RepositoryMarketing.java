@@ -9,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import entities.Segmentacion;
 import java.sql.Statement;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,11 +35,11 @@ public class RepositoryMarketing {
     public List<ClienteMarketing> listarClientesActivos() {
         String sql = "SELECT u.id_usuario, u.nombre, "
                 + "COALESCE(NULLIF(u.pais, ''), 'No especificado') AS pais, "
-                + "COALESCE(NULLIF(u.ciudad, ''), ("
-                + "SELECT s.ciudad FROM Solicitud_Contratacion_Organizador s "
+                + "COALESCE(NULLIF(TRIM(u.ciudad), ''), ("
+                + "SELECT NULLIF(TRIM(s.ciudad), '') FROM Solicitud_Contratacion_Organizador s "
                 + "WHERE s.id_cliente = u.id_usuario "
                 + "ORDER BY s.fecha_solicitud DESC, s.id_solicitud DESC LIMIT 1"
-                + ")) AS ciudad, u.fecha_nacimiento, u.acepta_marketing "
+                + ")) AS ciudad, u.acepta_marketing "
                 + "FROM Usuario u WHERE u.tipo_usuario = ? AND u.estado = ? ORDER BY u.id_usuario";
         List<ClienteMarketing> clientes = new ArrayList<>();
         try (Connection connection = conectar();
@@ -54,7 +53,6 @@ public class RepositoryMarketing {
                             result.getString("nombre"),
                             result.getString("pais"),
                             result.getString("ciudad"),
-                            result.getObject("fecha_nacimiento", LocalDate.class),
                             result.getBoolean("acepta_marketing")));
                 }
             }

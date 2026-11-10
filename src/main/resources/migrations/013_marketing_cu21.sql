@@ -1,6 +1,6 @@
 -- CU-21: Segmentar clientes automáticamente.
 
--- Datos del cliente usados para agrupar (país, ciudad y edad).
+-- Datos de ubicación usados para agrupar clientes (país y ciudad).
 ALTER TABLE Usuario ADD COLUMN IF NOT EXISTS pais VARCHAR(80);
 ALTER TABLE Usuario ADD COLUMN IF NOT EXISTS ciudad VARCHAR(80);
 ALTER TABLE Usuario ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;
