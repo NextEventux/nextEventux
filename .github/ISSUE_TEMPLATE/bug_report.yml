@@ -2,8 +2,7 @@ name: Reporte de error
 description: Informar un comportamiento incorrecto y reproducible del sistema.
 title: "[ERROR][MÓDULO] "
 labels:
-  - "tipo:error"
-  - "prioridad:alta"
+  - "bug"
 body:
   - type: dropdown
     id: module

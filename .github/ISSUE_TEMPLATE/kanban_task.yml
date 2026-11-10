@@ -1,9 +1,6 @@
 name: Tarea Kanban
 description: Registrar una tarea planificada del sprint o asociada a un caso de uso.
 title: "[TAREA][CU-XX] "
-labels:
-  - "tipo:tarea"
-  - "prioridad:media"
 body:
   - type: markdown
     attributes:
