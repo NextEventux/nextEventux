@@ -302,7 +302,56 @@ public class ViewRegistrarPago {
             tarjeta.getChildren().add(etiqueta(
                     "Se registrará el pago programado que estaba pendiente; no se crea un pago adicional.", "hint"));
         }
-        tarjeta.getChildren().add(acciones(corregir));
+        Label error = mensaje("", "error");
+        error.setVisible(false);
+        error.setManaged(false);
+
+        Button confirmar = new Button("Confirmar pago");
+        confirmar.setId("confirmarPago");
+        confirmar.getStyleClass().add("btn-primary");
+        confirmar.setOnAction(e -> {
+            // Evita un segundo clic mientras se guarda.
+            confirmar.setDisable(true);
+            try {
+                SaldoContratacion actualizada = controller.confirmarPago(pago);
+                mostrarPagoRegistrado(pago, actualizada);
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                error.setText(ex.getMessage());
+                error.setVisible(true);
+                error.setManaged(true);
+                confirmar.setDisable(false);
+            }
+        });
+
+        tarjeta.getChildren().addAll(error, acciones(corregir, confirmar));
+    }
+
+    // ==========================================
+    // Paso 12: pago registrado con el nuevo saldo
+    // ==========================================
+    private void mostrarPagoRegistrado(SolicitudPago pago, SaldoContratacion actualizada) {
+        GridPane datos = new GridPane();
+        datos.setHgap(40);
+        datos.setVgap(16);
+        datos.add(dato("Contratación", actualizada.getServicio()), 0, 0);
+        datos.add(dato("Valor pagado", dinero(pago.getValor())), 1, 0);
+        datos.add(dato("Total pagado", dinero(actualizada.getPagado())), 0, 1);
+        datos.add(dato("Nuevo saldo pendiente", dinero(actualizada.getSaldo())), 1, 1);
+        dosColumnas(datos);
+
+        Button otro = new Button("Registrar otro pago");
+        otro.setId("otroPago");
+        otro.getStyleClass().add("btn-secondary");
+        otro.setOnAction(e -> mostrarContrataciones());
+
+        Button volver = botonVolver();
+        volver.getStyleClass().setAll("button", "btn-primary");
+
+        tarjeta.getChildren().setAll(
+                tituloTarjeta("Pago registrado"),
+                mensaje("Pago registrado. El estado financiero del evento ya refleja este pago.", "success"),
+                datos,
+                acciones(otro, volver));
     }
 
     /** Convierte el texto del valor a BigDecimal; null si está vacío (el servicio pide el valor). */
