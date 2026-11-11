@@ -89,6 +89,27 @@ public class ServiceRegistroPago {
         return new SolicitudPago(idEvento, contratacion, tipo, valor, fecha, detalle, idProgramado);
     }
 
+    /**
+     * Pasos 10 a 12: registra el pago confirmado y devuelve la contratación con su nuevo saldo.
+     * El repositorio vuelve a verificar el saldo dentro de la transacción; si cambió mientras
+     * el organizador confirmaba, no se guarda nada y se informa el motivo.
+     */
+    public SaldoContratacion confirmarPago(SolicitudPago pago, SesionUsuario sesion) {
+        if (pago == null) {
+            throw new IllegalArgumentException("Revisa los datos del pago antes de confirmarlo.");
+        }
+        verificarEvento(pago.getIdEvento(), sesion);
+        try {
+            repoMovimientos.registrarPago(pago);
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("No se pudo registrar el pago. Vuelve a intentarlo.", e);
+        }
+        int idContratacion = pago.getContratacion().getIdContratacion();
+        return buscarContratacion(pago.getIdEvento(), idContratacion, sesion);
+    }
+
     private SaldoContratacion buscarContratacion(int idEvento, int idContratacion, SesionUsuario sesion) {
         for (SaldoContratacion contratacion : listarContratacionesPorPagar(idEvento, sesion)) {
             if (contratacion.getIdContratacion() == idContratacion) {
