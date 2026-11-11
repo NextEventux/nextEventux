@@ -3,6 +3,7 @@ package repositories;
 import persistencia.DatabaseConnection;
 import entities.finanzas.CompromisoFinanciero;
 import entities.finanzas.MovimientoFinanciero;
+import entities.finanzas.SaldoContratacion;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -62,6 +63,69 @@ public class RepositoryMovimientoFinanciero {
         }
 
         return compromisos;
+    }
+
+    /**
+     * CU-10: contrataciones del evento con lo pagado y su pago programado más antiguo.
+     * - Mismas contrataciones que cuenta CU06 (no CANCELADA, solicitud del mismo evento).
+     * - pagado suma los EGRESO REGISTRADO de la contratación.
+     * - El pago programado es el EGRESO PENDIENTE más antiguo; si no hay, queda null.
+     */
+    public List<SaldoContratacion> listarSaldosPorEvento(int idEvento) {
+        List<SaldoContratacion> saldos = new ArrayList<>();
+        String sql = """
+                SELECT c.id_contratacion, c.id_propuesta, c.fecha_contratacion,
+                       COALESCE(s.nombre, pr.descripcion) AS servicio,
+                       COALESCE(NULLIF(pv.empresa, ''), pv.nombre) AS proveedor,
+                       COALESCE(c.valor_acordado, pr.valor) AS valor,
+                       (SELECT COALESCE(SUM(m.valor), 0) FROM Movimiento_financiero m
+                        WHERE m.id_contratacion = c.id_contratacion AND m.id_evento = c.id_evento
+                          AND UPPER(TRIM(m.tipo)) = 'EGRESO'
+                          AND UPPER(TRIM(m.estado)) = 'REGISTRADO') AS pagado,
+                       prog.id_movimiento AS id_programado,
+                       prog.valor AS valor_programado
+                FROM Contratacion c
+                JOIN Propuesta pr ON pr.id_propuesta = c.id_propuesta
+                JOIN Solicitud_Ejecucion se ON se.id_solicitud = pr.id_solicitud
+                                           AND se.id_evento = c.id_evento
+                LEFT JOIN Servicio s ON s.id_servicio = se.id_servicio
+                LEFT JOIN Proveedor pv ON pv.id_proveedor = se.id_proveedor
+                LEFT JOIN Movimiento_financiero prog ON prog.id_movimiento = (
+                        SELECT m.id_movimiento FROM Movimiento_financiero m
+                        WHERE m.id_contratacion = c.id_contratacion AND m.id_evento = c.id_evento
+                          AND UPPER(TRIM(m.tipo)) = 'EGRESO'
+                          AND UPPER(TRIM(m.estado)) = 'PENDIENTE' AND m.valor IS NOT NULL
+                        ORDER BY m.fecha, m.id_movimiento LIMIT 1)
+                WHERE c.id_evento = ?
+                  AND UPPER(COALESCE(c.estado, '')) <> 'CANCELADA'
+                ORDER BY c.id_contratacion
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, idEvento);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Timestamp fecha = rs.getTimestamp("fecha_contratacion");
+                    saldos.add(new SaldoContratacion(
+                            rs.getInt("id_contratacion"),
+                            rs.getInt("id_propuesta"),
+                            rs.getString("servicio"),
+                            rs.getString("proveedor"),
+                            fecha != null ? fecha.toLocalDateTime() : null,
+                            rs.getBigDecimal("valor"),
+                            rs.getBigDecimal("pagado"),
+                            rs.getObject("id_programado", Integer.class),
+                            rs.getBigDecimal("valor_programado")));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("No se pudieron consultar los saldos de las contrataciones.", e);
+        }
+
+        return saldos;
     }
 
     /**
