@@ -134,16 +134,21 @@ public class RepositoryMovimientoFinanciero {
     }
 
     /**
-     * CU-10 (paso 11): guarda un pago nuevo como EGRESO REGISTRADO en una sola transacción.
+     * CU-10 (paso 11): guarda el pago como EGRESO REGISTRADO en una sola transacción.
      * Antes de guardarlo bloquea la contratación y vuelve a calcular su saldo, para que dos
-     * pagos simultáneos no superen el valor acordado. Devuelve el id del movimiento creado.
+     * pagos simultáneos no superen el valor acordado.
+     * - Pago nuevo: inserta un movimiento.
+     * - Pago programado: pasa ese movimiento PENDIENTE a REGISTRADO, sin crear otro.
+     * Devuelve el id del movimiento registrado.
      */
     public int registrarPago(SolicitudPago pago) {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
                 verificarSaldoActual(conn, pago);
-                int idMovimiento = insertarPago(conn, pago);
+                int idMovimiento = pago.esPagoProgramado()
+                        ? registrarPagoProgramado(conn, pago)
+                        : insertarPago(conn, pago);
                 conn.commit();
                 return idMovimiento;
             } catch (SQLException | RuntimeException e) {
@@ -225,6 +230,25 @@ public class RepositoryMovimientoFinanciero {
                 keys.next();
                 return keys.getInt(1);
             }
+        }
+    }
+
+    /** Pasa el pago PENDIENTE a REGISTRADO con el valor, la fecha y la descripción confirmados. */
+    private int registrarPagoProgramado(Connection conn, SolicitudPago pago) throws SQLException {
+        String sql = "UPDATE Movimiento_financiero SET estado = 'REGISTRADO', valor = ?, fecha = ?, descripcion = ? "
+                + "WHERE id_movimiento = ? AND id_contratacion = ? AND id_evento = ? "
+                + "AND UPPER(TRIM(tipo)) = 'EGRESO' AND UPPER(TRIM(estado)) = 'PENDIENTE'";
+        try (PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setBigDecimal(1, pago.getValor());
+            st.setTimestamp(2, Timestamp.valueOf(fechaPago(pago.getFecha())));
+            st.setString(3, pago.getDescripcion());
+            st.setInt(4, pago.getIdPagoProgramado());
+            st.setInt(5, pago.getContratacion().getIdContratacion());
+            st.setInt(6, pago.getIdEvento());
+            if (st.executeUpdate() != 1) {
+                throw new IllegalStateException("El pago programado ya no está pendiente. Revisa el pago.");
+            }
+            return pago.getIdPagoProgramado();
         }
     }
 
