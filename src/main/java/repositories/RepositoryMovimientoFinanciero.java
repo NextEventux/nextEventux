@@ -4,13 +4,18 @@ import persistencia.DatabaseConnection;
 import entities.finanzas.CompromisoFinanciero;
 import entities.finanzas.MovimientoFinanciero;
 import entities.finanzas.SaldoContratacion;
+import entities.finanzas.SolicitudPago;
+import entities.finanzas.TipoPago;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,6 +131,110 @@ public class RepositoryMovimientoFinanciero {
         }
 
         return saldos;
+    }
+
+    /**
+     * CU-10 (paso 11): guarda un pago nuevo como EGRESO REGISTRADO en una sola transacción.
+     * Antes de guardarlo bloquea la contratación y vuelve a calcular su saldo, para que dos
+     * pagos simultáneos no superen el valor acordado. Devuelve el id del movimiento creado.
+     */
+    public int registrarPago(SolicitudPago pago) {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                verificarSaldoActual(conn, pago);
+                int idMovimiento = insertarPago(conn, pago);
+                conn.commit();
+                return idMovimiento;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("No se pudo registrar el pago. Vuelve a intentarlo.", e);
+        }
+    }
+
+    /** Vuelve a validar el evento, la contratación y el saldo dentro de la transacción. */
+    private void verificarSaldoActual(Connection conn, SolicitudPago pago) throws SQLException {
+        int idContratacion = pago.getContratacion().getIdContratacion();
+        String evento = "SELECT estado FROM Evento WHERE id_evento = ?";
+        try (PreparedStatement st = conn.prepareStatement(evento)) {
+            st.setInt(1, pago.getIdEvento());
+            try (ResultSet rs = st.executeQuery()) {
+                if (!rs.next() || "CANCELADO".equalsIgnoreCase(texto(rs.getString("estado")))) {
+                    throw new IllegalStateException("El evento fue cancelado; no se pueden registrar pagos.");
+                }
+            }
+        }
+        // FOR UPDATE bloquea la contratación hasta el commit o el rollback.
+        String bloqueo = "SELECT estado FROM Contratacion WHERE id_contratacion = ? AND id_evento = ? FOR UPDATE";
+        try (PreparedStatement st = conn.prepareStatement(bloqueo)) {
+            st.setInt(1, idContratacion);
+            st.setInt(2, pago.getIdEvento());
+            try (ResultSet rs = st.executeQuery()) {
+                if (!rs.next() || "CANCELADA".equalsIgnoreCase(texto(rs.getString("estado")))) {
+                    throw new IllegalStateException("La contratación fue cancelada; no se puede registrar el pago.");
+                }
+            }
+        }
+        String saldo = """
+                SELECT COALESCE(c.valor_acordado, pr.valor) AS valor,
+                       (SELECT COALESCE(SUM(m.valor), 0) FROM Movimiento_financiero m
+                        WHERE m.id_contratacion = c.id_contratacion AND m.id_evento = c.id_evento
+                          AND UPPER(TRIM(m.tipo)) = 'EGRESO'
+                          AND UPPER(TRIM(m.estado)) = 'REGISTRADO') AS pagado
+                FROM Contratacion c
+                JOIN Propuesta pr ON pr.id_propuesta = c.id_propuesta
+                WHERE c.id_contratacion = ?
+                """;
+        try (PreparedStatement st = conn.prepareStatement(saldo)) {
+            st.setInt(1, idContratacion);
+            try (ResultSet rs = st.executeQuery()) {
+                rs.next();
+                BigDecimal valor = rs.getBigDecimal("valor");
+                BigDecimal pagado = rs.getBigDecimal("pagado");
+                if (valor == null) {
+                    throw new IllegalStateException("La contratación no tiene valor acordado.");
+                }
+                BigDecimal saldoActual = valor.subtract(pagado);
+                boolean anticipoConPagos = pago.getTipo() == TipoPago.ANTICIPO && pagado.signum() > 0;
+                boolean finalDistinto = pago.getTipo() == TipoPago.PAGO_FINAL
+                        && pago.getValor().compareTo(saldoActual) != 0;
+                if (pago.getValor().compareTo(saldoActual) > 0 || anticipoConPagos || finalDistinto) {
+                    throw new IllegalStateException(
+                            "El saldo de la contratación cambió mientras confirmabas. Revisa el pago.");
+                }
+            }
+        }
+    }
+
+    private int insertarPago(Connection conn, SolicitudPago pago) throws SQLException {
+        String sql = "INSERT INTO Movimiento_financiero "
+                + "(id_propuesta, id_evento, id_contratacion, valor, fecha, descripcion, tipo, estado) "
+                + "VALUES (?, ?, ?, ?, ?, ?, 'EGRESO', 'REGISTRADO')";
+        try (PreparedStatement st = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            st.setInt(1, pago.getContratacion().getIdPropuesta());
+            st.setInt(2, pago.getIdEvento());
+            st.setInt(3, pago.getContratacion().getIdContratacion());
+            st.setBigDecimal(4, pago.getValor());
+            st.setTimestamp(5, Timestamp.valueOf(fechaPago(pago.getFecha())));
+            st.setString(6, pago.getDescripcion());
+            st.executeUpdate();
+            try (ResultSet keys = st.getGeneratedKeys()) {
+                keys.next();
+                return keys.getInt(1);
+            }
+        }
+    }
+
+    /** Un pago de hoy guarda la hora actual; uno de otro día, el inicio de ese día. */
+    private static LocalDateTime fechaPago(LocalDate fecha) {
+        return LocalDate.now().equals(fecha) ? LocalDateTime.now() : fecha.atStartOfDay();
+    }
+
+    private static String texto(String valor) {
+        return valor == null ? "" : valor.trim();
     }
 
     /**
