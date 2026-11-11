@@ -3,21 +3,34 @@ package views.finanzas;
 import controllers.ControllerRegistroPago;
 import entities.SesionUsuario;
 import entities.finanzas.SaldoContratacion;
+import entities.finanzas.SolicitudPago;
+import entities.finanzas.TipoPago;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import services.ServiceRegistroPago;
 import views.components.MenuCompartido;
 
 /**
@@ -27,6 +40,12 @@ import views.components.MenuCompartido;
  * Usa las clases del CSS compartido (card, info-card, field-label, btn-primary, message, etc.).
  */
 public class ViewRegistrarPago {
+
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    // Valores como 400000, 400.000, 1.250.000,50 o 400000.50.
+    private static final Pattern VALOR_CON_MILES = Pattern.compile("\\d{1,3}(\\.\\d{3})+(,\\d{1,2})?");
+    private static final Pattern VALOR_CON_COMA = Pattern.compile("\\d+(,\\d{1,2})?");
+    private static final Pattern VALOR_CON_PUNTO = Pattern.compile("\\d+\\.\\d{1,2}");
 
     private final ControllerRegistroPago controller;
     private final SesionUsuario sesion;
@@ -166,13 +185,139 @@ public class ViewRegistrarPago {
     }
 
     // ==========================================
-    // Paso 6: formulario de pago
+    // Pasos 6 a 8: formulario de pago
     // ==========================================
     private void mostrarFormulario(SaldoContratacion contratacion) {
+        mostrarFormulario(contratacion, null);
+    }
+
+    /** previo trae los datos ya escritos cuando el organizador vuelve desde el resumen. */
+    private void mostrarFormulario(SaldoContratacion contratacion, SolicitudPago previo) {
+        ComboBox<TipoPago> tipo = new ComboBox<>();
+        tipo.setId("tipoPago");
+        tipo.getItems().setAll(TipoPago.values());
+        tipo.setMaxWidth(Double.MAX_VALUE);
+        // Sin pagos previos se sugiere Anticipo; con pagos, Abono.
+        tipo.setValue(previo != null ? previo.getTipo()
+                : contratacion.getPagado().signum() == 0 ? TipoPago.ANTICIPO : TipoPago.ABONO);
+
+        TextField valor = new TextField(previo != null ? previo.getValor().toPlainString() : "");
+        valor.setId("valorPago");
+        valor.setPromptText("Ej: 400.000");
+
+        DatePicker fecha = new DatePicker(previo != null ? previo.getFecha() : LocalDate.now());
+        fecha.setId("fechaPago");
+        fecha.setMaxWidth(Double.MAX_VALUE);
+
+        TextField detalle = new TextField(previo != null ? previo.getDetalle() : "");
+        detalle.setId("detallePago");
+        detalle.setPromptText("Opcional, por ejemplo: segunda cuota");
+        detalle.setTextFormatter(new TextFormatter<String>(cambio ->
+                cambio.getControlNewText().length() <= ServiceRegistroPago.MAXIMO_DETALLE ? cambio : null));
+
+        GridPane campos = new GridPane();
+        campos.setHgap(24);
+        campos.setVgap(18);
+        campos.add(campo("Tipo de pago", tipo), 0, 0);
+        campos.add(campo("Valor", valor), 1, 0);
+        campos.add(campo("Fecha del pago", fecha), 0, 1);
+        campos.add(campo("Descripción", detalle), 1, 1);
+        dosColumnas(campos);
+
+        // Si hay un pago programado que cabe en el saldo, se ofrece registrarlo en vez de crear otro.
+        CheckBox programado = new CheckBox();
+        programado.setId("usarPagoProgramado");
+        boolean ofrecerProgramado = contratacion.tienePagoProgramado()
+                && contratacion.getValorPagoProgramado().compareTo(contratacion.getSaldo()) <= 0;
+        if (ofrecerProgramado) {
+            programado.setText("Registrar el pago programado de "
+                    + dinero(contratacion.getValorPagoProgramado()) + " (pendiente)");
+            programado.selectedProperty().addListener((obs, antes, marcado) -> {
+                valor.setDisable(marcado);
+                if (marcado) {
+                    valor.setText(contratacion.getValorPagoProgramado().toPlainString());
+                }
+            });
+            programado.setSelected(previo != null && previo.esPagoProgramado());
+        }
+
+        Label error = mensaje("", "error");
+        error.setVisible(false);
+        error.setManaged(false);
+
+        Button continuar = new Button("Continuar");
+        continuar.setId("continuarPago");
+        continuar.getStyleClass().add("btn-primary");
+        continuar.setOnAction(e -> {
+            try {
+                SolicitudPago pago = controller.validarPago(idEvento, contratacion.getIdContratacion(),
+                        tipo.getValue(), leerValor(valor.getText()), fecha.getValue(), detalle.getText(),
+                        ofrecerProgramado && programado.isSelected());
+                mostrarResumen(pago);
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                error.setText(ex.getMessage());
+                error.setVisible(true);
+                error.setManaged(true);
+            }
+        });
+
         tarjeta.getChildren().setAll(
                 tituloTarjeta("Pago a " + contratacion.getServicio()),
                 ayuda(proveedor(contratacion) + " · Saldo pendiente: " + dinero(contratacion.getSaldo())),
-                acciones(botonCancelar()));
+                campos);
+        if (ofrecerProgramado) {
+            tarjeta.getChildren().add(programado);
+        }
+        tarjeta.getChildren().addAll(error, acciones(botonCancelar(), continuar));
+    }
+
+    // ==========================================
+    // Paso 9: resumen para confirmar
+    // ==========================================
+    private void mostrarResumen(SolicitudPago pago) {
+        SaldoContratacion contratacion = pago.getContratacion();
+        GridPane datos = new GridPane();
+        datos.setHgap(40);
+        datos.setVgap(16);
+        datos.add(dato("Contratación", contratacion.getServicio()), 0, 0);
+        datos.add(dato("Proveedor", proveedor(contratacion)), 1, 0);
+        datos.add(dato("Tipo de pago", pago.getTipo().getEtiqueta()), 0, 1);
+        datos.add(dato("Fecha del pago", pago.getFecha().format(FORMATO_FECHA)), 1, 1);
+        datos.add(dato("Valor", dinero(pago.getValor())), 0, 2);
+        datos.add(dato("Descripción", pago.getDescripcion()), 1, 2);
+        datos.add(dato("Saldo actual", dinero(contratacion.getSaldo())), 0, 3);
+        datos.add(dato("Saldo que quedará", dinero(pago.getSaldoRestante())), 1, 3);
+        dosColumnas(datos);
+
+        Button corregir = new Button("Corregir datos");
+        corregir.setId("corregirPago");
+        corregir.getStyleClass().add("btn-secondary");
+        corregir.setOnAction(e -> mostrarFormulario(contratacion, pago));
+
+        tarjeta.getChildren().setAll(
+                tituloTarjeta("Revisa el pago"),
+                ayuda("Confirma que los datos son correctos. El pago se guardará como registrado."),
+                datos);
+        if (pago.esPagoProgramado()) {
+            tarjeta.getChildren().add(etiqueta(
+                    "Se registrará el pago programado que estaba pendiente; no se crea un pago adicional.", "hint"));
+        }
+        tarjeta.getChildren().add(acciones(corregir));
+    }
+
+    /** Convierte el texto del valor a BigDecimal; null si está vacío (el servicio pide el valor). */
+    private static BigDecimal leerValor(String texto) {
+        String limpio = texto == null ? "" : texto.replace("$", "").replace(" ", "").trim();
+        if (limpio.isEmpty()) {
+            return null;
+        }
+        if (VALOR_CON_MILES.matcher(limpio).matches() || VALOR_CON_COMA.matcher(limpio).matches()) {
+            return new BigDecimal(limpio.replace(".", "").replace(",", "."));
+        }
+        if (VALOR_CON_PUNTO.matcher(limpio).matches()) {
+            return new BigDecimal(limpio);
+        }
+        throw new IllegalArgumentException("Escribe el valor solo con números, por ejemplo 400.000 o 400000.");
     }
 
     // ==========================================
@@ -222,6 +367,21 @@ public class ViewRegistrarPago {
         HBox acciones = new HBox(12, botones);
         acciones.setAlignment(Pos.CENTER_RIGHT);
         return acciones;
+    }
+
+    /** Reparte la grilla en dos columnas del mismo ancho. */
+    private static void dosColumnas(GridPane grilla) {
+        for (int i = 0; i < 2; i++) {
+            ColumnConstraints columna = new ColumnConstraints();
+            columna.setPercentWidth(50);
+            grilla.getColumnConstraints().add(columna);
+        }
+    }
+
+    private VBox campo(String titulo, Node control) {
+        VBox campo = new VBox(8, etiqueta(titulo, "field-label"), control);
+        campo.setMaxWidth(Double.MAX_VALUE);
+        return campo;
     }
 
     private VBox dato(String titulo, String valor) {
