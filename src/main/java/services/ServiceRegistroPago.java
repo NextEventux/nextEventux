@@ -21,6 +21,10 @@ import repositories.eventos.RepositoryEvento;
  *   puede estar CANCELADO.
  * - Se listan las contrataciones que cuenta CU06 (no CANCELADA) con lo pagado y el saldo.
  * - Un pago nunca supera el saldo pendiente: valor acordado − pagos REGISTRADO.
+ * - Los pagos programados (PENDIENTE) reservan su parte del saldo: un pago nuevo solo usa el
+ *   saldo libre (saldo − pagos programados); para pagar lo programado se registra ese pago.
+ * - Al confirmar se vuelven a aplicar todas las reglas y se exige que el saldo siga siendo
+ *   el que vio el organizador; así un resumen viejo o repetido no se puede guardar.
  * - No se cambia la estructura de la base: el tipo de pago va al inicio de la descripción
  *   del movimiento y un pago programado (PENDIENTE) se registra cambiando su estado.
  */
@@ -68,7 +72,7 @@ public class ServiceRegistroPago {
         if (tipo == null) {
             throw new IllegalArgumentException("Selecciona el tipo de pago.");
         }
-        validarValor(contratacion, tipo, valor);
+        validarValor(contratacion, tipo, valor, pagoProgramado);
         validarFecha(contratacion, fecha, hoy);
         if (detalle != null && detalle.trim().length() > MAXIMO_DETALLE) {
             throw new IllegalArgumentException(
@@ -91,23 +95,49 @@ public class ServiceRegistroPago {
 
     /**
      * Pasos 10 a 12: registra el pago confirmado y devuelve la contratación con su nuevo saldo.
-     * El repositorio vuelve a verificar el saldo dentro de la transacción; si cambió mientras
-     * el organizador confirmaba, no se guarda nada y se informa el motivo.
+     * - Vuelve a aplicar todas las validaciones, aunque el pago no venga de validarPago.
+     * - Exige que el saldo y los pagos programados sigan siendo los del resumen; si cambiaron
+     *   (por ejemplo, otro pago o un reintento del mismo resumen), no se guarda nada.
+     * - El repositorio repite la verificación dentro de la transacción.
+     * - Después de guardar no se hace otra consulta: el nuevo saldo se calcula con los datos
+     *   ya validados, así que un pago guardado nunca se reporta como fallido.
      */
     public SaldoContratacion confirmarPago(SolicitudPago pago, SesionUsuario sesion) {
-        if (pago == null) {
+        if (pago == null || pago.getContratacion() == null) {
             throw new IllegalArgumentException("Revisa los datos del pago antes de confirmarlo.");
         }
-        verificarEvento(pago.getIdEvento(), sesion);
+        SaldoContratacion mostrada = pago.getContratacion();
+        SolicitudPago validado = validarPago(pago.getIdEvento(), mostrada.getIdContratacion(), pago.getTipo(),
+                pago.getValor(), pago.getFecha(), pago.getDetalle(), pago.esPagoProgramado(), sesion);
+        SaldoContratacion actual = validado.getContratacion();
+        boolean mismoSaldo = mostrada.getSaldo() != null
+                && actual.getSaldo().compareTo(mostrada.getSaldo()) == 0
+                && actual.getTotalProgramado().compareTo(mostrada.getTotalProgramado()) == 0;
+        boolean mismoProgramado = java.util.Objects.equals(validado.getIdPagoProgramado(), pago.getIdPagoProgramado());
+        if (!mismoSaldo || !mismoProgramado) {
+            throw new IllegalStateException("El saldo de la contratación cambió desde que revisaste el pago. "
+                    + "Vuelve a las contrataciones y revisa el pago.");
+        }
         try {
-            repoMovimientos.registrarPago(pago);
+            repoMovimientos.registrarPago(validado);
         } catch (IllegalStateException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new IllegalStateException("No se pudo registrar el pago. Vuelve a intentarlo.", e);
+            throw new IllegalStateException("No se pudo registrar el pago. Vuelve a las contrataciones "
+                    + "y revisa el saldo antes de intentarlo de nuevo.", e);
         }
-        int idContratacion = pago.getContratacion().getIdContratacion();
-        return buscarContratacion(pago.getIdEvento(), idContratacion, sesion);
+        return saldoDespuesDelPago(validado);
+    }
+
+    /** Contratación con el pago ya sumado, calculada sin consultar de nuevo la base. */
+    private static SaldoContratacion saldoDespuesDelPago(SolicitudPago pago) {
+        SaldoContratacion antes = pago.getContratacion();
+        BigDecimal programado = pago.esPagoProgramado()
+                ? antes.getTotalProgramado().subtract(pago.getValor())
+                : antes.getTotalProgramado();
+        return new SaldoContratacion(antes.getIdContratacion(), antes.getIdPropuesta(), antes.getServicio(),
+                antes.getProveedor(), antes.getFechaContratacion(), antes.getValorAcordado(),
+                antes.getPagado().add(pago.getValor()), null, null, programado);
     }
 
     private SaldoContratacion buscarContratacion(int idEvento, int idContratacion, SesionUsuario sesion) {
@@ -119,7 +149,8 @@ public class ServiceRegistroPago {
         throw new IllegalArgumentException("Selecciona una contratación vigente de este evento.");
     }
 
-    private static void validarValor(SaldoContratacion contratacion, TipoPago tipo, BigDecimal valor) {
+    private static void validarValor(SaldoContratacion contratacion, TipoPago tipo, BigDecimal valor,
+                                     boolean pagoProgramado) {
         if (valor == null || valor.signum() <= 0) {
             throw new IllegalArgumentException("Ingresa un valor mayor que cero.");
         }
@@ -133,6 +164,19 @@ public class ServiceRegistroPago {
         if (tipo == TipoPago.ANTICIPO && contratacion.getPagado().signum() > 0) {
             throw new IllegalArgumentException(
                     "Ya hay pagos registrados en esta contratación; usa Abono o Pago final.");
+        }
+        // Un pago nuevo solo puede usar el saldo libre; lo programado queda reservado.
+        BigDecimal programado = contratacion.getTotalProgramado();
+        if (!pagoProgramado && programado.signum() > 0) {
+            if (tipo == TipoPago.PAGO_FINAL) {
+                throw new IllegalArgumentException("Hay " + dinero(programado) + " en pagos programados; "
+                        + "registra el pago programado para completar el pago.");
+            }
+            if (valor.compareTo(contratacion.getSaldoLibre()) > 0) {
+                throw new IllegalArgumentException("Este pago supera el saldo libre de "
+                        + dinero(contratacion.getSaldoLibre()) + ": hay " + dinero(programado)
+                        + " en pagos programados. Registra el pago programado o ajusta el valor.");
+            }
         }
         if (tipo == TipoPago.PAGO_FINAL && valor.compareTo(saldo) != 0) {
             throw new IllegalArgumentException(
