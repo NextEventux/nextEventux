@@ -75,6 +75,7 @@ public class RepositoryMovimientoFinanciero {
      * - Mismas contrataciones que cuenta CU06 (no CANCELADA, solicitud del mismo evento).
      * - pagado suma los EGRESO REGISTRADO de la contratación.
      * - El pago programado es el EGRESO PENDIENTE más antiguo; si no hay, queda null.
+     * - total_programado suma todos los EGRESO PENDIENTE (reservan parte del saldo).
      */
     public List<SaldoContratacion> listarSaldosPorEvento(int idEvento) {
         List<SaldoContratacion> saldos = new ArrayList<>();
@@ -87,6 +88,10 @@ public class RepositoryMovimientoFinanciero {
                         WHERE m.id_contratacion = c.id_contratacion AND m.id_evento = c.id_evento
                           AND UPPER(TRIM(m.tipo)) = 'EGRESO'
                           AND UPPER(TRIM(m.estado)) = 'REGISTRADO') AS pagado,
+                       (SELECT COALESCE(SUM(m.valor), 0) FROM Movimiento_financiero m
+                        WHERE m.id_contratacion = c.id_contratacion AND m.id_evento = c.id_evento
+                          AND UPPER(TRIM(m.tipo)) = 'EGRESO'
+                          AND UPPER(TRIM(m.estado)) = 'PENDIENTE') AS total_programado,
                        prog.id_movimiento AS id_programado,
                        prog.valor AS valor_programado
                 FROM Contratacion c
@@ -123,7 +128,8 @@ public class RepositoryMovimientoFinanciero {
                             rs.getBigDecimal("valor"),
                             rs.getBigDecimal("pagado"),
                             rs.getObject("id_programado", Integer.class),
-                            rs.getBigDecimal("valor_programado")));
+                            rs.getBigDecimal("valor_programado"),
+                            rs.getBigDecimal("total_programado")));
                 }
             }
         } catch (SQLException e) {
@@ -188,7 +194,11 @@ public class RepositoryMovimientoFinanciero {
                        (SELECT COALESCE(SUM(m.valor), 0) FROM Movimiento_financiero m
                         WHERE m.id_contratacion = c.id_contratacion AND m.id_evento = c.id_evento
                           AND UPPER(TRIM(m.tipo)) = 'EGRESO'
-                          AND UPPER(TRIM(m.estado)) = 'REGISTRADO') AS pagado
+                          AND UPPER(TRIM(m.estado)) = 'REGISTRADO') AS pagado,
+                       (SELECT COALESCE(SUM(m.valor), 0) FROM Movimiento_financiero m
+                        WHERE m.id_contratacion = c.id_contratacion AND m.id_evento = c.id_evento
+                          AND UPPER(TRIM(m.tipo)) = 'EGRESO'
+                          AND UPPER(TRIM(m.estado)) = 'PENDIENTE') AS programado
                 FROM Contratacion c
                 JOIN Propuesta pr ON pr.id_propuesta = c.id_propuesta
                 WHERE c.id_contratacion = ?
@@ -199,16 +209,26 @@ public class RepositoryMovimientoFinanciero {
                 rs.next();
                 BigDecimal valor = rs.getBigDecimal("valor");
                 BigDecimal pagado = rs.getBigDecimal("pagado");
+                BigDecimal programado = rs.getBigDecimal("programado");
                 if (valor == null) {
                     throw new IllegalStateException("La contratación no tiene valor acordado.");
                 }
                 BigDecimal saldoActual = valor.subtract(pagado);
+                // Lo que se confirma debe ser exactamente lo que se mostró en el resumen.
+                SaldoContratacion mostrado = pago.getContratacion();
+                if (saldoActual.compareTo(mostrado.getSaldo()) != 0
+                        || programado.compareTo(mostrado.getTotalProgramado()) != 0) {
+                    throw new IllegalStateException("El saldo de la contratación cambió desde que revisaste "
+                            + "el pago. Vuelve a las contrataciones y revisa el pago.");
+                }
+                // Un pago nuevo solo usa el saldo libre; uno programado ya está dentro de lo reservado.
+                BigDecimal disponible = pago.esPagoProgramado() ? saldoActual : saldoActual.subtract(programado);
                 boolean anticipoConPagos = pago.getTipo() == TipoPago.ANTICIPO && pagado.signum() > 0;
                 boolean finalDistinto = pago.getTipo() == TipoPago.PAGO_FINAL
-                        && pago.getValor().compareTo(saldoActual) != 0;
-                if (pago.getValor().compareTo(saldoActual) > 0 || anticipoConPagos || finalDistinto) {
+                        && pago.getValor().compareTo(disponible) != 0;
+                if (pago.getValor().compareTo(disponible) > 0 || anticipoConPagos || finalDistinto) {
                     throw new IllegalStateException(
-                            "El saldo de la contratación cambió mientras confirmabas. Revisa el pago.");
+                            "El pago ya no cumple las reglas del saldo de la contratación. Revisa el pago.");
                 }
             }
         }
