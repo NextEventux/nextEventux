@@ -200,10 +200,12 @@ public class ServiceRegistroPago {
         }
     }
 
-    /** Formato de pesos colombianos para los mensajes: $ 1.800.000. */
+    /** Formato de pesos colombianos para los mensajes, igual que en pantalla: $ 1.800.000 o $ 400.000,50. */
     private static String dinero(BigDecimal valor) {
         NumberFormat formato = NumberFormat.getNumberInstance(new Locale("es", "CO"));
-        formato.setMaximumFractionDigits(2);
+        int decimales = valor.stripTrailingZeros().scale() > 0 ? 2 : 0;
+        formato.setMinimumFractionDigits(decimales);
+        formato.setMaximumFractionDigits(decimales);
         return "$ " + formato.format(valor);
     }
 
