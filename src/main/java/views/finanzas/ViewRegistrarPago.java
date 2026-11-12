@@ -165,6 +165,11 @@ public class ViewRegistrarPago {
                 dato("Acordado", acordado),
                 dato("Pagado", dinero(contratacion.getPagado())),
                 dato("Saldo", saldo));
+        if (contratacion.tieneValor() && contratacion.getTotalProgramado().signum() > 0) {
+            datos.getChildren().addAll(
+                    dato("Programado", dinero(contratacion.getTotalProgramado())),
+                    dato("Libre", dinero(contratacion.getSaldoLibre())));
+        }
         datos.setAlignment(Pos.CENTER_LEFT);
 
         Node accion;
@@ -238,7 +243,8 @@ public class ViewRegistrarPago {
                     valor.setText(contratacion.getValorPagoProgramado().toPlainString());
                 }
             });
-            programado.setSelected(previo != null && previo.esPagoProgramado());
+            boolean sinSaldoLibre = contratacion.getSaldoLibre().signum() == 0;
+            programado.setSelected(previo != null ? previo.esPagoProgramado() : sinSaldoLibre);
         }
 
         Label error = mensaje("", "error");
@@ -263,7 +269,7 @@ public class ViewRegistrarPago {
 
         tarjeta.getChildren().setAll(
                 tituloTarjeta("Pago a " + contratacion.getServicio()),
-                ayuda(proveedor(contratacion) + " · Saldo pendiente: " + dinero(contratacion.getSaldo())),
+                ayuda(resumenSaldo(contratacion)),
                 campos);
         if (ofrecerProgramado) {
             tarjeta.getChildren().add(programado);
@@ -316,10 +322,16 @@ public class ViewRegistrarPago {
                 SaldoContratacion actualizada = controller.confirmarPago(pago);
                 mostrarPagoRegistrado(pago, actualizada);
             } catch (IllegalArgumentException | IllegalStateException ex) {
+                // El resumen ya no es válido (por ejemplo, el saldo cambió): no se deja reintentar
+                // con los mismos datos; se vuelve a la lista con los saldos actuales.
                 error.setText(ex.getMessage());
                 error.setVisible(true);
                 error.setManaged(true);
-                confirmar.setDisable(false);
+                Button volverLista = new Button("Volver a las contrataciones");
+                volverLista.setId("volverContrataciones");
+                volverLista.getStyleClass().add("btn-primary");
+                volverLista.setOnAction(ev -> mostrarContrataciones());
+                ((HBox) confirmar.getParent()).getChildren().setAll(volverLista);
             }
         });
 
@@ -441,6 +453,16 @@ public class ViewRegistrarPago {
         Label label = new Label(texto);
         label.getStyleClass().add(estilo);
         return label;
+    }
+
+    /** "Proveedor · Saldo pendiente: $ X", con lo programado y lo libre si hay pagos programados. */
+    private static String resumenSaldo(SaldoContratacion contratacion) {
+        String texto = proveedor(contratacion) + " · Saldo pendiente: " + dinero(contratacion.getSaldo());
+        if (contratacion.getTotalProgramado().signum() > 0) {
+            texto += " · Programado: " + dinero(contratacion.getTotalProgramado())
+                    + " · Libre para pagos nuevos: " + dinero(contratacion.getSaldoLibre());
+        }
+        return texto;
     }
 
     private static String proveedor(SaldoContratacion contratacion) {
