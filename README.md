@@ -40,8 +40,7 @@ Las pruebas automatizadas cubren reglas de negocio y persistencia en H2 para los
 - Cancelar o finalizar solo libera reservas que no tengan otro compromiso activo. Una asociación incoherente de una contratación con su disponibilidad bloquea la operación.
 - La finalización guarda fotografías y libera recursos antes de enviar avisos internos. Si falla el envío, se puede reintentar sin volver a cargar fotos; no se deben borrar esos datos ni reiniciar la base para resolverlo.
 - Publicar un servicio requiere disponibilidad; no se puede retirar si hay solicitudes pendientes o contrataciones activas.
-- `014_cuentas_demostracion.sql` no se ejecuta al iniciar la aplicación. Ejecutarlo manualmente restablece contraseñas coincidentes de cuentas oficiales a `1234`; no lo ejecutes sobre tu H2 sin verificar primero sus efectos.
-
+- Las cuentas oficiales de demostración se sincronizan durante la inicialización mediante `SincronizarCuentasDemo`, sin restablecer las contraseñas de las cuentas existentes. La antigua migración `014_cuentas_demostracion.sql` fue retirada porque ya no se utilizaba y podía restablecer contraseñas al ejecutarse manualmente.
 ## Tecnologías y arquitectura
 
 Versiones declaradas en [`pom.xml`](pom.xml):
