@@ -508,7 +508,11 @@ public class ViewFinanciera {
                 : valor instanceof Number ? BigDecimal.valueOf(((Number) valor).doubleValue())
                 : BigDecimal.ZERO;
         NumberFormat formato = NumberFormat.getNumberInstance(new Locale("es", "CO"));
-        formato.setMaximumFractionDigits(0);
+        // Los centavos solo se muestran si el valor los tiene (CU-10 permite pagos con centavos):
+        // $ 400.000 o $ 400.000,50, nunca redondeado a $ 400.001.
+        int decimales = numero.stripTrailingZeros().scale() > 0 ? 2 : 0;
+        formato.setMinimumFractionDigits(decimales);
+        formato.setMaximumFractionDigits(decimales);
         return "$ " + formato.format(numero);
     }
 
