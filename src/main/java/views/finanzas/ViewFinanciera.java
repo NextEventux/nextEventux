@@ -64,6 +64,8 @@ public class ViewFinanciera {
     private final Runnable abrirInvitados;
     private final Runnable cerrarSesion;
     private Runnable abrirPropuestas;
+    // CU-10: abre "Registrar pago"; si es null (por ejemplo en LanzadorFinanciera) no se muestra el botón.
+    private Runnable abrirRegistroPago;
 
     /** Uso independiente (LanzadorFinanciera). */
     public ViewFinanciera(ControllerFinanciera controller) {
@@ -90,6 +92,11 @@ public class ViewFinanciera {
 
     public ViewFinanciera conPropuestas(Runnable accion) {
         this.abrirPropuestas = accion;
+        return this;
+    }
+
+    public ViewFinanciera conRegistroPago(Runnable accion) {
+        this.abrirRegistroPago = accion;
         return this;
     }
 
@@ -346,7 +353,15 @@ public class ViewFinanciera {
         exportar.setOnAction(e -> exportarCSV(
                 exportar.getScene() != null ? exportar.getScene().getWindow() : null, estado));
 
-        HBox acciones = new HBox(12, cerrar, exportar);
+        HBox acciones = new HBox(12, cerrar);
+        if (abrirRegistroPago != null) {
+            Button registrarPago = new Button("Registrar pago");
+            registrarPago.setId("registrarPago");
+            registrarPago.getStyleClass().add("btn-secondary");
+            registrarPago.setOnAction(e -> abrirRegistroPago.run());
+            acciones.getChildren().add(registrarPago);
+        }
+        acciones.getChildren().add(exportar);
         acciones.setAlignment(Pos.CENTER_RIGHT);
         tarjeta.getChildren().add(acciones);
 
@@ -493,7 +508,11 @@ public class ViewFinanciera {
                 : valor instanceof Number ? BigDecimal.valueOf(((Number) valor).doubleValue())
                 : BigDecimal.ZERO;
         NumberFormat formato = NumberFormat.getNumberInstance(new Locale("es", "CO"));
-        formato.setMaximumFractionDigits(0);
+        // Los centavos solo se muestran si el valor los tiene (CU-10 permite pagos con centavos):
+        // $ 400.000 o $ 400.000,50, nunca redondeado a $ 400.001.
+        int decimales = numero.stripTrailingZeros().scale() > 0 ? 2 : 0;
+        formato.setMinimumFractionDigits(decimales);
+        formato.setMaximumFractionDigits(decimales);
         return "$ " + formato.format(numero);
     }
 

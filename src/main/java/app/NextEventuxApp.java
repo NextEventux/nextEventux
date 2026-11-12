@@ -5,6 +5,7 @@ import controllers.ControllerAutenticacion;
 import controllers.solicitudes.ControllerContratacionServicio;
 import controllers.eventos.ControllerEventos;
 import controllers.ControllerFinanciera;
+import controllers.ControllerRegistroPago;
 import controllers.eventos.ControllerInvitados;
 import controllers.proveedores.ControllerProveedores;
 import controllers.eventos.ControllerPublicacion;
@@ -41,6 +42,7 @@ import services.proveedores.ServiceAvisosProveedor;
 import services.solicitudes.ServiceContratacionServicio;
 import services.ServiceEventos;
 import services.ServiceFinanciera;
+import services.ServiceRegistroPago;
 import services.ServiceInvitados;
 import services.proveedores.ServiceProveedores;
 import services.ServicePublicacion;
@@ -57,6 +59,7 @@ import views.eventos.ViewEdicion;
 import views.eventos.ViewEventos;
 import views.eventos.ViewFinalizacion;
 import views.finanzas.ViewFinanciera;
+import views.finanzas.ViewRegistrarPago;
 import views.invitaciones.ViewInvitados;
 import views.servicios.ViewListaServiciosProveedor;
 import views.ViewLogin;
@@ -85,6 +88,7 @@ public class NextEventuxApp extends Application {
     private Stage stage;
     private ControllerPublicacion publicaciones;
     private ControllerFinanciera controllerFinanciera;
+    private ControllerRegistroPago controllerRegistroPago;
 
     @Override
     public void start(Stage stage) {
@@ -216,6 +220,9 @@ public class NextEventuxApp extends Application {
         controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
         controllerFinanciera = new ControllerFinanciera(new ServiceFinanciera(new RepositoryMovimientoFinanciero(),
                 new RepositoryPlanificacion(), new RepositoryEvento()), sesion);
+        // CU-10: registrar pago de una contratación.
+        controllerRegistroPago = new ControllerRegistroPago(new ServiceRegistroPago(
+                new RepositoryMovimientoFinanciero(), new RepositoryEvento()), sesion);
 
         String tipo = sesion.getTipoUsuario();
 
@@ -353,6 +360,23 @@ public class NextEventuxApp extends Application {
         navegacion.ir(Navegacion.Pantalla.ESTADO_FINANCIERO);
     }
 
+    // CU-10: se abre desde el estado financiero del evento seleccionado y vuelve a él.
+    private void mostrarRegistroPago() {
+        if (!esOrganizador() || eventoSeleccionado == null) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.ir(Navegacion.Pantalla.REGISTRAR_PAGO);
+    }
+
+    private void volverAEstadoFinanciero() {
+        if (!esOrganizador() || eventoSeleccionado == null) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.ir(Navegacion.Pantalla.ESTADO_FINANCIERO);
+    }
+
     private void registrarRutasOrganizador() {
         navegacion
                 .registrar(
@@ -477,6 +501,20 @@ public class NextEventuxApp extends Application {
                         () -> new ViewFinanciera(
                                 controllerFinanciera,
                                 sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarMisEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .conRegistroPago(this::mostrarRegistroPago)
+                                .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0))
+                .registrarDinamica(
+                        Navegacion.Pantalla.REGISTRAR_PAGO,
+                        () -> new ViewRegistrarPago(
+                                controllerRegistroPago,
+                                sesionActual,
+                                this::volverAEstadoFinanciero,
                                 this::mostrarEventos,
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
