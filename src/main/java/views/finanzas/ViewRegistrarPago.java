@@ -470,10 +470,13 @@ public class ViewRegistrarPago {
         return nombre == null || nombre.isBlank() ? "Proveedor sin nombre" : nombre;
     }
 
-    /** Formato de pesos colombianos: $ 1.800.000 (con centavos solo si los hay). */
+    /** Formato de pesos colombianos, igual que CU-06: $ 1.800.000 o $ 400.000,50. */
     private static String dinero(BigDecimal valor) {
+        BigDecimal numero = valor == null ? BigDecimal.ZERO : valor;
         NumberFormat formato = NumberFormat.getNumberInstance(new Locale("es", "CO"));
-        formato.setMaximumFractionDigits(2);
-        return "$ " + formato.format(valor == null ? BigDecimal.ZERO : valor);
+        int decimales = numero.stripTrailingZeros().scale() > 0 ? 2 : 0;
+        formato.setMinimumFractionDigits(decimales);
+        formato.setMaximumFractionDigits(decimales);
+        return "$ " + formato.format(numero);
     }
 }
