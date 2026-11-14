@@ -569,3 +569,5 @@ ALTER TABLE Segmentacion ALTER COLUMN id_segmento RESTART WITH 4;
 ALTER TABLE Campana ALTER COLUMN id_campana RESTART WITH 3;
 ALTER TABLE Envio_Campana ALTER COLUMN id_envio RESTART WITH 5;
 ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 4;
+
+INSERT INTO Presupuesto_marketing (id_presupuesto, disponible) VALUES (1, 20000000.00);
