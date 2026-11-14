@@ -1,14 +1,17 @@
 package repositories;
 
 import persistencia.DatabaseConnection;
+import entities.Campana;
 import entities.ClienteMarketing;
 import entities.SolicitudEvento;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import entities.Segmentacion;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -198,5 +201,226 @@ public class RepositoryMarketing {
             }
         }
         return ids;
+    }
+
+    // ---------- CU-22: campañas de marketing ----------
+
+    private static final String ESTADO_ENVIO = "ENVIADO";
+    private static final String SELECT_CAMPANA = "SELECT c.id_campana, c.id_usuario, c.id_segmento, c.nombre, "
+            + "c.tipo_oferta, c.fecha_inicio, c.fecha_fin, c.presupuesto_maximo, c.estado, "
+            + "c.visualizaciones, c.conversiones, s.nombre AS nombre_segmento "
+            + "FROM Campana c JOIN Segmentacion s ON s.id_segmento = c.id_segmento ";
+
+    // Busca un segmento por su identificador, esté activo o no; devuelve null si no existe.
+    public Segmentacion buscarSegmento(int idSegmento) {
+        String sql = "SELECT id_segmento, id_usuario, nombre, criterios, descripcion, estados "
+                + "FROM Segmentacion WHERE id_segmento = ?";
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, idSegmento);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    return null;
+                }
+                return new Segmentacion(
+                        result.getInt("id_segmento"),
+                        result.getInt("id_usuario"),
+                        result.getString("nombre"),
+                        result.getString("criterios"),
+                        result.getString("descripcion"),
+                        result.getString("estados"),
+                        listarIdsClientes(connection, idSegmento));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo consultar el segmento. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    // Presupuesto de marketing que todavía no está comprometido en campañas.
+    public BigDecimal obtenerPresupuestoDisponible() {
+        String sql = "SELECT disponible FROM Presupuesto_marketing WHERE id_presupuesto = 1";
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            return result.next() ? result.getBigDecimal(1) : BigDecimal.ZERO;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo consultar el presupuesto de marketing. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    /*
+     * Guarda la campaña y descuenta su presupuesto del disponible en una sola transacción.
+     * Devuelve false, sin guardar nada, si el presupuesto disponible ya no alcanza.
+     */
+    public boolean guardarCampanaComprometiendoPresupuesto(Campana campana) {
+        String descontar = "UPDATE Presupuesto_marketing SET disponible = disponible - ? "
+                + "WHERE id_presupuesto = 1 AND disponible >= ?";
+        try (Connection connection = conectar()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(descontar)) {
+                statement.setBigDecimal(1, campana.getPresupuestoMaximo());
+                statement.setBigDecimal(2, campana.getPresupuestoMaximo());
+                if (statement.executeUpdate() == 0) {
+                    connection.rollback();
+                    return false;
+                }
+                insertarCampana(connection, campana);
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo guardar la campaña. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    private void insertarCampana(Connection connection, Campana campana) throws SQLException {
+        String sql = "INSERT INTO Campana (id_usuario, id_segmento, nombre, tipo_oferta, fecha_inicio, "
+                + "fecha_fin, presupuesto_maximo, estado, visualizaciones, conversiones) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            statement.setInt(1, campana.getIdUsuario());
+            statement.setInt(2, campana.getIdSegmento());
+            statement.setString(3, campana.getNombre());
+            statement.setString(4, campana.getTipoOferta());
+            statement.setTimestamp(5, Timestamp.valueOf(campana.getFechaInicio().atStartOfDay()));
+            statement.setTimestamp(6, Timestamp.valueOf(campana.getFechaFin().atStartOfDay()));
+            statement.setBigDecimal(7, campana.getPresupuestoMaximo());
+            statement.setString(8, campana.getEstado());
+            statement.setLong(9, campana.getVisualizaciones());
+            statement.setLong(10, campana.getConversiones());
+            statement.executeUpdate();
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                if (!keys.next()) {
+                    throw new SQLException("No se generó el identificador de la campaña.");
+                }
+                campana.setIdCampana(keys.getInt(1));
+            }
+        }
+    }
+
+    // Busca una campaña de segmento por su identificador; devuelve null si no existe.
+    public Campana buscarCampana(int idCampana) {
+        String sql = SELECT_CAMPANA + "WHERE c.id_campana = ?";
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, idCampana);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? mapearCampana(result) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo consultar la campaña. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    // Lista las campañas dirigidas a un segmento; las campañas de proveedores no se incluyen.
+    public List<Campana> listarCampanas() {
+        String sql = SELECT_CAMPANA + "ORDER BY c.id_campana";
+        List<Campana> campanas = new ArrayList<>();
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                campanas.add(mapearCampana(result));
+            }
+            return campanas;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron consultar las campañas. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    /*
+     * Pasa la campaña de PROGRAMADA a ACTIVA y registra un envío para cada cliente del segmento
+     * que acepta marketing, todo en una transacción. Devuelve false si no estaba PROGRAMADA.
+     */
+    public boolean activarYDistribuirCampana(int idCampana) {
+        String activar = "UPDATE Campana SET estado = ? WHERE id_campana = ? AND estado = ?";
+        String distribuir = "INSERT INTO Envio_Campana (id_campana, id_usuario, fecha_solicitud, estado) "
+                + "SELECT c.id_campana, sc.id_usuario, CURRENT_TIMESTAMP, ? "
+                + "FROM Campana c "
+                + "JOIN Segmento_cliente sc ON sc.id_segmento = c.id_segmento "
+                + "JOIN Usuario u ON u.id_usuario = sc.id_usuario "
+                + "WHERE c.id_campana = ? AND u.acepta_marketing = TRUE";
+        try (Connection connection = conectar()) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement statement = connection.prepareStatement(activar)) {
+                    statement.setString(1, Campana.ESTADO_ACTIVA);
+                    statement.setInt(2, idCampana);
+                    statement.setString(3, Campana.ESTADO_PROGRAMADA);
+                    if (statement.executeUpdate() == 0) {
+                        connection.rollback();
+                        return false;
+                    }
+                }
+                try (PreparedStatement statement = connection.prepareStatement(distribuir)) {
+                    statement.setString(1, ESTADO_ENVIO);
+                    statement.setInt(2, idCampana);
+                    statement.executeUpdate();
+                }
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo activar la campaña. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    // Cambia el estado solo si la campaña está en el estado esperado; devuelve true si lo cambió.
+    public boolean cambiarEstadoCampana(int idCampana, String estadoEsperado, String estadoNuevo) {
+        String sql = "UPDATE Campana SET estado = ? WHERE id_campana = ? AND estado = ?";
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, estadoNuevo);
+            statement.setInt(2, idCampana);
+            statement.setString(3, estadoEsperado);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo cambiar el estado de la campaña. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    // Suma una visualización a una campaña ACTIVA; devuelve false si no lo está.
+    public boolean incrementarVisualizaciones(int idCampana) {
+        return incrementarMetrica("visualizaciones", idCampana);
+    }
+
+    // Suma una conversión a una campaña ACTIVA; devuelve false si no lo está.
+    public boolean incrementarConversiones(int idCampana) {
+        return incrementarMetrica("conversiones", idCampana);
+    }
+
+    private boolean incrementarMetrica(String columna, int idCampana) {
+        String sql = "UPDATE Campana SET " + columna + " = " + columna + " + 1 "
+                + "WHERE id_campana = ? AND estado = ?";
+        try (Connection connection = conectar();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, idCampana);
+            statement.setString(2, Campana.ESTADO_ACTIVA);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo registrar la métrica de la campaña. Revisa la conexión con la base de datos.", e);
+        }
+    }
+
+    private Campana mapearCampana(ResultSet result) throws SQLException {
+        return new Campana(
+                result.getInt("id_campana"),
+                result.getInt("id_usuario"),
+                result.getInt("id_segmento"),
+                result.getString("nombre"),
+                result.getString("tipo_oferta"),
+                result.getTimestamp("fecha_inicio").toLocalDateTime().toLocalDate(),
+                result.getTimestamp("fecha_fin").toLocalDateTime().toLocalDate(),
+                result.getBigDecimal("presupuesto_maximo"),
+                result.getString("estado"),
+                result.getLong("visualizaciones"),
+                result.getLong("conversiones"),
+                result.getString("nombre_segmento"));
     }
 }
