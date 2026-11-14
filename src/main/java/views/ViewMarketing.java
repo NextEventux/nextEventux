@@ -36,7 +36,6 @@ public class ViewMarketing {
     private final Runnable cerrarSesion;
     private Runnable abrirSanciones;
     private Runnable abrirMarketing;
-    private Runnable abrirCampanas;
     private final TableView<Segmentacion> tabla = new TableView<>();
     private final Label resumenSegmentos = new Label("0");
     private final Label resumenClientes = new Label("0");
@@ -69,12 +68,6 @@ public class ViewMarketing {
     public ViewMarketing conNavegacion(Runnable sanciones, Runnable marketing) {
         this.abrirSanciones = sanciones;
         this.abrirMarketing = marketing;
-        return this;
-    }
-
-    // permite abrir la pantalla para crear una campaña dirigida a un segmento
-    public ViewMarketing conCampanas(Runnable abrirCampanas) {
-        this.abrirCampanas = abrirCampanas;
         return this;
     }
 
@@ -168,13 +161,6 @@ public class ViewMarketing {
         generar.getStyleClass().add("btn-primary");
         generar.setOnAction(event -> generarSegmentos());
         HBox acciones = new HBox(12, generar);
-        if (abrirCampanas != null) {
-            Button crearCampana = new Button("Crear campaña");
-            crearCampana.setId("crearCampana");
-            crearCampana.getStyleClass().add("btn-secondary");
-            crearCampana.setOnAction(event -> abrirCampanas.run());
-            acciones.getChildren().add(0, crearCampana);
-        }
         acciones.setAlignment(Pos.CENTER_RIGHT);
 
         tarjeta.getChildren().addAll(titulo, ayuda, tabla, mensaje, acciones);
