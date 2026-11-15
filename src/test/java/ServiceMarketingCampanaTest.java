@@ -171,6 +171,17 @@ class ServiceMarketingCampanaTest {
     }
 
     @Test
+    void unaCampanaProgramadaVencidaSeFinalizaSinDistribuir() throws Exception {
+        int id = crearYObtenerId("100000");
+        reloj.setFecha(FIN.plusDays(1));
+
+        servicio.verificarCampanas();
+
+        assertEquals(Campana.ESTADO_FINALIZADA, servicio.obtenerCampana(id).getEstado());
+        assertEquals(0, DatosCampanaPrueba.contarEnvios(url, id));
+    }
+
+    @Test
     void lanzarUnaCampanaQueNoEstaProgramadaFalla() {
         int id = crearYActivar();
         assertThrows(IllegalArgumentException.class, () -> servicio.lanzarCampana(id));
@@ -283,6 +294,20 @@ class ServiceMarketingCampanaTest {
         servicio.verificarCampanas();
 
         assertEquals(Campana.ESTADO_FINALIZADA, servicio.obtenerCampana(id).getEstado());
+    }
+
+    @Test
+    void unaCampanaPausadaVencidaNoSePuedeReanudar() throws Exception {
+        int id = crearYActivar();
+        servicio.pausarCampana(DatosCampanaPrueba.ADMINISTRADOR, id);
+        reloj.setFecha(FIN);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> servicio.reanudarCampana(DatosCampanaPrueba.ADMINISTRADOR, id));
+
+        assertTrue(error.getMessage().contains("ya finalizó"));
+        assertEquals(Campana.ESTADO_PAUSADA, servicio.obtenerCampana(id).getEstado());
+        assertEquals(2, DatosCampanaPrueba.contarEnvios(url, id));
     }
 
     @Test

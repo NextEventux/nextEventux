@@ -252,7 +252,11 @@ public class ServiceMarketing {
     // Reactiva una campaña pausada (PAUSADA -> ACTIVA).
     public void reanudarCampana(int idAdministrador, int idCampana) {
         exigirAdministrador(idAdministrador);
-        exigirCampana(idCampana);
+        Campana campana = exigirCampana(idCampana);
+        if (Campana.ESTADO_PAUSADA.equals(campana.getEstado())
+                && !campana.getFechaFin().isAfter(LocalDate.now(reloj))) {
+            throw new IllegalArgumentException("La campaña ya finalizó y no se puede reanudar.");
+        }
         if (!repositorio.cambiarEstadoCampana(idCampana, Campana.ESTADO_PAUSADA, Campana.ESTADO_ACTIVA)) {
             throw transicionInvalida(idCampana, "reactivarse");
         }
@@ -300,15 +304,18 @@ public class ServiceMarketing {
     }
 
     /*
-     * Activa las campañas programadas cuya fecha de inicio llegó y desactiva las activas
-     * o pausadas cuya fecha de fin llegó. La campaña termina el día de su fecha de fin.
+     * Activa solo las campañas programadas dentro de su vigencia y finaliza las vencidas
+     * sin distribuirlas. También finaliza las activas o pausadas cuya fecha de fin llegó.
      */
     public void verificarCampanas() {
         LocalDate hoy = LocalDate.now(reloj);
         for (Campana campana : repositorio.listarCampanas()) {
-            if (Campana.ESTADO_PROGRAMADA.equals(campana.getEstado())
-                    && !campana.getFechaInicio().isAfter(hoy)) {
-                intentar(() -> lanzarCampana(campana.getIdCampana()));
+            if (Campana.ESTADO_PROGRAMADA.equals(campana.getEstado())) {
+                if (!campana.getFechaFin().isAfter(hoy)) {
+                    intentar(() -> finalizarCampanaProgramada(campana.getIdCampana()));
+                } else if (!campana.getFechaInicio().isAfter(hoy)) {
+                    intentar(() -> lanzarCampana(campana.getIdCampana()));
+                }
             }
         }
         for (Campana campana : repositorio.listarCampanas()) {
@@ -317,6 +324,13 @@ public class ServiceMarketing {
             if (vigente && !campana.getFechaFin().isAfter(hoy)) {
                 intentar(() -> finalizarCampana(campana.getIdCampana()));
             }
+        }
+    }
+
+    private void finalizarCampanaProgramada(int idCampana) {
+        if (!repositorio.cambiarEstadoCampana(
+                idCampana, Campana.ESTADO_PROGRAMADA, Campana.ESTADO_FINALIZADA)) {
+            throw transicionInvalida(idCampana, "finalizarse");
         }
     }
 
