@@ -170,7 +170,7 @@ public class ServiceMarketing {
         return texto != null && !texto.isBlank();
     }
 
-    // ---------- CU-22: crear campaña de marketing ----------
+    // ---------- cu-23: crear campaña de marketing ----------
 
     private static final Logger LOG = Logger.getLogger(ServiceMarketing.class.getName());
 

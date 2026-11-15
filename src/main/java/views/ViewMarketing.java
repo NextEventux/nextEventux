@@ -72,7 +72,7 @@ public class ViewMarketing {
         return this;
     }
 
-    // CU-22: permite abrir la pantalla para crear una campaña dirigida a un segmento.
+    // cu-23: permite abrir la pantalla para crear una campaña dirigida a un segmento.
     public ViewMarketing conCampanas(Runnable abrirCampanas) {
         this.abrirCampanas = abrirCampanas;
         return this;

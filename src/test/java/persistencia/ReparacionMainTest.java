@@ -12,7 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReparacionMainTest {
-    // Migraciones registradas: 010, 011, 012, 013 de Marketing, 015 del catálogo demo y 016 de CU-22.
+    // Migraciones registradas: 010, 011, 012, 013 de Marketing, 015 del catálogo demo y 016 de cu-23.
 
     private static final int MIGRACIONES_REGISTRADAS = 6;
 

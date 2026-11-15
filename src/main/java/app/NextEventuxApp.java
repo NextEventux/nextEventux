@@ -135,7 +135,7 @@ public class NextEventuxApp extends Application {
         controllerAutenticacion = new ControllerAutenticacion(
                 new ServiceAutenticacion(new RepositoryAutenticacion()));
 
-        // CU-22: las campañas se activan y se desactivan solas en sus fechas
+        // cu-23: las campañas se activan y se desactivan solas en sus fechas
         serviceMarketing = new services.ServiceMarketing(new repositories.RepositoryMarketing());
         serviceMarketing.setAlFinalizarCampana(this::avisarCampanaFinalizada);
         serviceMarketing.iniciarPlanificador(PERIODO_REVISION_CAMPANAS_SEGUNDOS);
@@ -302,7 +302,7 @@ public class NextEventuxApp extends Application {
                                 .conNavegacion(this::mostrarSancionesProveedor, this::mostrarMarketing)
                                 .conCampanas(this::mostrarCampanas)
                                 .crearPantalla());
-                // CU-22: crear campañas de marketing
+                // cu-23: crear campañas de marketing
                 navegacion.registrarDinamica(
                         Navegacion.Pantalla.CAMPANAS,
                         () -> new views.ViewCampana(
@@ -567,7 +567,7 @@ public class NextEventuxApp extends Application {
         navegacion.mostrarEn(contenedor, Navegacion.Pantalla.MARKETING);
     }
 
-    // CU-22: la creación de campañas es exclusiva del administrador
+    // cu-23: la creación de campañas es exclusiva del administrador
     private void mostrarCampanas() {
         if (sesionActual == null
                 || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
@@ -577,7 +577,7 @@ public class NextEventuxApp extends Application {
         navegacion.mostrarEn(contenedor, Navegacion.Pantalla.CAMPANAS);
     }
 
-    // CU-22: al terminar una campaña, el administrador conectado ve su resumen
+    // cu-23: al terminar una campaña, el administrador conectado ve su resumen
     private void avisarCampanaFinalizada(entities.Campana campana) {
         javafx.application.Platform.runLater(() -> {
             if (sesionActual != null

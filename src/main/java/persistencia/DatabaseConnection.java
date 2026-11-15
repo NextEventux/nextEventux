@@ -134,7 +134,7 @@ public class DatabaseConnection {
         ejecutarUnaVez(connection,"013_marketing_cu21.sql", null);
         //Catalogo de demostracion
         ejecutarUnaVez(connection, "015_catalogo_demostracion.sql", null);
-        // CU-22: campañas de marketing y presupuesto de marketing
+        // cu-23: campañas de marketing y presupuesto de marketing
         ejecutarUnaVez(connection, "016_marketing_cu22.sql", null);
 
         if (repararContadorEventos) {

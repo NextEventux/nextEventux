@@ -12,7 +12,7 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import persistencia.DatabaseConnection;
 
-// Datos de prueba del CU-22: administrador, clientes, segmentos y presupuesto de marketing.
+// Datos de prueba del cu-23: administrador, clientes, segmentos y presupuesto de marketing.
 final class DatosCampanaPrueba {
     static final int ADMINISTRADOR = 1;
     static final int CLIENTE_CON_CONSENTIMIENTO = 2;

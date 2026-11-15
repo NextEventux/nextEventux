@@ -3,7 +3,7 @@ package entities;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-//Campaña de marketing dirigida a un segmento de clientes (CU-22).
+//Campaña de marketing dirigida a un segmento de clientes (cu-23).
 public class Campana {
     public static final String ESTADO_PROGRAMADA = "PROGRAMADA";
     public static final String ESTADO_ACTIVA = "ACTIVA";

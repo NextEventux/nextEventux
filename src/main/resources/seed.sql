@@ -572,7 +572,7 @@ ALTER TABLE Puntos_fidelidad ALTER COLUMN id_puntos RESTART WITH 4;
 
 
 -- ---------------------------------------------------------
--- PRESUPUESTO DE MARKETING (CU-22)
+-- PRESUPUESTO DE MARKETING (cu-23)
 -- ---------------------------------------------------------
 
 INSERT INTO Presupuesto_marketing (id_presupuesto, disponible) VALUES (1, 20000000.00);

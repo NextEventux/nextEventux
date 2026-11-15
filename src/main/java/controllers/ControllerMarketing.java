@@ -21,7 +21,7 @@ public class ControllerMarketing {
         return serviceMarketing.listarSegmentosActivos();
     }
 
-    // CU-22: crear campaña de marketing
+    // cu-23: crear campaña de marketing
 
     public Campana crearCampana(Campana campana) {
         return serviceMarketing.crearCampana(campana);

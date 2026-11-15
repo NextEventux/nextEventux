@@ -203,7 +203,7 @@ public class RepositoryMarketing {
         return ids;
     }
 
-    // ---------- CU-22: campañas de marketing ----------
+    // ---------- cu-23: campañas de marketing ----------
 
     private static final String ESTADO_ENVIO = "ENVIADO";
     private static final String SELECT_CAMPANA = "SELECT c.id_campana, c.id_usuario, c.id_segmento, c.nombre, "

@@ -35,7 +35,7 @@ import javafx.util.Duration;
 import javafx.util.StringConverter;
 import views.components.MenuCompartido;
 
-// CU-22: pantalla para crear campañas de marketing y seguir su estado y sus métricas.
+// cu-23: pantalla para crear campañas de marketing y seguir su estado y sus métricas.
 public class ViewCampana {
     private static final double SEGUNDOS_ACTUALIZACION = 2;
 
