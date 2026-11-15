@@ -1,7 +1,7 @@
 package controllers;
 
-import entities.Segmentacion;
 import entities.Campana;
+import entities.Segmentacion;
 import java.util.List;
 import services.ServiceMarketing;
 

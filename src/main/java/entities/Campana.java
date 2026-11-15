@@ -3,7 +3,7 @@ package entities;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-//Campaña de marketing dirigida a un segmento de clientes
+//Campaña de marketing dirigida a un segmento de clientes (CU-22).
 public class Campana {
     public static final String ESTADO_PROGRAMADA = "PROGRAMADA";
     public static final String ESTADO_ACTIVA = "ACTIVA";
@@ -23,14 +23,14 @@ public class Campana {
     private final long conversiones;
     private final String nombreSegmento;
 
-    //Campaña nueva: queda programada y sin métricas
+    //Campaña nueva: queda programada y sin métricas.
     public Campana(int idUsuario, int idSegmento, String nombre, String tipoOferta,
                    LocalDate fechaInicio, LocalDate fechaFin, BigDecimal presupuestoMaximo) {
         this(null, idUsuario, idSegmento, nombre, tipoOferta, fechaInicio, fechaFin,
                 presupuestoMaximo, ESTADO_PROGRAMADA, 0L, 0L, null);
     }
 
-    //Campaña que ya existe en la BD
+    //Campaña que ya existe en la BD.
     public Campana(Integer idCampana, int idUsuario, int idSegmento, String nombre, String tipoOferta,
                    LocalDate fechaInicio, LocalDate fechaFin, BigDecimal presupuestoMaximo,
                    String estado, long visualizaciones, long conversiones, String nombreSegmento) {
@@ -68,12 +68,12 @@ public class Campana {
 
     public String getEstado() { return estado; }
 
-    //Alcance: veces que se visualizó la oferta
+    //Alcance: veces que se visualizó la oferta.
     public long getVisualizaciones() { return visualizaciones; }
 
-    //Conversión: servicios contratados a partir de la oferta
+    //Conversión: servicios contratados a partir de la oferta.
     public long getConversiones() { return conversiones; }
 
-    //Nombre del segmento; solo viene lleno cuando la campaña se lee de la BD
+    //Nombre del segmento; solo viene lleno cuando la campaña se lee de la BD.
     public String getNombreSegmento() { return nombreSegmento; }
 }
