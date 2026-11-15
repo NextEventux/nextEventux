@@ -104,6 +104,12 @@ public class NextEventuxApp extends Application {
                 System.out.println("[BD] Se sincronizaron " + cuentasCreadas
                         + " cuentas de demostración faltantes.");
             }
+            int datosSegmentacion = inicializacion.SincronizarPreferenciasClientesDemo
+                    .sincronizar(conexion);
+            if (datosSegmentacion > 0) {
+                System.out.println("[BD] Se completaron " + datosSegmentacion
+                        + " datos demo para segmentar clientes.");
+            }
             inicializacion.SincronizarCatalogoDemo.Resultado catalogo
                     = inicializacion.SincronizarCatalogoDemo.sincronizar(conexion);
             if (catalogo.eventosCreados() > 0 || catalogo.serviciosCreados() > 0) {
