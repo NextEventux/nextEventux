@@ -1,6 +1,6 @@
--- CU-22: Crear campaña de marketing.
+-- CU-23: Crear campaña de marketing.
 
--- Las campañas del CU-22 las crea un administrador para un segmento, sin proveedor.
+-- Las campañas del CU-23 las crea un administrador para un segmento, sin proveedor.
 -- Las campañas de proveedores ya existentes conservan su id_proveedor.
 ALTER TABLE Campana ALTER COLUMN id_proveedor SET NULL;
 
