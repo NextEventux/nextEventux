@@ -80,6 +80,8 @@ public class NextEventuxApp extends Application {
     private ControllerSancionesProveedor controllerSanciones;
 
     private SesionUsuario sesionActual;
+    private static final long PERIODO_REVISION_CAMPANAS_SEGUNDOS = 5;
+    private services.ServiceMarketing serviceMarketing;
     private Navegacion navegacion;
     private Servicio servicioSeleccionado;
     private Integer servicioProveedorSeleccionado;
@@ -105,6 +107,15 @@ public class NextEventuxApp extends Application {
             if (cuentasCreadas > 0) {
                 System.out.println("[BD] Se sincronizaron " + cuentasCreadas
                         + " cuentas de demostración faltantes.");
+            }
+            int datosSegmentacion = inicializacion.SincronizarPreferenciasClientesDemo
+                    .sincronizar(conexion);
+            if (datosSegmentacion > 0) {
+                System.out.println("[BD] Se completaron " + datosSegmentacion
+                        + " datos demo para segmentar clientes.");
+            }
+            if (inicializacion.SincronizarPresupuestoMarketing.sincronizar(conexion)) {
+                System.out.println("[BD] Se creó el presupuesto de marketing inicial.");
             }
             inicializacion.SincronizarCatalogoDemo.Resultado catalogo
                     = inicializacion.SincronizarCatalogoDemo.sincronizar(conexion);
@@ -136,6 +147,11 @@ public class NextEventuxApp extends Application {
 
         controllerAutenticacion = new ControllerAutenticacion(
                 new ServiceAutenticacion(new RepositoryAutenticacion()));
+
+        // cu-23: las campañas se activan y se desactivan solas en sus fechas
+        serviceMarketing = new services.ServiceMarketing(new repositories.RepositoryMarketing());
+        serviceMarketing.setAlFinalizarCampana(this::avisarCampanaFinalizada);
+        serviceMarketing.iniciarPlanificador(PERIODO_REVISION_CAMPANAS_SEGUNDOS);
 
         controllerProveedores = new ControllerProveedores(
                 new ServiceProveedores(
@@ -294,14 +310,24 @@ public class NextEventuxApp extends Application {
                 navegacion.registrarDinamica(
                         Navegacion.Pantalla.MARKETING,
                         () -> new views.ViewMarketing(
-                                new controllers.ControllerMarketing(
-                                        new services.ServiceMarketing(
-                                                new repositories.RepositoryMarketing())),
+                                new controllers.ControllerMarketing(serviceMarketing),
                                 sesionActual.getIdUsuario(),
                                 sesionActual,
                                 this::mostrarPublicacion,
                                 this::mostrarLogin)
                                 .conNavegacion(this::mostrarSancionesProveedor, this::mostrarMarketing)
+                                .conCampanas(this::mostrarCampanas)
+                                .crearPantalla());
+                // cu-23: crear campañas de marketing
+                navegacion.registrarDinamica(
+                        Navegacion.Pantalla.CAMPANAS,
+                        () -> new views.ViewCampana(
+                                new controllers.ControllerMarketing(serviceMarketing),
+                                sesionActual,
+                                this::mostrarMarketing,
+                                this::mostrarLogin,
+                                this::mostrarSancionesProveedor,
+                                this::mostrarPublicacion)
                                 .crearPantalla());
             }
             if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
@@ -586,6 +612,33 @@ public class NextEventuxApp extends Application {
             return;
         }
         navegacion.mostrarEn(contenedor, Navegacion.Pantalla.MARKETING);
+    }
+
+    // cu-23: la creación de campañas es exclusiva del administrador
+    private void mostrarCampanas() {
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.mostrarEn(contenedor, Navegacion.Pantalla.CAMPANAS);
+    }
+
+    // cu-23: al terminar una campaña, el administrador conectado ve su resumen
+    private void avisarCampanaFinalizada(entities.Campana campana) {
+        javafx.application.Platform.runLater(() -> {
+            if (sesionActual != null
+                    && "ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+                views.ViewCampana.mostrarResumen(campana);
+            }
+        });
+    }
+
+    @Override
+    public void stop() {
+        if (serviceMarketing != null) {
+            serviceMarketing.detenerPlanificador();
+        }
     }
 
     /**

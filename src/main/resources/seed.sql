@@ -45,6 +45,22 @@ VALUES
 (15, 'Mateo Castillo', 'mateo', '1234', 'ACTIVO', TIMESTAMP '2026-10-06 09:10:00', FALSE, 'ADMINISTRADOR'),
 (16, 'Shirly Montenegro', 'shirly', '1234', 'ACTIVO', TIMESTAMP '2026-10-06 09:20:00', FALSE, 'ADMINISTRADOR');
 
+-- Ubicacion y preferencias demo para la segmentacion de clientes.
+UPDATE Usuario SET pais = 'Colombia', ciudad = 'Bogotá'
+WHERE usuario = 'ana.martinez' AND tipo_usuario = 'CLIENTE';
+UPDATE Usuario SET pais = 'Colombia', ciudad = 'Bogotá'
+WHERE usuario = 'diego.perez' AND tipo_usuario = 'CLIENTE';
+UPDATE Usuario SET pais = 'Colombia', ciudad = 'Medellín'
+WHERE usuario = 'paula.rios' AND tipo_usuario = 'CLIENTE';
+
+INSERT INTO Busqueda_evento (id_usuario, tipo, fecha_busqueda)
+SELECT id_usuario, 'Boda', CURRENT_TIMESTAMP
+FROM Usuario WHERE usuario IN ('ana.martinez', 'diego.perez')
+    AND tipo_usuario = 'CLIENTE';
+INSERT INTO Busqueda_evento (id_usuario, tipo, fecha_busqueda)
+SELECT id_usuario, 'Quinceaños', CURRENT_TIMESTAMP
+FROM Usuario WHERE usuario = 'paula.rios' AND tipo_usuario = 'CLIENTE';
+
 -- ---------------------------------------------------------
 -- ROLES Y PERMISOS
 -- ---------------------------------------------------------
