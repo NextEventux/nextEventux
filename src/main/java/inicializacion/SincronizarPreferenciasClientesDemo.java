@@ -140,11 +140,17 @@ public final class SincronizarPreferenciasClientesDemo {
 
     private static int asegurarPreferencia(
             Connection conexion, int idUsuario, String tipoEvento) throws SQLException {
-        String buscar = "SELECT 1 FROM Busqueda_evento WHERE id_usuario = ? "
-                + "AND UPPER(TRIM(tipo)) = UPPER(?) LIMIT 1";
+        String buscar = "SELECT 1 FROM ("
+                + "SELECT tipo FROM Busqueda_evento WHERE id_usuario = ? "
+                + "UNION ALL SELECT tipo FROM Evento WHERE id_cliente = ? "
+                + "UNION ALL SELECT tipo_evento AS tipo "
+                + "FROM Solicitud_Contratacion_Organizador WHERE id_cliente = ?"
+                + ") preferencias WHERE UPPER(TRIM(tipo)) = UPPER(?) LIMIT 1";
         try (PreparedStatement consulta = conexion.prepareStatement(buscar)) {
             consulta.setInt(1, idUsuario);
-            consulta.setString(2, tipoEvento);
+            consulta.setInt(2, idUsuario);
+            consulta.setInt(3, idUsuario);
+            consulta.setString(4, tipoEvento);
             try (ResultSet resultado = consulta.executeQuery()) {
                 if (resultado.next()) {
                     return 0;
