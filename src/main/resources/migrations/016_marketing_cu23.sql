@@ -18,7 +18,7 @@ ALTER TABLE Campana ADD CONSTRAINT IF NOT EXISTS fk_campana_segmento
     FOREIGN KEY (id_segmento) REFERENCES Segmentacion(id_segmento);
 
 -- Presupuesto de marketing que aún no está comprometido en campañas (una sola fila, id 1).
--- La migración no inserta datos: sin fila, el disponible es 0 y la base sigue contando como vacía.
+-- La migración no inserta datos; SincronizarPresupuestoMarketing lo crea al iniciar la aplicación.
 CREATE TABLE IF NOT EXISTS Presupuesto_marketing (
     id_presupuesto INT PRIMARY KEY,
     disponible DECIMAL(12,2) NOT NULL CHECK (disponible >= 0)

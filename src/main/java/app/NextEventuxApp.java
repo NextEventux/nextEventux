@@ -110,6 +110,9 @@ public class NextEventuxApp extends Application {
                 System.out.println("[BD] Se completaron " + datosSegmentacion
                         + " datos demo para segmentar clientes.");
             }
+            if (inicializacion.SincronizarPresupuestoMarketing.sincronizar(conexion)) {
+                System.out.println("[BD] Se creó el presupuesto de marketing inicial.");
+            }
             inicializacion.SincronizarCatalogoDemo.Resultado catalogo
                     = inicializacion.SincronizarCatalogoDemo.sincronizar(conexion);
             if (catalogo.eventosCreados() > 0 || catalogo.serviciosCreados() > 0) {
