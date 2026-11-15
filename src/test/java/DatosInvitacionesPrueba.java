@@ -26,8 +26,8 @@ class DatosInvitacionesPrueba {
                     + "(2, 'Sala Pequeña', 'Calle 2', 2, 'DISPONIBLE')");
             statement.executeUpdate("INSERT INTO Evento (id_evento, id_organizador, nombre, fecha_inicio, fecha_fin, "
                     + "ubicacion, estado, fecha_creacion) VALUES "
-                    + "(1, 1, 'Boda', TIMESTAMP '2026-11-15 15:00:00', TIMESTAMP '2026-11-15 23:00:00', 'Salón Grande', 'PLANEADO', CURRENT_TIMESTAMP), "
-                    + "(2, 1, 'Cumpleaños', TIMESTAMP '2026-12-01 15:00:00', TIMESTAMP '2026-12-01 20:00:00', 'Sala Pequeña', 'PLANEADO', CURRENT_TIMESTAMP), "
+                    + "(1, 1, 'Boda', TIMESTAMP '2026-12-15 15:00:00', TIMESTAMP '2026-12-15 23:00:00', 'Salón Grande', 'PLANEADO', CURRENT_TIMESTAMP), "
+                    + "(2, 1, 'Cumpleaños', TIMESTAMP '2026-12-20 15:00:00', TIMESTAMP '2026-12-20 20:00:00', 'Sala Pequeña', 'PLANEADO', CURRENT_TIMESTAMP), "
                     + "(3, 1, 'Cancelado', TIMESTAMP '2026-12-10 15:00:00', TIMESTAMP '2026-12-10 20:00:00', 'Salón Grande', 'CANCELADO', CURRENT_TIMESTAMP), "
                     + "(4, 1, 'Pasado', TIMESTAMP '2020-01-10 15:00:00', TIMESTAMP '2020-01-10 20:00:00', 'Salón Grande', 'PLANEADO', CURRENT_TIMESTAMP)");
         }
