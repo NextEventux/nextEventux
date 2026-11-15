@@ -8,27 +8,38 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
+import persistencia.PropiedadSistemaTemporal;
 import entities.solicitudes.PropuestaServicio;
 import services.solicitudes.ServiceSolicitudes;
 
 /** CU-12: el material de apoyo de una propuesta es opcional y queda en su versión. */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class MaterialApoyoPropuestaH2Test {
 
     private static final String URL
             = "jdbc:h2:mem:cu12material;DB_CLOSE_DELAY=-1";
 
     private ServiceSolicitudes proveedor;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
+        propiedadUrlBaseDatos =
+                new PropiedadSistemaTemporal("nexteventux.db.url", URL);
         DatosCU12Prueba.preparar(URL);
         proveedor = DatosCU12Prueba.servicioProveedor();
     }
 
     @AfterEach
     void limpiar() throws Exception {
-        DatosCU12Prueba.limpiar(URL);
+        try {
+            DatosCU12Prueba.limpiar(URL);
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
+        }
     }
 
     private int enviar(String material) {

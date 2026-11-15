@@ -8,9 +8,12 @@ import java.sql.*;
 import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class ReparacionMainTest {
     // Migraciones registradas: 010, 011, 012, 013 de Marketing, 015 del catálogo demo y 016 de cu-23.
 
@@ -19,12 +22,12 @@ class ReparacionMainTest {
     @TempDir Path carpeta;
 
     @Test void rutaAbsolutaConfigurableSinTocarLaBaseReal() {
-        String anterior=System.getProperty("nexteventux.home");
+        PropiedadSistemaTemporal propiedadDirectorio =
+                new PropiedadSistemaTemporal("nexteventux.home",carpeta.toString());
         try {
-            System.setProperty("nexteventux.home",carpeta.toString());
             assertEquals("jdbc:h2:"+carpeta.resolve("nexteventux").toString().replace('\\', '/')+";DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE",DatabaseConnection.urlPorDefecto());
         } finally {
-            if(anterior==null)System.clearProperty("nexteventux.home");else System.setProperty("nexteventux.home",anterior);
+            propiedadDirectorio.restaurar();
         }
     }
 

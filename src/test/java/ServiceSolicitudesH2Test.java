@@ -18,8 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.solicitudes.PropuestaServicio;
 import entities.SesionUsuario;
 import entities.solicitudes.SolicitudEjecucion;
@@ -27,20 +30,22 @@ import repositories.solicitudes.RepositorySolicitudEjecucion;
 import repositories.solicitudes.RepositoryPropuestaServicio;
 import services.solicitudes.ServiceSolicitudes;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class ServiceSolicitudesH2Test {
 
     private static final String URL
             = "jdbc:h2:mem:cu12solicitudes;DB_CLOSE_DELAY=-1";
 
     private ServiceSolicitudes service;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
 
-        System.setProperty("nexteventux.db.url", URL);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", URL);
 
         // La conexion inicializa el esquema y las migraciones de CU12
-        try (Connection connection = DatabaseConnection.getConnection(); Statement statement = connection.createStatement()) {
+        try (Connection connection = DatabaseConnection.getConnection(URL); Statement statement = connection.createStatement()) {
 
             // Estos registros solo se usan para probar las solicitudes
             statement.execute("SET REFERENTIAL_INTEGRITY FALSE");
@@ -87,7 +92,7 @@ public class ServiceSolicitudesH2Test {
     }
 
     private void prepararDatosSolicitud() throws Exception {
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(URL);
                 Statement statement = connection.createStatement()) {
 
             statement.execute("SET REFERENTIAL_INTEGRITY FALSE");
@@ -140,7 +145,7 @@ public class ServiceSolicitudesH2Test {
                 statement.execute("DROP ALL OBJECTS");
             }
         } finally {
-            System.clearProperty("nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 

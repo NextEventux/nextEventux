@@ -3,10 +3,13 @@ import entities.eventos.Planificacion;
 
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.SesionUsuario;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.eventos.RepositoryPlanificacion;
@@ -27,16 +30,19 @@ import static org.junit.jupiter.api.Assertions.*;
  * de 15.000.000, dos contrataciones ACTIVA (1.800.000 y 2.200.000) y cuatro
  * movimientos EGRESO que suman 4.000.000.
  */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class ServiceFinancieraH2Test {
 
+    private static final String URL = "jdbc:h2:mem:cu06_test;DB_CLOSE_DELAY=-1";
     private static final double DELTA = 0.001;
 
     private ServiceFinanciera service;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void prepararBaseDatos() throws Exception {
-        System.setProperty("nexteventux.db.url", "jdbc:h2:mem:cu06_test;DB_CLOSE_DELAY=-1");
-        try (Connection connection = DatabaseConnection.getConnection()) {
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", URL);
+        try (Connection connection = DatabaseConnection.getConnection(URL)) {
             CargarDatosEjemplo.cargar(connection);
         }
         service = new ServiceFinanciera(
@@ -47,11 +53,14 @@ public class ServiceFinancieraH2Test {
 
     @AfterEach
     void limpiar() throws Exception {
-        try (Connection connection = DatabaseConnection.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.execute("DROP ALL OBJECTS");
+        try {
+            try (Connection connection = DatabaseConnection.getConnection(URL);
+                    Statement statement = connection.createStatement()) {
+                statement.execute("DROP ALL OBJECTS");
+            }
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
         }
-        System.clearProperty("nexteventux.db.url");
     }
 
     @Test
@@ -334,7 +343,7 @@ public class ServiceFinancieraH2Test {
     }
 
     private static void ejecutar(String sql) throws Exception {
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(URL);
              Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
         }

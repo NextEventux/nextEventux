@@ -11,13 +11,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class DatosDemostracionH2Test {
 
     private static final String TEST_URL
@@ -26,7 +30,8 @@ public class DatosDemostracionH2Test {
     @Test
     void usuariosDeDemostracionDebenPoderIngresar() throws Exception {
 
-        System.setProperty("nexteventux.db.url", TEST_URL);
+        PropiedadSistemaTemporal propiedadUrlBaseDatos =
+                new PropiedadSistemaTemporal("nexteventux.db.url", TEST_URL);
 
         try {
             try (Connection connection
@@ -116,7 +121,7 @@ public class DatosDemostracionH2Test {
             }
 
         } finally {
-            System.clearProperty("nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 

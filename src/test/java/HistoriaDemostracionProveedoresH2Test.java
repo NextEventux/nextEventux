@@ -12,9 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.contrataciones.ConfirmacionContratacion;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
@@ -31,14 +34,16 @@ import services.solicitudes.ServiceSolicitudes;
  * solicitudes en todos los estados y la propuesta seleccionada se puede
  * contratar de principio a fin.
  */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class HistoriaDemostracionProveedoresH2Test {
 
     private String url;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void cargarDatos() throws Exception {
         url = "jdbc:h2:mem:historia_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
-        System.setProperty("nexteventux.db.url", url);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", url);
 
         try (Connection connection = DatabaseConnection.getConnection(url)) {
             CargarDatosEjemplo.cargar(connection);
@@ -51,7 +56,7 @@ public class HistoriaDemostracionProveedoresH2Test {
                 Statement statement = connection.createStatement()) {
             statement.execute("SHUTDOWN");
         } finally {
-            System.clearProperty("nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 
