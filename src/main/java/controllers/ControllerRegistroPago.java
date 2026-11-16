@@ -7,7 +7,7 @@ import entities.SesionUsuario;
 import entities.finanzas.SaldoContratacion;
 import entities.finanzas.SolicitudPago;
 import entities.finanzas.TipoPago;
-import services.ServiceRegistroPago;
+import services.finanzas.ServiceRegistroPago;
 
 /** CU-10: conecta la pantalla de registro de pagos con el servicio, usando la sesión actual. */
 public class ControllerRegistroPago {

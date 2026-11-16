@@ -13,7 +13,7 @@ import org.junit.jupiter.api.parallel.Resources;
 import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.eventos.RepositoryPlanificacion;
-import services.ServiceFinanciera;
+import services.finanzas.ServiceFinanciera;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
