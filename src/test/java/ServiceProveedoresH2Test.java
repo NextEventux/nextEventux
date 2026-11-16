@@ -2,11 +2,14 @@ import entities.eventos.Fotografia;
 
 
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import controllers.proveedores.ControllerProveedores;
 import entities.servicios.Servicio;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.servicios.RepositoryServicio;
 import services.proveedores.ServiceProveedores;
@@ -19,20 +22,22 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class ServiceProveedoresH2Test {
+
+    private static final String URL = "jdbc:h2:mem:cu11;DB_CLOSE_DELAY=-1";
 
     private ControllerProveedores controller;
     private RepositoryServicio repositoryServicio;
     private RepositoryDisponibilidadServicio repositoryDisponibilidad;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void prepararBaseDatos() throws Exception {
 
-        System.setProperty(
-                "nexteventux.db.url",
-                "jdbc:h2:mem:cu11;DB_CLOSE_DELAY=-1");
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", URL);
 
-        try (Connection connection = DatabaseConnection.getConnection(); Statement statement = connection.createStatement()) {
+        try (Connection connection = DatabaseConnection.getConnection(URL); Statement statement = connection.createStatement()) {
 
             statement.execute("SET REFERENTIAL_INTEGRITY FALSE");
 
@@ -62,12 +67,13 @@ public class ServiceProveedoresH2Test {
     @AfterEach
     void limpiar() throws Exception {
 
-        try (Connection connection = DatabaseConnection.getConnection(); Statement statement = connection.createStatement()) {
-
-            statement.execute("DROP ALL OBJECTS");
+        try {
+            try (Connection connection = DatabaseConnection.getConnection(URL); Statement statement = connection.createStatement()) {
+                statement.execute("DROP ALL OBJECTS");
+            }
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
         }
-
-        System.clearProperty("nexteventux.db.url");
     }
 
     @Test
@@ -132,7 +138,7 @@ public class ServiceProveedoresH2Test {
                         .getEstado());
 
         try (Connection connection
-                = DatabaseConnection.getConnection(); Statement statement
+                = DatabaseConnection.getConnection(URL); Statement statement
                 = connection.createStatement()) {
 
             statement.executeUpdate("""
@@ -153,7 +159,7 @@ public class ServiceProveedoresH2Test {
                         servicio.getIdServicio()));
 
         try (Connection connection
-                = DatabaseConnection.getConnection(); Statement statement
+                = DatabaseConnection.getConnection(URL); Statement statement
                 = connection.createStatement()) {
 
             statement.executeUpdate("""

@@ -8,25 +8,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.SesionUsuario;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class ServiceAutenticacionH2Test {
 
     private static final String TEST_URL
             = "jdbc:h2:mem:auth;DB_CLOSE_DELAY=-1";
 
     private ServiceAutenticacion service;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
 
-        System.setProperty(
-                "nexteventux.db.url",
-                TEST_URL);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", TEST_URL);
 
         try (Connection connection
                 = DatabaseConnection.getConnection(TEST_URL); Statement statement
@@ -149,8 +152,7 @@ public class ServiceAutenticacionH2Test {
                         "DROP ALL OBJECTS");
             }
         } finally {
-            System.clearProperty(
-                    "nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 

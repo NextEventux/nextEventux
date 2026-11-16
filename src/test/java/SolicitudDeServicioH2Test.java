@@ -11,33 +11,44 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.eventos.EventoSolicitable;
 import entities.solicitudes.NecesidadAbierta;
 import services.solicitudes.ServiceSolicitudes;
 
 /** CU-12: el organizador elige su evento y su necesidad por nombre. */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class SolicitudDeServicioH2Test {
 
     private static final String URL
             = "jdbc:h2:mem:cu12solicitar;DB_CLOSE_DELAY=-1";
 
     private ServiceSolicitudes organizador;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
+        propiedadUrlBaseDatos =
+                new PropiedadSistemaTemporal("nexteventux.db.url", URL);
         DatosCU12Prueba.preparar(URL);
         organizador = DatosCU12Prueba.servicioOrganizador();
     }
 
     @AfterEach
     void limpiar() throws Exception {
-        DatosCU12Prueba.limpiar(URL);
+        try {
+            DatosCU12Prueba.limpiar(URL);
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
+        }
     }
 
     private void ejecutar(String sql) throws Exception {
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(URL);
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
         }

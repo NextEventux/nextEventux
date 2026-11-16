@@ -10,11 +10,15 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
+import persistencia.PropiedadSistemaTemporal;
 import entities.solicitudes.MensajeSolicitud;
 import services.solicitudes.ServiceSolicitudes;
 
 /** CU-12 (A2): la solicitud de ajuste queda vinculada a la versión vigente. */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class AjustePropuestaH2Test {
 
     private static final String URL
@@ -22,9 +26,12 @@ class AjustePropuestaH2Test {
 
     private ServiceSolicitudes proveedor;
     private ServiceSolicitudes organizador;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
+        propiedadUrlBaseDatos =
+                new PropiedadSistemaTemporal("nexteventux.db.url", URL);
         DatosCU12Prueba.preparar(URL);
         proveedor = DatosCU12Prueba.servicioProveedor();
         organizador = DatosCU12Prueba.servicioOrganizador();
@@ -32,7 +39,11 @@ class AjustePropuestaH2Test {
 
     @AfterEach
     void limpiar() throws Exception {
-        DatosCU12Prueba.limpiar(URL);
+        try {
+            DatosCU12Prueba.limpiar(URL);
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
+        }
     }
 
     private int enviarPropuesta(String precio) {

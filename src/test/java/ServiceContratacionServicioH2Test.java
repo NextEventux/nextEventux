@@ -22,8 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.contrataciones.ConfirmacionContratacion;
 import entities.contrataciones.DisponibilidadContratacion;
 import entities.contrataciones.PresupuestoContratacion;
@@ -42,6 +45,7 @@ import services.solicitudes.ServiceSolicitudes;
  * CU-13 (contratar servicio) sobre H2 en memoria, recorriendo el flujo real:
  * solicitud (CU-12) -> propuesta -> seleccion -> contratacion.
  */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class ServiceContratacionServicioH2Test {
 
     private static final String URL
@@ -65,13 +69,14 @@ public class ServiceContratacionServicioH2Test {
     private ServiceSolicitudes solicitudesProvA;
     private ServiceSolicitudes solicitudesProvB;
     private ServiceContratacionServicio contratacion;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
 
-        System.setProperty("nexteventux.db.url", URL);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", URL);
 
-        try (Connection c = DatabaseConnection.getConnection();
+        try (Connection c = DatabaseConnection.getConnection(URL);
                 Statement s = c.createStatement()) {
 
             s.executeUpdate("INSERT INTO Usuario (id_usuario, nombre, usuario, contraseña, estado, "
@@ -119,7 +124,7 @@ public class ServiceContratacionServicioH2Test {
                 s.execute("DROP ALL OBJECTS");
             }
         } finally {
-            System.clearProperty("nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 
@@ -655,14 +660,14 @@ public class ServiceContratacionServicioH2Test {
     }
 
     private void ejecutar(String sql) throws SQLException {
-        try (Connection c = DatabaseConnection.getConnection();
+        try (Connection c = DatabaseConnection.getConnection(URL);
                 Statement s = c.createStatement()) {
             s.execute(sql);
         }
     }
 
     private String texto(String sql) throws SQLException {
-        try (Connection c = DatabaseConnection.getConnection();
+        try (Connection c = DatabaseConnection.getConnection(URL);
                 Statement s = c.createStatement();
                 ResultSet r = s.executeQuery(sql)) {
             return r.next() ? r.getString(1) : null;

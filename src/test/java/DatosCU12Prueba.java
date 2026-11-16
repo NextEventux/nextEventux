@@ -27,9 +27,7 @@ class DatosCU12Prueba {
     }
 
     static void preparar(String url) throws Exception {
-        System.setProperty("nexteventux.db.url", url);
-
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
 
             statement.executeUpdate("""
@@ -88,8 +86,6 @@ class DatosCU12Prueba {
         try (Connection connection = DriverManager.getConnection(url, "sa", "");
                 Statement statement = connection.createStatement()) {
             statement.execute("DROP ALL OBJECTS");
-        } finally {
-            System.clearProperty("nexteventux.db.url");
         }
     }
 

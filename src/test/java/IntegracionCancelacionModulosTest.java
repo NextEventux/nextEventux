@@ -17,10 +17,14 @@ import services.*;
 import services.invitaciones.ServiceInvitados;
 import java.sql.*;
 import java.util.UUID;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class IntegracionCancelacionModulosTest {
-    private String url, anterior;
+    private String url;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
     private ServiceEventos eventos;
     private ServiceInvitados invitados;
     private ServiceAvisosProveedor avisos;
@@ -30,7 +34,7 @@ class IntegracionCancelacionModulosTest {
 
     @BeforeEach void preparar() throws Exception {
         url="jdbc:h2:mem:integracion_"+UUID.randomUUID()+";DB_CLOSE_DELAY=-1";
-        anterior=System.getProperty("nexteventux.db.url"); System.setProperty("nexteventux.db.url",url);
+        propiedadUrlBaseDatos=new PropiedadSistemaTemporal("nexteventux.db.url",url);
         try(Connection c=DatabaseConnection.getConnection(url)) {CargarDatosEjemplo.cargar(c);}
         disponibilidades=new RepositoryDisponibilidadServicio();
         disponibilidad(1); disponibilidad(3);
@@ -47,8 +51,11 @@ class IntegracionCancelacionModulosTest {
     }
 
     @AfterEach void limpiar() throws Exception {
-        if(anterior==null) System.clearProperty("nexteventux.db.url"); else System.setProperty("nexteventux.db.url",anterior);
-        try(Connection c=DriverManager.getConnection(url,"sa","");Statement s=c.createStatement()) {s.execute("SHUTDOWN");}
+        try {
+            try(Connection c=DriverManager.getConnection(url,"sa","");Statement s=c.createStatement()) {s.execute("SHUTDOWN");}
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
+        }
     }
 
     @Test void cancelaConLosHorariosDeCu11YLosModulosLeenElResultado() {
