@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import repositories.eventos.RepositoryEvento;
-import services.ServiceEventos;
+import services.eventos.ServiceEventos;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;

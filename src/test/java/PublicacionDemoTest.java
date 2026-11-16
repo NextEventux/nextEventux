@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryPublicacion;
-import services.ServicePublicacion;
+import services.eventos.ServicePublicacion;
 import repositories.RepositoryAutenticacion;
 import services.ServiceAutenticacion;
 import java.nio.file.Path;

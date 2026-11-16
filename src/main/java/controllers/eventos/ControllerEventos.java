@@ -6,7 +6,7 @@ import entities.Organizador;
 import entities.SesionUsuario;
 import entities.eventos.Fotografia;
 import java.util.List;
-import services.ServiceEventos;
+import services.eventos.ServiceEventos;
 
 public class ControllerEventos {
 

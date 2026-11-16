@@ -1,4 +1,4 @@
-package services;
+package services.eventos;
 
 import entities.eventos.Evento;
 import entities.eventos.PlantillaEvento;

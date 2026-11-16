@@ -127,7 +127,7 @@ public class ViewFinalizacion {
                 nuevas.add(new Fotografia(archivo.getName(),Files.readAllBytes(archivo.toPath())));
             }
             // Validar también en el servicio antes de leer la imagen para la vista previa.
-            services.ServiceEventos.validarFotografias(nuevas);
+            services.eventos.ServiceEventos.validarFotografias(nuevas);
             fotos.clear(); fotos.addAll(nuevas); miniaturas.getChildren().clear();
             for(Fotografia foto:fotos) {
                 ImageView imagen=new ImageView(new Image(new java.io.ByteArrayInputStream(foto.contenido()),130,90,true,true));

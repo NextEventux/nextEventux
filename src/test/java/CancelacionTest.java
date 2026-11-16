@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import repositories.eventos.RepositoryCancelacion;
 import repositories.eventos.RepositoryEvento;
-import services.ServiceEventos;
+import services.eventos.ServiceEventos;
 import services.ServiceAutenticacion;
 import repositories.RepositoryAutenticacion;
 import entities.SesionUsuario;

@@ -1,7 +1,7 @@
 import persistencia.DatabaseConnection;
 import entities.eventos.Evento;
 import repositories.eventos.RepositoryEvento;
-import services.ServiceEventos;
+import services.eventos.ServiceEventos;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;

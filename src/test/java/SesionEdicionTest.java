@@ -9,7 +9,7 @@ import org.junit.jupiter.api.io.TempDir;
 import repositories.RepositoryAutenticacion;
 import repositories.eventos.RepositoryEvento;
 import services.ServiceAutenticacion;
-import services.ServiceEventos;
+import services.eventos.ServiceEventos;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.sql.Connection;
