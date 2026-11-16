@@ -13,6 +13,9 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
+import persistencia.PropiedadSistemaTemporal;
 import repositories.*;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
 import repositories.solicitudes.RepositoryPropuestaServicio;
@@ -21,6 +24,7 @@ import services.solicitudes.ServiceSolicitudes;
 import services.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class SolicitudesEventoTest {
     String url;
     ServiceEventos service;
@@ -152,7 +156,8 @@ class SolicitudesEventoTest {
     }
 
     @Test void proveedorVerificadoRespondeEnCu12YOrganizadorSeleccionaSuPropuesta() {
-        System.setProperty("nexteventux.db.url",url);
+        PropiedadSistemaTemporal propiedadUrlBaseDatos =
+                new PropiedadSistemaTemporal("nexteventux.db.url", url);
         try {
             int solicitud=controller.solicitarServicio(evento.getIdEvento(),1);
             SesionUsuario proveedor=new ServiceAutenticacion(new RepositoryAutenticacion(url)).iniciarSesion("proveedor","clave");
@@ -163,11 +168,14 @@ class SolicitudesEventoTest {
             organizador.seleccionarPropuesta(1,propuesta);
             assertEquals("EN_NEGOCIACION",controller.listarSolicitudesServicio(evento.getIdEvento()).get(0).estado());
             assertEquals(new BigDecimal("60.00"),controller.consultarPresupuesto(evento.getIdEvento()).comprometido());
-        } finally {System.clearProperty("nexteventux.db.url");}
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
+        }
     }
 
     @Test void solicitarDesdeCatalogoRespetaElMismoPresupuestoDeCu01() throws Exception {
-        System.setProperty("nexteventux.db.url",url);
+        PropiedadSistemaTemporal propiedadUrlBaseDatos =
+                new PropiedadSistemaTemporal("nexteventux.db.url", url);
         try {
             ServiceSolicitudes catalogo=new ServiceSolicitudes(new RepositorySolicitudEjecucion(),new RepositoryPropuestaServicio(),sesion);
             catalogo.crearSolicitud(1,evento.getIdEvento(),1,"Decoración del salón");
@@ -175,7 +183,9 @@ class SolicitudesEventoTest {
             assertThrows(IllegalArgumentException.class,()->catalogo.crearSolicitud(1,evento.getIdEvento(),2,"Música"));
             assertEquals(1,cuenta("Solicitud_Ejecucion"));
             assertEquals(1,cuenta("Necesidad_Servicio_Evento"));
-        } finally {System.clearProperty("nexteventux.db.url");}
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
+        }
     }
 
     private Evento datos(int organizador) {

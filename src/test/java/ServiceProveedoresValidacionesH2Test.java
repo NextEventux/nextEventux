@@ -10,8 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.servicios.Servicio;
 import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.servicios.RepositoryServicio;
@@ -22,6 +25,7 @@ import services.proveedores.ServiceProveedores;
  * Se exigen aquí porque CU-12 y CU-13 usan el precio del servicio
  * para comprometer el presupuesto de un evento.
  */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class ServiceProveedoresValidacionesH2Test {
 
     private static final String URL
@@ -29,13 +33,14 @@ public class ServiceProveedoresValidacionesH2Test {
     private static final int PROVEEDOR = 9401;
 
     private ServiceProveedores service;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
 
-        System.setProperty("nexteventux.db.url", URL);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", URL);
 
-        try (Connection c = DatabaseConnection.getConnection();
+        try (Connection c = DatabaseConnection.getConnection(URL);
                 Statement s = c.createStatement()) {
 
             s.executeUpdate("INSERT INTO Usuario (id_usuario, nombre, usuario, contraseña, estado, "
@@ -58,7 +63,7 @@ public class ServiceProveedoresValidacionesH2Test {
                 s.execute("DROP ALL OBJECTS");
             }
         } finally {
-            System.clearProperty("nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 

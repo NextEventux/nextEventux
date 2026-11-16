@@ -16,7 +16,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import repositories.RepositoryAutenticacion;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.solicitudes.RepositoryPropuestaServicio;
@@ -31,28 +34,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class IntegracionInicializacionDemoH2Test {
 
     private static final String CLAVE = "1234";
 
     private String url;
-    private String urlAnterior;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void prepararBaseEnMemoria() {
-        urlAnterior = System.getProperty("nexteventux.db.url");
         url = "jdbc:h2:mem:integracion_demo_" + UUID.randomUUID()
                 + ";DB_CLOSE_DELAY=-1";
-        System.setProperty("nexteventux.db.url", url);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", url);
     }
 
     @AfterEach
     void restaurarConfiguracion() {
-        if (urlAnterior == null) {
-            System.clearProperty("nexteventux.db.url");
-        } else {
-            System.setProperty("nexteventux.db.url", urlAnterior);
-        }
+        propiedadUrlBaseDatos.restaurar();
     }
 
     @Test

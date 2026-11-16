@@ -13,14 +13,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import entities.solicitudes.MensajeSolicitud;
 import entities.SesionUsuario;
 import repositories.solicitudes.RepositorySolicitudEjecucion;
 import repositories.solicitudes.RepositoryPropuestaServicio;
 import services.solicitudes.ServiceSolicitudes;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class MensajesSolicitudH2Test {
 
     private static final String URL =
@@ -28,13 +32,14 @@ public class MensajesSolicitudH2Test {
 
     private ServiceSolicitudes organizador;
     private ServiceSolicitudes proveedor;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
 
-        System.setProperty("nexteventux.db.url", URL);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", URL);
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(URL);
              Statement statement = connection.createStatement()) {
 
             statement.executeUpdate("""
@@ -138,7 +143,7 @@ public class MensajesSolicitudH2Test {
                 statement.execute("DROP ALL OBJECTS");
             }
         } finally {
-            System.clearProperty("nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 
@@ -191,7 +196,7 @@ public class MensajesSolicitudH2Test {
     @Test
     void solicitudCerradaNoPermiteNuevosMensajes() throws Exception {
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(URL);
              Statement statement = connection.createStatement()) {
 
             statement.executeUpdate("""
@@ -206,7 +211,7 @@ public class MensajesSolicitudH2Test {
                 () -> organizador.enviarMensaje(
                         9201, 9201, "Mensaje tardio.", null));
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(URL);
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     UPDATE Solicitud_Ejecucion
@@ -232,7 +237,7 @@ public class MensajesSolicitudH2Test {
                 contenido,
                 "  https://ejemplo.test/referencia  ");
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnection.getConnection(URL);
                 Statement statement = connection.createStatement();
                 var result = statement.executeQuery("""
                         SELECT contenido, adjunto_url

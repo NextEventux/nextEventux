@@ -7,25 +7,37 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
+import persistencia.PropiedadSistemaTemporal;
 import entities.solicitudes.ContextoSolicitud;
 import entities.solicitudes.PropuestaServicio;
 import entities.solicitudes.SolicitudEjecucion;
 
 /** CU-12: el proveedor ve nombres, fechas y lugar en vez de identificadores. */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class ContextoSolicitudH2Test {
 
     private static final String URL
             = "jdbc:h2:mem:cu12contexto;DB_CLOSE_DELAY=-1";
 
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
+
     @BeforeEach
     void preparar() throws Exception {
+        propiedadUrlBaseDatos =
+                new PropiedadSistemaTemporal("nexteventux.db.url", URL);
         DatosCU12Prueba.preparar(URL);
     }
 
     @AfterEach
     void limpiar() throws Exception {
-        DatosCU12Prueba.limpiar(URL);
+        try {
+            DatosCU12Prueba.limpiar(URL);
+        } finally {
+            propiedadUrlBaseDatos.restaurar();
+        }
     }
 
     @Test
@@ -71,7 +83,7 @@ class ContextoSolicitudH2Test {
 
     @Test
     void laSolicitudSigueVisibleSiFaltanDatosRelacionados() throws Exception {
-        try (var connection = persistencia.DatabaseConnection.getConnection();
+        try (var connection = persistencia.DatabaseConnection.getConnection(URL);
                 var statement = connection.createStatement()) {
             statement.execute("SET REFERENTIAL_INTEGRITY FALSE");
             statement.executeUpdate("""

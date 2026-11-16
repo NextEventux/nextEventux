@@ -11,19 +11,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import inicializacion.CargarDatosEjemplo;
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 
 /** Datos de demostración de CU-11: cada proveedor tiene servicios en varios estados. */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 public class ServiciosDemostracionH2Test {
 
     private String url;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void cargarDatos() throws Exception {
         url = "jdbc:h2:mem:servicios_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
-        System.setProperty("nexteventux.db.url", url);
+        propiedadUrlBaseDatos = new PropiedadSistemaTemporal("nexteventux.db.url", url);
 
         try (Connection connection = DatabaseConnection.getConnection(url)) {
             CargarDatosEjemplo.cargar(connection);
@@ -36,7 +41,7 @@ public class ServiciosDemostracionH2Test {
                 Statement statement = connection.createStatement()) {
             statement.execute("SHUTDOWN");
         } finally {
-            System.clearProperty("nexteventux.db.url");
+            propiedadUrlBaseDatos.restaurar();
         }
     }
 
