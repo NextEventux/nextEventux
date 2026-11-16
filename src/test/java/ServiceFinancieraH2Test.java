@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.eventos.RepositoryPlanificacion;
-import services.ServiceFinanciera;
+import services.finanzas.ServiceFinanciera;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
