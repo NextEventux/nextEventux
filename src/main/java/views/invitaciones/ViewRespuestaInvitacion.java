@@ -5,7 +5,7 @@ import entities.eventos.Fotografia;
 
 import views.eventos.ViewEventos;
 
-import controllers.eventos.ControllerInvitados;
+import controllers.invitaciones.ControllerInvitados;
 import entities.invitaciones.InvitacionRecibida;
 import entities.invitaciones.Invitado;
 import java.net.URL;

@@ -1,7 +1,7 @@
 import entities.invitaciones.ReservaRegalo;
 
 import persistencia.DatabaseConnection;
-import controllers.eventos.ControllerInvitados;
+import controllers.invitaciones.ControllerInvitados;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.Invitado;
 import entities.eventos.Evento;
@@ -22,7 +22,7 @@ import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;
 import repositories.invitaciones.RepositoryRegalo;
 import repositories.invitaciones.RepositoryReservaRegalo;
-import services.ServiceInvitados;
+import services.invitaciones.ServiceInvitados;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** CU-20: el organizador arma la mesa de regalos y los invitados reservan sin duplicados (R43). */
