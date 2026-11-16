@@ -22,6 +22,7 @@ import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.solicitudes.RepositorySolicitudServicio;
 import services.solicitudes.ServiceSolicitudes;
 import services.*;
+import services.eventos.ServiceEventos;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ResourceLock(Resources.SYSTEM_PROPERTIES)

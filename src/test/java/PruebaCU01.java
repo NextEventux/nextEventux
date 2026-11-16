@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import controllers.eventos.ControllerEventos;
 import entities.eventos.Evento;
 import repositories.eventos.RepositoryEvento;
-import services.ServiceEventos;
+import services.eventos.ServiceEventos;
 
 public class PruebaCU01 {
 

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import repositories.*;
 import services.*;
+import services.eventos.ServicePublicacion;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.sql.*;

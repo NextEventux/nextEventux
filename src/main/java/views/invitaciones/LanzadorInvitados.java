@@ -9,7 +9,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import repositories.eventos.RepositoryEvento;
-import services.ServiceEventos;
+import services.eventos.ServiceEventos;
 import services.invitaciones.ServiceInvitados;
 
 /**

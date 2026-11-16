@@ -4,7 +4,7 @@ import entities.eventos.Evento;
 import entities.eventos.PlantillaEvento;
 
 import entities.*;
-import services.ServicePublicacion;
+import services.eventos.ServicePublicacion;
 import java.util.List;
 
 public class ControllerPublicacion {
