@@ -1,4 +1,4 @@
-import controllers.eventos.ControllerInvitados;
+import controllers.invitaciones.ControllerInvitados;
 import entities.invitaciones.Invitacion;
 import entities.invitaciones.InvitacionRecibida;
 import entities.invitaciones.Invitado;
@@ -11,7 +11,7 @@ import repositories.eventos.RepositoryEvento;
 import repositories.invitaciones.RepositoryInvitacion;
 import repositories.invitaciones.RepositoryInvitado;
 import repositories.RepositoryLugar;
-import services.ServiceInvitados;
+import services.invitaciones.ServiceInvitados;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** CU-16: el invitado consulta sus invitaciones y responde si asistirá. */

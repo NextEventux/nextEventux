@@ -5,7 +5,7 @@ import entities.eventos.Evento;
 import entities.invitaciones.Invitado;
 
 
-import controllers.eventos.ControllerInvitados;
+import controllers.invitaciones.ControllerInvitados;
 import entities.invitaciones.InvitacionRecibida;
 import entities.invitaciones.Regalo;
 import java.math.BigDecimal;

@@ -4,13 +4,13 @@ import views.eventos.ViewEventos;
 
 import app.Navegacion;
 import controllers.eventos.ControllerEventos;
-import controllers.eventos.ControllerInvitados;
+import controllers.invitaciones.ControllerInvitados;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import repositories.eventos.RepositoryEvento;
 import services.eventos.ServiceEventos;
-import services.ServiceInvitados;
+import services.invitaciones.ServiceInvitados;
 
 /**
  * Abre la aplicación directamente en la pantalla de Invitaciones (CU-17).

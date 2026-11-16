@@ -16,6 +16,7 @@ import repositories.invitaciones.RepositoryInvitacion;
 import repositories.invitaciones.RepositoryInvitado;
 import services.*;
 import services.eventos.ServiceEventos;
+import services.invitaciones.ServiceInvitados;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.sql.*;

@@ -1,4 +1,4 @@
-package controllers.eventos;
+package controllers.invitaciones;
 
 import entities.eventos.Fotografia;
 
@@ -11,7 +11,7 @@ import entities.invitaciones.Regalo;
 import entities.SesionUsuario;
 import java.util.List;
 import java.util.Map;
-import services.ServiceInvitados;
+import services.invitaciones.ServiceInvitados;
 
 /** Intermediario entre las vistas del módulo de invitados y ServiceInvitados (CU-16, CU-17 y CU-20). */
 public class ControllerInvitados {

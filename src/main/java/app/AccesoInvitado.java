@@ -1,6 +1,6 @@
 package app;
 
-import controllers.eventos.ControllerInvitados;
+import controllers.invitaciones.ControllerInvitados;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import views.invitaciones.ViewMesaRegalos;

@@ -2,12 +2,12 @@ package views.invitaciones;
 
 import app.AccesoInvitado;
 import app.Navegacion;
-import controllers.eventos.ControllerInvitados;
+import controllers.invitaciones.ControllerInvitados;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import services.ServiceInvitados;
+import services.invitaciones.ServiceInvitados;
 
 /**
  * Abre el acceso del invitado directamente en la pantalla del CU-16 (Gestionar respuesta a la invitación).
