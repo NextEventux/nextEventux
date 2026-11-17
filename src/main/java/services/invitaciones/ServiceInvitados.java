@@ -421,13 +421,13 @@ public class ServiceInvitados {
     /** La mesa no se modifica en eventos cancelados o finalizados; el invitado tampoco reserva si ya empezó. */
     private void validarEventoParaRegalos(int eventoId, boolean comoInvitado) {
         Evento evento = repositoryEvento.listarEventos().stream()
-                .filter(e -> e.getIdEvento() != null && e.getIdEvento() == eventoId)
+                .filter(e -> e.getIdEvento() == eventoId)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("El evento no está registrado."));
-        String estado = evento.getEstado() == null ? "" : evento.getEstado().toUpperCase();
+        String estado = evento.getEstado().toUpperCase();
         if (estado.equals("CANCELADO") || estado.equals("FINALIZADO"))
             throw new IllegalArgumentException("El evento está " + estado.toLowerCase() + "; su mesa de regalos ya no se puede modificar.");
-        if (comoInvitado && evento.getFechaInicio() != null && !evento.getFechaInicio().isAfter(LocalDateTime.now()))
+        if (comoInvitado && !evento.getFechaInicio().isAfter(LocalDateTime.now()))
             throw new IllegalArgumentException("El evento ya comenzó; la mesa de regalos está cerrada.");
     }
 
@@ -487,13 +487,13 @@ public class ServiceInvitados {
 
     private Evento buscarEvento(int eventoId) {
         return repositoryEvento.listarEventos().stream()
-                .filter(e -> e.getIdEvento() != null && e.getIdEvento() == eventoId)
+                .filter(e -> e.getIdEvento() == eventoId)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Selecciona un evento registrado."));
     }
 
     private static boolean estaCerrado(Evento evento) {
-        String estado = evento.getEstado() == null ? "" : evento.getEstado().trim().toUpperCase();
+        String estado = evento.getEstado().trim().toUpperCase();
         return estado.equals("CANCELADO") || estado.equals("FINALIZADO");
     }
 

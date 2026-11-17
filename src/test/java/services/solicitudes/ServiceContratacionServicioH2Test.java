@@ -168,6 +168,28 @@ class ServiceContratacionServicioH2Test {
     }
 
     @Test
+    void noPermiteContratarCuandoElPresupuestoEsInsuficiente() throws Exception {
+        ejecutar("UPDATE Evento SET presupuesto = 0 WHERE id_evento = " + EVENTO);
+
+        PresupuestoContratacion presupuesto
+                = service.verificarPresupuesto(ORGANIZADOR, PROPUESTA);
+        assertFalse(presupuesto.suficiente());
+        assertTrue(presupuesto.faltante().signum() > 0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.contratar(ORGANIZADOR, PROPUESTA));
+
+        assertEquals("0", valor("SELECT COUNT(*) FROM Contratacion "
+                + "WHERE id_propuesta = " + PROPUESTA));
+        assertEquals("DISPONIBLE", valor("SELECT estado FROM Disponibilidad_Servicio "
+                + "WHERE id_disponibilidad = 101"));
+        assertEquals("SELECCIONADA", valor("SELECT estado FROM Propuesta "
+                + "WHERE id_propuesta = " + PROPUESTA));
+        assertEquals("SELECCIONADA", valor("SELECT estado FROM Necesidad_Servicio_Evento "
+                + "WHERE id_necesidad_servicio = 3"));
+    }
+
+    @Test
     void exigeOrganizadorPropietarioYSesionActiva() {
         ServiceContratacionServicio otroOrganizador
                 = crearServicio(sesion("ORGANIZADOR", 1, 1, "ACTIVO", "ACTIVO"));
@@ -183,6 +205,32 @@ class ServiceContratacionServicioH2Test {
                 () -> proveedor.contratar(5, PROPUESTA));
         assertThrows(IllegalStateException.class,
                 () -> usuarioInactivo.verificarDisponibilidad(ORGANIZADOR, PROPUESTA));
+    }
+
+    @Test
+    void exigeRepositorioSesionYActorOrganizadorActivo() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ServiceContratacionServicio(null, sesionOrganizador()));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ServiceContratacionServicio(
+                        new RepositoryContratacionServicio(), null));
+
+        ServiceContratacionServicio usuarioSinId
+                = crearServicio(sesion("ORGANIZADOR", ORGANIZADOR,
+                        0, "ACTIVO", "ACTIVO"));
+        ServiceContratacionServicio actorSinId
+                = crearServicio(sesion("ORGANIZADOR", 0,
+                        USUARIO_ORGANIZADOR, "ACTIVO", "ACTIVO"));
+        ServiceContratacionServicio actorInactivo
+                = crearServicio(sesion("ORGANIZADOR", ORGANIZADOR,
+                        USUARIO_ORGANIZADOR, "ACTIVO", "INACTIVO"));
+
+        assertThrows(IllegalStateException.class,
+                () -> usuarioSinId.consultarResumen(ORGANIZADOR, PROPUESTA));
+        assertThrows(IllegalStateException.class,
+                () -> actorSinId.verificarDisponibilidad(ORGANIZADOR, PROPUESTA));
+        assertThrows(IllegalStateException.class,
+                () -> actorInactivo.verificarPresupuesto(ORGANIZADOR, PROPUESTA));
     }
 
     @Test

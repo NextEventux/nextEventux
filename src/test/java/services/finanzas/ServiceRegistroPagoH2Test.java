@@ -95,6 +95,17 @@ class ServiceRegistroPagoH2Test {
     }
 
     @Test
+    void envuelveErroresAlConsultarLasContrataciones() throws Exception {
+        ejecutar("ALTER TABLE Movimiento_financiero RENAME COLUMN valor TO valor_prueba");
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.listarContratacionesPorPagar(EVENTO, sesionOrganizador()));
+
+        assertEquals("No se pudieron consultar las contrataciones. Vuelve a intentarlo.", error.getMessage());
+        assertTrue(error.getCause() instanceof RuntimeException);
+    }
+
+    @Test
     void listaContratacionesRequiereOrganizadorActivoYEventoVigente() throws Exception {
         assertThrows(IllegalStateException.class,
                 () -> service.listarContratacionesPorPagar(EVENTO, null));
@@ -185,6 +196,24 @@ class ServiceRegistroPagoH2Test {
                 LocalDate.now(), "Abono", null);
         assertThrows(IllegalArgumentException.class,
                 () -> service.confirmarPago(sinContratacion, sesionOrganizador()));
+    }
+
+    @Test
+    void noConfirmaUnResumenSinSaldoMostrado() throws Exception {
+        liberarSaldoReservado();
+        SaldoContratacion sinSaldoMostrado = new SaldoContratacion(
+                CONTRATACION, 1, "Servicio", "Proveedor", null, null,
+                BigDecimal.ZERO, null, null, BigDecimal.ZERO);
+        SolicitudPago pago = new SolicitudPago(
+                EVENTO, sinSaldoMostrado, TipoPago.ABONO, new BigDecimal("1000"),
+                LocalDate.now(), null, null);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.confirmarPago(pago, sesionOrganizador()));
+
+        assertTrue(error.getMessage().contains("El saldo de la contratación cambió"));
+        assertEquals("1", valor("SELECT COUNT(*) FROM Movimiento_financiero "
+                + "WHERE id_contratacion = 1 AND estado = 'REGISTRADO'"));
     }
 
     @Test
@@ -380,6 +409,24 @@ class ServiceRegistroPagoH2Test {
         assertEquals(0, new BigDecimal("500000").compareTo(saldo.getSaldo()));
         assertEquals(0, new BigDecimal("400000").compareTo(saldo.getTotalProgramado()));
         assertEquals("2", valor("SELECT COUNT(*) FROM Movimiento_financiero "
+                + "WHERE id_contratacion = 1 AND estado = 'REGISTRADO'"));
+    }
+
+    @Test
+    void conservaElSaldoYEnvuelveUnErrorDePersistencia() throws Exception {
+        liberarSaldoReservado();
+        ejecutar("ALTER TABLE Movimiento_financiero ADD CONSTRAINT CK_PAGO_PRUEBA "
+                + "CHECK (valor <> 12345.00)");
+        SolicitudPago pago = validar(CONTRATACION, TipoPago.ABONO, new BigDecimal("12345"),
+                LocalDate.now(), "Pago rechazado por la base", false);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.confirmarPago(pago, sesionOrganizador()));
+
+        assertEquals("No se pudo registrar el pago. Vuelve a las contrataciones "
+                + "y revisa el saldo antes de intentarlo de nuevo.", error.getMessage());
+        assertTrue(error.getCause() instanceof RuntimeException);
+        assertEquals("1", valor("SELECT COUNT(*) FROM Movimiento_financiero "
                 + "WHERE id_contratacion = 1 AND estado = 'REGISTRADO'"));
     }
 

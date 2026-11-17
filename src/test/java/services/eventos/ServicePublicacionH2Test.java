@@ -184,6 +184,47 @@ class ServicePublicacionH2Test {
     }
 
     @Test
+    void rechazaSesionesSinIdentidadOConOrganizadorNoActivo() throws Exception {
+        assertThrows(IllegalStateException.class, () -> service.esAdministrador(null));
+
+        SesionUsuario sinUsuario = sesion(0, 10, "Laura Gómez", "ORGANIZADOR");
+        assertThrows(IllegalStateException.class, () -> service.nombreUsuario(sinUsuario));
+
+        SesionUsuario sinActor = sesion(10, 0, "Laura Gómez", "ORGANIZADOR");
+        assertThrows(IllegalStateException.class, () -> service.listarEventos(sinActor));
+
+        SesionUsuario actorInactivo = sesion(10, 10, "Laura Gómez", "ORGANIZADOR");
+        actorInactivo.setEstadoActor("INACTIVO");
+        assertThrows(IllegalStateException.class, () -> service.listarPlantillas(actorInactivo));
+
+        try (Connection connection = DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("UPDATE Organizador SET estado = 'INACTIVO' WHERE id_organizador = 10");
+        }
+        assertThrows(IllegalStateException.class, () -> service.notificaciones(organizador));
+    }
+
+    @Test
+    void vuelveAValidarElRolDeAdministradorContraLosDatosPersistidos() throws Exception {
+        service.solicitar(organizador, eventoFinalizado.getIdEvento());
+
+        try (Connection connection = DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("DELETE FROM Usuario_rol WHERE id_usuario = 30");
+            statement.executeUpdate("INSERT INTO Usuario "
+                    + "(id_usuario, nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario) "
+                    + "VALUES (31, 'Ana Pérez', 'ana-admin', 'solo-prueba', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ADMINISTRADOR')");
+            statement.executeUpdate("INSERT INTO Usuario_rol (id_usuario, id_rol) VALUES (31, 30)");
+        }
+
+        SesionUsuario otraAdministradora = sesion(31, 0, "Ana Pérez", "ADMINISTRADOR");
+        assertTrue(service.esAdministrador(otraAdministradora));
+        assertThrows(IllegalStateException.class, () -> service.esAdministrador(administrador));
+        assertThrows(IllegalStateException.class, () -> service.listarSolicitudes(administrador));
+        assertEquals("PENDIENTE", service.listarSolicitudes(organizador).get(0).estado());
+    }
+
+    @Test
     void exigeIdentificadorYMotivoValidosParaRechazarLaSolicitud() {
         service.solicitar(organizador, eventoFinalizado.getIdEvento());
         int idSolicitud = service.listarSolicitudes(organizador).get(0).id();

@@ -136,6 +136,69 @@ class ServiceAdministracionH2Test {
     }
 
     @Test
+    void seleccionaOrganizadorDisponibleYValidaIdentificadores() {
+        Organizador seleccionado = service.seleccionarOrganizador(ORGANIZADOR);
+
+        assertEquals(ORGANIZADOR, seleccionado.id());
+        assertEquals("Eventos Bogotá", seleccionado.empresa());
+        assertFalse(service.verificarDisponibilidadOrganizador(
+                9999, LocalDate.now().plusDays(30)));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.verificarDisponibilidadOrganizador(
+                        0, LocalDate.now().plusDays(30)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ServiceAdministracion(null,
+                        new RepositoryOrganizador(url)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ServiceAdministracion(
+                        new RepositoryContratacion(url), null));
+    }
+
+    @Test
+    void rechazaCadaCriterioDeBusquedaObligatorioCuandoFaltaOVacio() {
+        IllegalArgumentException ciudadFaltante = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.consultarOrganizadores(Map.of(
+                        "tipoEvento", "Bodas",
+                        "presupuestoEstimado", BigDecimal.ZERO,
+                        "fechaAproximada", LocalDate.now().plusDays(30))));
+        assertTrue(ciudadFaltante.getMessage().contains("Completa el tipo de evento"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.consultarOrganizadores(Map.of(
+                        "ciudad", "Bogota",
+                        "presupuestoEstimado", BigDecimal.ZERO,
+                        "fechaAproximada", LocalDate.now().plusDays(30))));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.consultarOrganizadores(Map.of(
+                        "ciudad", "Bogota",
+                        "tipoEvento", "Bodas",
+                        "fechaAproximada", LocalDate.now().plusDays(30))));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.consultarOrganizadores(Map.of(
+                        "ciudad", "Bogota",
+                        "tipoEvento", "Bodas",
+                        "presupuestoEstimado", BigDecimal.ZERO)));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.consultarOrganizadores(Map.of(
+                        "ciudad", " ",
+                        "tipoEvento", "Bodas",
+                        "presupuestoEstimado", BigDecimal.ZERO,
+                        "fechaAproximada", LocalDate.now().plusDays(30))));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.consultarOrganizadores(Map.of(
+                        "ciudad", "Bogota",
+                        "tipoEvento", " ",
+                        "presupuestoEstimado", BigDecimal.ZERO,
+                        "fechaAproximada", LocalDate.now().plusDays(30))));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.contratarOrganizador(0,
+                        nuevaContratacion(CLIENTE, "Bodas", "Bogota",
+                                LocalDate.now().plusDays(30),
+                                BigDecimal.ZERO, null)));
+    }
+
+    @Test
     void rechazaFiltrosIncompletosTiposIncorrectosYTextoExcesivo() throws Exception {
         assertThrows(IllegalArgumentException.class,
                 () -> service.consultarOrganizadores(Map.of("ciudad", "Bogota")));
@@ -230,6 +293,35 @@ class ServiceAdministracionH2Test {
                         new Contratacion(
                                 CLIENTE, ORGANIZADOR, "Bodas", "Bogota",
                                 fechaOcupada, new BigDecimal("2000000"), null)));
+    }
+
+    @Test
+    void permiteContratarEnFechaOcupadaSoloPorEventoCancelado() throws Exception {
+        LocalDate fechaEvento = LocalDate.now().plusDays(45);
+        ejecutar("INSERT INTO Evento "
+                + "(id_evento, id_organizador, nombre, tipo, fecha_inicio, fecha_fin, "
+                + "ubicacion, estado, fecha_creacion) "
+                + "VALUES (9502, 9201, 'Evento cancelado', 'Bodas', TIMESTAMP '"
+                + fechaEvento.minusDays(1) + " 10:00:00', TIMESTAMP '"
+                + fechaEvento.plusDays(1) + " 10:00:00', "
+                + "'Bogota', 'CANCELADO', CURRENT_TIMESTAMP)");
+
+        assertTrue(service.verificarDisponibilidadOrganizador(ORGANIZADOR, fechaEvento));
+        service.contratarOrganizador(ORGANIZADOR, new Contratacion(
+                CLIENTE,
+                9999,
+                "Bodas",
+                "Bogota",
+                fechaEvento,
+                new BigDecimal("2500000"),
+                "Evento familiar"));
+
+        assertEquals(1, consultarEntero(
+                "SELECT COUNT(*) FROM Solicitud_Contratacion_Organizador "
+                + "WHERE id_cliente = " + CLIENTE + " AND id_organizador = "
+                + ORGANIZADOR + " AND fecha_aproximada = DATE '" + fechaEvento + "'"));
+        assertEquals(1, consultarEntero(
+                "SELECT COUNT(*) FROM Notificacion_interna WHERE id_usuario = 9002"));
     }
 
     private void insertarUsuario(int id, String nombre, String tipo, String estado) throws Exception {

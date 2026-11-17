@@ -19,13 +19,19 @@ import java.sql.Statement;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.nio.ByteBuffer;
+import java.util.zip.CRC32;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import persistencia.DatabaseConnection;
+import persistencia.PropiedadSistemaTemporal;
 import repositories.eventos.RepositoryCancelacion;
 import repositories.eventos.RepositoryEvento;
 import repositories.eventos.RepositoryFinalizacion;
@@ -37,17 +43,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 class ServiceEventosH2Test {
 
     private static final int EVENTO = 1;
     private static final int ORGANIZADOR = 1;
     private String url;
     private ServiceEventos service;
+    private PropiedadSistemaTemporal propiedadUrlBaseDatos;
 
     @BeforeEach
     void preparar() throws Exception {
         // la base vive entre conexiones del servicio y tiene un nombre único en memoria
         url = "jdbc:h2:mem:eventos_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
+        propiedadUrlBaseDatos
+                = new PropiedadSistemaTemporal("nexteventux.db.url", url);
 
         // cargamos los datos de ejemplo solo en esta base temporal vacía
         try (Connection connection = DatabaseConnection.getConnection(url)) {
@@ -63,13 +73,33 @@ class ServiceEventosH2Test {
 
     @AfterEach
     void limpiar() throws Exception {
-        if (url != null) {
-            // usamos jdbc directo para apagar esta base temporal sin volver a inicializarla
-            try (Connection connection = DriverManager.getConnection(url, "sa", "");
-                    Statement statement = connection.createStatement()) {
-                statement.execute("SHUTDOWN");
+        try {
+            if (url != null) {
+                // usamos jdbc directo para apagar esta base temporal sin volver a inicializarla
+                try (Connection connection = DriverManager.getConnection(url, "sa", "");
+                        Statement statement = connection.createStatement()) {
+                    statement.execute("SHUTDOWN");
+                }
+            }
+        } finally {
+            if (propiedadUrlBaseDatos != null) {
+                propiedadUrlBaseDatos.restaurar();
             }
         }
+    }
+
+    @Test
+    void constructoresConvenientesUsanRepositoriosRealesDeLaBaseAislada() {
+        ServiceEventos conRepositorioEvento = new ServiceEventos(new RepositoryEvento(url));
+        ServiceEventos conCancelaciones = new ServiceEventos(
+                new RepositoryEvento(url), new RepositoryCancelacion());
+        ServiceEventos conFinalizaciones = new ServiceEventos(
+                new RepositoryEvento(url), new RepositoryCancelacion(),
+                new RepositoryFinalizacion());
+
+        assertTrue(conRepositorioEvento.listarOrganizadores().size() > 0);
+        assertTrue(conCancelaciones.listarEventosParaCancelar(sesionOrganizador()).size() > 0);
+        assertTrue(conFinalizaciones.listarEventosParaFinalizar(sesionOrganizador()).size() > 0);
     }
 
     @Test
@@ -109,6 +139,20 @@ class ServiceEventosH2Test {
     }
 
     @Test
+    void noPersisteUnEventoSinPresupuesto() throws Exception {
+        LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+        Evento sinPresupuesto = new Evento(ORGANIZADOR, "Evento sin presupuesto", "Boda",
+                "Evento creado para integración", inicio, inicio.plusHours(8), "Salón de prueba",
+                null, 10);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.crearEvento(sinPresupuesto, sesionOrganizador()));
+
+        assertEquals("Ingresa un presupuesto mayor o igual a cero.", error.getMessage());
+        assertEquals("4", valor("SELECT COUNT(*) FROM Evento"));
+    }
+
+    @Test
     void aceptaLosValoresMaximosYMinimosDeUnEvento() {
         LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
         Evento enLimites = new Evento(ORGANIZADOR, "E".repeat(150), "T".repeat(100), "D".repeat(255),
@@ -127,7 +171,95 @@ class ServiceEventosH2Test {
     }
 
     @Test
+    void validaTodosLosCamposGeneralesDeUnEvento() {
+        LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+        LocalDateTime fin = inicio.plusHours(1);
+
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                0, "Evento", "Boda", null, inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, null, "Boda", null, inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, " ", "Boda", null, inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "n".repeat(151), "Boda", null, inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", " ", null, inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", null, null, inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "t".repeat(101), null, inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, " ",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, null,
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, "l".repeat(256),
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, null, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, null, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", "d".repeat(256), inicio, fin, "Salón",
+                BigDecimal.ZERO, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, "Salón",
+                new BigDecimal("-0.01"), 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, "Salón",
+                new BigDecimal("10000000000.00"), 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, "Salón",
+                null, 0)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, "Salón",
+                BigDecimal.ZERO, -1)));
+        assertFalse(service.validarInformacionEvento(eventoDatos(
+                ORGANIZADOR, "Evento", "Boda", null, inicio, fin, "Salón",
+                BigDecimal.ZERO, null)));
+    }
+
+    @Test
+    void rechazaEdicionesConIdentificadoresDatosONombresInvalidos() {
+        EdicionEvento valida = new EdicionEvento(
+                "Evento", "Boda", LocalDateTime.now(), LocalDateTime.now().plusHours(1), "Salón");
+        assertThrows(IllegalArgumentException.class,
+                () -> service.editarEvento(0, sesionOrganizador(), valida));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.editarEvento(EVENTO, sesionOrganizador(), null));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.editarEvento(EVENTO, sesionOrganizador(),
+                        new EdicionEvento(" ", "Boda", valida.inicio(), valida.fin(), "Salón")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.editarEvento(EVENTO, sesionOrganizador(),
+                        new EdicionEvento("Evento", " ", valida.inicio(), valida.fin(), "Salón")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.editarEvento(EVENTO, sesionOrganizador(),
+                        new EdicionEvento("Evento", "Boda", valida.inicio(), valida.fin(), " ")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.editarEvento(EVENTO, sesionOrganizador(),
+                        new EdicionEvento("Evento", "Boda", null, valida.fin(), "Salón")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.editarEvento(EVENTO, sesionOrganizador(),
+                        new EdicionEvento("Evento", "Boda", valida.inicio(), null, "Salón")));
+    }
+
+    @Test
     void requiereOrganizadorActivoParaGestionarEventos() {
+        assertThrows(IllegalStateException.class,
+                () -> service.nombreOrganizador(null));
         SesionUsuario inactiva = sesionOrganizador();
         inactiva.setEstadoUsuario("INACTIVO");
 
@@ -145,6 +277,29 @@ class ServiceEventosH2Test {
         rolIncorrecto.setTipoUsuario("PROVEEDOR");
         assertThrows(IllegalStateException.class,
                 () -> service.nombreOrganizador(rolIncorrecto));
+
+        SesionUsuario sinUsuario = sesionOrganizador();
+        sinUsuario.setIdUsuario(0);
+        assertThrows(IllegalStateException.class,
+                () -> service.nombreOrganizador(sinUsuario));
+        SesionUsuario sinActor = sesionOrganizador();
+        sinActor.setIdActor(0);
+        assertThrows(IllegalStateException.class,
+                () -> service.nombreOrganizador(sinActor));
+        assertThrows(IllegalStateException.class,
+                () -> service.nombreOrganizador(sesion(1, 9999)));
+    }
+
+    @Test
+    void validaQueElOrganizadorSigaActivoEnLaBaseDeDatos() throws Exception {
+        ejecutar("UPDATE Organizador SET estado = 'INACTIVO' WHERE id_organizador = " + ORGANIZADOR);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.consultarPresupuesto(EVENTO, sesionOrganizador()));
+
+        assertEquals("Inicia sesión como organizador activo para gestionar tus eventos.",
+                error.getMessage());
+        assertEquals("PLANEADO", valor("SELECT estado FROM Evento WHERE id_evento = " + EVENTO));
     }
 
     @Test
@@ -357,6 +512,14 @@ class ServiceEventosH2Test {
     }
 
     @Test
+    void rechazaIdentificadoresInvalidosAntesDeConsultarEventos() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.cancelarEvento(0, sesionOrganizador(), true));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.finalizarEvento(0, sesionOrganizador(), null));
+    }
+
+    @Test
     void cancelaElEventoYActualizaSusRelaciones() throws Exception {
         prepararReservasContratacionesEvento();
         service.cancelarEvento(EVENTO, sesionOrganizador(), true);
@@ -430,6 +593,92 @@ class ServiceEventosH2Test {
     }
 
     @Test
+    void finalizaUnaGaleriaPendienteSinVolverAGuardarFotografias() throws Exception {
+        ejecutar("UPDATE Evento SET estado = 'CONFIRMADO', "
+                + "fecha_inicio = TIMESTAMP '2020-01-01 15:00:00', "
+                + "fecha_fin = TIMESTAMP '2020-01-01 23:00:00' WHERE id_evento = " + EVENTO);
+        ejecutar("INSERT INTO Finalizacion_evento (id_evento, enviada) VALUES (1, FALSE)");
+
+        service.finalizarEvento(EVENTO, sesionOrganizador(), List.of());
+
+        assertEquals("FINALIZADO", valor("SELECT estado FROM Evento WHERE id_evento = " + EVENTO));
+        assertEquals("TRUE", valor("SELECT enviada FROM Finalizacion_evento WHERE id_evento = " + EVENTO));
+        assertEquals("0", valor("SELECT COUNT(*) FROM Fotografia_evento WHERE id_evento = " + EVENTO));
+    }
+
+    @Test
+    void noIniciaUnaGaleriaNuevaSinFotografias() throws Exception {
+        ejecutar("UPDATE Evento SET estado = 'CONFIRMADO', "
+                + "fecha_inicio = TIMESTAMP '2020-01-01 15:00:00', "
+                + "fecha_fin = TIMESTAMP '2020-01-01 23:00:00' WHERE id_evento = " + EVENTO);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.finalizarEvento(EVENTO, sesionOrganizador(), List.of()));
+
+        assertEquals("Carga al menos una fotografía del evento.", error.getMessage());
+        assertEquals("0", valor("SELECT COUNT(*) FROM Finalizacion_evento WHERE id_evento = " + EVENTO));
+        assertEquals("CONFIRMADO", valor("SELECT estado FROM Evento WHERE id_evento = " + EVENTO));
+    }
+
+    @Test
+    void validaTamanosFormatosYDimensionesDeFotografias() throws Exception {
+        assertThrows(IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(
+                        List.of(new Fotografia(" ", fotografiaValida().contenido()))));
+        assertThrows(IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(
+                        List.of(new Fotografia(null, fotografiaValida().contenido()))));
+        assertThrows(IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(
+                        List.of(new Fotografia("f".repeat(151),
+                                fotografiaValida().contenido()))));
+        assertThrows(IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(
+                        List.of(new Fotografia("vacia.png", new byte[0]))));
+        assertThrows(IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(
+                        List.of(new Fotografia("grande.png", new byte[5 * 1024 * 1024 + 1]))));
+
+        IllegalArgumentException demasiadosMegapixeles = assertThrows(
+                IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(
+                        List.of(new Fotografia("grande.png", pngConDimensiones(5001, 4000)))));
+        assertEquals("Usa fotografías PNG o JPG de hasta 20 megapíxeles.",
+                demasiadosMegapixeles.getMessage());
+
+        ServiceEventos.validarFotografias(
+                List.of(new Fotografia("valida.jpg", imagenValida("jpg"))));
+        IllegalArgumentException formatoNoPermitido = assertThrows(
+                IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(
+                        List.of(new Fotografia("animacion.gif", imagenValida("gif")))));
+        assertEquals("Usa fotografías PNG o JPG de hasta 20 megapíxeles.",
+                formatoNoPermitido.getMessage());
+
+        IllegalArgumentException imagenTruncada = assertThrows(
+                IllegalArgumentException.class,
+                () -> ServiceEventos.validarFotografias(List.of(
+                        new Fotografia("truncada.png",
+                                Arrays.copyOf(fotografiaValida().contenido(), 33)))));
+        assertEquals("No se pudo leer una fotografía. Selecciona un archivo PNG o JPG válido.",
+                imagenTruncada.getMessage());
+    }
+
+    @Test
+    void cancelarNoPuedeInterrumpirUnaFinalizacionIniciada() throws Exception {
+        ejecutar("INSERT INTO Finalizacion_evento (id_evento, enviada) VALUES (1, FALSE)");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.cancelarEvento(EVENTO, sesionOrganizador(), true));
+
+        assertTrue(error.getMessage().contains("finalización iniciada"));
+        assertEquals("PLANEADO", valor("SELECT estado FROM Evento WHERE id_evento = " + EVENTO));
+        assertEquals("0", valor("SELECT COUNT(*) FROM Notificacion_interna "
+                + "WHERE id_evento = " + EVENTO
+                + " AND mensaje LIKE 'Se canceló un evento asociado%'"));
+    }
+
+    @Test
     void rechazaFotografiasInvalidasConElMotivoEspecifico() throws Exception {
         IllegalArgumentException sinFotos = assertThrows(IllegalArgumentException.class,
                 () -> service.finalizarEvento(EVENTO, sesionOrganizador(), null));
@@ -490,6 +739,20 @@ class ServiceEventosH2Test {
                 valor("SELECT COUNT(*) FROM Fotografia_evento WHERE id_evento = " + EVENTO));
     }
 
+    private Evento eventoDatos(
+            int organizador,
+            String nombre,
+            String tipo,
+            String descripcion,
+            LocalDateTime inicio,
+            LocalDateTime fin,
+            String lugar,
+            BigDecimal presupuesto,
+            Integer invitados) {
+        return new Evento(null, organizador, nombre, tipo, descripcion, inicio, fin,
+                lugar, presupuesto, invitados, Evento.ESTADO_INICIAL, LocalDateTime.now());
+    }
+
     private Evento eventoNuevo(int organizador, String nombre) {
         LocalDateTime inicio = LocalDateTime.now().plusDays(30).withNano(0);
         return new Evento(organizador, nombre, "Boda", "Evento creado para integración",
@@ -521,10 +784,23 @@ class ServiceEventosH2Test {
 
     private Fotografia fotografiaValida() throws Exception {
         // generamos un png pequeño y real porque el servicio revisa el contenido de la foto
+        return new Fotografia("recuerdo.png", imagenValida("png"));
+    }
+
+    private byte[] imagenValida(String formato) throws Exception {
         BufferedImage imagen = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         ByteArrayOutputStream salida = new ByteArrayOutputStream();
-        ImageIO.write(imagen, "png", salida);
-        return new Fotografia("recuerdo.png", salida.toByteArray());
+        ImageIO.write(imagen, formato, salida);
+        return salida.toByteArray();
+    }
+
+    private byte[] pngConDimensiones(int ancho, int alto) throws Exception {
+        byte[] png = imagenValida("png");
+        ByteBuffer.wrap(png).putInt(16, ancho).putInt(20, alto);
+        CRC32 crc = new CRC32();
+        crc.update(png, 12, 17);
+        ByteBuffer.wrap(png).putInt(29, (int) crc.getValue());
+        return png;
     }
 
     private void prepararReservasContratacionesEvento() throws Exception {

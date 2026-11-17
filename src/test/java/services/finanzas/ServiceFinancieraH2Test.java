@@ -250,6 +250,28 @@ class ServiceFinancieraH2Test {
     }
 
     @Test
+    void envuelveErroresAlConsultarElEstadoFinanciero() throws Exception {
+        ejecutar("ALTER TABLE Movimiento_financiero RENAME COLUMN valor TO valor_prueba");
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.consultarEstadoFinanciero(EVENTO, sesionOrganizador()));
+
+        assertEquals("No se pudo consultar el estado financiero. Vuelve a intentarlo.", error.getMessage());
+        assertTrue(error.getCause() instanceof RuntimeException);
+    }
+
+    @Test
+    void envuelveErroresAlConsultarElPresupuestoDisponible() throws Exception {
+        ejecutar("ALTER TABLE Contratacion RENAME COLUMN valor_acordado TO valor_acordado_prueba");
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.consultarPresupuestoDisponible(EVENTO, sesionOrganizador()));
+
+        assertEquals("No se pudo consultar el presupuesto disponible. Vuelve a intentarlo.", error.getMessage());
+        assertTrue(error.getCause() instanceof RuntimeException);
+    }
+
+    @Test
     void consultaPresupuestoDisponibleConCompromisosReales() throws Exception {
         assertMonto("11000000.00",
                 service.consultarPresupuestoDisponible(EVENTO, sesionOrganizador()));

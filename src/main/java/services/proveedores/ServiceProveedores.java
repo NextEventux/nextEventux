@@ -485,8 +485,7 @@ public class ServiceProveedores {
                     "El proveedor es obligatorio.");
         }
 
-        if (servicio.getNombre() == null
-                || servicio.getNombre().isBlank()) {
+        if (servicio.getNombre().isBlank()) {
             throw new IllegalArgumentException(
                     "El nombre es obligatorio.");
         }

@@ -33,6 +33,10 @@ class ServiceAutenticacionH2Test {
         insertarUsuario(8005, "Cliente", "cliente", "CLIENTE", "ACTIVO");
         insertarUsuario(8006, "Administrador", "administrador", "ADMINISTRADOR", "ACTIVO");
         insertarUsuario(8007, "Cuenta inactiva", "cuenta.inactiva", "ADMINISTRADOR", "INACTIVO");
+        insertarUsuario(8008, "Proveedor sin perfil", "proveedor.sin.perfil", "PROVEEDOR", "ACTIVO");
+        insertarUsuario(8009, "Rol no habilitado", "rol.no.habilitado", "INVITADO", "ACTIVO");
+        insertarUsuario(8010, "Proveedor verificado", "proveedor.verificado", "PROVEEDOR", "ACTIVO");
+        insertarUsuario(8011, "Organizador sin perfil", "organizador.sin.perfil", "ORGANIZADOR", "ACTIVO");
 
         ejecutar("INSERT INTO Proveedor "
                 + "(id_proveedor, id_usuario, nombre, empresa, correo, telefono, direccion, estado) "
@@ -42,6 +46,10 @@ class ServiceAutenticacionH2Test {
                 + "(id_proveedor, id_usuario, nombre, empresa, correo, telefono, direccion, estado) "
                 + "VALUES (8102, 8003, 'Proveedor pendiente', 'Empresa', 'pp@prueba.com', "
                 + "'3000000002', 'Bogota', 'PENDIENTE')");
+        ejecutar("INSERT INTO Proveedor "
+                + "(id_proveedor, id_usuario, nombre, empresa, correo, telefono, direccion, estado) "
+                + "VALUES (8110, 8010, 'Proveedor verificado', 'Empresa', 'pv@prueba.com', "
+                + "'3000000010', 'Bogota', 'VERIFICADO')");
         ejecutar("INSERT INTO Organizador "
                 + "(id_organizador, id_usuario, empresa, telefono, estado) "
                 + "VALUES (8201, 8002, 'Eventos', '3000000003', 'ACTIVO')");
@@ -86,13 +94,35 @@ class ServiceAutenticacionH2Test {
     @Test
     void rechazaCredencialesVaciasOIncorrectas() {
         assertThrows(IllegalArgumentException.class,
+                () -> service.iniciarSesion(null, "clave8001"));
+        assertThrows(IllegalArgumentException.class,
                 () -> service.iniciarSesion(" ", "clave8001"));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.iniciarSesion("proveedor.aprobado", null));
         assertThrows(IllegalArgumentException.class,
                 () -> service.iniciarSesion("proveedor.aprobado", " "));
         assertThrows(IllegalArgumentException.class,
                 () -> service.iniciarSesion("proveedor.aprobado", "incorrecta"));
         assertThrows(IllegalArgumentException.class,
                 () -> service.iniciarSesion("no-existe", "clave"));
+    }
+
+    @Test
+    void rechazaProveedorSinPerfilYUsuarioConRolNoHabilitado() {
+        assertThrows(IllegalStateException.class,
+                () -> service.iniciarSesion("proveedor.sin.perfil", "clave8008"));
+        assertThrows(IllegalStateException.class,
+                () -> service.iniciarSesion("rol.no.habilitado", "clave8009"));
+    }
+
+    @Test
+    void admiteProveedorVerificadoYRechazaOrganizadorSinPerfil() {
+        SesionUsuario proveedor = service.iniciarSesion("proveedor.verificado", "clave8010");
+        assertEquals(8110, proveedor.getIdActor());
+        assertEquals("VERIFICADO", proveedor.getEstadoActor());
+
+        assertThrows(IllegalStateException.class,
+                () -> service.iniciarSesion("organizador.sin.perfil", "clave8011"));
     }
 
     @Test

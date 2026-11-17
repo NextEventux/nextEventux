@@ -18,13 +18,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServiceMarketing {
 
+    interface Planificador {
+        void scheduleWithFixedDelay(Runnable tarea, long periodoSegundos);
+
+        void shutdownNow();
+    }
+
     private final RepositoryMarketing repositorio;
     private final Clock reloj;
+    private final Supplier<Planificador> crearPlanificador;
 
     public ServiceMarketing(RepositoryMarketing repositorio) {
         this(repositorio, Clock.systemDefaultZone());
@@ -32,8 +40,14 @@ public class ServiceMarketing {
 
     // Permite controlar la fecha actual en las pruebas.
     public ServiceMarketing(RepositoryMarketing repositorio, Clock reloj) {
+        this(repositorio, reloj, ServiceMarketing::crearPlanificadorPredeterminado);
+    }
+
+    ServiceMarketing(RepositoryMarketing repositorio, Clock reloj,
+            Supplier<Planificador> crearPlanificador) {
         this.repositorio = repositorio;
         this.reloj = reloj;
+        this.crearPlanificador = crearPlanificador;
     }
 
     // Cada grupo reúne clientes de una misma ubicación que comparten un tipo de evento
@@ -175,7 +189,7 @@ public class ServiceMarketing {
     private static final Logger LOG = Logger.getLogger(ServiceMarketing.class.getName());
 
     private volatile Consumer<Campana> alFinalizarCampana = campana -> { };
-    private ScheduledExecutorService planificador;
+    private Planificador planificador;
 
     // Presupuesto de marketing que todavía no está comprometido en campañas.
     public BigDecimal obtenerPresupuestoDisponible() {
@@ -339,18 +353,33 @@ public class ServiceMarketing {
         if (planificador != null) {
             return;
         }
-        planificador = Executors.newSingleThreadScheduledExecutor(tarea -> {
-            Thread hilo = new Thread(tarea, "planificador-campanas");
-            hilo.setDaemon(true);
-            return hilo;
-        });
+        planificador = crearPlanificador.get();
         planificador.scheduleWithFixedDelay(() -> {
             try {
                 verificarCampanas();
             } catch (RuntimeException e) {
                 LOG.log(Level.WARNING, "No se pudieron revisar las campañas", e);
             }
-        }, 0, periodoSegundos, TimeUnit.SECONDS);
+        }, periodoSegundos);
+    }
+
+    private static Planificador crearPlanificadorPredeterminado() {
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(tarea -> {
+            Thread hilo = new Thread(tarea, "planificador-campanas");
+            hilo.setDaemon(true);
+            return hilo;
+        });
+        return new Planificador() {
+            @Override
+            public void scheduleWithFixedDelay(Runnable tarea, long periodoSegundos) {
+                executor.scheduleWithFixedDelay(tarea, 0, periodoSegundos, TimeUnit.SECONDS);
+            }
+
+            @Override
+            public void shutdownNow() {
+                executor.shutdownNow();
+            }
+        };
     }
 
     public synchronized void detenerPlanificador() {

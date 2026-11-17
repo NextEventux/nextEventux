@@ -105,6 +105,64 @@ class ServiceSancionesProveedorH2Test {
     }
 
     @Test
+    void multaQueSuperaUnSaldoPositivoNoAgregaSancionNiNotificacion() throws Exception {
+        service.aplicarSancion(administrador, multa("90"));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador, multa("20")));
+
+        assertTrue(error.getMessage().contains("supera el saldo pendiente"));
+        assertEquals(1, contar("SELECT COUNT(*) FROM Sancion "
+                + "WHERE motivo LIKE 'CU09|MULTA|PROV=1|CONTRATO=1|%'"));
+        assertDinero("1620000.00", new BigDecimal(valor("SELECT SUM(valor) FROM Sancion "
+                + "WHERE motivo LIKE 'CU09|MULTA|PROV=1|CONTRATO=1|%'")));
+        assertEquals(1, contar("SELECT COUNT(*) FROM Notificacion_interna "
+                + "WHERE id_usuario = 3 AND id_evento = 1 AND mensaje LIKE 'Se aplicó una multa%'"));
+    }
+
+    @Test
+    void rechazaMotivoDeMultaDemasiadoLargoSinPersistirCambios() throws Exception {
+        int sancionesAntes = contar("SELECT COUNT(*) FROM Sancion");
+        int notificacionesAntes = contar("SELECT COUNT(*) FROM Notificacion_interna");
+        String estadoProveedorAntes = valor(
+                "SELECT estado FROM Proveedor WHERE id_proveedor = 1");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador, multa("10." + "0".repeat(300))));
+
+        assertEquals("La justificación es demasiado larga para registrar la sanción.",
+                error.getMessage());
+        assertEquals(sancionesAntes, contar("SELECT COUNT(*) FROM Sancion"));
+        assertEquals(notificacionesAntes, contar("SELECT COUNT(*) FROM Notificacion_interna"));
+        assertEquals(estadoProveedorAntes,
+                valor("SELECT estado FROM Proveedor WHERE id_proveedor = 1"));
+    }
+
+    @Test
+    void informaFallosDeConexionEnConsultasYAplicacionDeSancion() {
+        String baseNoDisponible = "jdbc:h2:mem:sanciones_ausente_"
+                + UUID.randomUUID().toString().replace("-", "") + ";IFEXISTS=TRUE";
+        ServiceSancionesProveedor sinConexion = new ServiceSancionesProveedor(
+                new RepositorySancionesProveedor(baseNoDisponible));
+
+        IllegalStateException busqueda = assertThrows(IllegalStateException.class,
+                () -> sinConexion.buscarProveedores(administrador, "proveedor"));
+        assertEquals("No se pudo buscar proveedores. Vuelve a intentarlo.", busqueda.getMessage());
+
+        IllegalStateException eventos = assertThrows(IllegalStateException.class,
+                () -> sinConexion.eventosDelProveedor(administrador, 1));
+        assertEquals("No se pudieron cargar los eventos del proveedor.", eventos.getMessage());
+
+        IllegalStateException contratos = assertThrows(IllegalStateException.class,
+                () -> sinConexion.contratosActivos(administrador, 1, 1));
+        assertEquals("No se pudieron cargar los contratos del proveedor.", contratos.getMessage());
+
+        IllegalStateException sancion = assertThrows(IllegalStateException.class,
+                () -> sinConexion.aplicarSancion(administrador, multa("10")));
+        assertEquals("No se pudo aplicar la sanción. Vuelve a intentarlo.", sancion.getMessage());
+    }
+
+    @Test
     void suspensionActualizaProveedorYNotificaYNoPuedeRepetirse() throws Exception {
         ResultadoSancion resultado = service.aplicarSancion(administrador, suspension());
 
@@ -126,10 +184,14 @@ class ServiceSancionesProveedorH2Test {
     void rechazaSesionesSinPermisoYEntradasDeSancionInvalidas() {
         SesionUsuario proveedor = sesion("PROVEEDOR", "ACTIVO");
         assertThrows(SecurityException.class,
+                () -> service.buscarProveedores(null, "Mariana"));
+        assertThrows(SecurityException.class,
                 () -> service.buscarProveedores(proveedor, "Mariana"));
         assertThrows(SecurityException.class,
                 () -> service.eventosDelProveedor(sesion("ADMINISTRADOR", "INACTIVO"), 1));
 
+        assertThrows(IllegalArgumentException.class,
+                () -> new ServiceSancionesProveedor(null));
         assertThrows(IllegalArgumentException.class,
                 () -> service.aplicarSancion(administrador, null));
         assertThrows(IllegalArgumentException.class,
@@ -138,10 +200,92 @@ class ServiceSancionesProveedorH2Test {
                                 "Justificación suficientemente larga")));
         assertThrows(IllegalArgumentException.class,
                 () -> service.aplicarSancion(administrador,
+                        new SolicitudSancion(1, 1, "RETRASO", "OTRA", 0, null,
+                                "Justificación suficientemente larga")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador,
                         new SolicitudSancion(1, 1, "RETRASO", "MULTA", 1, "0",
                                 "Justificación suficientemente larga")));
         assertThrows(IllegalArgumentException.class,
                 () -> service.buscarProveedores(administrador, "x".repeat(101)));
+    }
+
+    @Test
+    void admiteSesionAdministradoraSinEstadoYRechazaIdentificadoresInvalidos() {
+        SesionUsuario sinEstado = sesion("ADMINISTRADOR", null);
+        assertTrue(service.buscarProveedores(sinEstado, null).size() > 0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.eventosDelProveedor(administrador, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.contratosActivos(administrador, 0, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.contratosActivos(administrador, 1, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador,
+                        new SolicitudSancion(0, 1, "RETRASO", "MULTA", 1, "10",
+                                "Retraso durante el montaje")));
+    }
+
+    @Test
+    void rechazaJustificacionesYContratoDeMultaInvalidosSinEscrituras()
+            throws Exception {
+        int sancionesAntes = contar("SELECT COUNT(*) FROM Sancion");
+        int notificacionesAntes = contar("SELECT COUNT(*) FROM Notificacion_interna");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador,
+                        new SolicitudSancion(1, 1, "RETRASO", "SUSPENSION", 0, null,
+                                "corta")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador,
+                        new SolicitudSancion(1, 1, "RETRASO", "SUSPENSION", 0, null,
+                                "j".repeat(151))));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador,
+                        new SolicitudSancion(1, 1, "RETRASO", "MULTA", 0, "10",
+                                "Retraso durante el montaje")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador,
+                        new SolicitudSancion(1, 1, "RETRASO", "MULTA", 1, " ",
+                                "Retraso durante el montaje")));
+
+        assertEquals(sancionesAntes, contar("SELECT COUNT(*) FROM Sancion"));
+        assertEquals(notificacionesAntes,
+                contar("SELECT COUNT(*) FROM Notificacion_interna"));
+    }
+
+    @Test
+    void multaRechazaContratoSinValorYValorRedondeadoACero() throws Exception {
+        int sancionesAntes = contar("SELECT COUNT(*) FROM Sancion");
+        int notificacionesAntes = contar("SELECT COUNT(*) FROM Notificacion_interna");
+
+        ejecutar("UPDATE Contratacion SET valor_acordado = NULL WHERE id_contratacion = 1");
+        IllegalArgumentException sinValor = assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador, multa("10")));
+        assertTrue(sinValor.getMessage().contains("valor acordado"));
+
+        ejecutar("UPDATE Contratacion SET valor_acordado = 0.01 WHERE id_contratacion = 1");
+        IllegalArgumentException redondeadaACero = assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador, multa("0.01")));
+        assertTrue(redondeadaACero.getMessage().contains("demasiado pequeña"));
+
+        assertEquals(sancionesAntes, contar("SELECT COUNT(*) FROM Sancion"));
+        assertEquals(notificacionesAntes,
+                contar("SELECT COUNT(*) FROM Notificacion_interna"));
+    }
+
+    @Test
+    void multaPermiteProveedorVerificadoSinCambiarSuEstado() throws Exception {
+        ejecutar("UPDATE Proveedor SET estado = 'VERIFICADO' WHERE id_proveedor = 1");
+
+        ResultadoSancion resultado = service.aplicarSancion(administrador, multa("10"));
+
+        assertEquals("VERIFICADO", resultado.estadoProveedor());
+        assertEquals("VERIFICADO",
+                valor("SELECT estado FROM Proveedor WHERE id_proveedor = 1"));
+        assertEquals(1, contar("SELECT COUNT(*) FROM Sancion "
+                + "WHERE motivo LIKE 'CU09|MULTA|PROV=1|CONTRATO=1|%'"));
     }
 
     @Test
@@ -156,6 +300,27 @@ class ServiceSancionesProveedorH2Test {
         assertEquals(sancionesAntes, contar("SELECT COUNT(*) FROM Sancion"));
         assertEquals(0, contar("SELECT COUNT(*) FROM Notificacion_interna "
                 + "WHERE id_usuario = 3 AND id_evento = 1 AND mensaje LIKE 'Se aplicó una multa%'"));
+    }
+
+    @Test
+    void noPermiteSancionarProveedorPendienteNiPersisteCambios() throws Exception {
+        int sancionesAntes = contar("SELECT COUNT(*) FROM Sancion");
+        int notificacionesAntes = contar("SELECT COUNT(*) FROM Notificacion_interna");
+        try (Connection connection = DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate(
+                    "UPDATE Proveedor SET estado = 'PENDIENTE' WHERE id_proveedor = 1");
+        }
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.aplicarSancion(administrador, multa("10")));
+
+        assertTrue(error.getMessage().contains("no está activo"));
+        assertEquals(sancionesAntes, contar("SELECT COUNT(*) FROM Sancion"));
+        assertEquals(notificacionesAntes,
+                contar("SELECT COUNT(*) FROM Notificacion_interna"));
+        assertEquals("PENDIENTE",
+                valor("SELECT estado FROM Proveedor WHERE id_proveedor = 1"));
     }
 
     @Test
@@ -274,6 +439,13 @@ class ServiceSancionesProveedorH2Test {
                 ResultSet resultado = statement.executeQuery(sql)) {
             resultado.next();
             return resultado.getString(1);
+        }
+    }
+
+    private void ejecutar(String sql) throws Exception {
+        try (Connection connection = DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate(sql);
         }
     }
 

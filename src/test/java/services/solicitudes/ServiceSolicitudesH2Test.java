@@ -133,11 +133,34 @@ class ServiceSolicitudesH2Test {
             throws Exception {
         ServiceSolicitudes proveedorPendiente = crearServicio(sesion(
                 "PROVEEDOR", 1, 3, "ACTIVO", "PENDIENTE"));
+        ServiceSolicitudes usuarioInvalido = crearServicio(sesion(
+                "PROVEEDOR", 1, 0, "ACTIVO", "APROBADO"));
+        ServiceSolicitudes actorInvalido = crearServicio(sesion(
+                "PROVEEDOR", 0, 3, "ACTIVO", "APROBADO"));
+        ServiceSolicitudes rolDesconocido = crearServicio(sesion(
+                "INVITADO", 1, 3, "ACTIVO", "ACTIVO"));
+        ServiceSolicitudes organizadorNoActivo = crearServicio(sesion(
+                "ORGANIZADOR", 1, 1, "ACTIVO", "PENDIENTE"));
+        SesionUsuario sesionSinEstado = sesion(
+                "PROVEEDOR", 1, 3, "ACTIVO", "APROBADO");
+        sesionSinEstado.setEstadoUsuario(null);
+        ServiceSolicitudes estadoUsuarioNulo
+                = crearServicio(sesionSinEstado);
 
         assertThrows(IllegalStateException.class,
                 () -> organizador.listarSolicitudesProveedor(1));
         assertThrows(IllegalStateException.class,
                 () -> proveedorPendiente.listarSolicitudesProveedor(1));
+        assertThrows(IllegalStateException.class,
+                () -> usuarioInvalido.listarSolicitudesProveedor(1));
+        assertThrows(IllegalStateException.class,
+                () -> actorInvalido.listarSolicitudesProveedor(1));
+        assertThrows(IllegalStateException.class,
+                () -> rolDesconocido.listarSolicitudesProveedor(1));
+        assertThrows(IllegalStateException.class,
+                () -> organizadorNoActivo.listarSolicitudesProveedor(1));
+        assertThrows(IllegalStateException.class,
+                () -> estadoUsuarioNulo.listarSolicitudesProveedor(1));
         assertThrows(IllegalArgumentException.class,
                 () -> new ServiceSolicitudes(
                         new RepositorySolicitudEjecucion(),
@@ -155,6 +178,8 @@ class ServiceSolicitudesH2Test {
             throws Exception {
         assertThrows(IllegalArgumentException.class,
                 () -> proveedor.rechazarSolicitud(1, 0, "Motivo válido"));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.rechazarSolicitud(0, 4, "Motivo válido"));
         assertThrows(IllegalArgumentException.class,
                 () -> proveedor.rechazarSolicitud(1, 4, null));
         assertThrows(IllegalArgumentException.class,
@@ -254,6 +279,19 @@ class ServiceSolicitudesH2Test {
         int necesidadesAntes = Integer.parseInt(valor(
                 "SELECT COUNT(*) FROM Necesidad_Servicio_Evento WHERE id_evento = 3"));
 
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.crearSolicitudParaNecesidad(
+                        0, 3, 3, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.crearSolicitudParaNecesidad(
+                        3, 0, 3, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.crearSolicitudParaNecesidad(
+                        3, 3, 0, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.crearSolicitudParaNecesidad(
+                        3, 3, 3, 0));
+
         assertEquals("ABIERTA", valor(
                 "SELECT estado FROM Necesidad_Servicio_Evento "
                         + "WHERE id_necesidad_servicio = 1 AND id_evento = 3"));
@@ -293,18 +331,37 @@ class ServiceSolicitudesH2Test {
                 () -> proveedor.enviarPropuesta(1, 4, BigDecimal.ZERO,
                         "Alcance", "Condiciones"));
         assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(0, 4,
+                        new BigDecimal("100.00"), "Alcance", "Condiciones"));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(1, 0,
+                        new BigDecimal("100.00"), "Alcance", "Condiciones"));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(1, 4, null,
+                        "Alcance", "Condiciones"));
+        assertThrows(IllegalArgumentException.class,
                 () -> proveedor.enviarPropuesta(1, 4,
                         new BigDecimal("100.001"), "Alcance", "Condiciones"));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(1, 4,
+                        new BigDecimal("10000000000.00"),
+                        "Alcance", "Condiciones"));
         assertThrows(IllegalArgumentException.class,
                 () -> proveedor.enviarPropuesta(1, 4,
                         new BigDecimal("100.00"), "Alcance", "Condiciones",
                         "http://ejemplo.com/catalogo"));
         assertThrows(IllegalArgumentException.class,
                 () -> proveedor.enviarPropuesta(1, 4,
+                        new BigDecimal("100.00"), null, "Condiciones"));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(1, 4,
                         new BigDecimal("100.00"), " ", "Condiciones"));
         assertThrows(IllegalArgumentException.class,
                 () -> proveedor.enviarPropuesta(1, 4,
                         new BigDecimal("100.00"), "Alcance", " "));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(1, 4,
+                        new BigDecimal("100.00"), "Alcance", null));
         assertThrows(IllegalArgumentException.class,
                 () -> proveedor.enviarPropuesta(1, 4,
                         new BigDecimal("100.00"), "d".repeat(256), "Condiciones"));
@@ -323,9 +380,62 @@ class ServiceSolicitudesH2Test {
     }
 
     @Test
+    void aceptaPropuestaConCerosDecimalesRedundantesYMaterialDeApoyo()
+            throws Exception {
+        int idPropuesta = proveedor.enviarPropuesta(
+                1,
+                4,
+                new BigDecimal("100.000"),
+                "  Montaje sencillo  ",
+                "  Incluye instalación  ",
+                "  https://ejemplo.com/catalogo.pdf  ");
+
+        assertTrue(idPropuesta > 0);
+        assertEquals(new BigDecimal("100.00"),
+                new BigDecimal(valor("SELECT valor FROM Propuesta "
+                        + "WHERE id_propuesta = " + idPropuesta)));
+        assertEquals("https://ejemplo.com/catalogo.pdf",
+                valor("SELECT material_apoyo FROM Propuesta "
+                        + "WHERE id_propuesta = " + idPropuesta));
+        assertEquals("EN_NEGOCIACION", valor(
+                "SELECT estado FROM Solicitud_Ejecucion WHERE id_solicitud = 4"));
+    }
+
+    @Test
+    void admiteMaterialDeApoyoEnBlancoYRechazaUrlConSintaxisInvalida()
+            throws Exception {
+        int idPropuesta = proveedor.enviarPropuesta(
+                1, 4, new BigDecimal("100.00"), "Alcance", "Condiciones", "   ");
+
+        assertTrue(idPropuesta > 0);
+        assertTrue(valor("SELECT material_apoyo FROM Propuesta "
+                + "WHERE id_propuesta = " + idPropuesta) == null);
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(
+                        1, 4, new BigDecimal("100.00"), "Alcance", "Condiciones",
+                        "https://[::1"));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.enviarPropuesta(
+                        1, 4, new BigDecimal("100.00"), "Alcance", "Condiciones",
+                        "https:///catalogo"));
+        assertEquals("1", valor("SELECT COUNT(*) FROM Propuesta "
+                + "WHERE id_solicitud = 4"));
+    }
+
+    @Test
     void noCreaSolicitudSinDescripcion() throws Exception {
         assertThrows(IllegalArgumentException.class,
                 () -> organizador.crearSolicitud(1, 1, 1, " "));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.crearSolicitud(0, 1, 1, "Necesidad válida"));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.crearSolicitud(1, 0, 1, "Necesidad válida"));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.crearSolicitud(1, 1, 0, "Necesidad válida"));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.crearSolicitud(1, 1, 1, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.crearSolicitud(1, 1, 1, "d".repeat(501)));
 
         assertEquals("0", valor("SELECT COUNT(*) FROM Solicitud_Ejecucion "
                 + "WHERE id_evento = 1 AND id_necesidad_servicio IS NOT NULL "
@@ -377,12 +487,39 @@ class ServiceSolicitudesH2Test {
     }
 
     @Test
+    void organizadoraSolicitaAjusteSinAdjuntoYLoPersisteVinculadoALaPropuesta()
+            throws Exception {
+        String ajuste = "Solicito el detalle del horario de montaje.";
+        organizadorSolicitudesEventoTres().solicitarAjuste(
+                3, 4, "  " + ajuste + "  ", null);
+        String ajusteSinEnlace = "Solicito también el detalle de instalación.";
+        organizadorSolicitudesEventoTres().solicitarAjuste(
+                3, 4, ajusteSinEnlace, "  ");
+
+        assertEquals("1", valor("SELECT COUNT(*) FROM Mensaje "
+                + "WHERE id_propuesta = 4 AND contenido = '" + ajuste + "'"));
+        assertNull(valor("SELECT adjunto_url FROM Mensaje "
+                + "WHERE id_propuesta = 4 AND contenido = '" + ajuste + "'"));
+        assertEquals("1", valor("SELECT COUNT(*) FROM Mensaje "
+                + "WHERE id_propuesta = 4 AND contenido = '"
+                + ajusteSinEnlace + "' AND adjunto_url IS NULL"));
+    }
+
+    @Test
     void restringeLecturaYEnvioDeMensajesALaCuentaAutenticada()
             throws Exception {
         assertThrows(IllegalStateException.class,
                 () -> organizador.listarMensajes(5, 4));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.listarMensajes(0, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.listarMensajes(5, 0));
         assertThrows(IllegalStateException.class,
                 () -> proveedor.enviarMensaje(5, 8, "Mensaje ajeno", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.enviarMensaje(0, 1, "Mensaje válido", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.enviarMensaje(4, 0, "Mensaje válido", null));
         assertThrows(IllegalArgumentException.class,
                 () -> organizador.enviarMensaje(4, 1, "  ", null));
 
@@ -402,10 +539,21 @@ class ServiceSolicitudesH2Test {
                         5, 8, "m".repeat(1001), null));
         assertThrows(IllegalArgumentException.class,
                 () -> organizadorEventoTres.enviarMensaje(
+                        5, 8, null, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.enviarMensaje(
                         5, 8, "Mensaje válido",
                         "https://ejemplo.com/" + "a".repeat(1001)));
         assertThrows(IllegalArgumentException.class,
                 () -> organizadorEventoTres.solicitarAjuste(3, 4, "  ", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.solicitarAjuste(
+                        0, 4, "Solicitar cambio", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.solicitarAjuste(
+                        3, 0, "Solicitar cambio", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizadorEventoTres.solicitarAjuste(3, 4, null, null));
         assertThrows(IllegalArgumentException.class,
                 () -> organizadorEventoTres.solicitarAjuste(
                         3, 4, "a".repeat(1001), null));
@@ -415,6 +563,21 @@ class ServiceSolicitudesH2Test {
 
         assertEquals(mensajesAntes, Integer.parseInt(valor(
                 "SELECT COUNT(*) FROM Mensaje WHERE id_conversacion = 4")));
+    }
+
+    @Test
+    void enviaMensajesConAdjuntoVacioOVinculadoYLosPersiste()
+            throws Exception {
+        otroProveedor.enviarMensaje(5, 4, "Mensaje sin adjunto", "  ");
+        otroProveedor.enviarMensaje(
+                5, 4, "Mensaje con adjunto", "  https://ejemplo.com/foto.jpg  ");
+
+        assertEquals("1", valor("SELECT COUNT(*) FROM Mensaje "
+                + "WHERE contenido = 'Mensaje sin adjunto' "
+                + "AND adjunto_url IS NULL"));
+        assertEquals("https://ejemplo.com/foto.jpg", valor(
+                "SELECT adjunto_url FROM Mensaje "
+                        + "WHERE contenido = 'Mensaje con adjunto'"));
     }
 
     @Test
@@ -435,20 +598,51 @@ class ServiceSolicitudesH2Test {
     }
 
     @Test
-    void operacionesRechazanRolCuentaEIdentificadoresQueNoCorresponden() {
+    void operacionesRechazanRolCuentaEIdentificadoresQueNoCorresponden()
+            throws Exception {
         ServiceSolicitudes cuentaAjena = crearServicio(sesion(
                 "PROVEEDOR", 2, 4, "ACTIVO", "APROBADO"));
         ServiceSolicitudes inactivo = crearServicio(sesion(
                 "PROVEEDOR", 1, 3, "INACTIVO", "APROBADO"));
+        ServiceSolicitudes cliente = crearServicio(sesion(
+                "CLIENTE", 8, 8, "ACTIVO", "ACTIVO"));
+        ServiceSolicitudes usuarioSinId = crearServicio(sesion(
+                "CLIENTE", 1, 0, "ACTIVO", "ACTIVO"));
+        ServiceSolicitudes actorSinId = crearServicio(sesion(
+                "CLIENTE", 0, 8, "ACTIVO", "ACTIVO"));
+        int mensajesAntes = Integer.parseInt(valor(
+                "SELECT COUNT(*) FROM Mensaje WHERE id_conversacion = 4"));
 
         assertThrows(IllegalStateException.class,
                 () -> cuentaAjena.listarSolicitudesProveedor(1));
         assertThrows(IllegalStateException.class,
                 () -> inactivo.listarSolicitudesProveedor(1));
+        assertThrows(IllegalStateException.class,
+                () -> cliente.listarMensajes(5, 8));
+        assertThrows(IllegalStateException.class,
+                () -> usuarioSinId.listarMensajes(5, 8));
+        assertThrows(IllegalStateException.class,
+                () -> actorSinId.listarMensajes(5, 8));
         assertThrows(IllegalArgumentException.class,
                 () -> proveedor.listarSolicitudesProveedor(0));
         assertThrows(IllegalArgumentException.class,
                 () -> organizador.listarEventosSolicitables(-1));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.listarPropuestasOrganizador(0));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.rechazarPropuesta(0, 9));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.rechazarPropuesta(3, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.seleccionarPropuesta(0, 9));
+        assertThrows(IllegalArgumentException.class,
+                () -> organizador.seleccionarPropuesta(3, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.listarHistorialPropuestas(0, 14));
+        assertThrows(IllegalArgumentException.class,
+                () -> proveedor.listarHistorialPropuestas(5, 0));
+        assertEquals(mensajesAntes, Integer.parseInt(valor(
+                "SELECT COUNT(*) FROM Mensaje WHERE id_conversacion = 4")));
     }
 
     private ServiceSolicitudes organizadorSolicitudesEventoTres() {

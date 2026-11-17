@@ -23,6 +23,7 @@ import repositories.servicios.RepositoryServicio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -107,6 +108,18 @@ class ServiceProveedoresH2Test {
         assertNotNull(guardado);
         assertEquals("BORRADOR", guardado.getEstado());
 
+        Servicio estadoEnBlanco = servicioValido();
+        estadoEnBlanco.setEstado("  ");
+        service.crearServicio(estadoEnBlanco);
+        assertEquals("BORRADOR",
+                service.buscarServicio(estadoEnBlanco.getIdServicio()).getEstado());
+
+        Servicio estadoExplicito = servicioValido();
+        estadoExplicito.setEstado("BORRADOR");
+        service.crearServicio(estadoExplicito);
+        assertEquals("BORRADOR",
+                service.buscarServicio(estadoExplicito.getIdServicio()).getEstado());
+
         Servicio edicion = servicioValido();
         edicion.setIdProveedor(999);
         edicion.setNombre("Fotografía editada");
@@ -117,15 +130,56 @@ class ServiceProveedoresH2Test {
         assertEquals("Fotografía editada", actualizado.getNombre());
         assertEquals(PROVEEDOR, actualizado.getIdProveedor());
         assertEquals("BORRADOR", actualizado.getEstado());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.modificarServicio(
+                        PROVEEDOR, datos.getIdServicio(), null));
+        assertEquals("Fotografía editada",
+                service.buscarServicio(datos.getIdServicio()).getNombre());
+
+        Servicio estadoEdicionEnBlanco = servicioValido();
+        estadoEdicionEnBlanco.setNombre("Fotografía sin cambio de estado");
+        estadoEdicionEnBlanco.setEstado("  ");
+        service.modificarServicio(
+                PROVEEDOR, datos.getIdServicio(), estadoEdicionEnBlanco);
+        assertEquals("BORRADOR",
+                service.buscarServicio(datos.getIdServicio()).getEstado());
+
+        Servicio estadoEdicionExplicito = servicioValido();
+        estadoEdicionExplicito.setEstado("BORRADOR");
+        service.modificarServicio(
+                PROVEEDOR, datos.getIdServicio(), estadoEdicionExplicito);
+        assertEquals("BORRADOR",
+                service.buscarServicio(datos.getIdServicio()).getEstado());
     }
 
     @Test
     void rechazaDatosInvalidosSinGuardarElServicio() {
         assertThrows(IllegalArgumentException.class, () -> service.crearServicio(null));
 
+        Servicio proveedorInvalido = servicioValido();
+        proveedorInvalido.setIdProveedor(0);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.crearServicio(proveedorInvalido));
+
         Servicio precioInvalido = servicioValido();
         precioInvalido.setPrecio(0);
         assertThrows(IllegalArgumentException.class, () -> service.crearServicio(precioInvalido));
+
+        Servicio precioNoNumerico = servicioValido();
+        precioNoNumerico.setPrecio(Double.NaN);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.crearServicio(precioNoNumerico));
+
+        Servicio precioInfinito = servicioValido();
+        precioInfinito.setPrecio(Double.POSITIVE_INFINITY);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.crearServicio(precioInfinito));
+
+        Servicio precioSobreElMaximo = servicioValido();
+        precioSobreElMaximo.setPrecio(10_000_000_000d);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.crearServicio(precioSobreElMaximo));
 
         Servicio capacidadInvalida = servicioValido();
         capacidadInvalida.setCantidadMaximaPersonas(0);
@@ -134,6 +188,18 @@ class ServiceProveedoresH2Test {
         Servicio nombreInvalido = servicioValido();
         nombreInvalido.setNombre(" ");
         assertThrows(IllegalArgumentException.class, () -> service.crearServicio(nombreInvalido));
+
+        Servicio nombreNulo = servicioValido();
+        nombreNulo.setNombre(null);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.crearServicio(nombreNulo));
+
+        Servicio categoriaVacia = servicioValido();
+        categoriaVacia.setCategoria(" ");
+        IllegalArgumentException errorCategoria = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.crearServicio(categoriaVacia));
+        assertTrue(errorCategoria.getMessage().contains("La categoria es obligatoria"));
 
         assertTrue(service.listarServiciosProveedor(PROVEEDOR).isEmpty());
     }
@@ -236,6 +302,27 @@ class ServiceProveedoresH2Test {
     }
 
     @Test
+    void publicaServicioConCapacidadMaximaOpcionalNula() {
+        Servicio servicio = servicioValido();
+        servicio.setCantidadMaximaPersonas(null);
+        service.crearServicio(servicio);
+
+        assertNull(service.buscarServicio(servicio.getIdServicio())
+                .getCantidadMaximaPersonas());
+
+        service.registrarDisponibilidadServicio(
+                PROVEEDOR,
+                servicio.getIdServicio(),
+                Date.valueOf(LocalDate.now().plusDays(20)),
+                "09:00 - 10:00");
+        service.publicarServicio(PROVEEDOR, servicio.getIdServicio());
+
+        Servicio publicado = service.buscarServicio(servicio.getIdServicio());
+        assertEquals("DISPONIBLE", publicado.getEstado());
+        assertNull(publicado.getCantidadMaximaPersonas());
+    }
+
+    @Test
     void publicaSoloTrasRegistrarDisponibilidad() throws Exception {
         Servicio servicio = crearServicio();
 
@@ -270,6 +357,35 @@ class ServiceProveedoresH2Test {
     }
 
     @Test
+    void publicarServicioRechazaDatosInvalidosPersistidos() throws Exception {
+        assertPublicacionRechazada("nombre = ' '", "El nombre es obligatorio", PROVEEDOR);
+        assertPublicacionRechazada("tipo = NULL", "El tipo es obligatorio", PROVEEDOR);
+        assertPublicacionRechazada("tipo = ' '", "El tipo es obligatorio", PROVEEDOR);
+        assertPublicacionRechazada("descripcion = NULL", "La descripcion es obligatoria", PROVEEDOR);
+        assertPublicacionRechazada("descripcion = ' '", "La descripcion es obligatoria", PROVEEDOR);
+        assertPublicacionRechazada("precio = 0", "El precio debe ser mayor que cero", PROVEEDOR);
+        assertPublicacionRechazada("categoria = NULL", "La categoria es obligatoria", PROVEEDOR);
+        assertPublicacionRechazada("categoria = ' '", "La categoria es obligatoria", PROVEEDOR);
+        assertPublicacionRechazada("ciudad_zona = NULL", "La ciudad o zona es obligatoria", PROVEEDOR);
+        assertPublicacionRechazada("ciudad_zona = ' '", "La ciudad o zona es obligatoria", PROVEEDOR);
+        assertPublicacionRechazada("anticipacion_minima = -1",
+                "La anticipacion minima no puede ser negativa", PROVEEDOR);
+        assertPublicacionRechazada("cantidad_maxima_personas = 0",
+                "La cantidad maxima debe ser mayor que cero", PROVEEDOR);
+
+        ejecutar("INSERT INTO Usuario "
+                + "(id_usuario, nombre, usuario, contraseña, estado, fecha_registro, "
+                + "acepta_marketing, tipo_usuario) VALUES "
+                + "(0, 'Proveedor cero', 'proveedor.cero', 'x', 'ACTIVO', "
+                + "CURRENT_TIMESTAMP, FALSE, 'PROVEEDOR')");
+        ejecutar("INSERT INTO Proveedor "
+                + "(id_proveedor, id_usuario, nombre, estado) VALUES "
+                + "(0, 0, 'Proveedor cero', 'APROBADO')");
+        assertPublicacionRechazada(
+                "id_proveedor = 0", "El proveedor es obligatorio", 0);
+    }
+
+    @Test
     void protegeServiciosAjenoAlModificarYAgregarDisponibilidad() {
         Servicio servicio = crearServicio();
 
@@ -284,11 +400,26 @@ class ServiceProveedoresH2Test {
     }
 
     @Test
+    void rechazaModificarUnServicioInexistenteSinCambiarLaPersistencia() throws Exception {
+        int serviciosAntes = contar("SELECT COUNT(*) FROM Servicio");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.modificarServicio(PROVEEDOR, 99999, servicioValido()));
+
+        assertEquals(serviciosAntes, contar("SELECT COUNT(*) FROM Servicio"));
+        assertTrue(service.listarServiciosProveedor(PROVEEDOR).isEmpty());
+    }
+
+    @Test
     void asignaOrdenAImagenesYValidaAlProveedorAntesDeEliminar() {
         Servicio servicio = crearServicio();
 
         assertThrows(IllegalArgumentException.class,
+                () -> service.agregarImagenServicio(
+                        PROVEEDOR, servicio.getIdServicio(), null));
+        assertThrows(IllegalArgumentException.class,
                 () -> service.agregarImagenServicio(PROVEEDOR, servicio.getIdServicio(), " "));
+        assertTrue(service.listarImagenesServicio(servicio.getIdServicio()).isEmpty());
         service.agregarImagenServicio(PROVEEDOR, servicio.getIdServicio(), "https://ejemplo.test/uno.jpg");
         service.agregarImagenServicio(PROVEEDOR, servicio.getIdServicio(), "https://ejemplo.test/dos.jpg");
 
@@ -309,6 +440,9 @@ class ServiceProveedoresH2Test {
     void preguntaPublicaSeRespondeYPersisteElCambioDeEstado() {
         Servicio servicio = crearServicio();
 
+        assertThrows(IllegalArgumentException.class,
+                () -> service.formularPreguntaPublica(
+                        99999, ORGANIZADOR, "¿Está disponible?"));
         assertThrows(IllegalStateException.class,
                 () -> service.formularPreguntaPublica(servicio.getIdServicio(), ORGANIZADOR, "¿Está disponible?"));
         service.registrarDisponibilidadServicio(
@@ -318,13 +452,31 @@ class ServiceProveedoresH2Test {
                 "09:00 - 12:00");
         service.publicarServicio(PROVEEDOR, servicio.getIdServicio());
 
+        assertThrows(IllegalArgumentException.class,
+                () -> service.formularPreguntaPublica(
+                        servicio.getIdServicio(), ORGANIZADOR, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.formularPreguntaPublica(
+                        servicio.getIdServicio(), ORGANIZADOR, "  "));
+        assertTrue(service.listarPreguntasPublicas(servicio.getIdServicio()).isEmpty());
+
         service.formularPreguntaPublica(servicio.getIdServicio(), ORGANIZADOR, "  ¿Incluye montaje?  ");
         PreguntaServicio pregunta = service.listarPreguntasPublicas(servicio.getIdServicio()).get(0);
         assertEquals("¿Incluye montaje?", pregunta.getPregunta());
         assertEquals("PENDIENTE", pregunta.getEstado());
 
         assertThrows(IllegalArgumentException.class,
+                () -> service.responderPreguntaPublica(
+                        PROVEEDOR, 99999, "Respuesta válida"));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.responderPreguntaPublica(
+                        PROVEEDOR, pregunta.getIdPregunta(), null));
+        assertThrows(IllegalArgumentException.class,
                 () -> service.responderPreguntaPublica(PROVEEDOR, pregunta.getIdPregunta(), " "));
+        PreguntaServicio pendiente = service.listarPreguntasPublicas(
+                servicio.getIdServicio()).get(0);
+        assertEquals("PENDIENTE", pendiente.getEstado());
+        assertNull(pendiente.getRespuesta());
         assertThrows(IllegalStateException.class,
                 () -> service.responderPreguntaPublica(999, pregunta.getIdPregunta(), "Sí"));
         service.responderPreguntaPublica(PROVEEDOR, pregunta.getIdPregunta(), "  Sí, está incluido.  ");
@@ -368,6 +520,23 @@ class ServiceProveedoresH2Test {
         Servicio servicio = servicioValido();
         service.crearServicio(servicio);
         return servicio;
+    }
+
+    private void assertPublicacionRechazada(
+            String actualizacion,
+            String mensajeEsperado,
+            int idProveedor) throws Exception {
+        Servicio servicio = crearServicio();
+        ejecutar("UPDATE Servicio SET " + actualizacion
+                + " WHERE id_servicio = " + servicio.getIdServicio());
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.publicarServicio(idProveedor, servicio.getIdServicio()));
+
+        assertTrue(error.getMessage().contains(mensajeEsperado));
+        assertEquals("BORRADOR",
+                service.buscarServicio(servicio.getIdServicio()).getEstado());
     }
 
     private Servicio servicioValido() {

@@ -191,12 +191,10 @@ public class ServiceRegistroPago {
         if (fecha.isAfter(hoy)) {
             throw new IllegalArgumentException("La fecha del pago no puede ser futura.");
         }
-        if (contratacion.getFechaContratacion() != null) {
-            LocalDate contratada = contratacion.getFechaContratacion().toLocalDate();
-            if (fecha.isBefore(contratada)) {
-                throw new IllegalArgumentException("La fecha del pago no puede ser anterior a la contratación ("
-                        + contratada.format(FORMATO_FECHA) + ").");
-            }
+        LocalDate contratada = contratacion.getFechaContratacion().toLocalDate();
+        if (fecha.isBefore(contratada)) {
+            throw new IllegalArgumentException("La fecha del pago no puede ser anterior a la contratación ("
+                    + contratada.format(FORMATO_FECHA) + ").");
         }
     }
 
@@ -223,7 +221,7 @@ public class ServiceRegistroPago {
         if (evento == null) {
             throw new IllegalArgumentException("Selecciona un evento existente de tu cuenta.");
         }
-        String estado = evento.getEstado() == null ? "" : evento.getEstado().trim();
+        String estado = evento.getEstado().trim();
         if ("CANCELADO".equalsIgnoreCase(estado)) {
             throw new IllegalStateException("No se pueden registrar pagos de un evento cancelado.");
         }

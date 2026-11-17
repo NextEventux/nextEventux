@@ -83,6 +83,14 @@ class ServiceAvisosProveedorH2Test {
     void exigeSesionDeProveedorActivoYVerificado() {
         assertThrows(IllegalStateException.class, () -> service.listar(null));
 
+        SesionUsuario sinUsuario = sesionProveedor();
+        sinUsuario.setIdUsuario(0);
+        assertThrows(IllegalStateException.class, () -> service.listar(sinUsuario));
+
+        SesionUsuario sinProveedor = sesionProveedor();
+        sinProveedor.setIdActor(0);
+        assertThrows(IllegalStateException.class, () -> service.listar(sinProveedor));
+
         SesionUsuario organizador = sesionProveedor();
         organizador.setTipoUsuario("ORGANIZADOR");
         assertThrows(IllegalStateException.class, () -> service.listar(organizador));
@@ -101,6 +109,15 @@ class ServiceAvisosProveedorH2Test {
         ejecutar("UPDATE Proveedor SET estado = 'PENDIENTE' WHERE id_proveedor = " + PROVEEDOR);
 
         assertThrows(IllegalStateException.class, () -> service.listar(sesionProveedor()));
+    }
+
+    @Test
+    void permiteProveedorVerificadoSinAvisos() throws Exception {
+        ejecutar("UPDATE Proveedor SET estado = 'VERIFICADO' WHERE id_proveedor = " + PROVEEDOR);
+        SesionUsuario verificado = sesionProveedor();
+        verificado.setEstadoActor("VERIFICADO");
+
+        assertEquals(java.util.List.of(), service.listar(verificado));
     }
 
     private SesionUsuario sesionProveedor() {
