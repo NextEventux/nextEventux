@@ -213,6 +213,36 @@ class ServiceMarketingH2Test {
     }
 
     @Test
+    void noComprometeUnaCampanaSiOtroProcesoConsumeElPresupuestoTrasValidarla() throws Exception {
+        insertarSegmentoActivo();
+        RepositoryMarketing repositorio = new RepositoryMarketing(url);
+        ServiceMarketing coordinado = new ServiceMarketing(
+                repositorio,
+                Clock.fixed(Instant.parse("2026-11-16T12:00:00Z"), ZoneOffset.UTC),
+                new ServiceMarketing.Coordinador() {
+                    @Override
+                    public void antesDeComprometerPresupuesto(Campana solicitada) {
+                        Campana competidora = nuevaCampana(
+                                ADMINISTRADOR, SEGMENTO, "Gasto concurrente", "10%",
+                                HOY.plusDays(1), HOY.plusDays(5), solicitada.getPresupuestoMaximo());
+                        assertTrue(repositorio.guardarCampanaComprometiendoPresupuesto(competidora));
+                    }
+                });
+
+        assertThrows(IllegalArgumentException.class,
+                () -> coordinado.crearCampana(nuevaCampana(
+                        ADMINISTRADOR, SEGMENTO, "Presupuesto insuficiente", "15%",
+                        HOY.plusDays(2), HOY.plusDays(10), new BigDecimal("1000.00"))));
+
+        assertEquals(1, consultarEntero("SELECT COUNT(*) FROM Campana"));
+        assertEquals(1, consultarEntero(
+                "SELECT COUNT(*) FROM Campana WHERE nombre = 'Gasto concurrente'"));
+        assertEquals(0, consultarEntero(
+                "SELECT COUNT(*) FROM Campana WHERE nombre = 'Presupuesto insuficiente'"));
+        assertEquals(0, service.obtenerPresupuestoDisponible().signum());
+    }
+
+    @Test
     void validaAdministradorFechasSegmentoYPresupuesto() throws Exception {
         insertarSegmentoActivo();
 
@@ -425,6 +455,34 @@ class ServiceMarketingH2Test {
     }
 
     @Test
+    void omiteUnaTransicionSiOtraOperacionCambiaLaCampanaDespuesDeLeerla() throws Exception {
+        insertarSegmentoActivo();
+        Campana vencida = service.crearCampana(nuevaCampana(
+                ADMINISTRADOR, SEGMENTO, "Vencida concurrente", "10%",
+                HOY.minusDays(1), HOY, new BigDecimal("50")));
+        RepositoryMarketing repositorio = new RepositoryMarketing(url);
+        ServiceMarketing coordinado = new ServiceMarketing(
+                repositorio,
+                Clock.fixed(Instant.parse("2026-11-16T12:00:00Z"), ZoneOffset.UTC),
+                new ServiceMarketing.Coordinador() {
+                    @Override
+                    public void antesDeIntentarTransicion(int idCampana) {
+                        if (idCampana == vencida.getIdCampana()) {
+                            assertTrue(repositorio.cambiarEstadoCampana(
+                                    idCampana, Campana.ESTADO_PROGRAMADA, Campana.ESTADO_FINALIZADA));
+                        }
+                    }
+                });
+
+        assertDoesNotThrow(coordinado::verificarCampanas);
+
+        assertEquals(Campana.ESTADO_FINALIZADA,
+                coordinado.obtenerCampana(vencida.getIdCampana()).getEstado());
+        assertEquals(0, consultarEntero(
+                "SELECT COUNT(*) FROM Campana WHERE estado = 'PROGRAMADA'"));
+    }
+
+    @Test
     void finalizaCampanasActivasYEnPausaCuandoLlegaSuFechaFin() throws Exception {
         insertarSegmentoActivo();
         Campana activa = service.crearCampana(nuevaCampana(
@@ -506,8 +564,10 @@ class ServiceMarketingH2Test {
                 + UUID.randomUUID().toString().replace("-", "") + ";AUTO_SERVER=TRUE";
         assertThrows(SQLException.class,
                 () -> DatabaseConnection.getConnection(baseNoDisponible));
+        RepositoryMarketing repositorioConFalla = new RepositoryMarketing(baseNoDisponible);
+        assertThrows(IllegalStateException.class, repositorioConFalla::listarCampanas);
         ServiceMarketing servicioConFalla = new ServiceMarketing(
-                new RepositoryMarketing(baseNoDisponible),
+                repositorioConFalla,
                 Clock.fixed(Instant.parse("2026-11-16T12:00:00Z"), ZoneOffset.UTC),
                 () -> planificador);
 
@@ -525,6 +585,33 @@ class ServiceMarketingH2Test {
 
         assertEquals(1, planificador.detenciones);
         assertFalse(servicioConFalla.planificadorActivo());
+    }
+
+    @Test
+    void tareaProgramadaEjecutaLaRevisionNormalConH2() throws Exception {
+        insertarSegmentoActivo();
+        Campana iniciaHoy = service.crearCampana(nuevaCampana(
+                ADMINISTRADOR, SEGMENTO, "Inicia desde el planificador", "15%",
+                HOY, HOY.plusDays(5), new BigDecimal("50")));
+        PlanificadorControlado planificador = new PlanificadorControlado();
+        ServiceMarketing coordinado = new ServiceMarketing(
+                new RepositoryMarketing(url),
+                Clock.fixed(Instant.parse("2026-11-16T12:00:00Z"), ZoneOffset.UTC),
+                () -> planificador);
+
+        coordinado.iniciarPlanificador(17);
+        try {
+            assertNotNull(planificador.tarea);
+            assertDoesNotThrow(planificador.tarea::run);
+        } finally {
+            coordinado.detenerPlanificador();
+        }
+
+        assertEquals(1, planificador.detenciones);
+        assertEquals(Campana.ESTADO_ACTIVA,
+                coordinado.obtenerCampana(iniciaHoy.getIdCampana()).getEstado());
+        assertEquals(1, consultarEntero(
+                "SELECT COUNT(*) FROM Envio_Campana WHERE id_campana = " + iniciaHoy.getIdCampana()));
     }
 
     @Test

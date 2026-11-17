@@ -30,15 +30,29 @@ import repositories.eventos.RepositoryEvento;
  */
 public class ServiceRegistroPago {
 
+    @FunctionalInterface
+    interface CoordinadorConfirmacion {
+        void despuesDeValidar(SolicitudPago pago);
+    }
+
     public static final int MAXIMO_DETALLE = 200;
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final RepositoryMovimientoFinanciero repoMovimientos;
     private final RepositoryEvento repoEventos;
+    private final CoordinadorConfirmacion coordinador;
 
     public ServiceRegistroPago(RepositoryMovimientoFinanciero repoMovimientos, RepositoryEvento repoEventos) {
+        this(repoMovimientos, repoEventos, pago -> { });
+    }
+
+    ServiceRegistroPago(
+            RepositoryMovimientoFinanciero repoMovimientos,
+            RepositoryEvento repoEventos,
+            CoordinadorConfirmacion coordinador) {
         this.repoMovimientos = repoMovimientos;
         this.repoEventos = repoEventos;
+        this.coordinador = coordinador;
     }
 
     /** Pasos 3 y 4: verifica el evento y lista sus contrataciones con lo pagado y el saldo. */
@@ -118,6 +132,7 @@ public class ServiceRegistroPago {
             throw new IllegalStateException("El saldo de la contratación cambió desde que revisaste el pago. "
                     + "Vuelve a las contrataciones y revisa el pago.");
         }
+        coordinador.despuesDeValidar(validado);
         try {
             repoMovimientos.registrarPago(validado);
         } catch (IllegalStateException e) {

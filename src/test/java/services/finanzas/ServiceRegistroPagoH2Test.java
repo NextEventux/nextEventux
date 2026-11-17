@@ -173,6 +173,27 @@ class ServiceRegistroPagoH2Test {
     }
 
     @Test
+    void conservaElPagoRegistradoPorOtroProcesoEntreValidacionYConfirmacion() throws Exception {
+        SolicitudPago pago = validar(
+                CONTRATACION, TipoPago.PAGO_FINAL, new BigDecimal("900000"),
+                LocalDate.now(), null, true);
+        RepositoryMovimientoFinanciero movimientos = new RepositoryMovimientoFinanciero();
+        ServiceRegistroPago coordinado = new ServiceRegistroPago(
+                movimientos, new RepositoryEvento(url), movimientos::registrarPago);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> coordinado.confirmarPago(pago, sesionOrganizador()));
+
+        assertTrue(error.getMessage().contains("El saldo de la contratación cambió"));
+        assertEquals("REGISTRADO", valor(
+                "SELECT estado FROM Movimiento_financiero WHERE id_movimiento = 2"));
+        assertEquals("1", valor("SELECT COUNT(*) FROM Movimiento_financiero "
+                + "WHERE id_contratacion = 1 AND estado = 'REGISTRADO' "
+                + "AND id_movimiento = 2"));
+        assertEquals(4, Integer.parseInt(valor("SELECT COUNT(*) FROM Movimiento_financiero")));
+    }
+
+    @Test
     void noConfirmaDosVecesUnResumenConSaldoDesactualizado() throws Exception {
         ejecutar("DELETE FROM Movimiento_financiero WHERE id_movimiento = 2");
         SolicitudPago pago = validar(

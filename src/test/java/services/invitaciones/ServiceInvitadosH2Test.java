@@ -199,6 +199,59 @@ class ServiceInvitadosH2Test {
     }
 
     @Test
+    void quitarInvitadoToleraQueSuInvitacionSeElimineEntreConsultas() {
+        Invitacion invitacion = crearInvitacion(evento, LUGAR_GRANDE, "Eliminación concurrente");
+        Invitado ana = agregarInvitado(
+                invitacion.getIdInvitacion(), "Ana", "ana@correo.com", "3001112222");
+        ServiceInvitados coordinado = servicioCoordinado(punto -> {
+            if (punto == ServiceInvitados.PuntoCoordinacion.ANTES_DE_BUSCAR_INVITACION_AL_QUITAR) {
+                repositoryInvitado.eliminarInvitado(ana.getIdInvitado());
+                repositoryInvitacion.eliminarInvitacion(invitacion.getIdInvitacion());
+            }
+        });
+
+        coordinado.quitarInvitado(ana.getIdInvitado());
+
+        assertNull(repositoryInvitado.buscarInvitado(ana.getIdInvitado()));
+        assertNull(repositoryInvitacion.buscarInvitacion(invitacion.getIdInvitacion()));
+    }
+
+    @Test
+    void omiteInvitadosEliminadosDespuesDeListarSusInvitaciones() {
+        Invitacion invitacion = crearInvitacion(evento, LUGAR_GRANDE, "Consulta concurrente");
+        Invitado ana = agregarInvitado(
+                invitacion.getIdInvitacion(), "Ana", "ana@correo.com", "3001112222");
+        ServiceInvitados coordinado = servicioCoordinado(punto -> {
+            if (punto == ServiceInvitados.PuntoCoordinacion.DESPUES_DE_LISTAR_INVITACIONES_POR_CORREO) {
+                repositoryInvitado.eliminarInvitado(ana.getIdInvitado());
+            }
+        });
+
+        assertTrue(coordinado.consultarInvitacionesPorCorreo(
+                ana.getCorreo(), ana.getTelefono()).isEmpty());
+        assertNull(repositoryInvitado.buscarInvitado(ana.getIdInvitado()));
+    }
+
+    @Test
+    void conservaLaInvitacionEnviadaSiElInvitadoDesapareceAlActualizarSuRespuesta() {
+        Invitacion invitacion = crearInvitacion(evento, LUGAR_GRANDE, "Respuesta concurrente");
+        Invitado ana = agregarInvitado(
+                invitacion.getIdInvitacion(), "Ana", "ana@correo.com", "3001112222");
+        ServiceInvitados coordinado = servicioCoordinado(punto -> {
+            if (punto == ServiceInvitados.PuntoCoordinacion.DESPUES_DE_ACTUALIZAR_ESTADO_INVITADO) {
+                repositoryInvitado.eliminarInvitado(ana.getIdInvitado());
+            }
+        });
+
+        coordinado.gestionarRespuestaInvitacion(
+                ana.getIdInvitado(), ana.getCorreo(), ana.getTelefono(), Invitado.ESTADO_CONFIRMADO);
+
+        assertNull(repositoryInvitado.buscarInvitado(ana.getIdInvitado()));
+        assertEquals(Invitacion.ESTADO_ENVIADA,
+                repositoryInvitacion.buscarInvitacion(invitacion.getIdInvitacion()).getEstadoRespuesta());
+    }
+
+    @Test
     void consultaGaleriaSoloParaElCorreoYTelefonoEntregados() throws Exception {
         Invitacion invitacion = crearInvitacion(evento, LUGAR_GRANDE, "Galería");
         Invitado ana
@@ -448,6 +501,73 @@ class ServiceInvitadosH2Test {
     }
 
     @Test
+    void detectaUnaReservaCreadaAntesDeQuitarUnRegalo() {
+        Invitacion invitacion = crearInvitacion(evento, LUGAR_GRANDE, "Reserva antes de quitar");
+        Invitado ana = agregarInvitado(
+                invitacion.getIdInvitacion(), "Ana", "ana@correo.com", "3001112222");
+        Regalo regalo = new Regalo("Jarrón", "Cerámica", new BigDecimal("45000.00"));
+        service.agregarRegalo(ORGANIZADOR, invitacion.getIdInvitacion(), regalo);
+        ServiceInvitados coordinado = servicioCoordinado(punto -> {
+            if (punto == ServiceInvitados.PuntoCoordinacion.ANTES_DE_QUITAR_REGALO) {
+                service.reservarRegalo(
+                        ana.getIdInvitado(), ana.getCorreo(), ana.getTelefono(), regalo.getIdRegalo());
+            }
+        });
+
+        assertThrows(IllegalArgumentException.class,
+                () -> coordinado.quitarRegalo(ORGANIZADOR, regalo.getIdRegalo()));
+
+        assertEquals(1, new RepositoryReservaRegalo(url).contarReservasActivas(regalo.getIdRegalo()));
+        assertNotNull(repositoryRegalo.buscarRegalo(regalo.getIdRegalo()));
+    }
+
+    @Test
+    void detectaUnaReservaCreadaEntreLaLecturaYLaConsultaDeDisponibilidad() {
+        Invitacion invitacion = crearInvitacion(evento, LUGAR_GRANDE, "Disponibilidad concurrente");
+        Invitado ana = agregarInvitado(
+                invitacion.getIdInvitacion(), "Ana", "ana@correo.com", "3001112222");
+        Regalo regalo = new Regalo("Libro", "Edición ilustrada", new BigDecimal("25000.00"));
+        service.agregarRegalo(ORGANIZADOR, invitacion.getIdInvitacion(), regalo);
+        ServiceInvitados coordinado = servicioCoordinado(punto -> {
+            if (punto == ServiceInvitados.PuntoCoordinacion.ANTES_DE_VALIDAR_DISPONIBILIDAD_REGALO) {
+                service.reservarRegalo(
+                        ana.getIdInvitado(), ana.getCorreo(), ana.getTelefono(), regalo.getIdRegalo());
+            }
+        });
+
+        assertFalse(coordinado.validarDisponibilidadRegalo(regalo.getIdRegalo()));
+        assertEquals(1, new RepositoryReservaRegalo(url).contarReservasActivas(regalo.getIdRegalo()));
+    }
+
+    @Test
+    void noDuplicaUnaReservaSiOtroInvitadoLaGanaTrasLaValidacion() {
+        Invitacion invitacion = crearInvitacion(evento, LUGAR_GRANDE, "Dos invitados compiten");
+        Invitado ana = agregarInvitado(
+                invitacion.getIdInvitacion(), "Ana", "ana@correo.com", "3001112222");
+        Invitado luis = agregarInvitado(
+                invitacion.getIdInvitacion(), "Luis", "luis@correo.com", "3001113333");
+        Regalo regalo = new Regalo("Tazas", "Cerámica", new BigDecimal("12000.00"));
+        service.agregarRegalo(ORGANIZADOR, invitacion.getIdInvitacion(), regalo);
+        ServiceInvitados coordinado = servicioCoordinado(punto -> {
+            if (punto == ServiceInvitados.PuntoCoordinacion.ANTES_DE_REGISTRAR_RESERVA) {
+                service.reservarRegalo(
+                        luis.getIdInvitado(), luis.getCorreo(), luis.getTelefono(), regalo.getIdRegalo());
+            }
+        });
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> coordinado.reservarRegalo(
+                        ana.getIdInvitado(), ana.getCorreo(), ana.getTelefono(), regalo.getIdRegalo()));
+
+        assertTrue(error.getMessage().contains("ya fue reservado por otro invitado"));
+        assertEquals(1, new RepositoryReservaRegalo(url).contarReservasActivas(regalo.getIdRegalo()));
+        assertEquals(luis.getIdInvitado(),
+                new RepositoryReservaRegalo(url)
+                        .buscarReservaActiva(regalo.getIdRegalo(), luis.getIdInvitado())
+                        .getIdInvitado());
+    }
+
+    @Test
     void construyeServiciosPredeterminadosContraLaH2Aislada() {
         PropiedadSistemaTemporal propiedadUrl =
                 new PropiedadSistemaTemporal("nexteventux.db.url", url);
@@ -485,6 +605,8 @@ class ServiceInvitadosH2Test {
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.crearInvitacion(999999, invitacion(LUGAR_GRANDE, "Evento inexistente")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.validarEventoDelOrganizador(ORGANIZADOR, 999999));
         assertThrows(IllegalArgumentException.class, () -> service.eventoDeInvitacion(999999));
         assertThrows(IllegalArgumentException.class, () -> service.eventoDeInvitado(999999));
         assertThrows(IllegalArgumentException.class, () -> service.eventoDeRegalo(999999));
@@ -810,6 +932,12 @@ class ServiceInvitadosH2Test {
         Invitado invitado = new Invitado(nombre, correo, telefono, null);
         service.agregarInvitado(idInvitacion, invitado);
         return invitado;
+    }
+
+    private ServiceInvitados servicioCoordinado(ServiceInvitados.Coordinador coordinador) {
+        return new ServiceInvitados(repositoryInvitacion, repositoryInvitado,
+                new RepositoryLugar(url), repositoryEvento, repositoryRegalo,
+                new RepositoryReservaRegalo(url), coordinador);
     }
 
     private SesionUsuario sesionOrganizador() {

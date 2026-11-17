@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.List;
@@ -152,6 +153,23 @@ class ServiceAdministracionH2Test {
         assertThrows(IllegalArgumentException.class,
                 () -> new ServiceAdministracion(
                         new RepositoryContratacion(url), null));
+    }
+
+    @Test
+    void detectaEliminacionDelPerfilDespuesDeVerificarlo() throws Exception {
+        ServiceAdministracion coordinado = new ServiceAdministracion(
+                new RepositoryContratacion(url),
+                new RepositoryOrganizador(url),
+                this::eliminarOrganizador);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> coordinado.seleccionarOrganizador(ORGANIZADOR));
+
+        assertEquals("No se encontro el perfil del organizador seleccionado.", error.getMessage());
+        assertEquals(0, consultarEntero(
+                "SELECT COUNT(*) FROM Organizador WHERE id_organizador = " + ORGANIZADOR));
+        assertEquals(1, consultarEntero(
+                "SELECT COUNT(*) FROM Usuario WHERE id_usuario = 9002"));
     }
 
     @Test
@@ -348,6 +366,16 @@ class ServiceAdministracionH2Test {
         try (Connection connection = DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
+        }
+    }
+
+    private void eliminarOrganizador(int idOrganizador) {
+        try (Connection connection = DatabaseConnection.getConnection(url);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate(
+                    "DELETE FROM Organizador WHERE id_organizador = " + idOrganizador);
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo preparar el cambio concurrente.", e);
         }
     }
 

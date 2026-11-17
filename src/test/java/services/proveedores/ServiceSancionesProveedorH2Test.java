@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.UUID;
@@ -118,6 +119,30 @@ class ServiceSancionesProveedorH2Test {
                 + "WHERE motivo LIKE 'CU09|MULTA|PROV=1|CONTRATO=1|%'")));
         assertEquals(1, contar("SELECT COUNT(*) FROM Notificacion_interna "
                 + "WHERE id_usuario = 3 AND id_evento = 1 AND mensaje LIKE 'Se aplicó una multa%'"));
+    }
+
+    @Test
+    void revierteLaSancionSiLaNotificacionFallaDentroDeLaTransaccion() throws Exception {
+        String mensajeBloqueado = "Se aplicó una multa de $180.00 al contrato #1. "
+                + "Saldo pendiente: $1799820.00.";
+        assertEquals(0, contar("SELECT COUNT(*) FROM Notificacion_interna WHERE mensaje = '"
+                + mensajeBloqueado + "'"));
+        ejecutar("ALTER TABLE Notificacion_interna ADD CONSTRAINT CK_SANCION_PRUEBA "
+                + "CHECK (mensaje <> '" + mensajeBloqueado + "')");
+        int sancionesAntes = contar("SELECT COUNT(*) FROM Sancion");
+        int notificacionesAntes = contar("SELECT COUNT(*) FROM Notificacion_interna");
+        String estadoProveedorAntes = valor(
+                "SELECT estado FROM Proveedor WHERE id_proveedor = 1");
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.aplicarSancion(administrador, multa("0.01")));
+
+        assertEquals("No se pudo aplicar la sanción. No se guardó ningún cambio.", error.getMessage());
+        assertTrue(error.getCause() instanceof SQLException);
+        assertEquals(sancionesAntes, contar("SELECT COUNT(*) FROM Sancion"));
+        assertEquals(notificacionesAntes, contar("SELECT COUNT(*) FROM Notificacion_interna"));
+        assertEquals(estadoProveedorAntes,
+                valor("SELECT estado FROM Proveedor WHERE id_proveedor = 1"));
     }
 
     @Test

@@ -24,15 +24,21 @@ import java.util.logging.Logger;
 
 public class ServiceMarketing {
 
+    interface Coordinador {
+        default void antesDeComprometerPresupuesto(Campana campana) { }
+
+        default void antesDeIntentarTransicion(int idCampana) { }
+    }
+
     interface Planificador {
         void scheduleWithFixedDelay(Runnable tarea, long periodoSegundos);
-
         void shutdownNow();
     }
 
     private final RepositoryMarketing repositorio;
     private final Clock reloj;
     private final Supplier<Planificador> crearPlanificador;
+    private final Coordinador coordinador;
 
     public ServiceMarketing(RepositoryMarketing repositorio) {
         this(repositorio, Clock.systemDefaultZone());
@@ -40,14 +46,24 @@ public class ServiceMarketing {
 
     // Permite controlar la fecha actual en las pruebas.
     public ServiceMarketing(RepositoryMarketing repositorio, Clock reloj) {
-        this(repositorio, reloj, ServiceMarketing::crearPlanificadorPredeterminado);
+        this(repositorio, reloj, ServiceMarketing::crearPlanificadorPredeterminado, new Coordinador() { });
     }
 
     ServiceMarketing(RepositoryMarketing repositorio, Clock reloj,
             Supplier<Planificador> crearPlanificador) {
+        this(repositorio, reloj, crearPlanificador, new Coordinador() { });
+    }
+
+    ServiceMarketing(RepositoryMarketing repositorio, Clock reloj, Coordinador coordinador) {
+        this(repositorio, reloj, ServiceMarketing::crearPlanificadorPredeterminado, coordinador);
+    }
+
+    ServiceMarketing(RepositoryMarketing repositorio, Clock reloj,
+            Supplier<Planificador> crearPlanificador, Coordinador coordinador) {
         this.repositorio = repositorio;
         this.reloj = reloj;
         this.crearPlanificador = crearPlanificador;
+        this.coordinador = coordinador;
     }
 
     // Cada grupo reúne clientes de una misma ubicación que comparten un tipo de evento
@@ -240,6 +256,7 @@ public class ServiceMarketing {
                 campana.getFechaInicio(),
                 campana.getFechaFin(),
                 campana.getPresupuestoMaximo().setScale(2, RoundingMode.HALF_UP));
+        coordinador.antesDeComprometerPresupuesto(programada);
         if (!repositorio.guardarCampanaComprometiendoPresupuesto(programada)) {
             throw presupuestoInsuficiente(repositorio.obtenerPresupuestoDisponible());
         }
@@ -326,9 +343,11 @@ public class ServiceMarketing {
         for (Campana campana : repositorio.listarCampanas()) {
             if (Campana.ESTADO_PROGRAMADA.equals(campana.getEstado())) {
                 if (!campana.getFechaFin().isAfter(hoy)) {
-                    intentar(() -> finalizarCampanaProgramada(campana.getIdCampana()));
+                    intentar(campana.getIdCampana(),
+                            () -> finalizarCampanaProgramada(campana.getIdCampana()));
                 } else if (!campana.getFechaInicio().isAfter(hoy)) {
-                    intentar(() -> lanzarCampana(campana.getIdCampana()));
+                    intentar(campana.getIdCampana(),
+                            () -> lanzarCampana(campana.getIdCampana()));
                 }
             }
         }
@@ -336,7 +355,8 @@ public class ServiceMarketing {
             boolean vigente = Campana.ESTADO_ACTIVA.equals(campana.getEstado())
                     || Campana.ESTADO_PAUSADA.equals(campana.getEstado());
             if (vigente && !campana.getFechaFin().isAfter(hoy)) {
-                intentar(() -> finalizarCampana(campana.getIdCampana()));
+                intentar(campana.getIdCampana(),
+                        () -> finalizarCampana(campana.getIdCampana()));
             }
         }
     }
@@ -394,7 +414,8 @@ public class ServiceMarketing {
     }
 
     // Otro proceso pudo cambiar la campaña entre la lectura y el cambio: se omite sin detener la revisión.
-    private void intentar(Runnable accion) {
+    private void intentar(int idCampana, Runnable accion) {
+        coordinador.antesDeIntentarTransicion(idCampana);
         try {
             accion.run();
         } catch (IllegalArgumentException e) {
