@@ -51,8 +51,7 @@ public class ServiceSolicitudes {
     }
 
     private void exigirSesionAutenticada() {
-        if (sesion == null
-                || sesion.getIdUsuario() <= 0
+        if (sesion.getIdUsuario() <= 0
                 || sesion.getIdActor() <= 0
                 || !"ACTIVO".equalsIgnoreCase(
                         sesion.getEstadoUsuario())) {

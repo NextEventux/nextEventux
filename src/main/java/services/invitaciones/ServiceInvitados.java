@@ -34,6 +34,20 @@ import repositories.invitaciones.RepositoryReservaRegalo;
  * reserva o cancela regalos; cada regalo tiene a lo sumo una reserva activa (R43).
  */
 public class ServiceInvitados {
+    enum PuntoCoordinacion {
+        ANTES_DE_BUSCAR_INVITACION_AL_QUITAR,
+        DESPUES_DE_LISTAR_INVITACIONES_POR_CORREO,
+        DESPUES_DE_ACTUALIZAR_ESTADO_INVITADO,
+        ANTES_DE_QUITAR_REGALO,
+        ANTES_DE_VALIDAR_DISPONIBILIDAD_REGALO,
+        ANTES_DE_REGISTRAR_RESERVA
+    }
+
+    @FunctionalInterface
+    interface Coordinador {
+        void alcanzar(PuntoCoordinacion punto);
+    }
+
     private static final String MENSAJE_EVENTO_AJENO =
             "Solo puedes gestionar las invitaciones de tus propios eventos.";
     private static final String MENSAJE_MESA_AJENA =
@@ -56,6 +70,7 @@ public class ServiceInvitados {
     private final RepositoryEvento repositoryEvento;
     private final RepositoryRegalo repositoryRegalo;
     private final RepositoryReservaRegalo repositoryReservaRegalo;
+    private final Coordinador coordinador;
 
     public ServiceInvitados() {
         this(new RepositoryInvitacion(), new RepositoryInvitado(), new RepositoryLugar(), new RepositoryEvento(),
@@ -71,12 +86,21 @@ public class ServiceInvitados {
     public ServiceInvitados(RepositoryInvitacion repositoryInvitacion, RepositoryInvitado repositoryInvitado,
                             RepositoryLugar repositoryLugar, RepositoryEvento repositoryEvento,
                             RepositoryRegalo repositoryRegalo, RepositoryReservaRegalo repositoryReservaRegalo) {
+        this(repositoryInvitacion, repositoryInvitado, repositoryLugar, repositoryEvento,
+                repositoryRegalo, repositoryReservaRegalo, punto -> { });
+    }
+
+    ServiceInvitados(RepositoryInvitacion repositoryInvitacion, RepositoryInvitado repositoryInvitado,
+                     RepositoryLugar repositoryLugar, RepositoryEvento repositoryEvento,
+                     RepositoryRegalo repositoryRegalo, RepositoryReservaRegalo repositoryReservaRegalo,
+                     Coordinador coordinador) {
         this.repositoryInvitacion = repositoryInvitacion;
         this.repositoryInvitado = repositoryInvitado;
         this.repositoryLugar = repositoryLugar;
         this.repositoryEvento = repositoryEvento;
         this.repositoryRegalo = repositoryRegalo;
         this.repositoryReservaRegalo = repositoryReservaRegalo;
+        this.coordinador = coordinador;
     }
 
     // ------------------------------------------------------------------
@@ -227,6 +251,7 @@ public class ServiceInvitados {
     public void quitarInvitado(int idInvitado) {
         Invitado invitado = repositoryInvitado.buscarInvitado(idInvitado);
         if (invitado == null) throw new IllegalArgumentException("El invitado no existe.");
+        coordinador.alcanzar(PuntoCoordinacion.ANTES_DE_BUSCAR_INVITACION_AL_QUITAR);
         Invitacion invitacion = repositoryInvitacion.buscarInvitacion(invitado.getIdInvitacion());
         if (invitacion != null) validarEventoModificable(invitacion.getIdEvento());
         if (repositoryInvitado.tieneRegistrosAsociados(idInvitado)) {
@@ -251,7 +276,9 @@ public class ServiceInvitados {
         if (soloDigitos(telefono).isEmpty())
             throw new IllegalArgumentException("Ingresa el teléfono que registraste en la invitación.");
         List<InvitacionRecibida> invitaciones = new ArrayList<>();
-        for (InvitacionRecibida inv : repositoryInvitado.listarInvitacionesPorCorreo(limpio)) {
+        List<InvitacionRecibida> recibidas = repositoryInvitado.listarInvitacionesPorCorreo(limpio);
+        coordinador.alcanzar(PuntoCoordinacion.DESPUES_DE_LISTAR_INVITACIONES_POR_CORREO);
+        for (InvitacionRecibida inv : recibidas) {
             Invitado invitado = repositoryInvitado.buscarInvitado(inv.getIdInvitado());
             if (invitado == null || !mismoTelefono(invitado.getTelefono(), telefono)) continue;
             inv.setOcupados(repositoryInvitado.contarAsistentes(inv.getIdEvento(), inv.getIdLugar()));
@@ -299,6 +326,7 @@ public class ServiceInvitados {
             }
         }
         repositoryInvitado.actualizarEstado(idInvitado, nueva);
+        coordinador.alcanzar(PuntoCoordinacion.DESPUES_DE_ACTUALIZAR_ESTADO_INVITADO);
         actualizarEstadoInvitacion(invitacion);
     }
 
@@ -359,6 +387,7 @@ public class ServiceInvitados {
         Invitacion invitacion = buscarInvitacionActiva(regalo.getIdInvitacion());
         validarEventoDelOrganizador(idOrganizador, invitacion.getIdEvento());
         validarEventoParaRegalos(invitacion.getIdEvento(), false);
+        coordinador.alcanzar(PuntoCoordinacion.ANTES_DE_QUITAR_REGALO);
         if (regalo.estaReservado() || repositoryReservaRegalo.contarReservasActivas(idRegalo) > 0)
             throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por un invitado; no se puede quitar.");
         repositoryRegalo.eliminarRegalo(idRegalo);
@@ -382,6 +411,7 @@ public class ServiceInvitados {
     /** R43: un regalo está disponible si nadie lo tiene reservado. */
     public boolean validarDisponibilidadRegalo(int idRegalo) {
         Regalo regalo = buscarRegalo(idRegalo);
+        coordinador.alcanzar(PuntoCoordinacion.ANTES_DE_VALIDAR_DISPONIBILIDAD_REGALO);
         return !regalo.estaReservado() && repositoryReservaRegalo.contarReservasActivas(idRegalo) == 0;
     }
 
@@ -399,6 +429,7 @@ public class ServiceInvitados {
             throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por otro invitado. Elige otro regalo.");
         ReservaRegalo reserva = new ReservaRegalo(0, invitacion.getIdEvento(), idInvitado, idRegalo,
                 LocalDateTime.now(), ReservaRegalo.ESTADO_RESERVADO);
+        coordinador.alcanzar(PuntoCoordinacion.ANTES_DE_REGISTRAR_RESERVA);
         if (!repositoryReservaRegalo.registrarReserva(reserva))
             throw new IllegalArgumentException("\"" + regalo.getNombre() + "\" ya fue reservado por otro invitado. Elige otro regalo.");
     }
@@ -420,14 +451,11 @@ public class ServiceInvitados {
     // ------------------------------------------------------------------
     /** La mesa no se modifica en eventos cancelados o finalizados; el invitado tampoco reserva si ya empezó. */
     private void validarEventoParaRegalos(int eventoId, boolean comoInvitado) {
-        Evento evento = repositoryEvento.listarEventos().stream()
-                .filter(e -> e.getIdEvento() != null && e.getIdEvento() == eventoId)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("El evento no está registrado."));
-        String estado = evento.getEstado() == null ? "" : evento.getEstado().toUpperCase();
+        Evento evento = buscarEvento(eventoId, "El evento no está registrado.");
+        String estado = evento.getEstado().toUpperCase();
         if (estado.equals("CANCELADO") || estado.equals("FINALIZADO"))
             throw new IllegalArgumentException("El evento está " + estado.toLowerCase() + "; su mesa de regalos ya no se puede modificar.");
-        if (comoInvitado && evento.getFechaInicio() != null && !evento.getFechaInicio().isAfter(LocalDateTime.now()))
+        if (comoInvitado && !evento.getFechaInicio().isAfter(LocalDateTime.now()))
             throw new IllegalArgumentException("El evento ya comenzó; la mesa de regalos está cerrada.");
     }
 
@@ -486,14 +514,18 @@ public class ServiceInvitados {
     }
 
     private Evento buscarEvento(int eventoId) {
+        return buscarEvento(eventoId, "Selecciona un evento registrado.");
+    }
+
+    private Evento buscarEvento(int eventoId, String mensajeSiFalta) {
         return repositoryEvento.listarEventos().stream()
-                .filter(e -> e.getIdEvento() != null && e.getIdEvento() == eventoId)
+                .filter(evento -> evento.getIdEvento() == eventoId)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Selecciona un evento registrado."));
+                .orElseThrow(() -> new IllegalArgumentException(mensajeSiFalta));
     }
 
     private static boolean estaCerrado(Evento evento) {
-        String estado = evento.getEstado() == null ? "" : evento.getEstado().trim().toUpperCase();
+        String estado = evento.getEstado().trim().toUpperCase();
         return estado.equals("CANCELADO") || estado.equals("FINALIZADO");
     }
 
