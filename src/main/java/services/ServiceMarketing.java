@@ -320,6 +320,11 @@ public class ServiceMarketing {
         }
     }
 
+    public void finalizarCampana(int idAdministrador, int idCampana) {
+        exigirAdministrador(idAdministrador);
+        finalizarCampana(idCampana);
+    }
+
     // Campaña con su estado, segmento y métricas actuales.
     public Campana obtenerCampana(int idCampana) {
         return exigirCampana(idCampana);

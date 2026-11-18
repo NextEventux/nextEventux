@@ -16,6 +16,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -211,6 +212,37 @@ public class ViewCampana {
         }
     }
 
+    private void finalizarCampana() {
+        Campana seleccionada = exigirSeleccion();
+        if (seleccionada == null) {
+            return;
+        }
+        if (!Campana.ESTADO_ACTIVA.equals(seleccionada.getEstado())
+                && !Campana.ESTADO_PAUSADA.equals(seleccionada.getEstado())) {
+            mostrarMensaje("Solo puedes finalizar una campaña activa o pausada.", "error");
+            return;
+        }
+
+        Alert confirmar = new Alert(
+                Alert.AlertType.CONFIRMATION,
+                "La campaña dejará de distribuirse y no podrá reactivarse.",
+                ButtonType.OK,
+                ButtonType.CANCEL);
+        confirmar.setTitle("Finalizar campaña");
+        confirmar.setHeaderText("¿Finalizar «" + seleccionada.getNombre() + "»?");
+        if (confirmar.showAndWait().filter(ButtonType.OK::equals).isEmpty()) {
+            return;
+        }
+
+        try {
+            controller.finalizarCampana(sesion.getIdUsuario(), seleccionada.getIdCampana());
+            mostrarMensaje("Campaña finalizada. Sus métricas se conservaron.", "success");
+            cargarCampanas();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            mostrarMensaje(e.getMessage(), "error");
+        }
+    }
+
     private void verResumen() {
         Campana seleccionada = exigirSeleccion();
         if (seleccionada != null) {
@@ -366,7 +398,8 @@ public class ViewCampana {
     private VBox crearPanelInformacion() {
         Label texto = etiqueta("La campaña queda programada y se activa sola en la fecha de inicio. "
                 + "Mientras está activa se registran las visualizaciones y las contrataciones. "
-                + "En la fecha de fin se desactiva y se muestra su resumen. "
+                + "Puedes finalizar manualmente una campaña activa o pausada desde la tabla; "
+                + "al llegar la fecha de fin también se finaliza automáticamente. "
                 + "El presupuesto indicado se descuenta del disponible de marketing al crearla. "
                 + "Solo reciben la oferta los clientes del segmento que aceptan comunicaciones de marketing.",
                 "muted");
@@ -387,11 +420,15 @@ public class ViewCampana {
         reanudar.setId("reanudar");
         reanudar.getStyleClass().add("btn-secondary");
         reanudar.setOnAction(event -> reanudarCampana());
+        Button finalizar = new Button("Finalizar campaña");
+        finalizar.setId("finalizar");
+        finalizar.getStyleClass().add("btn-secondary");
+        finalizar.setOnAction(event -> finalizarCampana());
         Button resumen = new Button("Ver resumen");
         resumen.setId("resumen");
         resumen.getStyleClass().add("btn-secondary");
         resumen.setOnAction(event -> verResumen());
-        HBox acciones = new HBox(12, pausar, reanudar, resumen);
+        HBox acciones = new HBox(12, pausar, reanudar, finalizar, resumen);
         acciones.setAlignment(Pos.CENTER_RIGHT);
 
         VBox tarjeta = new VBox(18, etiqueta("Campañas", "card-title"), tabla, acciones);

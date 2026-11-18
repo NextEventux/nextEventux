@@ -38,4 +38,8 @@ public class ControllerMarketing {
     public void reanudarCampana(int idAdministrador, int idCampana) {
         serviceMarketing.reanudarCampana(idAdministrador, idCampana);
     }
+
+    public void finalizarCampana(int idAdministrador, int idCampana) {
+        serviceMarketing.finalizarCampana(idAdministrador, idCampana);
+    }
 }
