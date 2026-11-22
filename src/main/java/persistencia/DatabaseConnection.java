@@ -1,7 +1,5 @@
 package persistencia;
 
-import entities.eventos.Evento;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +7,8 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.h2.tools.RunScript;
 
@@ -36,28 +36,13 @@ public class DatabaseConnection {
     }
 
     public static Connection getConnection() throws SQLException {
-        return getConnection(
-                System.getProperty("nexteventux.db.url", urlPorDefecto()), true);
+        return getConnection(System.getProperty("nexteventux.db.url", urlPorDefecto()));
     }
 
     public static Connection getConnection(String url) throws SQLException {
-        return getConnection(url, true);
-    }
-
-    public static Connection getConnectionParaSincronizarDemo() throws SQLException {
-        return getConnection(
-                System.getProperty("nexteventux.db.url", urlPorDefecto()), false);
-    }
-
-    public static Connection getConnectionParaSincronizarDemo(String url) throws SQLException {
-        return getConnection(url, false);
-    }
-
-    private static Connection getConnection(String url, boolean repararContadorEventos)
-            throws SQLException {
         Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
         try {
-            inicializarSiHaceFalta(url, connection, repararContadorEventos);
+            inicializarSiHaceFalta(url, connection);
             return connection;
         } catch (SQLException | RuntimeException e) {
             try {
@@ -69,67 +54,16 @@ public class DatabaseConnection {
         }
     }
 
-    // Se evita repetir el esquema en cada consulta a una base ya inicializada.
-    private static final java.util.Set<String> INICIALIZADAS =
-            java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static final Set<String> INICIALIZADAS = new HashSet<>();
 
     private static synchronized void inicializarSiHaceFalta(
             String url,
-            Connection connection,
-            boolean repararContadorEventos) throws SQLException {
-        // La tabla centinela detecta bases recreadas con la misma URL (por ejemplo, en memoria).
-        if (INICIALIZADAS.contains(url) && existeTabla(connection, "ESQUEMA_INICIALIZADO")) {
-            if (repararContadorEventos) {
-                actualizarContadorEventos(connection);
-            }
+            Connection connection) throws SQLException {
+        if (INICIALIZADAS.contains(url)) {
             return;
         }
-        inicializarEsquema(connection, repararContadorEventos);
-        try (java.sql.Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS Esquema_inicializado (id INT PRIMARY KEY)");
-        }
-        INICIALIZADAS.add(url);
-    }
-
-    public static synchronized void inicializarEsquema(Connection connection) throws SQLException {
-        inicializarEsquema(connection, true);
-    }
-
-    private static synchronized void inicializarEsquema(
-            Connection connection,
-            boolean repararContadorEventos) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
-        if (repararContadorEventos) {
-            actualizarContadorEventos(connection);
-        }
-    }
-
-    private static boolean existeTabla(Connection connection, String tabla) throws SQLException {
-        try (java.sql.PreparedStatement statement = connection.prepareStatement(
-                "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?")) {
-            statement.setString(1, tabla);
-            try (java.sql.ResultSet result = statement.executeQuery()) {
-                return result.next();
-            }
-        }
-    }
-
-    // Los ejemplos antiguos usaban IDs explícitos sin avanzar la secuencia H2.
-    private static void actualizarContadorEventos(Connection connection) throws SQLException {
-        try (java.sql.Statement statement = connection.createStatement(); java.sql.ResultSet result = statement.executeQuery(
-                "SELECT IDENTITY_BASE, (SELECT COALESCE(MAX(id_evento), 0) FROM Evento) "
-                + "FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' "
-                + "AND TABLE_NAME = 'EVENTO' AND COLUMN_NAME = 'ID_EVENTO'")) {
-            if (result.next()) {
-                long siguiente = result.getLong(1);
-                long maximo = result.getLong(2);
-                if (siguiente <= maximo) {
-                    try (java.sql.Statement alter = connection.createStatement()) {
-                        alter.execute("ALTER TABLE Evento ALTER COLUMN id_evento RESTART WITH " + (maximo + 1));
-                    }
-                }
-            }
-        }
+        INICIALIZADAS.add(url);
     }
 
     private static void ejecutarScript(Connection connection, String recurso) throws SQLException {
