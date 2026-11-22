@@ -34,13 +34,19 @@ class DatabaseConnectionH2Test {
     void initializesFreshDatabaseLoadsSeedOnceAndPreservesDemoData() throws Exception {
         url = "jdbc:h2:" + tempDir.resolve("database_initialization").toAbsolutePath()
                 .toString().replace('\\', '/');
-        Map<String, Long> countsAfterFirstOpen;
+        Map<String, Long> countsAfterRebuild;
 
         try (Connection connection = DatabaseConnection.getConnection(url)) {
             verifySchema(connection);
             assertTrue(CargarDatosEjemplo.cargarSiEstaVacia(connection));
             assertFalse(CargarDatosEjemplo.cargarSiEstaVacia(connection));
-            countsAfterFirstOpen = countDemoData(connection);
+            try (Statement statement = connection.createStatement()) {
+                assertEquals(1, statement.executeUpdate(
+                        "UPDATE Usuario SET nombre = 'Dato anterior' WHERE usuario = 'laura.gomez'"));
+            }
+            ejecutarScriptsReconstruccion(connection);
+            verifySchema(connection);
+            countsAfterRebuild = countDemoData(connection);
             assertEquals(12, count(connection, "Usuario"));
             assertEquals(4, count(connection, "Evento"));
             assertEquals(15, count(connection, "Servicio"));
@@ -50,16 +56,18 @@ class DatabaseConnectionH2Test {
             assertEquals(10, count(connection, "Propuesta"));
             assertEquals(2, count(connection, "Contratacion"));
             assertEquals(1, count(connection, "Presupuesto_marketing"));
+            assertEquals("Laura Gómez", nombreUsuario(connection, "laura.gomez"));
         }
 
         apagarBase();
 
         try (Connection connection = DatabaseConnection.getConnection(url)) {
             assertFalse(CargarDatosEjemplo.cargarSiEstaVacia(connection));
-            assertEquals(countsAfterFirstOpen, countDemoData(connection));
+            assertEquals(countsAfterRebuild, countDemoData(connection));
             assertEquals(12, count(connection, "Usuario"));
             assertEquals(4, count(connection, "Evento"));
             assertEquals(15, count(connection, "Servicio"));
+            assertEquals("Laura Gómez", nombreUsuario(connection, "laura.gomez"));
         }
     }
 
@@ -119,6 +127,25 @@ class DatabaseConnectionH2Test {
                 ResultSet result = statement.executeQuery("SELECT COUNT(*) FROM " + table)) {
             result.next();
             return result.getLong(1);
+        }
+    }
+
+    private static void ejecutarScriptsReconstruccion(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("RUNSCRIPT FROM 'src/main/resources/drop-schema.sql'");
+            statement.execute("RUNSCRIPT FROM 'src/main/resources/schema.sql'");
+            statement.execute("RUNSCRIPT FROM 'src/main/resources/seed.sql'");
+        }
+    }
+
+    private static String nombreUsuario(Connection connection, String usuario) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT nombre FROM Usuario WHERE usuario = ?")) {
+            statement.setString(1, usuario);
+            try (ResultSet result = statement.executeQuery()) {
+                assertTrue(result.next());
+                return result.getString(1);
+            }
         }
     }
 
