@@ -40,7 +40,7 @@ Las pruebas automatizadas cubren reglas de negocio y persistencia en H2 para los
 - Cancelar o finalizar solo libera reservas que no tengan otro compromiso activo. Una asociación incoherente de una contratación con su disponibilidad bloquea la operación.
 - La finalización guarda fotografías y libera recursos antes de enviar avisos internos. Si falla el envío, se puede reintentar sin volver a cargar fotos; no se deben borrar esos datos ni reiniciar la base para resolverlo.
 - Publicar un servicio requiere disponibilidad; no se puede retirar si hay solicitudes pendientes o contrataciones activas.
-- Las cuentas oficiales de demostración se sincronizan durante la inicialización mediante `SincronizarCuentasDemo`, sin restablecer las contraseñas de las cuentas existentes.
+- Las cuentas de demostración se cargan desde `seed.sql` solo en una base vacía.
 ## Tecnologías y arquitectura
 
 Versiones declaradas en [`pom.xml`](pom.xml):
@@ -76,7 +76,7 @@ Por defecto, H2 conserva la base en la carpeta del usuario del sistema:
 - Linux/macOS: `~/.nexteventux/nexteventux.mv.db`
 - Windows: `%USERPROFILE%\.nexteventux\nexteventux.mv.db`
 
-La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. Al abrir una base nueva se crea el esquema desde `schema.sql`; la aplicación carga `seed.sql` y sincroniza los datos de demostración solo si no encuentra registros de negocio. Una base con datos existentes no se reemplaza por los ejemplos. Cambiar la ubicación no copia la base anterior.
+La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. Al abrir una base nueva se crea el esquema desde `schema.sql`; la aplicación carga `seed.sql` solo si no encuentra registros. Una base con datos existentes no se reemplaza por los ejemplos. Cambiar la ubicación no copia la base anterior.
 
 ### Actualizar el proyecto sin perder la H2
 
