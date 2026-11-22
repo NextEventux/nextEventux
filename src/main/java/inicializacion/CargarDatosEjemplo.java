@@ -2,6 +2,8 @@ package inicializacion;
 
 import persistencia.DatabaseConnection;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -60,9 +62,14 @@ public class CargarDatosEjemplo {
         if (!estaVacia(connection)) {
             throw new SQLException("Los ejemplos requieren una base vacía. No se modificaron los registros existentes.");
         }
-        try (InputStreamReader reader = new InputStreamReader(
-                CargarDatosEjemplo.class.getResourceAsStream("/seed.sql"), StandardCharsets.UTF_8)) {
+        InputStream seed = CargarDatosEjemplo.class.getResourceAsStream("/seed.sql");
+        if (seed == null) {
+            throw new SQLException("No se encontró el recurso /seed.sql");
+        }
+        try (InputStreamReader reader = new InputStreamReader(seed, StandardCharsets.UTF_8)) {
             RunScript.execute(connection, reader);
+        } catch (IOException e) {
+            throw new SQLException("No se pudo leer el recurso /seed.sql", e);
         }
     }
 }
