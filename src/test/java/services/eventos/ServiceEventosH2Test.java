@@ -110,12 +110,13 @@ class ServiceEventosH2Test {
         service.crearEvento(evento, sesionOrganizador());
 
         assertNotNull(evento.getIdEvento());
-        assertTrue(evento.getIdEvento() > 0);
+        int idEvento = evento.getIdEvento();
+        assertTrue(idEvento > 0);
         assertEquals(Evento.ESTADO_INICIAL, evento.getEstado());
         assertEquals("Evento de integración",
-                valor("SELECT nombre FROM Evento WHERE id_evento = " + evento.getIdEvento()));
+                valor("SELECT nombre FROM Evento WHERE id_evento = " + idEvento));
         assertEquals(Evento.ESTADO_INICIAL,
-                valor("SELECT estado FROM Evento WHERE id_evento = " + evento.getIdEvento()));
+                valor("SELECT estado FROM Evento WHERE id_evento = " + idEvento));
     }
 
     @Test
@@ -457,16 +458,18 @@ class ServiceEventosH2Test {
 
     @Test
     void consultaYEditaUnEventoPlaneadoConservandoLosDatosNoEditables() throws Exception {
-        Evento original = service.consultarEventoParaEditar(EVENTO, sesionOrganizador());
+        SesionUsuario organizador = sesionOrganizador();
+        Evento original = service.consultarEventoParaEditar(EVENTO, organizador);
         EdicionEvento cambios = new EdicionEvento(
                 "Boda actualizada", "Celebración",
                 LocalDateTime.of(2027, 11, 15, 15, 0),
                 LocalDateTime.of(2027, 11, 15, 23, 0),
                 "Jardín Central");
 
-        service.editarEvento(EVENTO, sesionOrganizador(), cambios);
+        service.editarEvento(EVENTO, organizador, cambios);
 
-        assertEquals("Boda actualizada", service.consultarEventoParaEditar(EVENTO, sesionOrganizador()).getNombre());
+        Evento editado = service.consultarEventoParaEditar(EVENTO, organizador);
+        assertEquals("Boda actualizada", editado.getNombre());
         assertEquals("Celebración", valor("SELECT tipo FROM Evento WHERE id_evento = " + EVENTO));
         assertEquals("Jardín Central", valor("SELECT ubicacion FROM Evento WHERE id_evento = " + EVENTO));
         assertEquals(original.getDescripcion(), valor("SELECT descripcion FROM Evento WHERE id_evento = " + EVENTO));
@@ -522,7 +525,8 @@ class ServiceEventosH2Test {
     @Test
     void cancelaElEventoYActualizaSusRelaciones() throws Exception {
         prepararReservasContratacionesEvento();
-        service.cancelarEvento(EVENTO, sesionOrganizador(), true);
+        SesionUsuario organizador = sesionOrganizador();
+        service.cancelarEvento(EVENTO, organizador, true);
 
         assertEquals("CANCELADO", valor("SELECT estado FROM Evento WHERE id_evento = " + EVENTO));
         assertEquals("2", valor("SELECT COUNT(*) FROM Contratacion "
@@ -532,7 +536,7 @@ class ServiceEventosH2Test {
         assertEquals("2", valor("SELECT COUNT(*) FROM Solicitud_Ejecucion "
                 + "WHERE id_evento = 1 AND estado = 'CANCELADA'"));
         boolean avisoEncontrado = false;
-        for (String aviso : service.listarAvisosCancelacion(EVENTO, sesionOrganizador())) {
+        for (String aviso : service.listarAvisosCancelacion(EVENTO, organizador)) {
             if (aviso.contains("Se canceló un evento asociado")) {
                 avisoEncontrado = true;
                 break;
@@ -542,7 +546,7 @@ class ServiceEventosH2Test {
         assertEquals("DISPONIBLE", valor("SELECT estado FROM Disponibilidad_Servicio "
                 + "WHERE id_disponibilidad = 1001"));
         IllegalArgumentException yaCancelado = assertThrows(IllegalArgumentException.class,
-                () -> service.cancelarEvento(EVENTO, sesionOrganizador(), true));
+                () -> service.cancelarEvento(EVENTO, organizador, true));
         assertEquals("No puedes cancelar un evento cancelado o finalizado.", yaCancelado.getMessage());
     }
 
@@ -571,7 +575,9 @@ class ServiceEventosH2Test {
                 + "fecha_inicio = TIMESTAMP '2020-01-01 15:00:00', "
                 + "fecha_fin = TIMESTAMP '2020-01-01 23:00:00' WHERE id_evento = " + EVENTO);
 
-        service.finalizarEvento(EVENTO, sesionOrganizador(), List.of(fotografiaValida()));
+        SesionUsuario organizador = sesionOrganizador();
+        List<Fotografia> fotos = List.of(fotografiaValida());
+        service.finalizarEvento(EVENTO, organizador, fotos);
 
         assertEquals("FINALIZADO", valor("SELECT estado FROM Evento WHERE id_evento = " + EVENTO));
         assertEquals("TRUE", valor("SELECT enviada FROM Finalizacion_evento WHERE id_evento = " + EVENTO));
@@ -580,8 +586,8 @@ class ServiceEventosH2Test {
         assertEquals("2", valor("SELECT COUNT(*) FROM Entrega_galeria WHERE id_evento = " + EVENTO));
         assertEquals("2", valor("SELECT COUNT(*) FROM Contratacion "
                 + "WHERE id_evento = 1 AND estado = 'FINALIZADA'"));
-        assertFalse(service.galeriaPendiente(EVENTO, sesionOrganizador()));
-        assertTrue(service.proveedoresParaCalificar(EVENTO, sesionOrganizador())
+        assertFalse(service.galeriaPendiente(EVENTO, organizador));
+        assertTrue(service.proveedoresParaCalificar(EVENTO, organizador)
                 .containsAll(List.of("Mariana López", "Andrés Torres")));
     }
 
