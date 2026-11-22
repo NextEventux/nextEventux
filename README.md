@@ -40,7 +40,7 @@ Las pruebas automatizadas cubren reglas de negocio y persistencia en H2 para los
 - Cancelar o finalizar solo libera reservas que no tengan otro compromiso activo. Una asociación incoherente de una contratación con su disponibilidad bloquea la operación.
 - La finalización guarda fotografías y libera recursos antes de enviar avisos internos. Si falla el envío, se puede reintentar sin volver a cargar fotos; no se deben borrar esos datos ni reiniciar la base para resolverlo.
 - Publicar un servicio requiere disponibilidad; no se puede retirar si hay solicitudes pendientes o contrataciones activas.
-- Las cuentas oficiales de demostración se sincronizan durante la inicialización mediante `SincronizarCuentasDemo`, sin restablecer las contraseñas de las cuentas existentes. La antigua migración `014_cuentas_demostracion.sql` fue retirada porque ya no se utilizaba y podía restablecer contraseñas al ejecutarse manualmente.
+- Las cuentas oficiales de demostración se sincronizan durante la inicialización mediante `SincronizarCuentasDemo`, sin restablecer las contraseñas de las cuentas existentes.
 ## Tecnologías y arquitectura
 
 Versiones declaradas en [`pom.xml`](pom.xml):
@@ -54,7 +54,7 @@ Versiones declaradas en [`pom.xml`](pom.xml):
 | Maven Surefire | 3.2.5; ejecución de pruebas Maven. |
 | JavaFX Maven Plugin | 0.0.8; ejecución de la aplicación con Maven. |
 
-La aplicación sigue una separación por capas: `app` inicia la interfaz y organiza la navegación; `views` presenta pantallas JavaFX; `controllers` conecta las acciones de vista; `services` concentra reglas de negocio; `repositories` accede a H2 mediante JDBC; y `entities` representa los datos. El esquema y los cambios de base de datos están en `src/main/resources/` y sus migraciones.
+La aplicación sigue una separación por capas: `app` inicia la interfaz y organiza la navegación; `views` presenta pantallas JavaFX; `controllers` conecta las acciones de vista; `services` concentra reglas de negocio; `repositories` accede a H2 mediante JDBC; y `entities` representa los datos. El esquema y los datos de ejemplo para una base nueva están en `src/main/resources/schema.sql` y `src/main/resources/seed.sql`.
 
 ## Clonar, compilar, probar y ejecutar
 
@@ -76,7 +76,7 @@ Por defecto, H2 conserva la base en la carpeta del usuario del sistema:
 - Linux/macOS: `~/.nexteventux/nexteventux.mv.db`
 - Windows: `%USERPROFILE%\.nexteventux\nexteventux.mv.db`
 
-La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. Al abrir una base vacía se inicializan el esquema y las migraciones, y la aplicación carga datos de ejemplo solo si no encuentra registros de negocio. Una base con datos existentes no se reemplaza por los ejemplos. Cambiar la ubicación no copia la base anterior.
+La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. Al abrir una base nueva se crea el esquema desde `schema.sql`; la aplicación carga `seed.sql` y sincroniza los datos de demostración solo si no encuentra registros de negocio. Una base con datos existentes no se reemplaza por los ejemplos. Cambiar la ubicación no copia la base anterior.
 
 ### Actualizar el proyecto sin perder la H2
 
