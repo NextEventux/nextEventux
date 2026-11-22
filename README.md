@@ -89,9 +89,25 @@ mvn clean test
 mvn javafx:run
 ```
 
-Cada integrante conserva su propia H2 en su computador; Git no comparte ni sincroniza físicamente los archivos de la base. Al iniciar, la aplicación carga `seed.sql` solo en una base sin datos de negocio. En una H2 existente agrega los datos oficiales faltantes que tienen sincronización implementada: cuentas y perfiles, cuatro eventos, quince servicios, necesidades, solicitudes, propuestas, contrataciones y el horario de fotografía requerido. No vuelve a copiar todo el seed. **No borres, reemplaces ni reinicies tu H2 personal para obtener esos ejemplos.**
+Cada integrante conserva su propia H2 en su computador; Git no comparte ni sincroniza físicamente los archivos de la base. Al iniciar, la aplicación carga `seed.sql` solo en una base vacía. Una base con datos no se completa ni se reemplaza automáticamente con ejemplos.
 
-La sincronización conserva las contraseñas existentes; `1234` es la clave inicial de cuentas nuevas, no una garantía para cuentas que ya tenías. Los IDs personales no se reutilizan intencionalmente. Ante asociaciones incompatibles o ambiguas puede detenerse el inicio; un horario personal que se solape con el horario oficial se conserva, se omite la inserción y se muestra un aviso. Revisa el [guion de demostración](docs/guion-demostracion.md) para conocer los datos disponibles y sus límites.
+### Reconstruir una base de desarrollo
+
+Para preparar una base desde cero, cierra NextEventux y conéctate desde un cliente H2 (por ejemplo, DBeaver) a una ruta de desarrollo separada de `.nexteventux`, con usuario `sa` y contraseña vacía. Crea antes la carpeta de desarrollo si no existe. En la consola SQL ejecuta los archivos del repositorio en este orden:
+
+1. `src/main/resources/drop-schema.sql`
+2. `src/main/resources/schema.sql`
+3. `src/main/resources/seed.sql`
+
+También se pueden ejecutar con `RUNSCRIPT`, sustituyendo `<ruta-del-repositorio>` por la ruta absoluta de la copia local:
+
+```sql
+RUNSCRIPT FROM '<ruta-del-repositorio>/src/main/resources/drop-schema.sql';
+RUNSCRIPT FROM '<ruta-del-repositorio>/src/main/resources/schema.sql';
+RUNSCRIPT FROM '<ruta-del-repositorio>/src/main/resources/seed.sql';
+```
+
+Conecta el cliente a una URL de archivo exclusiva para desarrollo, por ejemplo `jdbc:h2:file:C:/Users/<usuario>/NextEventux-development/nexteventux` en Windows o `jdbc:h2:file:/home/<usuario>/NextEventux-development/nexteventux` en Linux/macOS. **Estos scripts eliminan los datos de esa base. No uses la ruta de tu H2 personal.** El arranque normal de la aplicación nunca ejecuta los `DROP TABLE`. Para iniciar la aplicación con esta base, configura la propiedad existente `nexteventux.db.url` con la misma URL. Revisa el [guion de demostración](docs/guion-demostracion.md) para conocer los datos iniciales disponibles.
 
 ### Consultar la base con la aplicación abierta
 
