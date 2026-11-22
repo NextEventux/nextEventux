@@ -525,6 +525,8 @@ VALUES
 (1, 1, 'Decoración de fin de año', 'Promoción de servicios de decoración', TIMESTAMP '2026-11-01 00:00:00', TIMESTAMP '2026-12-31 23:59:59'),
 (2, 2, 'Menús para celebraciones', 'Promoción de paquetes de alimentación', TIMESTAMP '2026-10-15 00:00:00', TIMESTAMP '2026-12-15 23:59:59');
 
+INSERT INTO Presupuesto_marketing (id_presupuesto, disponible)
+VALUES (1, 20000000.00);
 
 -- ---------------------------------------------------------
 -- ENVÍOS DE CAMPAÑA

@@ -41,8 +41,7 @@ public class CargarDatosEjemplo {
         try (Statement tablas = connection.createStatement();
              ResultSet result = tablas.executeQuery(
                      "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES "
-                     + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_TYPE = 'BASE TABLE' "
-                     + "AND TABLE_NAME NOT IN ('ESQUEMA_VERSION','ESQUEMA_INICIALIZADO')")) {
+                     + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_TYPE = 'BASE TABLE'")) {
             while (result.next()) {
                 String tabla = result.getString(1).replace("\"", "\"\"");
                 try (Statement statement = connection.createStatement();

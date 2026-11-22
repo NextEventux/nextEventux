@@ -510,14 +510,6 @@ CREATE TABLE IF NOT EXISTS Segmento_cliente (
     CONSTRAINT uq_segmento_cliente UNIQUE (id_segmento, id_usuario)
 );
 
-CREATE TABLE IF NOT EXISTS Registro_demo_catalogo (
-    tipo VARCHAR(20) NOT NULL,
-    clave VARCHAR(100) NOT NULL,
-    id_registro INT NOT NULL,
-    PRIMARY KEY (tipo, clave),
-    UNIQUE (tipo, id_registro)
-);
-
 CREATE TABLE IF NOT EXISTS Presupuesto_marketing (
     id_presupuesto INT PRIMARY KEY,
     disponible DECIMAL(12,2) NOT NULL CHECK (disponible >= 0)
