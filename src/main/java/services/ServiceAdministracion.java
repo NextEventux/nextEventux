@@ -17,12 +17,25 @@ import java.util.Map;
  */
 public class ServiceAdministracion {
 
+    @FunctionalInterface
+    interface Coordinador {
+        void despuesDeVerificar(int idOrganizador);
+    }
+
     private final RepositoryContratacion repositoryContratacion;
     private final RepositoryOrganizador repositoryOrganizador;
+    private final Coordinador coordinador;
 
     public ServiceAdministracion(
             RepositoryContratacion repositoryContratacion,
             RepositoryOrganizador repositoryOrganizador) {
+        this(repositoryContratacion, repositoryOrganizador, id -> { });
+    }
+
+    ServiceAdministracion(
+            RepositoryContratacion repositoryContratacion,
+            RepositoryOrganizador repositoryOrganizador,
+            Coordinador coordinador) {
 
         if (repositoryContratacion == null
                 || repositoryOrganizador == null) {
@@ -32,6 +45,7 @@ public class ServiceAdministracion {
 
         this.repositoryContratacion = repositoryContratacion;
         this.repositoryOrganizador = repositoryOrganizador;
+        this.coordinador = coordinador;
     }
 
     /**
@@ -67,6 +81,7 @@ public class ServiceAdministracion {
                     "El organizador no esta activo o no se encuentra verificado.");
         }
 
+        coordinador.despuesDeVerificar(idOrganizador);
         Organizador organizador =
                 repositoryOrganizador.buscarOrganizador(idOrganizador);
 

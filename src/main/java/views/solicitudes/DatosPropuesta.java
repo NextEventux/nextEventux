@@ -2,7 +2,7 @@ package views.solicitudes;
 
 import java.math.BigDecimal;
 
-import services.EnlaceMaterialApoyo;
+import services.solicitudes.EnlaceMaterialApoyo;
 import views.PrecioPropuestaParser;
 
 /**

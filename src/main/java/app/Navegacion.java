@@ -31,7 +31,10 @@ public class Navegacion {
         PROPUESTAS_ORGANIZADOR("NextEventux | Propuestas recibidas"),
         CONTRATAR_SERVICIO("NextEventux | Contratar servicio"),
         ESTADO_FINANCIERO("NextEventux | Estado financiero"),
-        SANCIONES_PROVEEDOR("NextEventux | Sanciones a proveedores");
+        REGISTRAR_PAGO("NextEventux | Registrar pago"),
+        SANCIONES_PROVEEDOR("NextEventux | Sanciones a proveedores"),
+        MARKETING("NextEventux | Marketing"),
+        CAMPANAS("NextEventux | Crear campaña");
 
         private final String titulo;
 

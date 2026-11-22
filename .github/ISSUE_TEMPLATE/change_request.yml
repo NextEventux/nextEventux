@@ -2,8 +2,7 @@ name: Solicitud de cambio
 description: Proponer un cambio de requisito, alcance, regla de negocio o diseño.
 title: "[CAMBIO][CU-XX] "
 labels:
-  - "tipo:cambio"
-  - "prioridad:media"
+  - "enhancement"
 body:
   - type: dropdown
     id: module

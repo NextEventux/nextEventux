@@ -2,9 +2,7 @@ name: Documentación
 description: Corregir o actualizar documentación técnica asociada al repositorio.
 title: "[DOC] "
 labels:
-  - "tipo:documentacion"
-  - "modulo:documentacion"
-  - "prioridad:media"
+  - "documentation"
 body:
   - type: dropdown
     id: document

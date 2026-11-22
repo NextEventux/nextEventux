@@ -2,8 +2,8 @@ package views;
 
 import java.math.BigDecimal;
 
-import entities.DisponibilidadContratacion;
-import entities.PresupuestoContratacion;
+import entities.contrataciones.DisponibilidadContratacion;
+import entities.contrataciones.PresupuestoContratacion;
 
 /**
  * Reglas de presentación de la pantalla de contratación (CU-13).

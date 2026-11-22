@@ -1,9 +1,6 @@
 name: Issue general
 description: Registrar una situación que no encaja en las demás plantillas.
 title: "[GENERAL] "
-labels:
-  - "tipo:tarea"
-  - "prioridad:media"
 body:
   - type: markdown
     attributes:

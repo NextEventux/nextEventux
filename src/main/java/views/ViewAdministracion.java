@@ -1,6 +1,8 @@
 
 package views;
 
+import views.eventos.ViewEventos;
+
 import controllers.ControllerAdministracion;
 import entities.Contratacion;
 import entities.Organizador;

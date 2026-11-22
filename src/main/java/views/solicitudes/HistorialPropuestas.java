@@ -2,7 +2,7 @@ package views.solicitudes;
 
 import java.util.List;
 
-import entities.PropuestaServicio;
+import entities.solicitudes.PropuestaServicio;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;

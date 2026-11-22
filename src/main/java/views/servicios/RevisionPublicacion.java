@@ -2,7 +2,7 @@ package views.servicios;
 
 import java.math.BigDecimal;
 
-import entities.Servicio;
+import entities.servicios.Servicio;
 import javafx.scene.control.Button;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;

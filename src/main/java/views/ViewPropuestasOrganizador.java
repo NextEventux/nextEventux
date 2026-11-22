@@ -3,8 +3,8 @@ package views;
 import java.util.List;
 import java.util.function.Consumer;
 
-import controllers.ControllerSolicitudes;
-import entities.PropuestaServicio;
+import controllers.solicitudes.ControllerSolicitudes;
+import entities.solicitudes.PropuestaServicio;
 import entities.SesionUsuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

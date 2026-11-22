@@ -2,17 +2,18 @@ package app;
 
 import controllers.ControllerAdministracion;
 import controllers.ControllerAutenticacion;
-import controllers.ControllerContratacionServicio;
-import controllers.ControllerEventos;
+import controllers.solicitudes.ControllerContratacionServicio;
+import controllers.eventos.ControllerEventos;
 import controllers.ControllerFinanciera;
-import controllers.ControllerInvitados;
-import controllers.ControllerProveedores;
-import controllers.ControllerPublicacion;
-import controllers.ControllerSancionesProveedor;
-import controllers.ControllerSolicitudes;
-import entities.Evento;
-import entities.PropuestaServicio;
-import entities.Servicio;
+import controllers.ControllerRegistroPago;
+import controllers.invitaciones.ControllerInvitados;
+import controllers.proveedores.ControllerProveedores;
+import controllers.eventos.ControllerPublicacion;
+import controllers.proveedores.ControllerSancionesProveedor;
+import controllers.solicitudes.ControllerSolicitudes;
+import entities.eventos.Evento;
+import entities.solicitudes.PropuestaServicio;
+import entities.servicios.Servicio;
 import entities.SesionUsuario;
 import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
@@ -22,49 +23,51 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import repositories.RepositoryAutenticacion;
-import repositories.RepositoryAvisosProveedor;
+import repositories.proveedores.RepositoryAvisosProveedor;
 import repositories.RepositoryContratacion;
-import repositories.RepositoryContratacionServicio;
-import repositories.RepositoryDisponibilidadServicio;
-import repositories.RepositoryEvento;
+import repositories.solicitudes.RepositoryContratacionServicio;
+import repositories.servicios.RepositoryDisponibilidadServicio;
+import repositories.eventos.RepositoryEvento;
 import repositories.RepositoryMovimientoFinanciero;
 import repositories.RepositoryOrganizador;
-import repositories.RepositoryPlanificacion;
-import repositories.RepositoryPropuestaServicio;
+import repositories.eventos.RepositoryPlanificacion;
+import repositories.solicitudes.RepositoryPropuestaServicio;
 import repositories.RepositoryPublicacion;
-import repositories.RepositorySancionesProveedor;
-import repositories.RepositoryServicio;
-import repositories.RepositorySolicitudEjecucion;
+import repositories.proveedores.RepositorySancionesProveedor;
+import repositories.servicios.RepositoryServicio;
+import repositories.solicitudes.RepositorySolicitudEjecucion;
 import services.ServiceAdministracion;
 import services.ServiceAutenticacion;
-import services.ServiceAvisosProveedor;
-import services.ServiceContratacionServicio;
-import services.ServiceEventos;
-import services.ServiceFinanciera;
-import services.ServiceInvitados;
-import services.ServiceProveedores;
-import services.ServicePublicacion;
-import services.ServiceSancionesProveedor;
-import services.ServiceSolicitudes;
+import services.proveedores.ServiceAvisosProveedor;
+import services.solicitudes.ServiceContratacionServicio;
+import services.eventos.ServiceEventos;
+import services.finanzas.ServiceFinanciera;
+import services.finanzas.ServiceRegistroPago;
+import services.invitaciones.ServiceInvitados;
+import services.proveedores.ServiceProveedores;
+import services.eventos.ServicePublicacion;
+import services.proveedores.ServiceSancionesProveedor;
+import services.solicitudes.ServiceSolicitudes;
 import views.ViewAdministracion;
-import views.ViewAvisosProveedor;
-import views.ViewCancelacion;
-import views.ViewCatalogoServicios;
+import views.proveedores.ViewAvisosProveedor;
+import views.eventos.ViewCancelacion;
+import views.servicios.ViewCatalogoServicios;
 import views.ViewContratarServicio;
-import views.ViewDetalleServicio;
-import views.ViewDetalleServicioProveedor;
-import views.ViewEdicion;
-import views.ViewEventos;
-import views.ViewFinalizacion;
-import views.ViewFinanciera;
-import views.ViewInvitados;
-import views.ViewListaServiciosProveedor;
+import views.servicios.ViewDetalleServicio;
+import views.servicios.ViewDetalleServicioProveedor;
+import views.eventos.ViewEdicion;
+import views.eventos.ViewEventos;
+import views.eventos.ViewFinalizacion;
+import views.finanzas.ViewFinanciera;
+import views.finanzas.ViewRegistrarPago;
+import views.invitaciones.ViewInvitados;
+import views.servicios.ViewListaServiciosProveedor;
 import views.ViewLogin;
-import views.ViewMisEventos;
+import views.eventos.ViewMisEventos;
 import views.ViewPropuestasOrganizador;
 import views.ViewPublicacion;
-import views.ViewSancionesProveedor;
-import views.ViewSolicitudesProveedor;
+import views.proveedores.ViewSancionesProveedor;
+import views.proveedores.ViewSolicitudesProveedor;
 
 public class NextEventuxApp extends Application {
 
@@ -77,6 +80,8 @@ public class NextEventuxApp extends Application {
     private ControllerSancionesProveedor controllerSanciones;
 
     private SesionUsuario sesionActual;
+    private static final long PERIODO_REVISION_CAMPANAS_SEGUNDOS = 5;
+    private services.ServiceMarketing serviceMarketing;
     private Navegacion navegacion;
     private Servicio servicioSeleccionado;
     private Integer servicioProveedorSeleccionado;
@@ -85,6 +90,7 @@ public class NextEventuxApp extends Application {
     private Stage stage;
     private ControllerPublicacion publicaciones;
     private ControllerFinanciera controllerFinanciera;
+    private ControllerRegistroPago controllerRegistroPago;
 
     @Override
     public void start(Stage stage) {
@@ -92,16 +98,60 @@ public class NextEventuxApp extends Application {
 
         // Una base recién creada no tiene usuarios: se cargan los ejemplos una sola vez.
         // Si ya tiene datos no se toca, así lo que se crea se conserva entre sesiones.
-        try (java.sql.Connection conexion = config.DatabaseConnection.getConnection()) {
-            if (config.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
+        try (java.sql.Connection conexion
+                = persistencia.DatabaseConnection.getConnectionParaSincronizarDemo()) {
+            if (inicializacion.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
                 System.out.println("[BD] Base vacía: se cargaron los datos de ejemplo.");
             }
+            int cuentasCreadas = inicializacion.SincronizarCuentasDemo.sincronizar(conexion);
+            if (cuentasCreadas > 0) {
+                System.out.println("[BD] Se sincronizaron " + cuentasCreadas
+                        + " cuentas de demostración faltantes.");
+            }
+            int datosSegmentacion = inicializacion.SincronizarPreferenciasClientesDemo
+                    .sincronizar(conexion);
+            if (datosSegmentacion > 0) {
+                System.out.println("[BD] Se completaron " + datosSegmentacion
+                        + " datos demo para segmentar clientes.");
+            }
+            if (inicializacion.SincronizarPresupuestoMarketing.sincronizar(conexion)) {
+                System.out.println("[BD] Se creó el presupuesto de marketing inicial.");
+            }
+            inicializacion.SincronizarCatalogoDemo.Resultado catalogo
+                    = inicializacion.SincronizarCatalogoDemo.sincronizar(conexion);
+            if (catalogo.eventosCreados() > 0 || catalogo.serviciosCreados() > 0) {
+                System.out.println("[BD] Se sincronizaron " + catalogo.eventosCreados()
+                        + " eventos y " + catalogo.serviciosCreados()
+                        + " servicios de demostración faltantes.");
+            }
+            inicializacion.SincronizarDisponibilidadDemo.Resultado disponibilidad
+                    = inicializacion.SincronizarDisponibilidadDemo.sincronizar(conexion);
+            if (disponibilidad.advertencia() != null) {
+                System.out.println("[BD] Aviso: " + disponibilidad.advertencia());
+            }
+            inicializacion.SincronizarHistoriaDemo.Resultado historia
+                    = inicializacion.SincronizarHistoriaDemo.sincronizar(conexion);
+            if (historia.necesidadesCreadas() > 0 || historia.solicitudesCreadas() > 0
+                    || historia.propuestasCreadas() > 0
+                    || historia.contratacionesCreadas() > 0) {
+                System.out.println("[BD] Se sincronizaron " + historia.necesidadesCreadas()
+                        + " necesidades, " + historia.solicitudesCreadas()
+                        + " solicitudes, " + historia.propuestasCreadas()
+                        + " propuestas y " + historia.contratacionesCreadas()
+                        + " contrataciones de demostración faltantes.");
+            }
         } catch (Exception e) {
-            System.err.println("[BD] No se pudieron cargar los datos de ejemplo: " + e.getMessage());
+            throw new IllegalStateException(
+                    "[BD] No se pudieron sincronizar los datos de demostración.", e);
         }
 
         controllerAutenticacion = new ControllerAutenticacion(
                 new ServiceAutenticacion(new RepositoryAutenticacion()));
+
+        // cu-23: las campañas se activan y se desactivan solas en sus fechas
+        serviceMarketing = new services.ServiceMarketing(new repositories.RepositoryMarketing());
+        serviceMarketing.setAlFinalizarCampana(this::avisarCampanaFinalizada);
+        serviceMarketing.iniciarPlanificador(PERIODO_REVISION_CAMPANAS_SEGUNDOS);
 
         controllerProveedores = new ControllerProveedores(
                 new ServiceProveedores(
@@ -186,6 +236,9 @@ public class NextEventuxApp extends Application {
         controllerEventos = new ControllerEventos(new ServiceEventos(new RepositoryEvento()), sesion);
         controllerFinanciera = new ControllerFinanciera(new ServiceFinanciera(new RepositoryMovimientoFinanciero(),
                 new RepositoryPlanificacion(), new RepositoryEvento()), sesion);
+        // CU-10: registrar pago de una contratación.
+        controllerRegistroPago = new ControllerRegistroPago(new ServiceRegistroPago(
+                new RepositoryMovimientoFinanciero(), new RepositoryEvento()), sesion);
 
         String tipo = sesion.getTipoUsuario();
 
@@ -234,7 +287,8 @@ public class NextEventuxApp extends Application {
                             null, null, null,
                             this::mostrarSancionesProveedor,
                             null,
-                            this::mostrarPublicacion));
+                            this::mostrarPublicacion,
+                            this::mostrarMarketing));
                     BorderPane principal = new BorderPane();
 
                     principal.setTop(
@@ -250,6 +304,32 @@ public class NextEventuxApp extends Application {
 
         if ("ORGANIZADOR".equalsIgnoreCase(tipo) || "ADMINISTRADOR".equalsIgnoreCase(tipo)) {
             registrarRutasOrganizador();
+
+            // CU-21: registrar Marketing solamente para administradores
+            if ("ADMINISTRADOR".equalsIgnoreCase(tipo)) {
+                navegacion.registrarDinamica(
+                        Navegacion.Pantalla.MARKETING,
+                        () -> new views.ViewMarketing(
+                                new controllers.ControllerMarketing(serviceMarketing),
+                                sesionActual.getIdUsuario(),
+                                sesionActual,
+                                this::mostrarPublicacion,
+                                this::mostrarLogin)
+                                .conNavegacion(this::mostrarSancionesProveedor, this::mostrarMarketing)
+                                .conCampanas(this::mostrarCampanas)
+                                .crearPantalla());
+                // cu-23: crear campañas de marketing
+                navegacion.registrarDinamica(
+                        Navegacion.Pantalla.CAMPANAS,
+                        () -> new views.ViewCampana(
+                                new controllers.ControllerMarketing(serviceMarketing),
+                                sesionActual,
+                                this::mostrarMarketing,
+                                this::mostrarLogin,
+                                this::mostrarSancionesProveedor,
+                                this::mostrarPublicacion)
+                                .crearPantalla());
+            }
             if ("ORGANIZADOR".equalsIgnoreCase(tipo)) {
                 mostrarEventos();
             } else {
@@ -303,6 +383,23 @@ public class NextEventuxApp extends Application {
             return;
         }
         eventoSeleccionado = evento.getIdEvento();
+        navegacion.ir(Navegacion.Pantalla.ESTADO_FINANCIERO);
+    }
+
+    // CU-10: se abre desde el estado financiero del evento seleccionado y vuelve a él.
+    private void mostrarRegistroPago() {
+        if (!esOrganizador() || eventoSeleccionado == null) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.ir(Navegacion.Pantalla.REGISTRAR_PAGO);
+    }
+
+    private void volverAEstadoFinanciero() {
+        if (!esOrganizador() || eventoSeleccionado == null) {
+            mostrarLogin();
+            return;
+        }
         navegacion.ir(Navegacion.Pantalla.ESTADO_FINANCIERO);
     }
 
@@ -423,12 +520,27 @@ public class NextEventuxApp extends Application {
                                 this::mostrarSancionesProveedor,
                                 this::mostrarPublicacion)
                                 .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .conMarketing(this::mostrarMarketing)
                                 .crearPantalla())
                 .registrarDinamica(
                         Navegacion.Pantalla.ESTADO_FINANCIERO,
                         () -> new ViewFinanciera(
                                 controllerFinanciera,
                                 sesionActual,
+                                this::mostrarEventos,
+                                this::mostrarMisEventos,
+                                this::mostrarCatalogoServicios,
+                                this::mostrarInvitados,
+                                this::mostrarLogin)
+                                .conPropuestas(this::mostrarPropuestasOrganizador)
+                                .conRegistroPago(this::mostrarRegistroPago)
+                                .crearPantalla(eventoSeleccionado != null ? eventoSeleccionado : 0))
+                .registrarDinamica(
+                        Navegacion.Pantalla.REGISTRAR_PAGO,
+                        () -> new ViewRegistrarPago(
+                                controllerRegistroPago,
+                                sesionActual,
+                                this::volverAEstadoFinanciero,
                                 this::mostrarEventos,
                                 this::mostrarMisEventos,
                                 this::mostrarCatalogoServicios,
@@ -490,6 +602,43 @@ public class NextEventuxApp extends Application {
         }
         eventoSeleccionado = evento.getIdEvento();
         navegacion.ir(Navegacion.Pantalla.PUBLICACION_EVENTOS);
+    }
+
+    // CU-21: el acceso a Marketing es exclusivo del administrador
+    private void mostrarMarketing() {
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.mostrarEn(contenedor, Navegacion.Pantalla.MARKETING);
+    }
+
+    // cu-23: la creación de campañas es exclusiva del administrador
+    private void mostrarCampanas() {
+        if (sesionActual == null
+                || !"ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+            mostrarLogin();
+            return;
+        }
+        navegacion.mostrarEn(contenedor, Navegacion.Pantalla.CAMPANAS);
+    }
+
+    // cu-23: al terminar una campaña, el administrador conectado ve su resumen
+    private void avisarCampanaFinalizada(entities.Campana campana) {
+        javafx.application.Platform.runLater(() -> {
+            if (sesionActual != null
+                    && "ADMINISTRADOR".equalsIgnoreCase(sesionActual.getTipoUsuario())) {
+                views.ViewCampana.mostrarResumen(campana);
+            }
+        });
+    }
+
+    @Override
+    public void stop() {
+        if (serviceMarketing != null) {
+            serviceMarketing.detenerPlanificador();
+        }
     }
 
     /**
