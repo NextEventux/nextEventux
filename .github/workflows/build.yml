@@ -37,7 +37,7 @@ jobs:
           jacoco-csv-file: target/site/jacoco/jacoco.csv
 
       - name: Reporte JaCoCo independiente
-        uses: PavanMudigonda/jacoco-reporter@v5.2
+        uses: PavanMudigonda/jacoco-reporter@v5.2.1
         with:
           coverage_results_path: target/site/jacoco/jacoco.xml
           coverage_report_name: JaCoCo Coverage Report
