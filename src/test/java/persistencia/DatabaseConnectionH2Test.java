@@ -5,12 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import inicializacion.CargarDatosEjemplo;
-import inicializacion.SincronizarCatalogoDemo;
-import inicializacion.SincronizarCuentasDemo;
-import inicializacion.SincronizarDisponibilidadDemo;
-import inicializacion.SincronizarHistoriaDemo;
-import inicializacion.SincronizarPreferenciasClientesDemo;
-import inicializacion.SincronizarPresupuestoMarketing;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -18,41 +13,49 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class DatabaseConnectionH2Test {
 
+    @TempDir
+    Path tempDir;
     private String url;
 
     @AfterEach
     void cerrarBase() throws Exception {
         if (url != null) {
-            try (Connection connection = DriverManager.getConnection(url, "sa", "");
-                    Statement statement = connection.createStatement()) {
-                statement.execute("SHUTDOWN");
-            }
+            apagarBase();
         }
     }
 
     @Test
     void initializesFreshDatabaseLoadsSeedOnceAndPreservesDemoData() throws Exception {
-        url = "jdbc:h2:mem:database_initialization_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
+        url = "jdbc:h2:" + tempDir.resolve("database_initialization").toAbsolutePath()
+                .toString().replace('\\', '/');
         Map<String, Long> countsAfterFirstOpen;
 
         try (Connection connection = DatabaseConnection.getConnection(url)) {
             verifySchema(connection);
             assertTrue(CargarDatosEjemplo.cargarSiEstaVacia(connection));
             assertFalse(CargarDatosEjemplo.cargarSiEstaVacia(connection));
-            synchronizeDemoData(connection);
             countsAfterFirstOpen = countDemoData(connection);
-            assertTrue(countsAfterFirstOpen.get("REGISTRO_DEMO_CATALOGO") > 0);
+            assertEquals(12, count(connection, "Usuario"));
+            assertEquals(4, count(connection, "Evento"));
+            assertEquals(15, count(connection, "Servicio"));
+            assertEquals(11, count(connection, "Disponibilidad_Servicio"));
+            assertEquals(8, count(connection, "Necesidad_Servicio_Evento"));
+            assertEquals(15, count(connection, "Solicitud_Ejecucion"));
+            assertEquals(10, count(connection, "Propuesta"));
+            assertEquals(2, count(connection, "Contratacion"));
+            assertEquals(1, count(connection, "Presupuesto_marketing"));
         }
+
+        apagarBase();
 
         try (Connection connection = DatabaseConnection.getConnection(url)) {
             assertFalse(CargarDatosEjemplo.cargarSiEstaVacia(connection));
-            synchronizeDemoData(connection);
             assertEquals(countsAfterFirstOpen, countDemoData(connection));
             assertEquals(12, count(connection, "Usuario"));
             assertEquals(4, count(connection, "Evento"));
@@ -67,12 +70,14 @@ class DatabaseConnectionH2Test {
             "Notificacion_interna", "Finalizacion_evento", "Fotografia_evento",
             "Entrega_galeria", "Solicitud_Contratacion_Organizador",
             "Resena_Organizador", "Busqueda_evento", "Segmento_cliente",
-            "Registro_demo_catalogo", "Presupuesto_marketing"
+            "Presupuesto_marketing"
         };
         for (String table : tables) {
             assertTrue(tableExists(connection, table), "Falta la tabla " + table);
         }
         assertFalse(tableExists(connection, "Esquema_version"));
+        assertFalse(tableExists(connection, "Esquema_inicializado"));
+        assertFalse(tableExists(connection, "Registro_demo_catalogo"));
 
         String[][] columns = {
             {"Usuario", "pais"}, {"Usuario", "ciudad"}, {"Usuario", "fecha_nacimiento"},
@@ -95,19 +100,10 @@ class DatabaseConnectionH2Test {
         assertTrue(uniqueIndexExists(connection, "Disponibilidad_Servicio", "UQ_DISPONIBILIDAD_SERVICIO"));
     }
 
-    private static void synchronizeDemoData(Connection connection) throws SQLException {
-        SincronizarCuentasDemo.sincronizar(connection);
-        SincronizarPreferenciasClientesDemo.sincronizar(connection);
-        SincronizarPresupuestoMarketing.sincronizar(connection);
-        SincronizarCatalogoDemo.sincronizar(connection);
-        SincronizarDisponibilidadDemo.sincronizar(connection);
-        SincronizarHistoriaDemo.sincronizar(connection);
-    }
-
     private static Map<String, Long> countDemoData(Connection connection) throws SQLException {
         String[] tables = {
             "Usuario", "Organizador", "Proveedor", "Evento", "Servicio",
-            "Registro_demo_catalogo", "Disponibilidad_Servicio",
+            "Disponibilidad_Servicio",
             "Necesidad_Servicio_Evento", "Solicitud_Ejecucion", "Propuesta",
             "Contratacion", "Presupuesto_marketing"
         };
@@ -123,6 +119,13 @@ class DatabaseConnectionH2Test {
                 ResultSet result = statement.executeQuery("SELECT COUNT(*) FROM " + table)) {
             result.next();
             return result.getLong(1);
+        }
+    }
+
+    private void apagarBase() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(url, "sa", "");
+                Statement statement = connection.createStatement()) {
+            statement.execute("SHUTDOWN");
         }
     }
 
