@@ -99,50 +99,13 @@ public class NextEventuxApp extends Application {
         // Una base recién creada no tiene usuarios: se cargan los ejemplos una sola vez.
         // Si ya tiene datos no se toca, así lo que se crea se conserva entre sesiones.
         try (java.sql.Connection conexion
-                = persistencia.DatabaseConnection.getConnectionParaSincronizarDemo()) {
+                = persistencia.DatabaseConnection.getConnection()) {
             if (inicializacion.CargarDatosEjemplo.cargarSiEstaVacia(conexion)) {
                 System.out.println("[BD] Base vacía: se cargaron los datos de ejemplo.");
             }
-            int cuentasCreadas = inicializacion.SincronizarCuentasDemo.sincronizar(conexion);
-            if (cuentasCreadas > 0) {
-                System.out.println("[BD] Se sincronizaron " + cuentasCreadas
-                        + " cuentas de demostración faltantes.");
-            }
-            int datosSegmentacion = inicializacion.SincronizarPreferenciasClientesDemo
-                    .sincronizar(conexion);
-            if (datosSegmentacion > 0) {
-                System.out.println("[BD] Se completaron " + datosSegmentacion
-                        + " datos demo para segmentar clientes.");
-            }
-            if (inicializacion.SincronizarPresupuestoMarketing.sincronizar(conexion)) {
-                System.out.println("[BD] Se creó el presupuesto de marketing inicial.");
-            }
-            inicializacion.SincronizarCatalogoDemo.Resultado catalogo
-                    = inicializacion.SincronizarCatalogoDemo.sincronizar(conexion);
-            if (catalogo.eventosCreados() > 0 || catalogo.serviciosCreados() > 0) {
-                System.out.println("[BD] Se sincronizaron " + catalogo.eventosCreados()
-                        + " eventos y " + catalogo.serviciosCreados()
-                        + " servicios de demostración faltantes.");
-            }
-            inicializacion.SincronizarDisponibilidadDemo.Resultado disponibilidad
-                    = inicializacion.SincronizarDisponibilidadDemo.sincronizar(conexion);
-            if (disponibilidad.advertencia() != null) {
-                System.out.println("[BD] Aviso: " + disponibilidad.advertencia());
-            }
-            inicializacion.SincronizarHistoriaDemo.Resultado historia
-                    = inicializacion.SincronizarHistoriaDemo.sincronizar(conexion);
-            if (historia.necesidadesCreadas() > 0 || historia.solicitudesCreadas() > 0
-                    || historia.propuestasCreadas() > 0
-                    || historia.contratacionesCreadas() > 0) {
-                System.out.println("[BD] Se sincronizaron " + historia.necesidadesCreadas()
-                        + " necesidades, " + historia.solicitudesCreadas()
-                        + " solicitudes, " + historia.propuestasCreadas()
-                        + " propuestas y " + historia.contratacionesCreadas()
-                        + " contrataciones de demostración faltantes.");
-            }
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "[BD] No se pudieron sincronizar los datos de demostración.", e);
+                    "[BD] No se pudo inicializar la base de datos.", e);
         }
 
         controllerAutenticacion = new ControllerAutenticacion(
