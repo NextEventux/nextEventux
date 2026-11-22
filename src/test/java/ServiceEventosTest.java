@@ -28,8 +28,9 @@ class ServiceEventosTest {
     void guardaLosDatosValidadosDelFormulario() {
         Evento evento = evento("Festival", "Corporativo", "Bogotá", new BigDecimal("15000000.25"), 100);
         service.crearEvento(evento);
-        assertEquals(1, repository.listarEventos().size());
-        assertEquals(evento.getIdEvento(), repository.listarEventos().get(0).getIdEvento());
+        var eventosGuardados = repository.listarEventos();
+        assertEquals(1, eventosGuardados.size());
+        assertEquals(evento.getIdEvento(), eventosGuardados.get(0).getIdEvento());
         assertEquals("PLANEADO", evento.getEstado());
         assertNotNull(evento.getFechaCreacion());
         assertNotNull(evento.getIdEvento());

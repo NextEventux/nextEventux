@@ -94,11 +94,13 @@ class CancelacionTest {
         comprobarOriginal();
     }
 
-    @Test void noDuplicaNotificacionesAlCancelarDeNuevo() {
-        service.cancelarEvento(1,sesion,true);
-        assertThrows(IllegalArgumentException.class,()->service.cancelarEvento(1,sesion,true));
-        assertEquals(6,service.listarAvisosCancelacion(1,sesion).size());
-        assertTrue(service.listarAvisosCancelacion(1,otraSesion).isEmpty());
+    @Test
+    void noDuplicaNotificacionesAlCancelarDeNuevo() {
+        service.cancelarEvento(1, sesion, true);
+
+        assertThrows(IllegalArgumentException.class, () -> service.cancelarEvento(1, sesion, true));
+        assertEquals(6, service.listarAvisosCancelacion(1, sesion).size());
+        assertTrue(service.listarAvisosCancelacion(1, otraSesion).isEmpty());
     }
 
     @Test void bloqueaLugarReservadoSinVinculo() throws Exception {

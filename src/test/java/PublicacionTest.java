@@ -46,10 +46,12 @@ class PublicacionTest {
         eventos.guardarEvento(evento);
     }
 
-    @Test void registraSolicitudYNotificaALosAdministradoresSinPublicar() {
-        solicitar();
-        assertEquals("PENDIENTE",service.listarSolicitudes(organizador).get(0).estado());
-        assertEquals(1,service.notificaciones(administrador).size());
+    @Test
+    void registraSolicitudYNotificaALosAdministradoresSinPublicar() {
+        service.solicitar(organizador, evento.getIdEvento());
+
+        assertEquals("PENDIENTE", service.listarSolicitudes(organizador).get(0).estado());
+        assertEquals(1, service.notificaciones(administrador).size());
         assertTrue(service.listarPlantillas(organizador).isEmpty());
         assertTrue(service.notificaciones(organizador).isEmpty());
     }

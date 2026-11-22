@@ -47,12 +47,13 @@ class EdicionEventoTest {
     }
 
     @Test void guardaSoloLosCamposPermitidosYConservaElEstado() {
-        service.editarEvento(original.getIdEvento(),sesion,cambios());
-        Evento editado=new RepositoryEvento(url).buscarEvento(original.getIdEvento(),1);
-        assertEquals("Actualizado",editado.getNombre());
+        EdicionEvento datosNuevos = cambios();
+        service.editarEvento(original.getIdEvento(), sesion, datosNuevos);
+        Evento editado = new RepositoryEvento(url).buscarEvento(original.getIdEvento(), 1);
+        assertEquals("Actualizado", editado.getNombre());
         assertEquals("Cultural",editado.getTipo());
-        assertEquals(cambios().inicio(),editado.getFechaInicio());
-        assertEquals(cambios().fin(),editado.getFechaFin());
+        assertEquals(datosNuevos.inicio(), editado.getFechaInicio());
+        assertEquals(datosNuevos.fin(), editado.getFechaFin());
         assertEquals("Medellín",editado.getUbicacion());
         assertEquals(original.getIdEvento(),editado.getIdEvento());
         assertEquals(original.getIdOrganizador(),editado.getIdOrganizador());

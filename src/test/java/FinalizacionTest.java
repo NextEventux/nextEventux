@@ -121,11 +121,13 @@ class FinalizacionTest {
         sql("UPDATE Contratacion SET id_disponibilidad=NULL WHERE id_contratacion=1");
         assertThrows(IllegalArgumentException.class,()->controller.finalizarEvento(1,fotos)); sinCambios();
     }
-    @Test void sinConfirmadosFinalizaSinCrearAvisos() throws Exception {
+    @Test
+    void sinConfirmadosFinalizaSinCrearAvisos() throws Exception {
         sql("UPDATE Invitado SET estado='RECHAZADO'");
-        controller.finalizarEvento(1,fotos);
-        assertEquals("FINALIZADO",valor("SELECT estado FROM Evento WHERE id_evento=1"));
-        assertEquals("0",valor("SELECT COUNT(*) FROM Entrega_galeria"));
+        controller.finalizarEvento(1, fotos);
+
+        assertEquals("FINALIZADO", valor("SELECT estado FROM Evento WHERE id_evento=1"));
+        assertEquals("0", valor("SELECT COUNT(*) FROM Entrega_galeria"));
     }
 
     @Test void invitadoConfirmadoVeFotosPersistidasSoloConCorreoYTelefonoCorrectos() {
