@@ -73,21 +73,12 @@ public class DatabaseConnection {
     private static final java.util.Set<String> INICIALIZADAS =
             java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-    /**
-     * Olvida qué bases ya se inicializaron, como ocurre al reiniciar la aplicación.
-     * Lo usan las pruebas que verifican migraciones sobre bases existentes.
-     */
-    public static void reiniciarInicializacion() {
-        INICIALIZADAS.clear();
-    }
-
     private static synchronized void inicializarSiHaceFalta(
             String url,
             Connection connection,
             boolean repararContadorEventos) throws SQLException {
         // La tabla centinela detecta bases recreadas con la misma URL (por ejemplo, en memoria).
         if (INICIALIZADAS.contains(url) && existeTabla(connection, "ESQUEMA_INICIALIZADO")) {
-            ejecutarUnaVez(connection, "015_catalogo_demostracion.sql", null);
             if (repararContadorEventos) {
                 actualizarContadorEventos(connection);
             }
@@ -108,100 +99,8 @@ public class DatabaseConnection {
             Connection connection,
             boolean repararContadorEventos) throws SQLException {
         ejecutarScript(connection, "/schema.sql");
-        try (java.sql.Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS Esquema_version ("
-                    + "nombre VARCHAR(150) PRIMARY KEY, "
-                    + "aplicada TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)");
-        }
-        // Solo se ejecutan las migraciones presentes en esta versión del proyecto.
-        ejecutarScript(connection, "/migrations/001_evento_cu01.sql");
-        ejecutarScript(connection, "/migrations/002_proveedores_cu11.sql");
-        ejecutarScript(connection, "/migrations/003_proveedores_cu11_publicacion.sql");
-        ejecutarScript(connection, "/migrations/002_publicacion_eventos.sql");
-        ejecutarScript(connection, "/migrations/003_cancelacion_eventos.sql");
-        ejecutarScript(connection, "/migrations/004_proveedores_cu12.sql");
-        ejecutarScript(connection, "/migrations/008_finalizacion_eventos.sql");
-        ejecutarScript(connection, "/migrations/009_solicitudes_evento.sql");
-        ejecutarScript(connection, "/migrations/013_cu12_material_y_ajuste.sql");
-        // La restricción de unicidad se valida y registra sin modificar datos repetidos.
-        ejecutarUnaVez(connection, "010_organizador_usuario_unico.sql",
-                c -> verificarSinDuplicados(c, "Organizador", "id_usuario"));
-        ejecutarUnaVez(connection, "011_cu26_contratar_organizador.sql", null);
-        // CU-13: una propuesta solo puede contratarse una vez
-        ejecutarUnaVez(connection, "012_cu13_contratar_servicio.sql",
-                c -> verificarSinDuplicados(c, "Contratacion", "id_propuesta"));
-        // CU-21: agrega los datos y tablas necesarios para segmentar clientes
-        ejecutarUnaVez(connection,"013_marketing_cu21.sql", null);
-        //Catalogo de demostracion
-        ejecutarUnaVez(connection, "015_catalogo_demostracion.sql", null);
-        // cu-23: campañas de marketing y presupuesto de marketing
-        ejecutarUnaVez(connection, "016_marketing_cu23.sql", null);
-
         if (repararContadorEventos) {
             actualizarContadorEventos(connection);
-        }
-    }
-
-    @FunctionalInterface
-    private interface Verificacion {
-        void ejecutar(Connection connection) throws SQLException;
-    }
-
-    /**
-     * Ejecuta una migración nueva solo si no está registrada. La verificación previa
-     * se corre antes del script, de modo que un dato inválido detiene la apertura
-     * con un mensaje claro sin modificar nada y sin registrar la migración.
-     */
-    private static void ejecutarUnaVez(Connection connection, String archivo, Verificacion previa)
-            throws SQLException {
-        if (migracionAplicada(connection, archivo)) {
-            return;
-        }
-        if (previa != null) {
-            previa.ejecutar(connection);
-        }
-        ejecutarScript(connection, "/migrations/" + archivo);
-        try (java.sql.PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO Esquema_version (nombre) VALUES (?)")) {
-            statement.setString(1, archivo);
-            statement.executeUpdate();
-        }
-    }
-
-    private static boolean migracionAplicada(Connection connection, String archivo) throws SQLException {
-        try (java.sql.PreparedStatement statement = connection.prepareStatement(
-                "SELECT 1 FROM Esquema_version WHERE nombre = ?")) {
-            statement.setString(1, archivo);
-            try (java.sql.ResultSet result = statement.executeQuery()) {
-                return result.next();
-            }
-        }
-    }
-
-    /**
-     * Falla si la columna tiene valores repetidos, para poder exigir unicidad
-     * sin borrar ni reasignar datos. Los nombres de tabla y columna son constantes
-     * del código, nunca entradas del usuario.
-     */
-    static void verificarSinDuplicados(Connection connection, String tabla, String columna)
-            throws SQLException {
-        String sql = "SELECT " + columna + ", COUNT(*) FROM " + tabla
-                + " WHERE " + columna + " IS NOT NULL GROUP BY " + columna
-                + " HAVING COUNT(*) > 1 ORDER BY " + columna + " LIMIT 5";
-        StringBuilder repetidos = new StringBuilder();
-        try (java.sql.Statement statement = connection.createStatement();
-                java.sql.ResultSet result = statement.executeQuery(sql)) {
-            while (result.next()) {
-                if (repetidos.length() > 0) {
-                    repetidos.append(", ");
-                }
-                repetidos.append(result.getString(1)).append(" (").append(result.getInt(2)).append(" veces)");
-            }
-        }
-        if (repetidos.length() > 0) {
-            throw new SQLException("No se puede exigir un valor único en " + tabla + "." + columna
-                    + " porque hay valores repetidos: " + repetidos
-                    + ". Corrija esos registros y vuelva a abrir la aplicación.");
         }
     }
 
