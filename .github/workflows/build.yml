@@ -31,6 +31,11 @@ jobs:
         env:
           JAVA_TOOL_OPTIONS: -Dnexteventux.home=${{ runner.temp }}
 
+      - name: Resumen de cobertura JaCoCo
+        uses: jjmrocha/jacoco-summary@v1.1.1
+        with:
+          jacoco-csv-file: target/site/jacoco/jacoco.csv
+
       - name: Reporte de pruebas
         if: success() || failure()
         uses: mikepenz/action-junit-report@v5
