@@ -4,20 +4,11 @@
 
 Cada integrante utiliza su propia base H2 local.
 
-- En una base sin datos de negocio, la aplicación carga `seed.sql`.
-- En una base existente no vuelve a cargar ese archivo. Al iniciar, sincroniza el conjunto oficial descrito abajo, sin restablecer las contraseñas de cuentas existentes.
-- La sincronización no copia todos los datos del seed a las bases antiguas. Los registros no incluidos en los sincronizadores —por ejemplo, movimientos financieros, mensajes, invitaciones, invitados y regalos— aparecen automáticamente solo cuando se carga el seed en una base vacía.
+- En una base sin tablas, `CargarDatosEjemplo` ejecuta `data.sql` para crear el esquema y cargar los datos de demostración.
+- En una base existente con el esquema completo, el inicio normal conserva sus datos y no vuelve a ejecutar `data.sql`.
+- Si existen tablas pero falta alguna de las esperadas, el inicio informa cuáles faltan y no modifica la base.
 - Las cuentas, perfiles y demás registros personales de cada integrante permanecen en su H2 local; Git no comparte los archivos de base de datos.
-- No borres, reemplaces ni reinicies tu H2 para obtener los ejemplos oficiales. Si hay un conflicto de identidad o procedencia, la inicialización puede detenerse y requerir revisión manual; el sincronizador no resuelve toda inconsistencia automáticamente.
-
-Al iniciar la aplicación se sincronizan:
-
-- Las 12 cuentas oficiales y sus roles y perfiles que falten. En una H2 nueva, las cuentas del seed usan `1234`; una cuenta oficial que ya existía conserva su contraseña actual, por lo que `1234` no necesariamente funcionará para ella.
-- Los cuatro eventos y quince servicios oficiales. Se resuelven sus propietarios e IDs desde los datos existentes; los datos personales no se reemplazan. Los conflictos incompatibles o ambiguos requieren revisión.
-- Ocho necesidades, quince solicitudes, diez propuestas y dos contrataciones oficiales.
-- El horario del 20 de febrero de 2027, de 14:00 a 23:59, para la cobertura fotográfica necesaria al contratar la propuesta seleccionada de los quince años de Sofía. No se sincronizan las otras disponibilidades del seed a H2 existentes. Si ya hay un horario exactamente igual, se conserva; si hay uno que se solapa, no se modifica ni se duplica y se muestra un aviso. Una procedencia inconsistente requiere revisión.
-
-En una H2 nueva, `seed.sql` también incluye once horarios y datos de otros módulos, como movimientos financieros, conversaciones y mensajes, invitaciones, invitados y regalos. Esos conjuntos no se incorporan automáticamente a una H2 existente mediante esta sincronización.
+- Para reconstruir una base de desarrollo, conecta un cliente H2 a una URL de desarrollo y ejecuta `data.sql` manualmente. El archivo elimina todas las tablas de esa base; no uses la ruta de tu H2 personal.
 
 ## Cuentas
 
@@ -30,18 +21,18 @@ Las cuentas oficiales disponibles para demostración son:
 | Cliente | `ana.martinez`, `diego.perez`, `paula.rios` |
 | Administrador | `camila`, `mateo`, `shirly` |
 
-La clave inicial `1234` aplica a cuentas creadas por el seed o por el sincronizador. Si el usuario oficial ya existía en la H2, se conserva su clave.
+La clave inicial `1234` aplica a las cuentas de demostración cargadas desde `data.sql`. El inicio normal no cambia las contraseñas de una base existente.
 
-## Ejemplos sincronizados para proveedores y solicitudes
+## Ejemplos incluidos en data.sql
 
-Cada proveedor tiene cinco servicios oficiales. Sus estados y la cantidad de solicitudes varían:
+Al cargar `data.sql` en una base nueva o reconstruida, cada proveedor tiene cinco servicios de demostración. Sus estados y la cantidad de solicitudes varían:
 
 | Servicios (CU-11) | Dónde verlo |
 | --- | --- |
 | Disponibles | `flash`: cobertura fotográfica, video y cabina de fotos |
 | En borrador | `flash`: sesión de retratos. Sirve para probar «Revisar y publicar» |
 | Retirado | `flash`: álbum impreso premium |
-| Preguntas del servicio | El seed las contiene para una H2 nueva; no se sincronizan en H2 existentes |
+| Preguntas del servicio | Se cargan desde `data.sql` en una base nueva o reconstruida |
 
 | Solicitudes (CU-12) | Dónde verlo |
 | --- | --- |
@@ -78,9 +69,8 @@ Cada proveedor tiene cinco servicios oficiales. Sus estados y la cantidad de sol
 
 La propuesta de fotografía corresponde al evento del 20 de febrero de 2027. La
 contratación requiere que el evento siga vigente y que el horario cubra el evento;
-la fecha oficial está definida tanto en el seed como en el sincronizador. Si deja
-de servir para una demostración, no cambies solo `seed.sql`: cualquier ajuste debe
-coordinarse con el equipo y sus pruebas.
+la fecha oficial está definida en `data.sql`. Si deja de servir para una demostración,
+coordina el ajuste con el equipo y sus pruebas.
 
 Los ejemplos muestran los flujos que están implementados, pero no significan que
 todos los módulos o casos de uso del proyecto estén terminados. Otras

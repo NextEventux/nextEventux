@@ -40,7 +40,7 @@ Las pruebas automatizadas cubren reglas de negocio y persistencia en H2 para los
 - Cancelar o finalizar solo libera reservas que no tengan otro compromiso activo. Una asociación incoherente de una contratación con su disponibilidad bloquea la operación.
 - La finalización guarda fotografías y libera recursos antes de enviar avisos internos. Si falla el envío, se puede reintentar sin volver a cargar fotos; no se deben borrar esos datos ni reiniciar la base para resolverlo.
 - Publicar un servicio requiere disponibilidad; no se puede retirar si hay solicitudes pendientes o contrataciones activas.
-- Las cuentas de demostración se cargan desde `seed.sql` solo en una base vacía.
+- Los datos de demostración se cargan desde `data.sql` solo en una base nueva.
 ## Tecnologías y arquitectura
 
 Versiones declaradas en [`pom.xml`](pom.xml):
@@ -54,7 +54,7 @@ Versiones declaradas en [`pom.xml`](pom.xml):
 | Maven Surefire | 3.2.5; ejecución de pruebas Maven. |
 | JavaFX Maven Plugin | 0.0.8; ejecución de la aplicación con Maven. |
 
-La aplicación sigue una separación por capas: `app` inicia la interfaz y organiza la navegación; `views` presenta pantallas JavaFX; `controllers` conecta las acciones de vista; `services` concentra reglas de negocio; `repositories` accede a H2 mediante JDBC; y `entities` representa los datos. El esquema y los datos de ejemplo para una base nueva están en `src/main/resources/schema.sql` y `src/main/resources/seed.sql`.
+La aplicación sigue una separación por capas: `app` inicia la interfaz y organiza la navegación; `views` presenta pantallas JavaFX; `controllers` conecta las acciones de vista; `services` concentra reglas de negocio; `repositories` accede a H2 mediante JDBC; y `entities` representa los datos. La inicialización y los datos de ejemplo están en `src/main/resources/data.sql`.
 
 ## Clonar, compilar, probar y ejecutar
 
@@ -76,7 +76,7 @@ Por defecto, H2 conserva la base en la carpeta del usuario del sistema:
 - Linux/macOS: `~/.nexteventux/nexteventux.mv.db`
 - Windows: `%USERPROFILE%\.nexteventux\nexteventux.mv.db`
 
-La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. Al abrir una base nueva se crea el esquema desde `schema.sql`; la aplicación carga `seed.sql` solo si no encuentra registros. Una base con datos existentes no se reemplaza por los ejemplos. Cambiar la ubicación no copia la base anterior.
+La ubicación de la carpeta se puede cambiar con la propiedad Java `nexteventux.home`; la URL H2 completa se puede especificar con `nexteventux.db.url`. En una base sin tablas, `CargarDatosEjemplo` ejecuta `data.sql`, que crea el esquema y carga los ejemplos. Si ya están las tablas esperadas, el inicio normal no ejecuta el script ni borra datos. Si falta alguna, informa cuáles y se detiene sin reconstruir la base. Cambiar la ubicación no copia la base anterior.
 
 ### Actualizar el proyecto sin perder la H2
 
@@ -89,25 +89,17 @@ mvn clean test
 mvn javafx:run
 ```
 
-Cada integrante conserva su propia H2 en su computador; Git no comparte ni sincroniza físicamente los archivos de la base. Al iniciar, la aplicación carga `seed.sql` solo en una base vacía. Una base con datos no se completa ni se reemplaza automáticamente con ejemplos.
+Cada integrante conserva su propia H2 en su computador; Git no comparte ni sincroniza físicamente los archivos de la base. Al iniciar, la aplicación carga `data.sql` solo cuando todavía no hay tablas. Una base existente no se completa ni se reemplaza automáticamente con ejemplos.
 
 ### Reconstruir una base de desarrollo
 
-Para preparar una base desde cero, cierra NextEventux y conéctate desde un cliente H2 (por ejemplo, DBeaver) a una ruta de desarrollo separada de `.nexteventux`, con usuario `sa` y contraseña vacía. Crea antes la carpeta de desarrollo si no existe. En la consola SQL ejecuta los archivos del repositorio en este orden:
-
-1. `src/main/resources/drop-schema.sql`
-2. `src/main/resources/schema.sql`
-3. `src/main/resources/seed.sql`
-
-También se pueden ejecutar con `RUNSCRIPT`, sustituyendo `<ruta-del-repositorio>` por la ruta absoluta de la copia local:
+Para preparar una base desde cero, cierra NextEventux y conéctate desde un cliente H2 (por ejemplo, DBeaver) a una ruta de desarrollo separada de `.nexteventux`, con usuario `sa` y contraseña vacía. Crea antes la carpeta de desarrollo si no existe. Sustituye `<ruta-del-repositorio>` por la ruta absoluta de la copia local (usando `/`) y ejecuta el archivo en la consola SQL:
 
 ```sql
-RUNSCRIPT FROM '<ruta-del-repositorio>/src/main/resources/drop-schema.sql';
-RUNSCRIPT FROM '<ruta-del-repositorio>/src/main/resources/schema.sql';
-RUNSCRIPT FROM '<ruta-del-repositorio>/src/main/resources/seed.sql';
+RUNSCRIPT FROM '<ruta-del-repositorio>/src/main/resources/data.sql';
 ```
 
-Conecta el cliente a una URL de archivo exclusiva para desarrollo, por ejemplo `jdbc:h2:file:C:/Users/<usuario>/NextEventux-development/nexteventux` en Windows o `jdbc:h2:file:/home/<usuario>/NextEventux-development/nexteventux` en Linux/macOS. **Estos scripts eliminan los datos de esa base. No uses la ruta de tu H2 personal.** El arranque normal de la aplicación nunca ejecuta los `DROP TABLE`. Para iniciar la aplicación con esta base, configura la propiedad existente `nexteventux.db.url` con la misma URL. Revisa el [guion de demostración](docs/guion-demostracion.md) para conocer los datos iniciales disponibles.
+Conecta el cliente a una URL de archivo exclusiva para desarrollo, por ejemplo `jdbc:h2:file:C:/Users/<usuario>/NextEventux-development/nexteventux` en Windows o `jdbc:h2:file:/home/<usuario>/NextEventux-development/nexteventux` en Linux/macOS. **`data.sql` elimina y recrea las tablas de esa base; no lo ejecutes sobre tu H2 personal.** El inicio normal solo lo ejecuta cuando no existen tablas. Para iniciar la aplicación con esta base, configura la propiedad existente `nexteventux.db.url` con la misma URL. Revisa el [guion de demostración](docs/guion-demostracion.md) para conocer los datos iniciales disponibles.
 
 ### Consultar la base con la aplicación abierta
 
