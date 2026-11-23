@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import persistencia.DatabaseConnection;
+import persistencia.DatabaseTestUtils;
 import persistencia.PropiedadSistemaTemporal;
 import repositories.servicios.RepositoryDisponibilidadServicio;
 import repositories.servicios.RepositoryServicio;
@@ -50,6 +51,7 @@ class ServiceProveedoresH2Test {
         // creamos el proveedor, el organizador y el evento que usan los servicios
         try (Connection connection = DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
+            DatabaseTestUtils.crearEsquemaVacio(connection);
             statement.executeUpdate("INSERT INTO Usuario "
                     + "(id_usuario, nombre, usuario, contraseña, estado, fecha_registro, "
                     + "acepta_marketing, tipo_usuario) VALUES "

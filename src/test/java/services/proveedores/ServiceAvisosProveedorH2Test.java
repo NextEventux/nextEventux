@@ -9,6 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import persistencia.DatabaseConnection;
+import persistencia.DatabaseTestUtils;
 import repositories.proveedores.RepositoryAvisosProveedor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,6 +33,7 @@ class ServiceAvisosProveedorH2Test {
         // creamos las dos cuentas para comprobar que cada una vea sus propios avisos
         try (Connection connection = DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
+            DatabaseTestUtils.crearEsquemaVacio(connection);
             statement.executeUpdate("INSERT INTO Usuario "
                     + "(id_usuario, nombre, usuario, contraseña, estado, fecha_registro, "
                     + "acepta_marketing, tipo_usuario) VALUES "

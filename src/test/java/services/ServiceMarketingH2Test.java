@@ -30,6 +30,7 @@ import entities.ClienteMarketing;
 import entities.SegmentoCalculado;
 import entities.SolicitudEvento;
 import persistencia.DatabaseConnection;
+import persistencia.DatabaseTestUtils;
 import repositories.RepositoryMarketing;
 
 class ServiceMarketingH2Test {
@@ -47,6 +48,10 @@ class ServiceMarketingH2Test {
     void preparar() throws Exception {
         // la base vive entre conexiones del servicio y tiene un nombre único en memoria
         url = "jdbc:h2:mem:marketing_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
+
+        try (Connection connection = DatabaseConnection.getConnection(url)) {
+            DatabaseTestUtils.crearEsquemaVacio(connection);
+        }
 
         // creamos el administrador, los clientes y el presupuesto de prueba
         insertarUsuario(ADMINISTRADOR, "Administradora", "ADMINISTRADOR", "ACTIVO", false);
