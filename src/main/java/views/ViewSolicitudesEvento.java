@@ -22,6 +22,7 @@ public class ViewSolicitudesEvento {
     private final ListView<SolicitudServicioEvento> solicitudes = new ListView<>();
     private final TextField presupuesto = new TextField();
     private final NumberFormat pesos = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
+    private final Label detalleRechazo = new Label();
 
     public ViewSolicitudesEvento(ControllerEventos controller, Evento evento) {
         this.controller = controller;
@@ -70,8 +71,31 @@ public class ViewSolicitudesEvento {
         ayuda.setWrapText(true);
         ayuda.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
         Label estado = new Label(editable ? "Evento en planeación" : "Consulta del evento · " + evento.getEstado());
+        detalleRechazo.setWrapText(true);
+        detalleRechazo.setMaxWidth(Double.MAX_VALUE);
+        solicitudes.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((observable, anterior, seleccionada) -> {
+
+                    if (seleccionada == null) {
+                        detalleRechazo.setText("");
+                        return;
+                    }
+
+                    if ("RECHAZADA".equalsIgnoreCase(seleccionada.estado())) {
+                        String motivo = seleccionada.motivoRechazo();
+
+                        detalleRechazo.setText(
+                            motivo == null || motivo.isBlank()
+                                ? "Solicitud rechazada. No se registró un motivo."
+                                : "Motivo del rechazo: " + motivo
+                        );
+                    } else {
+                        detalleRechazo.setText("");
+                    }
+                });
         VBox contenido = new VBox(14, new Label(evento.getNombre()), estado, resumen, ayuda, servicios,
-                enviar, solicitudes, retirar, new Label("Ajustar presupuesto total"), new HBox(10, presupuesto, ajustar), mensaje);
+                enviar, solicitudes, detalleRechazo, retirar, new Label("Ajustar presupuesto total"), new HBox(10, presupuesto, ajustar), mensaje);
         contenido.getStyleClass().add("card");
         contenido.setPrefWidth(680);
         dialogo.getDialogPane().setContent(contenido);
