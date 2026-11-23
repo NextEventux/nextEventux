@@ -46,20 +46,46 @@ public class RepositorySolicitudServicio {
     }
 
     public List<SolicitudServicioEvento> listarSolicitudes(int evento, int organizador) {
-        List<SolicitudServicioEvento> solicitudes=new ArrayList<>();
-        try(Connection c=conectar()) {
-            evento(c,evento,organizador,false);
-            try(PreparedStatement s=c.prepareStatement("SELECT s.id_solicitud,COALESCE(v.nombre,'Servicio histórico'),p.nombre,s.costo_comprometido,s.estado "
-                    + "FROM Solicitud_Ejecucion s JOIN Proveedor p ON p.id_proveedor=s.id_proveedor "
-                    + "LEFT JOIN Servicio v ON v.id_servicio=s.id_servicio WHERE s.id_evento=? ORDER BY s.id_solicitud")) {
-                s.setInt(1,evento);
-                try(ResultSet r=s.executeQuery()) {
-                    while(r.next()) solicitudes.add(new SolicitudServicioEvento(r.getInt(1),r.getString(2),r.getString(3),r.getBigDecimal(4),r.getString(5)));
+        List<SolicitudServicioEvento> solicitudes = new ArrayList<>();
+
+        try (Connection c = conectar()) {
+
+            // Verificamos que el evento pertenezca al organizador
+            evento(c, evento, organizador, false);
+
+            // Consultamos las solicitudes incluyendo el motivo de rechazo
+            String sql = "SELECT s.id_solicitud, COALESCE(v.nombre,'Servicio histórico'), "
+                    + "p.nombre, s.costo_comprometido, s.estado, s.motivo_rechazo "
+                    + "FROM Solicitud_Ejecucion s "
+                    + "JOIN Proveedor p ON p.id_proveedor=s.id_proveedor "
+                    + "LEFT JOIN Servicio v ON v.id_servicio=s.id_servicio "
+                    + "WHERE s.id_evento=? ORDER BY s.id_solicitud";
+
+            try (PreparedStatement s = c.prepareStatement(sql)) {
+                s.setInt(1, evento);
+
+                try (ResultSet r = s.executeQuery()) {
+                    while (r.next()) {
+                        solicitudes.add(new SolicitudServicioEvento(
+                                r.getInt(1),
+                                r.getString(2),
+                                r.getString(3),
+                                r.getBigDecimal(4),
+                                r.getString(5),
+                                r.getString(6)
+                        ));
+                    }
                 }
             }
+
             return solicitudes;
-        } catch(SQLException e) { throw new IllegalStateException("No se pudieron consultar las solicitudes del evento.",e); }
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "No se pudieron consultar las solicitudes del evento.", e);
+        }
     }
+
 
     public int solicitar(int evento, int organizador, int servicio) {
         try(Connection c=conectar()) {
