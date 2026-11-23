@@ -105,7 +105,7 @@ public class NextEventuxApp extends Application {
             }
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "[BD] No se pudo inicializar la base de datos.", e);
+                    "[BD] No se pudo inicializar la base de datos: " + e.getMessage(), e);
         }
 
         controllerAutenticacion = new ControllerAutenticacion(

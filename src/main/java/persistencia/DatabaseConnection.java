@@ -1,16 +1,9 @@
 package persistencia;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.h2.tools.RunScript;
 
 public class DatabaseConnection {
 
@@ -40,41 +33,6 @@ public class DatabaseConnection {
     }
 
     public static Connection getConnection(String url) throws SQLException {
-        Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
-        try {
-            inicializarSiHaceFalta(url, connection);
-            return connection;
-        } catch (SQLException | RuntimeException e) {
-            try {
-                connection.close();
-            } catch (SQLException cierre) {
-                e.addSuppressed(cierre);
-            }
-            throw e;
-        }
-    }
-
-    private static final Set<String> INICIALIZADAS = new HashSet<>();
-
-    private static synchronized void inicializarSiHaceFalta(
-            String url,
-            Connection connection) throws SQLException {
-        if (INICIALIZADAS.contains(url)) {
-            return;
-        }
-        ejecutarScript(connection, "/schema.sql");
-        INICIALIZADAS.add(url);
-    }
-
-    private static void ejecutarScript(Connection connection, String recurso) throws SQLException {
-        InputStream schema = DatabaseConnection.class.getResourceAsStream(recurso);
-        if (schema == null) {
-            throw new SQLException("No se encontró el recurso " + recurso);
-        }
-        try (InputStreamReader reader = new InputStreamReader(schema, StandardCharsets.UTF_8)) {
-            RunScript.execute(connection, reader);
-        } catch (java.io.IOException e) {
-            throw new SQLException("No se pudo leer el esquema de la base de datos.", e);
-        }
+        return DriverManager.getConnection(url, USER, PASSWORD);
     }
 }
