@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import persistencia.DatabaseConnection;
+import persistencia.DatabaseTestUtils;
 import repositories.RepositoryPublicacion;
 import repositories.eventos.RepositoryEvento;
 
@@ -43,6 +44,7 @@ class ServicePublicacionH2Test {
         // creamos en esta h2 los organizadores y el administrador del escenario
         try (Connection connection = DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
+            DatabaseTestUtils.crearEsquemaVacio(connection);
             statement.executeUpdate("INSERT INTO Usuario "
                     + "(id_usuario, nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario) "
                     + "VALUES (10, 'Laura Gómez', 'laura', 'solo-prueba', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'), "

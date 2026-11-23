@@ -9,6 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import persistencia.DatabaseConnection;
+import persistencia.DatabaseTestUtils;
 import repositories.RepositoryAutenticacion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,6 +25,10 @@ class ServiceAutenticacionH2Test {
     void preparar() throws Exception {
         // la base vive entre conexiones del servicio y tiene un nombre único en memoria
         url = "jdbc:h2:mem:autenticacion_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
+
+        try (Connection connection = DatabaseConnection.getConnection(url)) {
+            DatabaseTestUtils.crearEsquemaVacio(connection);
+        }
 
         // creamos las cuentas y perfiles de prueba en esta base temporal
         insertarUsuario(8001, "Proveedor aprobado", "proveedor.aprobado", "PROVEEDOR", "ACTIVO");

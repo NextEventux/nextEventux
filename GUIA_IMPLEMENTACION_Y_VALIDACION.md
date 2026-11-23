@@ -103,9 +103,7 @@ src/
 │   │   ├── services/      (incluye servicios agrupados por área)
 │   │   └── views/         (pantallas JavaFX y componentes)
 │   └── resources/
-│       ├── migrations/
-│       ├── schema.sql
-│       └── seed.sql
+│       └── data.sql
 └── test/
     └── java/
 ```

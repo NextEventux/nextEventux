@@ -19,6 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import persistencia.DatabaseConnection;
+import persistencia.DatabaseTestUtils;
 import persistencia.PropiedadSistemaTemporal;
 import repositories.RepositoryLugar;
 import repositories.eventos.RepositoryEvento;
@@ -61,6 +62,7 @@ class ServiceInvitadosH2Test {
         // creamos las cuentas, perfiles y lugares que necesita la prueba
         try (Connection connection = DatabaseConnection.getConnection(url);
                 Statement statement = connection.createStatement()) {
+            DatabaseTestUtils.crearEsquemaVacio(connection);
             statement.executeUpdate("INSERT INTO Usuario "
                     + "(id_usuario, nombre, usuario, contraseña, estado, fecha_registro, acepta_marketing, tipo_usuario) "
                     + "VALUES (10, 'Laura Gómez', 'laura', 'solo-prueba', 'ACTIVO', CURRENT_TIMESTAMP, FALSE, 'ORGANIZADOR'), "

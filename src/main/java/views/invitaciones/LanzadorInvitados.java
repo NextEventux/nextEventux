@@ -5,18 +5,30 @@ import views.eventos.ViewEventos;
 import app.Navegacion;
 import controllers.eventos.ControllerEventos;
 import controllers.invitaciones.ControllerInvitados;
+import inicializacion.CargarDatosEjemplo;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import persistencia.DatabaseConnection;
 import repositories.eventos.RepositoryEvento;
 import services.eventos.ServiceEventos;
 import services.invitaciones.ServiceInvitados;
+
+import java.sql.Connection;
 
 /**
  * Abre la aplicación directamente en la pantalla de Invitaciones (CU-17).
  * El menú lateral permite ir a Crear evento (CU-01) y volver.
  */
 public class LanzadorInvitados extends Application {
+
+    @Override
+    public void init() throws Exception {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            CargarDatosEjemplo.cargarSiEstaVacia(connection);
+        }
+    }
+
     @Override
     public void start(Stage stage) {
         ControllerEventos controller = new ControllerEventos(new ServiceEventos(new RepositoryEvento()));
