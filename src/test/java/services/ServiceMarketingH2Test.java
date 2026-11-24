@@ -369,6 +369,24 @@ class ServiceMarketingH2Test {
     }
 
     @Test
+    void finalizaCampanaManualmenteSoloParaAdministradorActivo() throws Exception {
+        insertarSegmentoActivo();
+        Campana creada = service.crearCampana(nuevaCampana(
+                ADMINISTRADOR, SEGMENTO, "Oferta", "15%",
+                HOY, HOY.plusDays(5), new BigDecimal("50")));
+        int id = creada.getIdCampana();
+        service.lanzarCampana(id);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.finalizarCampana(9999, id));
+        assertEquals(Campana.ESTADO_ACTIVA, service.obtenerCampana(id).getEstado());
+
+        service.finalizarCampana(ADMINISTRADOR, id);
+
+        assertEquals(Campana.ESTADO_FINALIZADA, service.obtenerCampana(id).getEstado());
+    }
+
+    @Test
     void rechazaTransicionesInvalidasSinCambiarElEstadoDeLaCampana() throws Exception {
         insertarSegmentoActivo();
         Campana creada = service.crearCampana(nuevaCampana(
